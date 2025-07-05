@@ -24,7 +24,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "LaravelPrism\\Tests\\": "tests/"
+            "LaravelPrism\\Tests\\": "tests/",
+            "Tests\\Unit\\Analyzers\\Fixtures\\": "tests/Unit/Analyzers/Fixtures/"
         }
     },
     "extra": {
