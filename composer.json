@@ -11,8 +11,10 @@
         "illuminate/console": "^10.0|^11.0|^12.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^8.0|^9.0",
-        "phpunit/phpunit": "^10.0"
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0",
+        "laravel/pint": "^1.23",
+        "phpstan/phpstan": "^2.1"
     },
     "autoload": {
         "psr-4": {
@@ -30,6 +32,22 @@
                 "LaravelPrism\\PrismServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "format": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse",
+        "check-style": "vendor/bin/pint --test",
+        "fix-style": "vendor/bin/pint"
+    },
+    "scripts-descriptions": {
+        "test": "Run the tests",
+        "test-coverage": "Run the tests with coverage",
+        "format": "Format the code using Laravel Pint",
+        "analyse": "Analyse the code using PHPStan",
+        "check-style": "Check the code style",
+        "fix-style": "Fix the code style"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

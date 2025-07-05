@@ -2,13 +2,13 @@
 
 namespace LaravelPrism\Tests\Feature;
 
-use LaravelPrism\Tests\TestCase;
 use Illuminate\Support\Facades\Route;
 use LaravelPrism\Analyzers\RouteAnalyzer;
 use LaravelPrism\Generators\OpenApiGenerator;
-use LaravelPrism\Tests\Fixtures\Controllers\UserController;
 use LaravelPrism\Tests\Fixtures\Controllers\ProfileController;
+use LaravelPrism\Tests\Fixtures\Controllers\UserController;
 use LaravelPrism\Tests\Fixtures\StoreUserRequest;
+use LaravelPrism\Tests\TestCase;
 use Mockery;
 
 class OpenApiGeneratorTest extends TestCase
@@ -20,14 +20,14 @@ class OpenApiGeneratorTest extends TestCase
         Route::get('api/users', [UserController::class, 'index']);
         Route::post('api/users', [UserController::class, 'store']);
         Route::get('api/users/{user}', [UserController::class, 'show']);
-        
+
         $routeAnalyzer = app(RouteAnalyzer::class);
-        $generator = app(OpenApiGenerator::class);
-        
+        $generator     = app(OpenApiGenerator::class);
+
         // Act
-        $routes = $routeAnalyzer->analyze();
+        $routes  = $routeAnalyzer->analyze();
         $openapi = $generator->generate($routes);
-        
+
         // Assert
         $this->assertEquals('3.0.0', $openapi['openapi']);
         $this->assertArrayHasKey('info', $openapi);
@@ -36,28 +36,28 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayHasKey('get', $openapi['paths']['/api/users']);
         $this->assertArrayHasKey('post', $openapi['paths']['/api/users']);
     }
-    
+
     /** @test */
     public function it_includes_request_body_for_post_requests()
     {
         // Arrange
         Route::post('api/users', [UserController::class, 'store']);
-        
+
         // Mock controller analysis to return FormRequest
         $this->mockControllerAnalysis('store', [
             'formRequest' => StoreUserRequest::class,
         ]);
-        
+
         // Act
         $openapi = $this->generateOpenApi();
-        
+
         // Assert
         $operation = $openapi['paths']['/api/users']['post'];
         $this->assertArrayHasKey('requestBody', $operation);
         $this->assertTrue($operation['requestBody']['required']);
         $this->assertArrayHasKey('application/json', $operation['requestBody']['content']);
     }
-    
+
     /** @test */
     public function it_adds_security_requirements_for_authenticated_routes()
     {
@@ -65,26 +65,26 @@ class OpenApiGeneratorTest extends TestCase
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('api/profile', [ProfileController::class, 'show']);
         });
-        
+
         // Act
         $openapi = $this->generateOpenApi();
-        
+
         // Assert
         $operation = $openapi['paths']['/api/profile']['get'];
         $this->assertArrayHasKey('security', $operation);
         $this->assertArrayHasKey('bearerAuth', $operation['security'][0]);
     }
-    
+
     /** @test */
     public function it_generates_proper_path_parameters()
     {
         // Arrange
         Route::get('api/users/{user}', [UserController::class, 'show']);
         Route::put('api/posts/{post}/comments/{comment?}', [UserController::class, 'update']);
-        
+
         // Act
         $openapi = $this->generateOpenApi();
-        
+
         // Assert
         $userOperation = $openapi['paths']['/api/users/{user}']['get'];
         $this->assertArrayHasKey('parameters', $userOperation);
@@ -92,13 +92,13 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('user', $userOperation['parameters'][0]['name']);
         $this->assertEquals('path', $userOperation['parameters'][0]['in']);
         $this->assertTrue($userOperation['parameters'][0]['required']);
-        
+
         $commentOperation = $openapi['paths']['/api/posts/{post}/comments/{comment}']['put'];
         $this->assertCount(2, $commentOperation['parameters']);
-        $commentParam = array_filter($commentOperation['parameters'], fn($p) => $p['name'] === 'comment');
+        $commentParam = array_filter($commentOperation['parameters'], fn ($p) => $p['name'] === 'comment');
         $this->assertFalse(array_values($commentParam)[0]['required']);
     }
-    
+
     /** @test */
     public function it_includes_api_info_and_servers()
     {
@@ -107,43 +107,43 @@ class OpenApiGeneratorTest extends TestCase
         config(['prism.version' => '2.0.0']);
         config(['prism.description' => 'Test API Description']);
         config(['app.url' => 'https://example.com']);
-        
+
         Route::get('api/test', [UserController::class, 'index']);
-        
+
         // Act
         $openapi = $this->generateOpenApi();
-        
+
         // Assert
         $this->assertEquals('Test API', $openapi['info']['title']);
         $this->assertEquals('2.0.0', $openapi['info']['version']);
         $this->assertEquals('Test API Description', $openapi['info']['description']);
         $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
     }
-    
+
     /** @test */
     public function it_generates_tags_from_route_uri()
     {
         // Arrange
         Route::get('api/users', [UserController::class, 'index']);
         Route::get('api/posts', [UserController::class, 'index']);
-        
+
         // Act
         $openapi = $this->generateOpenApi();
-        
+
         // Assert
         $userOperation = $openapi['paths']['/api/users']['get'];
         $this->assertContains('User', $userOperation['tags']);
-        
+
         $postOperation = $openapi['paths']['/api/posts']['get'];
         $this->assertContains('Post', $postOperation['tags']);
     }
-    
+
     protected function mockControllerAnalysis(string $method, array $result): void
     {
         $controllerAnalyzer = Mockery::mock('LaravelPrism\Analyzers\ControllerAnalyzer');
         $controllerAnalyzer->shouldReceive('analyze')
             ->andReturn($result);
-            
+
         $this->app->instance('LaravelPrism\Analyzers\ControllerAnalyzer', $controllerAnalyzer);
     }
 }

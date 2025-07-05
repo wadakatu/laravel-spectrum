@@ -34,10 +34,10 @@ class TypeInference
                 return 'string'; // binary format
             }
         }
-        
+
         return 'string'; // デフォルト
     }
-    
+
     /**
      * フィールド名とルールからサンプル値を生成
      */
@@ -73,7 +73,7 @@ class TypeInference
                 return '550e8400-e29b-41d4-a716-446655440000';
             }
         }
-        
+
         // フィールド名ベースのサンプル
         if (Str::contains($field, ['name'])) {
             return 'John Doe';
@@ -96,10 +96,10 @@ class TypeInference
         if (Str::contains($field, ['price', 'amount', 'cost'])) {
             return 99.99;
         }
-        
+
         return 'string';
     }
-    
+
     /**
      * 整数型のサンプルを生成
      */
@@ -107,7 +107,7 @@ class TypeInference
     {
         $min = 1;
         $max = 100;
-        
+
         foreach ($rules as $rule) {
             if (Str::startsWith($rule, 'min:')) {
                 $min = (int) Str::after($rule, 'min:');
@@ -116,7 +116,7 @@ class TypeInference
                 $max = (int) Str::after($rule, 'max:');
             }
         }
-        
+
         // フィールド名に基づいた適切な値
         if (Str::contains($field, ['id'])) {
             return 1;
@@ -127,7 +127,7 @@ class TypeInference
         if (Str::contains($field, ['count', 'quantity'])) {
             return min(10, $max);
         }
-        
+
         return min($min + 1, $max);
     }
 }

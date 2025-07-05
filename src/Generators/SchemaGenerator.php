@@ -10,48 +10,48 @@ class SchemaGenerator
     public function generateFromParameters(array $parameters): array
     {
         $properties = [];
-        $required = [];
-        
+        $required   = [];
+
         foreach ($parameters as $parameter) {
             $properties[$parameter['name']] = [
-                'type' => $parameter['type'],
+                'type'        => $parameter['type'],
                 'description' => $parameter['description'] ?? null,
-                'example' => $parameter['example'] ?? null,
+                'example'     => $parameter['example'] ?? null,
             ];
-            
+
             if ($parameter['required']) {
                 $required[] = $parameter['name'];
             }
         }
-        
+
         $schema = [
-            'type' => 'object',
+            'type'       => 'object',
             'properties' => $properties,
         ];
-        
-        if (!empty($required)) {
+
+        if (! empty($required)) {
             $schema['required'] = $required;
         }
-        
+
         return $schema;
     }
-    
+
     /**
      * リソース構造からスキーマを生成
      */
     public function generateFromResource(array $resourceStructure): array
     {
         $properties = [];
-        
+
         foreach ($resourceStructure as $field => $info) {
             $properties[$field] = [
-                'type' => $info['type'],
+                'type'    => $info['type'],
                 'example' => $info['example'],
             ];
         }
-        
+
         return [
-            'type' => 'object',
+            'type'       => 'object',
             'properties' => $properties,
         ];
     }
