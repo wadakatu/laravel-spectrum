@@ -60,7 +60,12 @@ jobs:
         run: composer show -D
 
       - name: Execute tests
-        run: vendor/bin/phpunit --coverage-clover coverage.xml
+        run: |
+          if [[ -f "vendor/phpunit/phpunit/phpunit" ]] && vendor/bin/phpunit --version | grep -q "PHPUnit 9"; then
+            vendor/bin/phpunit --configuration phpunit9.xml --coverage-clover coverage.xml
+          else
+            vendor/bin/phpunit --coverage-clover coverage.xml
+          fi
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
