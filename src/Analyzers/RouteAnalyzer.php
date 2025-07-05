@@ -29,7 +29,7 @@ class RouteAnalyzer
             }
 
             $controller = $route->getController();
-            $method     = $route->getActionMethod();
+            $method = $route->getActionMethod();
 
             // コントローラーメソッドが存在しない場合はスキップ
             if (! $controller || $method === 'Closure' || ! is_object($controller)) {
@@ -37,13 +37,13 @@ class RouteAnalyzer
             }
 
             $routes[] = [
-                'uri'         => $route->uri(),
+                'uri' => $route->uri(),
                 'httpMethods' => $route->methods(),
-                'controller'  => get_class($controller),
-                'method'      => $method,
-                'name'        => $route->getName(),
-                'middleware'  => $this->extractMiddleware($route),
-                'parameters'  => $this->extractRouteParameters($route),
+                'controller' => get_class($controller),
+                'method' => $method,
+                'name' => $route->getName(),
+                'middleware' => $this->extractMiddleware($route),
+                'parameters' => $this->extractRouteParameters($route),
             ];
         }
 
@@ -55,7 +55,7 @@ class RouteAnalyzer
      */
     protected function isApiRoute($route): bool
     {
-        $uri            = $route->uri();
+        $uri = $route->uri();
         $configPatterns = config('prism.route_patterns', ['api/*']);
 
         foreach ($configPatterns as $pattern) {
@@ -77,13 +77,13 @@ class RouteAnalyzer
         $parameters = [];
         foreach ($matches[1] as $param) {
             $isOptional = Str::endsWith($param, '?');
-            $name       = rtrim($param, '?');
+            $name = rtrim($param, '?');
 
             $parameters[] = [
-                'name'     => $name,
+                'name' => $name,
                 'required' => ! $isOptional,
-                'in'       => 'path',
-                'type'     => 'string', // デフォルト、後で型推論で上書き可能
+                'in' => 'path',
+                'type' => 'string', // デフォルト、後で型推論で上書き可能
             ];
         }
 

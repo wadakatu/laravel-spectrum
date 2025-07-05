@@ -8,10 +8,14 @@ use PhpParser\PrettyPrinter;
 
 class ResourceStructureVisitor extends NodeVisitorAbstract
 {
-    private array $structure         = [];
+    private array $structure = [];
+
     private array $conditionalFields = [];
-    private array $nestedResources   = [];
+
+    private array $nestedResources = [];
+
     private PrettyPrinter\Standard $printer;
+
     private int $depth = 0;
 
     public function __construct(PrettyPrinter\Standard $printer)
@@ -93,21 +97,21 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     private function analyzeValue(Node $expr): array
     {
         $info = [
-            'type'     => 'mixed',
+            'type' => 'mixed',
             'nullable' => false,
-            'source'   => null,
-            'example'  => null,
+            'source' => null,
+            'example' => null,
         ];
 
         // スカラー値
         if ($expr instanceof Node\Scalar\String_) {
-            $info['type']    = 'string';
+            $info['type'] = 'string';
             $info['example'] = $expr->value;
         } elseif ($expr instanceof Node\Scalar\LNumber) {
-            $info['type']    = 'integer';
+            $info['type'] = 'integer';
             $info['example'] = $expr->value;
         } elseif ($expr instanceof Node\Scalar\DNumber) {
-            $info['type']    = 'number';
+            $info['type'] = 'number';
             $info['example'] = $expr->value;
         }
 
@@ -116,7 +120,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
                 $expr->var instanceof Node\Expr\Variable &&
                 $expr->var->name === 'this') {
             $propertyName = $expr->name->toString();
-            $info         = $this->analyzePropertyAccess($propertyName);
+            $info = $this->analyzePropertyAccess($propertyName);
         }
 
         // $this->property->method() (プロパティのメソッドチェーン)
@@ -169,7 +173,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
             if ($propertyName === 'value') {
                 // Enumのvalueアクセス
                 $info = [
-                    'type'   => 'string',
+                    'type' => 'string',
                     'source' => 'enum',
                 ];
             } else {
@@ -189,7 +193,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
 
         // 配列
         elseif ($expr instanceof Node\Expr\Array_) {
-            $info['type']       = 'object';
+            $info['type'] = 'object';
             $info['properties'] = $this->analyzeArrayStructure($expr);
         }
 
@@ -219,7 +223,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         $info = ['source' => 'property', 'property' => $property];
 
         // プロパティ名から型を推論
-        $info['type']    = $this->inferTypeFromPropertyName($property);
+        $info['type'] = $this->inferTypeFromPropertyName($property);
         $info['example'] = $this->generateExampleFromProperty($property);
 
         return $info;
@@ -231,9 +235,9 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     private function analyzeWhenMethod(Node\Expr\MethodCall $call): array
     {
         $info = [
-            'type'        => 'mixed',
+            'type' => 'mixed',
             'conditional' => true,
-            'condition'   => 'when',
+            'condition' => 'when',
         ];
 
         // 第2引数が値の場合
@@ -247,7 +251,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
             // 直接値の場合
             else {
                 $valueInfo = $this->analyzeValue($valueNode);
-                $info      = array_merge($info, $valueInfo);
+                $info = array_merge($info, $valueInfo);
             }
         }
 
@@ -262,9 +266,9 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     private function analyzeWhenLoadedMethod(Node\Expr\MethodCall $call): array
     {
         $info = [
-            'type'        => 'mixed',
+            'type' => 'mixed',
             'conditional' => true,
-            'condition'   => 'whenLoaded',
+            'condition' => 'whenLoaded',
         ];
 
         if (isset($call->args[0])) {
@@ -304,9 +308,9 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
             // ResourceクラスのCollection
             if (str_ends_with($className, 'Resource') &&
                 $call->name->toString() === 'collection') {
-                $info['type']  = 'array';
+                $info['type'] = 'array';
                 $info['items'] = [
-                    'type'     => 'object',
+                    'type' => 'object',
                     'resource' => $className,
                 ];
 
@@ -315,7 +319,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
                     $call->args[0]->value instanceof Node\Expr\MethodCall &&
                     $call->args[0]->value->name->toString() === 'whenLoaded') {
                     $whenLoadedInfo = $this->analyzeWhenLoadedMethod($call->args[0]->value);
-                    $info           = array_merge($info, $whenLoadedInfo);
+                    $info = array_merge($info, $whenLoadedInfo);
                 }
 
                 $this->nestedResources[] = $className;
@@ -343,7 +347,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
                     $new->args[0]->value instanceof Node\Expr\MethodCall &&
                     $new->args[0]->value->name->toString() === 'whenLoaded') {
                     $whenLoadedInfo = $this->analyzeWhenLoadedMethod($new->args[0]->value);
-                    $info           = array_merge($info, $whenLoadedInfo);
+                    $info = array_merge($info, $whenLoadedInfo);
                 }
 
                 $this->nestedResources[] = $className;
@@ -363,8 +367,8 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         // 日付フォーマット
         if (in_array($methodName, ['format', 'toDateString', 'toTimeString', 'toDateTimeString'])) {
             return [
-                'type'    => 'string',
-                'format'  => 'date-time',
+                'type' => 'string',
+                'format' => 'date-time',
                 'example' => date('Y-m-d H:i:s'),
             ];
         }
@@ -372,7 +376,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         // Enumのvalue
         if ($methodName === 'value' && $call->var instanceof Node\Expr\PropertyFetch) {
             return [
-                'type'   => 'string',
+                'type' => 'string',
                 'source' => 'enum',
             ];
         }
@@ -460,35 +464,35 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     private function inferTypeFromPropertyName(string $property): string
     {
         $typeMap = [
-            'id'          => 'integer',
-            'uuid'        => 'string',
-            'name'        => 'string',
-            'title'       => 'string',
+            'id' => 'integer',
+            'uuid' => 'string',
+            'name' => 'string',
+            'title' => 'string',
             'description' => 'string',
-            'email'       => 'string',
-            'phone'       => 'string',
-            'url'         => 'string',
-            'price'       => 'number',
-            'amount'      => 'number',
-            'total'       => 'number',
-            'cost'        => 'number',
-            'count'       => 'integer',
-            'quantity'    => 'integer',
-            'is_'         => 'boolean',
-            'has_'        => 'boolean',
-            'can_'        => 'boolean',
-            '_at'         => 'string', // timestamps
-            '_date'       => 'string',
-            'status'      => 'string',
-            'type'        => 'string',
-            'image'       => 'string',
-            'photo'       => 'string',
-            'avatar'      => 'string',
-            'data'        => 'object',
-            'meta'        => 'object',
-            'metadata'    => 'object',
-            'settings'    => 'object',
-            'config'      => 'object',
+            'email' => 'string',
+            'phone' => 'string',
+            'url' => 'string',
+            'price' => 'number',
+            'amount' => 'number',
+            'total' => 'number',
+            'cost' => 'number',
+            'count' => 'integer',
+            'quantity' => 'integer',
+            'is_' => 'boolean',
+            'has_' => 'boolean',
+            'can_' => 'boolean',
+            '_at' => 'string', // timestamps
+            '_date' => 'string',
+            'status' => 'string',
+            'type' => 'string',
+            'image' => 'string',
+            'photo' => 'string',
+            'avatar' => 'string',
+            'data' => 'object',
+            'meta' => 'object',
+            'metadata' => 'object',
+            'settings' => 'object',
+            'config' => 'object',
         ];
 
         // 完全一致
@@ -517,14 +521,14 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     private function generateExampleFromProperty(string $property): mixed
     {
         $examples = [
-            'id'         => 1,
-            'uuid'       => '550e8400-e29b-41d4-a716-446655440000',
-            'name'       => 'John Doe',
-            'email'      => 'user@example.com',
-            'phone'      => '+1-555-555-5555',
-            'price'      => 99.99,
-            'quantity'   => 10,
-            'is_active'  => true,
+            'id' => 1,
+            'uuid' => '550e8400-e29b-41d4-a716-446655440000',
+            'name' => 'John Doe',
+            'email' => 'user@example.com',
+            'phone' => '+1-555-555-5555',
+            'price' => 99.99,
+            'quantity' => 10,
+            'is_active' => true,
             'created_at' => '2024-01-01T00:00:00Z',
             'updated_at' => '2024-01-01T00:00:00Z',
         ];
@@ -535,9 +539,9 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     public function getStructure(): array
     {
         return [
-            'properties'        => $this->structure,
+            'properties' => $this->structure,
             'conditionalFields' => array_unique($this->conditionalFields),
-            'nestedResources'   => array_unique($this->nestedResources),
+            'nestedResources' => array_unique($this->nestedResources),
         ];
     }
 }

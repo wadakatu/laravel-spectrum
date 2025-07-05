@@ -9,7 +9,9 @@ use PhpParser\PrettyPrinter;
 class RulesExtractorVisitor extends NodeVisitorAbstract
 {
     private array $rules = [];
+
     private PrettyPrinter\Standard $printer;
+
     private array $variables = [];
 
     public function __construct(PrettyPrinter\Standard $printer)
@@ -47,7 +49,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
             // その他のメソッド呼び出しの結果を返す場合
             elseif ($node->expr instanceof Node\Expr\MethodCall ||
                     $node->expr instanceof Node\Expr\FuncCall) {
-                $this->rules = ['_notice' => 'Complex rules detected - ' . $this->printer->prettyPrintExpr($node->expr)];
+                $this->rules = ['_notice' => 'Complex rules detected - '.$this->printer->prettyPrintExpr($node->expr)];
             }
             // match式（PHP 8）
             elseif ($node->expr instanceof Node\Expr\Match_) {
@@ -66,7 +68,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         $rules = [];
 
         foreach ($array->items as $item) {
-            $key   = $this->evaluateKey($item->key);
+            $key = $this->evaluateKey($item->key);
             $value = $this->evaluateValue($item->value);
 
             if ($value !== null) {
@@ -101,7 +103,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
         foreach ($call->args as $arg) {
             if ($arg->value instanceof Node\Expr\Array_) {
-                $rules       = $this->extractArrayRules($arg->value);
+                $rules = $this->extractArrayRules($arg->value);
                 $mergedRules = array_merge($mergedRules, $rules);
             } elseif ($arg->value instanceof Node\Expr\Variable) {
                 // 変数の場合は保存された値を使用
@@ -161,11 +163,11 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
         // 連結演算子（'required|string' のような形式）
         if ($expr instanceof Node\Expr\BinaryOp\Concat) {
-            $left  = $this->evaluateValue($expr->left);
+            $left = $this->evaluateValue($expr->left);
             $right = $this->evaluateValue($expr->right);
 
             if (is_string($left) && is_string($right)) {
-                return $left . $right;
+                return $left.$right;
             }
         }
 

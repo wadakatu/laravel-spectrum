@@ -10,13 +10,13 @@ class SchemaGenerator
     public function generateFromParameters(array $parameters): array
     {
         $properties = [];
-        $required   = [];
+        $required = [];
 
         foreach ($parameters as $parameter) {
             $properties[$parameter['name']] = [
-                'type'        => $parameter['type'],
+                'type' => $parameter['type'],
                 'description' => $parameter['description'] ?? null,
-                'example'     => $parameter['example'] ?? null,
+                'example' => $parameter['example'] ?? null,
             ];
 
             if ($parameter['required']) {
@@ -25,7 +25,7 @@ class SchemaGenerator
         }
 
         $schema = [
-            'type'       => 'object',
+            'type' => 'object',
             'properties' => $properties,
         ];
 
@@ -45,13 +45,13 @@ class SchemaGenerator
 
         foreach ($resourceStructure as $field => $info) {
             $properties[$field] = [
-                'type'    => $info['type'],
+                'type' => $info['type'],
                 'example' => $info['example'],
             ];
         }
 
         return [
-            'type'       => 'object',
+            'type' => 'object',
             'properties' => $properties,
         ];
     }

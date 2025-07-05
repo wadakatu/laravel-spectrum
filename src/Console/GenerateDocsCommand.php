@@ -16,6 +16,7 @@ class GenerateDocsCommand extends Command
     protected $description = 'Generate API documentation';
 
     protected RouteAnalyzer $routeAnalyzer;
+
     protected OpenApiGenerator $openApiGenerator;
 
     public function __construct(
@@ -24,7 +25,7 @@ class GenerateDocsCommand extends Command
     ) {
         parent::__construct();
 
-        $this->routeAnalyzer    = $routeAnalyzer;
+        $this->routeAnalyzer = $routeAnalyzer;
         $this->openApiGenerator = $openApiGenerator;
     }
 
@@ -83,12 +84,12 @@ class GenerateDocsCommand extends Command
         // MVP版の簡易実装
         $yaml = '';
         foreach ($array as $key => $value) {
-            $yaml .= str_repeat('  ', $indent) . $key . ': ';
+            $yaml .= str_repeat('  ', $indent).$key.': ';
 
             if (is_array($value)) {
-                $yaml .= "\n" . $this->arrayToYaml($value, $indent + 1);
+                $yaml .= "\n".$this->arrayToYaml($value, $indent + 1);
             } else {
-                $yaml .= $value . "\n";
+                $yaml .= $value."\n";
             }
         }
 

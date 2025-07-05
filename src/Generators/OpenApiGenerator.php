@@ -10,8 +10,11 @@ use LaravelPrism\Analyzers\ResourceAnalyzer;
 class OpenApiGenerator
 {
     protected FormRequestAnalyzer $requestAnalyzer;
+
     protected ResourceAnalyzer $resourceAnalyzer;
+
     protected ControllerAnalyzer $controllerAnalyzer;
+
     protected SchemaGenerator $schemaGenerator;
 
     public function __construct(
@@ -20,10 +23,10 @@ class OpenApiGenerator
         ControllerAnalyzer $controllerAnalyzer,
         SchemaGenerator $schemaGenerator
     ) {
-        $this->requestAnalyzer    = $requestAnalyzer;
-        $this->resourceAnalyzer   = $resourceAnalyzer;
+        $this->requestAnalyzer = $requestAnalyzer;
+        $this->resourceAnalyzer = $resourceAnalyzer;
         $this->controllerAnalyzer = $controllerAnalyzer;
-        $this->schemaGenerator    = $schemaGenerator;
+        $this->schemaGenerator = $schemaGenerator;
     }
 
     /**
@@ -33,20 +36,20 @@ class OpenApiGenerator
     {
         $openapi = [
             'openapi' => '3.0.0',
-            'info'    => [
-                'title'       => config('prism.title', config('app.name') . ' API'),
-                'version'     => config('prism.version', '1.0.0'),
+            'info' => [
+                'title' => config('prism.title', config('app.name').' API'),
+                'version' => config('prism.version', '1.0.0'),
                 'description' => config('prism.description', ''),
             ],
             'servers' => [
                 [
-                    'url'         => rtrim(config('app.url'), '/') . '/api',
+                    'url' => rtrim(config('app.url'), '/').'/api',
                     'description' => 'API Server',
                 ],
             ],
-            'paths'      => [],
+            'paths' => [],
             'components' => [
-                'schemas'         => [],
+                'schemas' => [],
                 'securitySchemes' => $this->generateSecuritySchemes(),
             ],
         ];
@@ -77,11 +80,11 @@ class OpenApiGenerator
         );
 
         $operation = [
-            'summary'     => $this->generateSummary($route, $method),
+            'summary' => $this->generateSummary($route, $method),
             'operationId' => $this->generateOperationId($route, $method),
-            'tags'        => $this->generateTags($route),
-            'parameters'  => $this->generateParameters($route, $controllerInfo),
-            'responses'   => $this->generateResponses($route, $controllerInfo),
+            'tags' => $this->generateTags($route),
+            'parameters' => $this->generateParameters($route, $controllerInfo),
+            'responses' => $this->generateResponses($route, $controllerInfo),
         ];
 
         // リクエストボディの生成
@@ -119,7 +122,7 @@ class OpenApiGenerator
 
         return [
             'required' => true,
-            'content'  => [
+            'content' => [
                 'application/json' => [
                     'schema' => $schema,
                 ],
@@ -135,7 +138,7 @@ class OpenApiGenerator
         $responses = [];
 
         // 成功レスポンス
-        $successResponse                     = $this->generateSuccessResponse($route, $controllerInfo);
+        $successResponse = $this->generateSuccessResponse($route, $controllerInfo);
         $responses[$successResponse['code']] = $successResponse['response'];
 
         // エラーレスポンス（MVP版では基本的なもののみ）
@@ -165,9 +168,9 @@ class OpenApiGenerator
 
         // HTTPメソッドに基づくデフォルトのステータスコード
         $statusCode = match ($method) {
-            'post'   => '201',
+            'post' => '201',
             'delete' => '204',
-            default  => '200',
+            default => '200',
         };
 
         $response = [
@@ -192,7 +195,7 @@ class OpenApiGenerator
         }
 
         return [
-            'code'     => $statusCode,
+            'code' => $statusCode,
             'response' => $response,
         ];
     }
@@ -202,7 +205,7 @@ class OpenApiGenerator
      */
     protected function convertToOpenApiPath(string $uri): string
     {
-        return '/' . preg_replace('/\{([^}]+)\?\}/', '{$1}', $uri);
+        return '/'.preg_replace('/\{([^}]+)\?\}/', '{$1}', $uri);
     }
 
     /**
@@ -216,7 +219,7 @@ class OpenApiGenerator
 
         $uri = str_replace(['/', '{', '}', '?'], ['_', '', '', ''], $route['uri']);
 
-        return Str::camel($method . '_' . $uri);
+        return Str::camel($method.'_'.$uri);
     }
 
     /**
@@ -233,7 +236,7 @@ class OpenApiGenerator
             'post' => "Create a new {$resource}",
             'put', 'patch' => "Update {$resource}",
             'delete' => "Delete {$resource}",
-            default  => ucfirst($method) . " {$resource}",
+            default => ucfirst($method)." {$resource}",
         };
     }
 
@@ -276,8 +279,8 @@ class OpenApiGenerator
     {
         return [
             'bearerAuth' => [
-                'type'         => 'http',
-                'scheme'       => 'bearer',
+                'type' => 'http',
+                'scheme' => 'bearer',
                 'bearerFormat' => 'JWT',
             ],
         ];

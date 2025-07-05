@@ -26,8 +26,8 @@ class ControllerAnalyzer
         $methodReflection = $reflection->getMethod($method);
 
         $result = [
-            'formRequest'       => null,
-            'resource'          => null,
+            'formRequest' => null,
+            'resource' => null,
             'returnsCollection' => false,
         ];
 
@@ -50,7 +50,7 @@ class ControllerAnalyzer
         if (preg_match('/(\w+Resource)::collection/', $source, $matches)) {
             $resourceClass = $this->resolveClassName($matches[1], $reflection);
             if ($resourceClass && class_exists($resourceClass)) {
-                $result['resource']          = $resourceClass;
+                $result['resource'] = $resourceClass;
                 $result['returnsCollection'] = true;
             }
         } elseif (preg_match('/new\s+(\w+Resource)/', $source, $matches)) {
@@ -68,10 +68,10 @@ class ControllerAnalyzer
      */
     protected function getMethodSource(ReflectionMethod $method): string
     {
-        $filename  = $method->getFileName();
+        $filename = $method->getFileName();
         $startLine = $method->getStartLine() - 1;
-        $endLine   = $method->getEndLine();
-        $length    = $endLine - $startLine;
+        $endLine = $method->getEndLine();
+        $length = $endLine - $startLine;
 
         $source = file($filename);
 
@@ -85,16 +85,16 @@ class ControllerAnalyzer
     {
         // 同じ名前空間のクラスを試す
         $namespace = $reflection->getNamespaceName();
-        $fullName  = $namespace . '\\' . $shortName;
+        $fullName = $namespace.'\\'.$shortName;
         if (class_exists($fullName)) {
             return $fullName;
         }
 
         // ファイルのuse文をチェック（簡易版）
         $filename = $reflection->getFileName();
-        $content  = file_get_contents($filename);
+        $content = file_get_contents($filename);
 
-        if (preg_match('/use\s+([\w\\\\]+\\\\' . $shortName . ');/', $content, $matches)) {
+        if (preg_match('/use\s+([\w\\\\]+\\\\'.$shortName.');/', $content, $matches)) {
             return $matches[1];
         }
 
