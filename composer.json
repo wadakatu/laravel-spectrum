@@ -8,7 +8,8 @@
         "php": "^8.1",
         "illuminate/support": "^10.0|^11.0|^12.0",
         "illuminate/routing": "^10.0|^11.0|^12.0",
-        "illuminate/console": "^10.0|^11.0|^12.0"
+        "illuminate/console": "^10.0|^11.0|^12.0",
+        "nikic/php-parser": "^5.5"
     },
     "require-dev": {
         "orchestra/testbench": "^8.0|^9.0|^10.0",
@@ -36,18 +37,16 @@
     "scripts": {
         "test": "vendor/bin/phpunit",
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
-        "format": "vendor/bin/pint",
-        "analyse": "vendor/bin/phpstan analyse",
-        "check-style": "vendor/bin/pint --test",
-        "fix-style": "vendor/bin/pint"
+        "format": "vendor/bin/pint --test",
+        "format:fix": "vendor/bin/pint",
+        "analyze": "vendor/bin/phpstan analyse"
     },
     "scripts-descriptions": {
         "test": "Run the tests",
         "test-coverage": "Run the tests with coverage",
-        "format": "Format the code using Laravel Pint",
-        "analyse": "Analyse the code using PHPStan",
-        "check-style": "Check the code style",
-        "fix-style": "Fix the code style"
+        "format": "Check the code style",
+        "format:fix": "Format the code using Laravel Pint",
+        "analyze": "Analyse the code using PHPStan"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
