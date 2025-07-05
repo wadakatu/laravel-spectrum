@@ -9,6 +9,7 @@ use PhpParser\PrettyPrinter;
 class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
 {
     private array $array = [];
+
     private PrettyPrinter\Standard $printer;
 
     public function __construct(PrettyPrinter\Standard $printer)
@@ -31,7 +32,7 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         $result = [];
 
         foreach ($array->items as $item) {
-            $key   = $this->evaluateExpression($item->key);
+            $key = $this->evaluateExpression($item->key);
             $value = $this->evaluateExpression($item->value);
 
             if ($key !== null) {

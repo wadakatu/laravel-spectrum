@@ -9,6 +9,7 @@ use PhpParser\NodeVisitorAbstract;
 class ClassFindingVisitor extends NodeVisitorAbstract
 {
     private string $className;
+
     private ?Node\Stmt\Class_ $classNode = null;
 
     public function __construct(string $className)
