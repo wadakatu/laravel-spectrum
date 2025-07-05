@@ -1,0 +1,19 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method ReflectionType\:\:getName\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Call to an undefined method ReflectionType\:\:isBuiltin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php

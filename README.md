@@ -1,5 +1,12 @@
 # Laravel Prism
 
+[![Tests](https://github.com/wadakatu/laravel-prism/workflows/Tests/badge.svg)](https://github.com/wadakatu/laravel-prism/actions)
+[![Code Coverage](https://codecov.io/gh/wadakatu/laravel-prism/branch/main/graph/badge.svg)](https://codecov.io/gh/wadakatu/laravel-prism)
+[![Latest Stable Version](https://poser.pugx.org/wadakatu/laravel-prism/v)](https://packagist.org/packages/wadakatu/laravel-prism)
+[![Total Downloads](https://poser.pugx.org/wadakatu/laravel-prism/downloads)](https://packagist.org/packages/wadakatu/laravel-prism)
+[![License](https://poser.pugx.org/wadakatu/laravel-prism/license)](https://packagist.org/packages/wadakatu/laravel-prism)
+[![PHP Version Require](https://poser.pugx.org/wadakatu/laravel-prism/require/php)](https://packagist.org/packages/wadakatu/laravel-prism)
+
 Zero-annotation API documentation generator for Laravel.
 
 ## Features

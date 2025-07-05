@@ -9,9 +9,9 @@ class NestedTestResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id' => $this->id,
+            'id'      => $this->id,
             'profile' => [
-                'bio' => $this->bio,
+                'bio'    => $this->bio,
                 'avatar' => $this->avatar_url,
             ],
             'posts_count' => $this->posts()->count(),
