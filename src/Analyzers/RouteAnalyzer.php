@@ -22,11 +22,17 @@ class RouteAnalyzer
                 continue;
             }
 
+            // クロージャールートをスキップ
+            $action = $route->getAction();
+            if (isset($action['uses']) && $action['uses'] instanceof \Closure) {
+                continue;
+            }
+
             $controller = $route->getController();
             $method     = $route->getActionMethod();
 
             // コントローラーメソッドが存在しない場合はスキップ
-            if (! $controller || $method === 'Closure') {
+            if (! $controller || $method === 'Closure' || ! is_object($controller)) {
                 continue;
             }
 
