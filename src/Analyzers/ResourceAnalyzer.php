@@ -14,14 +14,16 @@ use PhpParser\PrettyPrinter;
 class ResourceAnalyzer
 {
     protected Parser $parser;
+
     protected NodeTraverser $traverser;
+
     protected PrettyPrinter\Standard $printer;
 
     public function __construct()
     {
-        $this->parser    = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->traverser = new NodeTraverser;
-        $this->printer   = new PrettyPrinter\Standard;
+        $this->printer = new PrettyPrinter\Standard;
     }
 
     /**
@@ -50,7 +52,7 @@ class ResourceAnalyzer
 
             // ファイルをパース
             $code = file_get_contents($filePath);
-            $ast  = $this->parser->parse($code);
+            $ast = $this->parser->parse($code);
 
             if (! $ast) {
                 return [];
@@ -114,7 +116,7 @@ class ResourceAnalyzer
      */
     protected function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
     {
-        $visitor   = new AST\Visitors\ClassFindingVisitor($className);
+        $visitor = new AST\Visitors\ClassFindingVisitor($className);
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
@@ -132,7 +134,7 @@ class ResourceAnalyzer
             return [];
         }
 
-        $visitor   = new AST\Visitors\ResourceStructureVisitor($this->printer);
+        $visitor = new AST\Visitors\ResourceStructureVisitor($this->printer);
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse([$toArrayMethod]);
@@ -158,7 +160,7 @@ class ResourceAnalyzer
             return [];
         }
 
-        $visitor   = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
+        $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse([$withMethod]);
@@ -213,7 +215,7 @@ class ResourceAnalyzer
         }
 
         $schema = [
-            'type'       => 'object',
+            'type' => 'object',
             'properties' => [],
         ];
 
@@ -281,11 +283,11 @@ class ResourceAnalyzer
 
         // 条件付きフィールドの場合
         if (isset($info['conditional']) && $info['conditional']) {
-            $schema['nullable']    = true;
+            $schema['nullable'] = true;
             $schema['description'] = 'Conditional field';
 
             if (isset($info['condition'])) {
-                $schema['description'] .= ' (' . $info['condition'] . ')';
+                $schema['description'] .= ' ('.$info['condition'].')';
             }
         }
 
@@ -302,12 +304,12 @@ class ResourceAnalyzer
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $properties[$key] = [
-                    'type'       => 'object',
+                    'type' => 'object',
                     'properties' => $this->generatePropertiesFromArray($value),
                 ];
             } else {
                 $properties[$key] = [
-                    'type'    => gettype($value),
+                    'type' => gettype($value),
                     'example' => $value,
                 ];
             }

@@ -15,16 +15,19 @@ use PhpParser\PrettyPrinter;
 class FormRequestAnalyzer
 {
     protected TypeInference $typeInference;
+
     protected Parser $parser;
+
     protected NodeTraverser $traverser;
+
     protected PrettyPrinter\Standard $printer;
 
     public function __construct(TypeInference $typeInference)
     {
         $this->typeInference = $typeInference;
-        $this->parser        = (new ParserFactory)->createForNewestSupportedVersion();
-        $this->traverser     = new NodeTraverser;
-        $this->printer       = new PrettyPrinter\Standard;
+        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->traverser = new NodeTraverser;
+        $this->printer = new PrettyPrinter\Standard;
     }
 
     /**
@@ -52,7 +55,7 @@ class FormRequestAnalyzer
 
             // ファイルをパース
             $code = file_get_contents($filePath);
-            $ast  = $this->parser->parse($code);
+            $ast = $this->parser->parse($code);
 
             if (! $ast) {
                 return [];
@@ -93,7 +96,7 @@ class FormRequestAnalyzer
      */
     protected function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
     {
-        $visitor   = new AST\Visitors\ClassFindingVisitor($className);
+        $visitor = new AST\Visitors\ClassFindingVisitor($className);
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
@@ -111,7 +114,7 @@ class FormRequestAnalyzer
             return [];
         }
 
-        $visitor   = new AST\Visitors\RulesExtractorVisitor($this->printer);
+        $visitor = new AST\Visitors\RulesExtractorVisitor($this->printer);
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse([$rulesMethod]);
@@ -129,7 +132,7 @@ class FormRequestAnalyzer
             return [];
         }
 
-        $visitor   = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
+        $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse([$attributesMethod]);
@@ -168,13 +171,13 @@ class FormRequestAnalyzer
             $ruleArray = is_array($rule) ? $rule : explode('|', $rule);
 
             $parameters[] = [
-                'name'        => $field,
-                'in'          => 'body',
-                'required'    => $this->isRequired($ruleArray),
-                'type'        => $this->typeInference->inferFromRules($ruleArray),
+                'name' => $field,
+                'in' => 'body',
+                'required' => $this->isRequired($ruleArray),
+                'type' => $this->typeInference->inferFromRules($ruleArray),
                 'description' => $attributes[$field] ?? $this->generateDescription($field, $ruleArray),
-                'example'     => $this->typeInference->generateExample($field, $ruleArray),
-                'validation'  => $ruleArray,
+                'example' => $this->typeInference->generateExample($field, $ruleArray),
+                'validation' => $ruleArray,
             ];
         }
 
@@ -233,17 +236,17 @@ class FormRequestAnalyzer
             $filePath = $reflection->getFileName();
             if ($filePath && file_exists($filePath)) {
                 // Read the file and find the anonymous class definition
-                $code      = file_get_contents($filePath);
+                $code = file_get_contents($filePath);
                 $startLine = $reflection->getStartLine() - 1;
-                $endLine   = $reflection->getEndLine();
+                $endLine = $reflection->getEndLine();
 
                 // Extract just the class definition
-                $lines     = explode("\n", $code);
+                $lines = explode("\n", $code);
                 $classCode = implode("\n", array_slice($lines, $startLine, $endLine - $startLine));
 
                 // Wrap in <?php tag for parsing
                 if (! str_contains($classCode, '<?php')) {
-                    $classCode = "<?php\n" . $classCode;
+                    $classCode = "<?php\n".$classCode;
                 }
 
                 try {
@@ -252,7 +255,7 @@ class FormRequestAnalyzer
                         // Find the class node (anonymous class)
                         $classNode = $this->findAnonymousClassNode($ast);
                         if ($classNode) {
-                            $rules      = $this->extractRules($classNode);
+                            $rules = $this->extractRules($classNode);
                             $attributes = $this->extractAttributes($classNode);
 
                             return $this->generateParameters($rules, $attributes);
