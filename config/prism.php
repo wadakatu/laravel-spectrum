@@ -10,7 +10,7 @@ return [
     | of the generated documentation.
     |
     */
-    'title' => env('APP_NAME', 'Laravel') . ' API',
+    'title' => env('APP_NAME', 'Laravel').' API',
 
     /*
     |--------------------------------------------------------------------------
