@@ -12,7 +12,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     private array $conditionalFields = [];
     private array $nestedResources   = [];
     private PrettyPrinter\Standard $printer;
-    private int $depth              = 0;
+    private int $depth = 0;
 
     public function __construct(PrettyPrinter\Standard $printer)
     {
