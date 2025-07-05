@@ -51,6 +51,9 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          if [[ "${{ matrix.php }}" == "8.1" ]]; then
+            composer remove laravel/pint phpstan/phpstan --dev --no-update
+          fi
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: List Installed Dependencies
