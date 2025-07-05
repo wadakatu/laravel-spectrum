@@ -9,7 +9,7 @@ class ResourceWithMeta extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'   => $this->id,
+            'id' => $this->id,
             'name' => $this->name,
         ];
     }
@@ -19,7 +19,7 @@ class ResourceWithMeta extends JsonResource
         return [
             'meta' => [
                 'version' => '1.0',
-                'author'  => 'Laravel Prism',
+                'author' => 'Laravel Prism',
             ],
         ];
     }

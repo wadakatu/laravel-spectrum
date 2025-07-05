@@ -9,9 +9,9 @@ class SimpleUserResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'         => $this->id,
-            'name'       => $this->name,
-            'email'      => $this->email,
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
             'created_at' => $this->created_at->toDateTimeString(),
         ];
     }

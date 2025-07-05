@@ -22,10 +22,10 @@ class OpenApiGeneratorTest extends TestCase
         Route::get('api/users/{user}', [UserController::class, 'show']);
 
         $routeAnalyzer = app(RouteAnalyzer::class);
-        $generator     = app(OpenApiGenerator::class);
+        $generator = app(OpenApiGenerator::class);
 
         // Act
-        $routes  = $routeAnalyzer->analyze();
+        $routes = $routeAnalyzer->analyze();
         $openapi = $generator->generate($routes);
 
         // Assert

@@ -44,11 +44,11 @@ class FormRequestAnalyzerTest extends TestCase
             public function rules(): array
             {
                 return [
-                    'age'       => 'required|integer|min:0|max:150',
-                    'price'     => 'required|numeric|min:0',
+                    'age' => 'required|integer|min:0|max:150',
+                    'price' => 'required|numeric|min:0',
                     'is_active' => 'required|boolean',
-                    'tags'      => 'required|array',
-                    'email'     => 'required|email',
+                    'tags' => 'required|array',
+                    'email' => 'required|email',
                 ];
             }
         };
@@ -98,7 +98,7 @@ class FormRequestAnalyzerTest extends TestCase
             public function rules(): array
             {
                 return [
-                    'name'  => ['required', 'string', 'max:255'],
+                    'name' => ['required', 'string', 'max:255'],
                     'email' => ['required', 'email'],
                 ];
             }
@@ -245,8 +245,8 @@ class FormRequestAnalyzerTest extends TestCase
             public function rules(): array
             {
                 return match ($this->method()) {
-                    'POST'  => ['name' => 'required|string', 'email' => 'required|email'],
-                    'PUT'   => ['name' => 'sometimes|required|string'],
+                    'POST' => ['name' => 'required|string', 'email' => 'required|email'],
+                    'PUT' => ['name' => 'sometimes|required|string'],
                     default => []
                 };
             }
@@ -268,10 +268,10 @@ class FormRequestAnalyzerTest extends TestCase
             public function rules(): array
             {
                 return [
-                    'user.name'      => 'required|string',
-                    'user.email'     => 'required|email',
+                    'user.name' => 'required|string',
+                    'user.email' => 'required|email',
                     'address.street' => 'required|string',
-                    'address.city'   => 'required|string',
+                    'address.city' => 'required|string',
                 ];
             }
         };
@@ -295,8 +295,8 @@ class FormRequestAnalyzerTest extends TestCase
             public function rules(): array
             {
                 return [
-                    'items'            => 'required|array',
-                    'items.*.name'     => 'required|string',
+                    'items' => 'required|array',
+                    'items.*.name' => 'required|string',
                     'items.*.quantity' => 'required|integer|min:1',
                 ];
             }
