@@ -17,7 +17,7 @@ class PrismServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/prism.php',
+            __DIR__.'/../config/prism.php',
             'prism'
         );
 
@@ -42,7 +42,7 @@ class PrismServiceProvider extends ServiceProvider
     {
         // 設定ファイルの公開
         $this->publishes([
-            __DIR__ . '/../config/prism.php' => config_path('prism.php'),
+            __DIR__.'/../config/prism.php' => config_path('prism.php'),
         ], 'prism-config');
     }
 }
