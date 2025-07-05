@@ -31,10 +31,6 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         $result = [];
 
         foreach ($array->items as $item) {
-            if (! $item || ! $item->key) {
-                continue;
-            }
-
             $key   = $this->evaluateExpression($item->key);
             $value = $this->evaluateExpression($item->value);
 
