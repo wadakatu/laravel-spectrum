@@ -8,6 +8,8 @@ use LaravelPrism\Analyzers\ControllerAnalyzer;
 use LaravelPrism\Analyzers\FormRequestAnalyzer;
 use LaravelPrism\Analyzers\ResourceAnalyzer;
 use LaravelPrism\Analyzers\RouteAnalyzer;
+use LaravelPrism\Cache\DocumentationCache;
+use LaravelPrism\Console\CacheCommand;
 use LaravelPrism\Console\GenerateDocsCommand;
 use LaravelPrism\Generators\ErrorResponseGenerator;
 use LaravelPrism\Generators\OpenApiGenerator;
@@ -26,6 +28,7 @@ class PrismServiceProvider extends ServiceProvider
         );
 
         // シングルトンとして登録
+        $this->app->singleton(DocumentationCache::class);
         $this->app->singleton(TypeInference::class);
         $this->app->singleton(RouteAnalyzer::class);
         $this->app->singleton(FormRequestAnalyzer::class);
@@ -42,6 +45,7 @@ class PrismServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 GenerateDocsCommand::class,
+                CacheCommand::class,
             ]);
         }
     }

@@ -4,6 +4,7 @@ namespace LaravelPrism\Analyzers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Support\TypeInference;
 use PhpParser\Error;
 use PhpParser\Node;
@@ -22,9 +23,12 @@ class FormRequestAnalyzer
 
     protected PrettyPrinter\Standard $printer;
 
-    public function __construct(TypeInference $typeInference)
+    protected DocumentationCache $cache;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache)
     {
         $this->typeInference = $typeInference;
+        $this->cache = $cache;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
@@ -34,6 +38,16 @@ class FormRequestAnalyzer
      * FormRequestクラスを解析してパラメータ情報を抽出
      */
     public function analyze(string $requestClass): array
+    {
+        return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
+            return $this->performAnalysis($requestClass);
+        });
+    }
+
+    /**
+     * 実際の解析処理
+     */
+    protected function performAnalysis(string $requestClass): array
     {
         if (! class_exists($requestClass)) {
             return [];
@@ -95,6 +109,16 @@ class FormRequestAnalyzer
      * FormRequestクラスを解析して詳細情報を取得
      */
     public function analyzeWithDetails(string $requestClass): array
+    {
+        return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
+            return $this->performAnalysisWithDetails($requestClass);
+        });
+    }
+
+    /**
+     * 実際の詳細解析処理
+     */
+    protected function performAnalysisWithDetails(string $requestClass): array
     {
         if (! class_exists($requestClass)) {
             return [];
@@ -459,6 +483,16 @@ class FormRequestAnalyzer
      * Analyze FormRequest with conditional rules support
      */
     public function analyzeWithConditionalRules(string $requestClass): array
+    {
+        return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
+            return $this->performAnalysisWithConditionalRules($requestClass);
+        });
+    }
+
+    /**
+     * 実際の条件付きルール解析処理
+     */
+    protected function performAnalysisWithConditionalRules(string $requestClass): array
     {
         if (! class_exists($requestClass)) {
             return [];

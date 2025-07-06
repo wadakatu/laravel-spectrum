@@ -3,6 +3,7 @@
 namespace LaravelPrism\Tests\Unit;
 
 use LaravelPrism\Analyzers\ResourceAnalyzer;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Tests\Fixtures\BooleanTestResource;
 use LaravelPrism\Tests\Fixtures\CollectionTestResource;
 use LaravelPrism\Tests\Fixtures\DateTestResource;
@@ -26,7 +27,15 @@ class ResourceAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new ResourceAnalyzer;
+
+        // Create a mock cache that always calls the callback
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberResource')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $this->analyzer = new ResourceAnalyzer($cache);
     }
 
     /** @test */

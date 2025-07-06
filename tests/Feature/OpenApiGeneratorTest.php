@@ -4,6 +4,7 @@ namespace LaravelPrism\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
 use LaravelPrism\Analyzers\RouteAnalyzer;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Generators\OpenApiGenerator;
 use LaravelPrism\Tests\Fixtures\Controllers\ProfileController;
 use LaravelPrism\Tests\Fixtures\Controllers\UserController;
@@ -13,6 +14,22 @@ use Mockery;
 
 class OpenApiGeneratorTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Clear cache before each test
+        app(DocumentationCache::class)->clear();
+    }
+
+    protected function tearDown(): void
+    {
+        // Clear cache after each test
+        app(DocumentationCache::class)->clear();
+
+        parent::tearDown();
+    }
+
     /** @test */
     public function it_generates_valid_openapi_specification()
     {

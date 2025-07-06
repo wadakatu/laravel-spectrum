@@ -4,17 +4,29 @@ namespace LaravelPrism\Tests\Feature;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Tests\Fixtures\Controllers\UserController;
 use LaravelPrism\Tests\TestCase;
 
 class GenerateDocsCommandTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Clear cache before test
+        app(DocumentationCache::class)->clear();
+    }
+
     protected function tearDown(): void
     {
         // テスト後のクリーンアップ
         if (File::exists(storage_path('app/prism'))) {
             File::deleteDirectory(storage_path('app/prism'));
         }
+
+        // Clear cache after test
+        app(DocumentationCache::class)->clear();
 
         parent::tearDown();
     }
@@ -41,6 +53,39 @@ class GenerateDocsCommandTest extends TestCase
 
         $this->assertEquals('3.0.0', $openapi['openapi']);
         $this->assertArrayHasKey('/api/users', $openapi['paths']);
+    }
+
+    /** @test */
+    public function it_clears_cache_when_clear_cache_option_is_specified()
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Create some cache
+        app(DocumentationCache::class)->remember('test_key', fn () => 'test_data');
+
+        // Act
+        $this->artisan('prism:generate --clear-cache')
+            ->expectsOutput('🧹 Clearing cache...')
+            ->expectsOutput('🔍 Analyzing routes...')
+            ->assertSuccessful();
+
+        // Assert
+        $stats = app(DocumentationCache::class)->getStats();
+        $this->assertEquals(1, $stats['total_files']); // Only the newly created cache
+    }
+
+    /** @test */
+    public function it_disables_cache_when_no_cache_option_is_specified()
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $this->artisan('prism:generate --no-cache')
+            ->expectsOutput('🔍 Analyzing routes...')
+            ->doesntExpectOutput('💾 Cache:')
+            ->assertSuccessful();
     }
 
     /** @test */

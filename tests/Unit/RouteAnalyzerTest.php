@@ -4,6 +4,7 @@ namespace LaravelPrism\Tests\Unit;
 
 use Illuminate\Support\Facades\Route;
 use LaravelPrism\Analyzers\RouteAnalyzer;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Tests\Fixtures\Controllers\CommentController;
 use LaravelPrism\Tests\Fixtures\Controllers\PageController;
 use LaravelPrism\Tests\Fixtures\Controllers\ProfileController;
@@ -18,7 +19,15 @@ class RouteAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new RouteAnalyzer;
+
+        // Create a mock cache that always calls the callback
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberRoutes')
+            ->willReturnCallback(function ($callback) {
+                return $callback();
+            });
+
+        $this->analyzer = new RouteAnalyzer($cache);
     }
 
     /** @test */

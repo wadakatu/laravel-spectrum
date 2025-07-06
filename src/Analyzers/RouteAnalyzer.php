@@ -4,15 +4,33 @@ namespace LaravelPrism\Analyzers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use LaravelPrism\Cache\DocumentationCache;
 
 class RouteAnalyzer
 {
     protected array $excludedMiddleware = ['web', 'api'];
 
+    protected DocumentationCache $cache;
+
+    public function __construct(DocumentationCache $cache)
+    {
+        $this->cache = $cache;
+    }
+
     /**
      * APIルートを解析して構造化された配列を返す
      */
     public function analyze(): array
+    {
+        return $this->cache->rememberRoutes(function () {
+            return $this->performAnalysis();
+        });
+    }
+
+    /**
+     * 実際のルート解析処理
+     */
+    protected function performAnalysis(): array
     {
         $routes = [];
 

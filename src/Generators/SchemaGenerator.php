@@ -13,13 +13,17 @@ class SchemaGenerator
         $required = [];
 
         foreach ($parameters as $parameter) {
+            if (! isset($parameter['name'])) {
+                continue;
+            }
+
             $properties[$parameter['name']] = [
-                'type' => $parameter['type'],
+                'type' => $parameter['type'] ?? 'string',
                 'description' => $parameter['description'] ?? null,
                 'example' => $parameter['example'] ?? null,
             ];
 
-            if ($parameter['required']) {
+            if ($parameter['required'] ?? false) {
                 $required[] = $parameter['name'];
             }
         }
