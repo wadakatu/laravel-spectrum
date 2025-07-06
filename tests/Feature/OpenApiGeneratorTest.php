@@ -72,7 +72,7 @@ class OpenApiGeneratorTest extends TestCase
         // Assert
         $operation = $openapi['paths']['/api/profile']['get'];
         $this->assertArrayHasKey('security', $operation);
-        $this->assertArrayHasKey('bearerAuth', $operation['security'][0]);
+        $this->assertArrayHasKey('sanctumAuth', $operation['security'][0]);
     }
 
     /** @test */
