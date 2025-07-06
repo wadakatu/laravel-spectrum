@@ -8,8 +8,10 @@ use LaravelPrism\Analyzers\FormRequestAnalyzer;
 use LaravelPrism\Analyzers\ResourceAnalyzer;
 use LaravelPrism\Analyzers\RouteAnalyzer;
 use LaravelPrism\Console\GenerateDocsCommand;
+use LaravelPrism\Generators\ErrorResponseGenerator;
 use LaravelPrism\Generators\OpenApiGenerator;
 use LaravelPrism\Generators\SchemaGenerator;
+use LaravelPrism\Generators\ValidationMessageGenerator;
 use LaravelPrism\Support\TypeInference;
 
 class PrismServiceProvider extends ServiceProvider
@@ -28,6 +30,8 @@ class PrismServiceProvider extends ServiceProvider
         $this->app->singleton(ResourceAnalyzer::class);
         $this->app->singleton(ControllerAnalyzer::class);
         $this->app->singleton(SchemaGenerator::class);
+        $this->app->singleton(ValidationMessageGenerator::class);
+        $this->app->singleton(ErrorResponseGenerator::class);
         $this->app->singleton(OpenApiGenerator::class);
 
         // コマンドの登録
