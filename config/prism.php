@@ -176,4 +176,56 @@ return [
             base_path('composer.lock'),
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Watch Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure the file watching behavior for real-time preview.
+    |
+    */
+    'watch' => [
+        /*
+        |--------------------------------------------------------------------------
+        | File Watching
+        |--------------------------------------------------------------------------
+        |
+        | Configure which directories and files to watch for changes.
+        |
+        */
+        'paths' => [
+            app_path('Http/Controllers'),
+            app_path('Http/Requests'),
+            app_path('Http/Resources'),
+            base_path('routes'),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Watch Ignore Patterns
+        |--------------------------------------------------------------------------
+        |
+        | Files matching these patterns will be ignored.
+        |
+        */
+        'ignore' => [
+            '*.log',
+            '*.cache',
+            '.git',
+            'vendor',
+            'node_modules',
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Debounce Time
+        |--------------------------------------------------------------------------
+        |
+        | Wait this many milliseconds after a file change before regenerating.
+        | Useful to avoid multiple regenerations when saving multiple files.
+        |
+        */
+        'debounce' => 300,
+    ],
 ];
