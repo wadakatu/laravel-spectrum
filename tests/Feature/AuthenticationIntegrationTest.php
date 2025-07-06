@@ -3,10 +3,26 @@
 namespace LaravelPrism\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Tests\TestCase;
 
 class AuthenticationIntegrationTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Clear cache before each test
+        app(DocumentationCache::class)->clear();
+    }
+    
+    protected function tearDown(): void
+    {
+        // Clear cache after each test
+        app(DocumentationCache::class)->clear();
+        
+        parent::tearDown();
+    }
     /** @test */
     public function it_includes_authentication_in_generated_openapi_spec()
     {
