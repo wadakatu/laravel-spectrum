@@ -17,18 +17,19 @@ class OpenApiGeneratorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Clear cache before each test
         app(DocumentationCache::class)->clear();
     }
-    
+
     protected function tearDown(): void
     {
         // Clear cache after each test
         app(DocumentationCache::class)->clear();
-        
+
         parent::tearDown();
     }
+
     /** @test */
     public function it_generates_valid_openapi_specification()
     {

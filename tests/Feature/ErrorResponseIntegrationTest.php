@@ -11,23 +11,24 @@ class ErrorResponseIntegrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Clear cache before each test
         app(DocumentationCache::class)->clear();
     }
-    
+
     protected function tearDown(): void
     {
         // Clear cache after each test
         app(DocumentationCache::class)->clear();
-        
+
         // テスト後のクリーンアップ
         if (\Illuminate\Support\Facades\File::exists(storage_path('app/prism'))) {
             \Illuminate\Support\Facades\File::deleteDirectory(storage_path('app/prism'));
         }
-        
+
         parent::tearDown();
     }
+
     /** @test */
     public function it_includes_error_responses_in_generated_openapi_spec()
     {

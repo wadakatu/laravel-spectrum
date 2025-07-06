@@ -8,7 +8,6 @@ class DocumentationCache
 {
     private string $cacheDir;
 
-
     private bool $enabled;
 
     public function __construct()
@@ -329,5 +328,4 @@ class DocumentationCache
 
         return array_unique($dependencies);
     }
-
 }
