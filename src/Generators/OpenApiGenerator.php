@@ -17,16 +17,20 @@ class OpenApiGenerator
 
     protected SchemaGenerator $schemaGenerator;
 
+    protected ErrorResponseGenerator $errorResponseGenerator;
+
     public function __construct(
         FormRequestAnalyzer $requestAnalyzer,
         ResourceAnalyzer $resourceAnalyzer,
         ControllerAnalyzer $controllerAnalyzer,
-        SchemaGenerator $schemaGenerator
+        SchemaGenerator $schemaGenerator,
+        ErrorResponseGenerator $errorResponseGenerator
     ) {
         $this->requestAnalyzer = $requestAnalyzer;
         $this->resourceAnalyzer = $resourceAnalyzer;
         $this->controllerAnalyzer = $controllerAnalyzer;
         $this->schemaGenerator = $schemaGenerator;
+        $this->errorResponseGenerator = $errorResponseGenerator;
     }
 
     /**
@@ -141,21 +145,48 @@ class OpenApiGenerator
         $successResponse = $this->generateSuccessResponse($route, $controllerInfo);
         $responses[$successResponse['code']] = $successResponse['response'];
 
-        // エラーレスポンス（MVP版では基本的なもののみ）
-        $responses['401'] = [
-            'description' => 'Unauthorized',
-        ];
-
-        $responses['404'] = [
-            'description' => 'Not Found',
-        ];
-
-        if (in_array(strtolower($route['httpMethods'][0]), ['post', 'put', 'patch'])) {
-            $responses['422'] = [
-                'description' => 'Validation Error',
-            ];
+        // エラーレスポンスを生成
+        $errorResponses = $this->generateErrorResponses($route, $controllerInfo);
+        
+        // マージ（array_mergeは数値キーを再インデックスするので + を使用）
+        return $responses + $errorResponses;
+    }
+    
+    /**
+     * エラーレスポンスを生成
+     */
+    protected function generateErrorResponses(array $route, array $controllerInfo): array
+    {
+        $method = strtolower($route['httpMethods'][0]);
+        $requiresAuth = $this->requiresAuth($route);
+        
+        // FormRequestがある場合は、そのルールから422エラーを生成
+        $formRequestData = null;
+        if (!empty($controllerInfo['formRequest'])) {
+            $formRequestData = $this->requestAnalyzer->analyzeWithDetails($controllerInfo['formRequest']);
         }
-
+        
+        // エラーレスポンスを生成
+        $allErrorResponses = $this->errorResponseGenerator->generateErrorResponses($formRequestData);
+        
+        // デフォルトのエラーレスポンスを取得
+        $defaultErrorResponses = $this->errorResponseGenerator->getDefaultErrorResponses(
+            $method,
+            $requiresAuth,
+            !empty($formRequestData)
+        );
+        
+        // FormRequestがない場合は、デフォルトのエラーレスポンスのみを使用
+        if (empty($formRequestData)) {
+            return $defaultErrorResponses;
+        }
+        
+        // FormRequestがある場合は、422エラーも含める
+        $responses = $defaultErrorResponses;
+        if (isset($allErrorResponses['422'])) {
+            $responses['422'] = $allErrorResponses['422'];
+        }
+        
         return $responses;
     }
 
