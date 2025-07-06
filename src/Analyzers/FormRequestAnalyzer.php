@@ -92,6 +92,141 @@ class FormRequestAnalyzer
     }
 
     /**
+     * FormRequestクラスを解析して詳細情報を取得
+     */
+    public function analyzeWithDetails(string $requestClass): array
+    {
+        if (!class_exists($requestClass)) {
+            return [];
+        }
+        
+        try {
+            $reflection = new \ReflectionClass($requestClass);
+            
+            // FormRequestを継承していない場合はスキップ
+            if (!$reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+                return [];
+            }
+            
+            $filePath = $reflection->getFileName();
+            if (!$filePath || !file_exists($filePath) || $reflection->isAnonymous()) {
+                // For anonymous classes or when file path is not available, use reflection-based fallback
+                return $this->analyzeWithDetailsUsingReflection($reflection);
+            }
+            
+            // ファイルをパース
+            $code = file_get_contents($filePath);
+            $ast = $this->parser->parse($code);
+            
+            if (!$ast) {
+                return [];
+            }
+            
+            // クラスノードを探す
+            $classNode = $this->findClassNode($ast, $reflection->getShortName());
+            if (!$classNode) {
+                return [];
+            }
+            
+            // rules()メソッドを解析
+            $rules = $this->extractRules($classNode);
+            
+            // attributes()メソッドを解析
+            $attributes = $this->extractAttributes($classNode);
+            
+            // messages()メソッドを解析
+            $messages = $this->extractMessages($classNode);
+            
+            return [
+                'rules' => $rules,
+                'attributes' => $attributes,
+                'messages' => $messages,
+            ];
+            
+        } catch (\Exception $e) {
+            Log::warning("Failed to analyze FormRequest with details: {$requestClass}", [
+                'error' => $e->getMessage()
+            ]);
+            return [];
+        }
+    }
+    
+    /**
+     * messages()メソッドから検証メッセージを抽出
+     */
+    protected function extractMessages(Node\Stmt\Class_ $class): array
+    {
+        $messagesMethod = $this->findMethodNode($class, 'messages');
+        if (!$messagesMethod) {
+            return [];
+        }
+        
+        $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse([$messagesMethod]);
+        
+        return $visitor->getArray();
+    }
+    
+    /**
+     * Reflection-based analysis with details for anonymous classes
+     */
+    protected function analyzeWithDetailsUsingReflection(\ReflectionClass $reflection): array
+    {
+        try {
+            // Fallback: try to create instance with mock request
+            $instance = $reflection->newInstanceWithoutConstructor();
+            
+            // Initialize request property to avoid errors
+            if ($reflection->hasProperty('request')) {
+                $requestProp = $reflection->getProperty('request');
+                $requestProp->setAccessible(true);
+                $mockRequest = new \Illuminate\Http\Request;
+                $requestProp->setValue($instance, $mockRequest);
+            }
+            
+            // Extract rules using reflection
+            $rules = [];
+            if ($reflection->hasMethod('rules')) {
+                $method = $reflection->getMethod('rules');
+                $method->setAccessible(true);
+                try {
+                    $rules = $method->invoke($instance) ?: [];
+                } catch (\Exception $e) {
+                    // If rules() method fails, return empty
+                    return [];
+                }
+            }
+            
+            // Extract attributes using reflection
+            $attributes = [];
+            if ($reflection->hasMethod('attributes')) {
+                $method = $reflection->getMethod('attributes');
+                $method->setAccessible(true);
+                $attributes = $method->invoke($instance) ?: [];
+            }
+            
+            // Extract messages using reflection
+            $messages = [];
+            if ($reflection->hasMethod('messages')) {
+                $method = $reflection->getMethod('messages');
+                $method->setAccessible(true);
+                $messages = $method->invoke($instance) ?: [];
+            }
+            
+            return [
+                'rules' => $rules,
+                'attributes' => $attributes,
+                'messages' => $messages,
+            ];
+            
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
      * クラスノードを探す
      */
     protected function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
