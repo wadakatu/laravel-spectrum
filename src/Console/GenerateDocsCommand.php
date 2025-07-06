@@ -5,13 +5,16 @@ namespace LaravelPrism\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use LaravelPrism\Analyzers\RouteAnalyzer;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Generators\OpenApiGenerator;
 
 class GenerateDocsCommand extends Command
 {
     protected $signature = 'prism:generate 
                             {--format=json : Output format (json|yaml)}
-                            {--output= : Output file path}';
+                            {--output= : Output file path}
+                            {--no-cache : Disable cache}
+                            {--clear-cache : Clear cache before generation}';
 
     protected $description = 'Generate API documentation';
 
@@ -19,18 +22,33 @@ class GenerateDocsCommand extends Command
 
     protected OpenApiGenerator $openApiGenerator;
 
+    protected DocumentationCache $cache;
+
     public function __construct(
         RouteAnalyzer $routeAnalyzer,
-        OpenApiGenerator $openApiGenerator
+        OpenApiGenerator $openApiGenerator,
+        DocumentationCache $cache
     ) {
         parent::__construct();
 
         $this->routeAnalyzer = $routeAnalyzer;
         $this->openApiGenerator = $openApiGenerator;
+        $this->cache = $cache;
     }
 
     public function handle(): int
     {
+        if ($this->option('clear-cache')) {
+            $this->info('🧹 Clearing cache...');
+            $this->cache->clear();
+        }
+
+        if ($this->option('no-cache')) {
+            config(['prism.cache.enabled' => false]);
+        }
+
+        $startTime = microtime(true);
+
         $this->info('🔍 Analyzing routes...');
 
         $routes = $this->routeAnalyzer->analyze();
@@ -58,6 +76,17 @@ class GenerateDocsCommand extends Command
         File::put($outputPath, $content);
 
         $this->info("✅ Documentation generated: {$outputPath}");
+
+        $endTime = microtime(true);
+        $duration = round($endTime - $startTime, 2);
+
+        $this->info("⏱️  Generation completed in {$duration} seconds");
+
+        // キャッシュ統計を表示
+        if (! $this->option('no-cache')) {
+            $stats = $this->cache->getStats();
+            $this->info("💾 Cache: {$stats['total_files']} files, {$stats['total_size_human']}");
+        }
 
         return 0;
     }
