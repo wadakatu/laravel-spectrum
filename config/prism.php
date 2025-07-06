@@ -122,4 +122,58 @@ return [
             ],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure the caching behavior for analysis results.
+    |
+    */
+    'cache' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Enable Cache
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, analysis results will be cached to speed up subsequent
+        | documentation generation.
+        |
+        */
+        'enabled' => env('PRISM_CACHE_ENABLED', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cache Directory
+        |--------------------------------------------------------------------------
+        |
+        | The directory where cache files will be stored.
+        |
+        */
+        'directory' => storage_path('app/prism/cache'),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cache TTL
+        |--------------------------------------------------------------------------
+        |
+        | Time to live for cache files in seconds. Set to null for no expiration.
+        |
+        */
+        'ttl' => env('PRISM_CACHE_TTL', null),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Watch Files
+        |--------------------------------------------------------------------------
+        |
+        | Additional files to watch for changes that should invalidate the cache.
+        |
+        */
+        'watch_files' => [
+            base_path('composer.json'),
+            base_path('composer.lock'),
+        ],
+    ],
 ];
