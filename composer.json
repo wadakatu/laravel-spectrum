@@ -29,7 +29,8 @@
     "autoload-dev": {
         "psr-4": {
             "LaravelPrism\\Tests\\": "tests/",
-            "Tests\\Unit\\Analyzers\\Fixtures\\": "tests/Unit/Analyzers/Fixtures/"
+            "Tests\\Unit\\Analyzers\\Fixtures\\": "tests/Unit/Analyzers/Fixtures/",
+            "League\\Fractal\\": "tests/Fixtures/vendor/league/fractal/"
         }
     },
     "extra": {

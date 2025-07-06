@@ -228,4 +228,66 @@ return [
         */
         'debounce' => 300,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response Transformer Support
+    |--------------------------------------------------------------------------
+    |
+    | Configure support for various response transformation libraries.
+    |
+    */
+    'transformers' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Enabled Transformers
+        |--------------------------------------------------------------------------
+        |
+        | Supported transformers for API response analysis
+        |
+        */
+        'enabled' => [
+            'laravel-resource' => true,
+            'fractal' => true,
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fractal Settings
+        |--------------------------------------------------------------------------
+        |
+        | Configuration specific to Fractal transformer support
+        |
+        */
+        'fractal' => [
+            // Default serializer format
+            'default_serializer' => 'array', // array, data_array, json_api
+
+            // How to handle includes in OpenAPI
+            'include_handling' => 'optional_properties', // optional_properties or separate_endpoints
+
+            // Default pagination schema for collections
+            'pagination_schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'data' => ['type' => 'array'],
+                    'meta' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'pagination' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'total' => ['type' => 'integer'],
+                                    'count' => ['type' => 'integer'],
+                                    'per_page' => ['type' => 'integer'],
+                                    'current_page' => ['type' => 'integer'],
+                                    'total_pages' => ['type' => 'integer'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ],
 ];

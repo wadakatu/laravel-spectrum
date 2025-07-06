@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use LaravelPrism\Analyzers\AuthenticationAnalyzer;
 use LaravelPrism\Analyzers\ControllerAnalyzer;
 use LaravelPrism\Analyzers\FormRequestAnalyzer;
+use LaravelPrism\Analyzers\FractalTransformerAnalyzer;
 use LaravelPrism\Analyzers\ResourceAnalyzer;
 use LaravelPrism\Analyzers\RouteAnalyzer;
 use LaravelPrism\Console\CacheCommand;
@@ -36,6 +37,7 @@ class PrismServiceProvider extends ServiceProvider
         $this->app->singleton(RouteAnalyzer::class);
         $this->app->singleton(FormRequestAnalyzer::class);
         $this->app->singleton(ResourceAnalyzer::class);
+        $this->app->singleton(FractalTransformerAnalyzer::class);
         $this->app->singleton(ControllerAnalyzer::class);
         $this->app->singleton(SchemaGenerator::class);
         $this->app->singleton(ValidationMessageGenerator::class);
