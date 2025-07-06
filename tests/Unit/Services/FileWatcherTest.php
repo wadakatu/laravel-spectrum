@@ -8,13 +8,14 @@ use Orchestra\Testbench\TestCase;
 class FileWatcherTest extends TestCase
 {
     private FileWatcher $watcher;
+
     private string $tempDir;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->watcher = new FileWatcher();
-        $this->tempDir = sys_get_temp_dir() . '/prism_watcher_test_' . uniqid();
+        $this->watcher = new FileWatcher;
+        $this->tempDir = sys_get_temp_dir().'/prism_watcher_test_'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 
@@ -41,7 +42,7 @@ class FileWatcherTest extends TestCase
         $this->watcher->watch([$this->tempDir], function () use (&$called) {
             $called = true;
         });
-        
+
         // Simply test that watch method accepts the parameters without error
         $this->assertTrue(true);
     }
@@ -53,13 +54,13 @@ class FileWatcherTest extends TestCase
 
     private function recursiveRemoveDirectory(string $directory): void
     {
-        if (!is_dir($directory)) {
+        if (! is_dir($directory)) {
             return;
         }
 
         $files = array_diff(scandir($directory), ['.', '..']);
         foreach ($files as $file) {
-            $path = $directory . '/' . $file;
+            $path = $directory.'/'.$file;
             is_dir($path) ? $this->recursiveRemoveDirectory($path) : unlink($path);
         }
         rmdir($directory);

@@ -39,7 +39,7 @@ class LiveReloadServerTest extends TestCase
 
         $this->assertStringContainsString('New connection', $output);
         $resourceId = spl_object_id($connection);
-        $this->assertStringContainsString((string)$resourceId, $output);
+        $this->assertStringContainsString((string) $resourceId, $output);
     }
 
     public function test_handles_connection_close(): void

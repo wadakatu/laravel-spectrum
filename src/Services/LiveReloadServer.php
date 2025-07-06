@@ -14,7 +14,6 @@ class LiveReloadServer implements MessageComponentInterface
 {
     protected $clients;
 
-
     public function __construct()
     {
         $this->clients = new \SplObjectStorage;
