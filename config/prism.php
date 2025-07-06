@@ -59,4 +59,67 @@ return [
         'api/health',
         'api/ping',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure how authentication is detected and documented.
+    |
+    */
+    'authentication' => [
+        /*
+        | Global authentication settings
+        */
+        'global' => [
+            'enabled' => false,
+            'scheme' => [
+                'type' => 'http',
+                'scheme' => 'bearer',
+                'bearerFormat' => 'JWT',
+                'description' => 'Global JWT authentication',
+                'name' => 'globalAuth',
+            ],
+            'required' => false,
+        ],
+
+        /*
+        | Custom authentication schemes
+        | Map middleware names to OpenAPI security schemes
+        */
+        'custom_schemes' => [
+            // 'custom-auth' => [
+            //     'type' => 'apiKey',
+            //     'in' => 'header',
+            //     'name' => 'X-Custom-Token',
+            //     'description' => 'Custom API token',
+            //     'name' => 'customAuth',
+            // ],
+        ],
+
+        /*
+        | Pattern-based authentication
+        | Apply authentication to routes matching patterns
+        */
+        'patterns' => [
+            // 'api/admin/*' => [
+            //     'scheme' => [...],
+            //     'required' => true,
+            // ],
+        ],
+
+        /*
+        | OAuth2 configuration for Passport
+        */
+        'oauth2' => [
+            'authorization_url' => env('APP_URL').'/oauth/authorize',
+            'token_url' => env('APP_URL').'/oauth/token',
+            'refresh_url' => env('APP_URL').'/oauth/token',
+            'scopes' => [
+                // 'read' => 'Read access',
+                // 'write' => 'Write access',
+            ],
+        ],
+    ],
 ];
