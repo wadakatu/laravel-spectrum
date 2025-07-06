@@ -171,4 +171,107 @@ class SchemaGenerator
 
         return false;
     }
+
+    /**
+     * Fractal Transformerからスキーマを生成
+     */
+    public function generateFromFractal(array $fractalData, bool $isCollection = false, bool $hasPagination = false): array
+    {
+        $itemSchema = $this->convertFractalPropertiesToSchema($fractalData['properties']);
+
+        // includesを追加
+        if (! empty($fractalData['availableIncludes'])) {
+            foreach ($fractalData['availableIncludes'] as $includeName => $includeData) {
+                $includeSchema = [];
+
+                if ($includeData['collection'] ?? false) {
+                    $includeSchema = [
+                        'type' => 'array',
+                        'items' => ['type' => 'object'],
+                    ];
+                } else {
+                    $includeSchema = ['type' => 'object'];
+                }
+
+                // デフォルトincludeかどうかをチェック
+                $isDefault = in_array($includeName, $fractalData['defaultIncludes'] ?? []);
+                $includeSchema['description'] = $isDefault
+                    ? "Default include. Use ?include=$includeName"
+                    : "Optional include. Use ?include=$includeName";
+
+                $itemSchema['properties'][$includeName] = $includeSchema;
+            }
+        }
+
+        // 基本構造を作成
+        $schema = [
+            'type' => 'object',
+            'properties' => [],
+        ];
+
+        if ($isCollection) {
+            $schema['properties']['data'] = [
+                'type' => 'array',
+                'items' => $itemSchema,
+            ];
+        } else {
+            $schema['properties']['data'] = $itemSchema;
+        }
+
+        // ページネーションメタデータを追加
+        if ($hasPagination) {
+            $schema['properties']['meta'] = [
+                'type' => 'object',
+                'properties' => [
+                    'pagination' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'total' => ['type' => 'integer', 'example' => 100],
+                            'count' => ['type' => 'integer', 'example' => 20],
+                            'per_page' => ['type' => 'integer', 'example' => 20],
+                            'current_page' => ['type' => 'integer', 'example' => 1],
+                            'total_pages' => ['type' => 'integer', 'example' => 5],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Fractalのプロパティをスキーマ形式に変換
+     */
+    private function convertFractalPropertiesToSchema(array $properties): array
+    {
+        $schema = [
+            'type' => 'object',
+            'properties' => [],
+        ];
+
+        foreach ($properties as $key => $property) {
+            $propSchema = [
+                'type' => $property['type'],
+            ];
+
+            if (isset($property['example'])) {
+                $propSchema['example'] = $property['example'];
+            }
+
+            if (isset($property['nullable']) && $property['nullable']) {
+                $propSchema['nullable'] = true;
+            }
+
+            // ネストしたプロパティの処理
+            if (isset($property['properties'])) {
+                $propSchema = $this->convertFractalPropertiesToSchema($property['properties']);
+                $propSchema['type'] = 'object';
+            }
+
+            $schema['properties'][$key] = $propSchema;
+        }
+
+        return $schema;
+    }
 }
