@@ -446,21 +446,245 @@ class FormRequestAnalyzer
      */
     protected function findAnonymousClassNode(array $ast): ?Node\Stmt\Class_
     {
-        foreach ($ast as $node) {
-            if ($node instanceof Node\Expr\New_ &&
-                $node->class instanceof Node\Stmt\Class_) {
-                return $node->class;
+        // Use a visitor to find anonymous class nodes
+        $visitor = new AST\Visitors\AnonymousClassFindingVisitor;
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        return $visitor->getClassNode();
+    }
+
+    /**
+     * Analyze FormRequest with conditional rules support
+     */
+    public function analyzeWithConditionalRules(string $requestClass): array
+    {
+        if (! class_exists($requestClass)) {
+            return [];
+        }
+
+        try {
+            $reflection = new \ReflectionClass($requestClass);
+
+            // FormRequestを継承していない場合はスキップ
+            if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+                return [];
             }
 
-            // Traverse child nodes
-            if ($node instanceof Node\Stmt\Expression &&
-                $node->expr instanceof Node\Expr\Assign &&
-                $node->expr->expr instanceof Node\Expr\New_ &&
-                $node->expr->expr->class instanceof Node\Stmt\Class_) {
-                return $node->expr->expr->class;
+            $filePath = $reflection->getFileName();
+            if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
+                // For anonymous classes, use special handling
+                return $this->analyzeAnonymousClassWithConditionalRules($reflection);
+            }
+
+            // ファイルをパース
+            $code = file_get_contents($filePath);
+            $ast = $this->parser->parse($code);
+
+            if (! $ast) {
+                return [];
+            }
+
+            // クラスノードを探す
+            $classNode = $this->findClassNode($ast, $reflection->getShortName());
+            if (! $classNode) {
+                return [];
+            }
+
+            // Try conditional rules extraction first
+            $conditionalRules = $this->extractConditionalRules($classNode);
+
+            if (! empty($conditionalRules['rules_sets'])) {
+                // Use conditional rules
+                $attributes = $this->extractAttributes($classNode);
+                $parameters = $this->generateParametersFromConditionalRules($conditionalRules, $attributes);
+
+                return [
+                    'parameters' => $parameters,
+                    'conditional_rules' => $conditionalRules,
+                ];
+            } else {
+                // Fall back to regular extraction
+                $rules = $this->extractRules($classNode);
+                $attributes = $this->extractAttributes($classNode);
+                $parameters = $this->generateParameters($rules, $attributes);
+
+                return [
+                    'parameters' => $parameters,
+                    'conditional_rules' => [
+                        'rules_sets' => [],
+                        'merged_rules' => [],
+                    ],
+                ];
+            }
+
+        } catch (Error $parseError) {
+            Log::warning("Failed to parse FormRequest: {$requestClass}", [
+                'error' => $parseError->getMessage(),
+            ]);
+
+            return [];
+        } catch (\Exception $e) {
+            Log::warning("Failed to analyze FormRequest: {$requestClass}", [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Extract conditional rules from rules() method
+     */
+    protected function extractConditionalRules(Node\Stmt\Class_ $class): array
+    {
+        $rulesMethod = $this->findMethodNode($class, 'rules');
+        if (! $rulesMethod) {
+            return ['rules_sets' => [], 'merged_rules' => []];
+        }
+
+        $visitor = new AST\Visitors\ConditionalRulesExtractorVisitor($this->printer);
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse([$rulesMethod]);
+
+        return $visitor->getRuleSets();
+    }
+
+    /**
+     * Generate parameters from conditional rules
+     */
+    protected function generateParametersFromConditionalRules(array $conditionalRules, array $attributes = []): array
+    {
+        $parameters = [];
+        $processedFields = [];
+
+        // Process all rule sets
+        foreach ($conditionalRules['rules_sets'] as $ruleSet) {
+            foreach ($ruleSet['rules'] as $field => $rule) {
+                if (! isset($processedFields[$field])) {
+                    $processedFields[$field] = [
+                        'name' => $field,
+                        'in' => 'body',
+                        'rules_by_condition' => [],
+                    ];
+                }
+
+                $processedFields[$field]['rules_by_condition'][] = [
+                    'conditions' => $ruleSet['conditions'],
+                    'rules' => is_array($rule) ? $rule : explode('|', $rule),
+                ];
             }
         }
 
-        return null;
+        // Generate parameters with merged rules for default type info
+        foreach ($conditionalRules['merged_rules'] as $field => $mergedRules) {
+            $parameters[] = [
+                'name' => $field,
+                'in' => 'body',
+                'required' => $this->isRequiredInAnyCondition($processedFields[$field]['rules_by_condition']),
+                'type' => $this->typeInference->inferFromRules($mergedRules),
+                'description' => $attributes[$field] ?? $this->generateConditionalDescription($field, $processedFields[$field]),
+                'conditional_rules' => $processedFields[$field]['rules_by_condition'],
+                'validation' => $mergedRules,
+                'example' => $this->typeInference->generateExample($field, $mergedRules),
+            ];
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * Check if field is required in any condition
+     */
+    protected function isRequiredInAnyCondition(array $rulesByCondition): bool
+    {
+        foreach ($rulesByCondition as $conditionRules) {
+            if ($this->isRequired($conditionRules['rules'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate description for conditional field
+     */
+    protected function generateConditionalDescription(string $field, array $fieldInfo): string
+    {
+        $description = Str::title(str_replace(['_', '-'], ' ', $field));
+
+        if (count($fieldInfo['rules_by_condition']) > 1) {
+            $description .= ' (条件により異なるルールが適用されます)';
+        }
+
+        return $description;
+    }
+
+    /**
+     * Analyze anonymous class with conditional rules support
+     */
+    protected function analyzeAnonymousClassWithConditionalRules(\ReflectionClass $reflection): array
+    {
+        try {
+            // For AST parsing of anonymous classes
+            $filePath = $reflection->getFileName();
+            if ($filePath && file_exists($filePath)) {
+                $code = file_get_contents($filePath);
+                $startLine = $reflection->getStartLine() - 1;
+                $endLine = $reflection->getEndLine();
+
+                $lines = explode("\n", $code);
+                $classCode = implode("\n", array_slice($lines, $startLine, $endLine - $startLine));
+
+                if (! str_contains($classCode, '<?php')) {
+                    $classCode = "<?php\n".$classCode;
+                }
+
+                try {
+                    $ast = $this->parser->parse($classCode);
+                    if ($ast) {
+                        $classNode = $this->findAnonymousClassNode($ast);
+                        if ($classNode) {
+                            $conditionalRules = $this->extractConditionalRules($classNode);
+
+                            if (! empty($conditionalRules['rules_sets'])) {
+                                $attributes = $this->extractAttributes($classNode);
+                                $parameters = $this->generateParametersFromConditionalRules($conditionalRules, $attributes);
+
+                                return [
+                                    'parameters' => $parameters,
+                                    'conditional_rules' => $conditionalRules,
+                                ];
+                            }
+                        }
+                    }
+                } catch (Error $e) {
+                    // Fall back to reflection-based extraction
+                }
+            }
+
+            // Fallback to reflection-based extraction
+            $result = $this->analyzeWithReflection($reflection);
+
+            return [
+                'parameters' => $result,
+                'conditional_rules' => [
+                    'rules_sets' => [],
+                    'merged_rules' => [],
+                ],
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'parameters' => [],
+                'conditional_rules' => [
+                    'rules_sets' => [],
+                    'merged_rules' => [],
+                ],
+            ];
+        }
     }
 }
