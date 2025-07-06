@@ -4,6 +4,7 @@ namespace LaravelPrism\Analyzers;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
+use LaravelPrism\Cache\DocumentationCache;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -19,8 +20,11 @@ class ResourceAnalyzer
 
     protected PrettyPrinter\Standard $printer;
 
-    public function __construct()
+    protected DocumentationCache $cache;
+
+    public function __construct(DocumentationCache $cache)
     {
+        $this->cache = $cache;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
@@ -32,6 +36,16 @@ class ResourceAnalyzer
      * @param  bool  $useNewFormat  新しいフォーマット（properties/conditionalFields等）を使用するか
      */
     public function analyze(string $resourceClass, bool $useNewFormat = false): array
+    {
+        return $this->cache->rememberResource($resourceClass, function () use ($resourceClass, $useNewFormat) {
+            return $this->performAnalysis($resourceClass, $useNewFormat);
+        });
+    }
+
+    /**
+     * 実際の解析処理
+     */
+    protected function performAnalysis(string $resourceClass, bool $useNewFormat = false): array
     {
         if (! class_exists($resourceClass)) {
             return [];

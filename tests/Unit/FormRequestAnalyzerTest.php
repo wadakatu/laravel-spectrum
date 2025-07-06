@@ -5,6 +5,7 @@ namespace LaravelPrism\Tests\Unit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use LaravelPrism\Analyzers\FormRequestAnalyzer;
+use LaravelPrism\Cache\DocumentationCache;
 use LaravelPrism\Support\TypeInference;
 use LaravelPrism\Tests\Fixtures\StoreUserRequest;
 use LaravelPrism\Tests\TestCase;
@@ -16,7 +17,15 @@ class FormRequestAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new FormRequestAnalyzer(new TypeInference);
+
+        // Create a mock cache that always calls the callback
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $this->analyzer = new FormRequestAnalyzer(new TypeInference, $cache);
     }
 
     /** @test */
