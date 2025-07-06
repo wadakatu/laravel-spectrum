@@ -147,11 +147,11 @@ class OpenApiGenerator
 
         // エラーレスポンスを生成
         $errorResponses = $this->generateErrorResponses($route, $controllerInfo);
-        
+
         // マージ（array_mergeは数値キーを再インデックスするので + を使用）
         return $responses + $errorResponses;
     }
-    
+
     /**
      * エラーレスポンスを生成
      */
@@ -159,34 +159,34 @@ class OpenApiGenerator
     {
         $method = strtolower($route['httpMethods'][0]);
         $requiresAuth = $this->requiresAuth($route);
-        
+
         // FormRequestがある場合は、そのルールから422エラーを生成
         $formRequestData = null;
-        if (!empty($controllerInfo['formRequest'])) {
+        if (! empty($controllerInfo['formRequest'])) {
             $formRequestData = $this->requestAnalyzer->analyzeWithDetails($controllerInfo['formRequest']);
         }
-        
+
         // エラーレスポンスを生成
         $allErrorResponses = $this->errorResponseGenerator->generateErrorResponses($formRequestData);
-        
+
         // デフォルトのエラーレスポンスを取得
         $defaultErrorResponses = $this->errorResponseGenerator->getDefaultErrorResponses(
             $method,
             $requiresAuth,
-            !empty($formRequestData)
+            ! empty($formRequestData)
         );
-        
+
         // FormRequestがない場合は、デフォルトのエラーレスポンスのみを使用
         if (empty($formRequestData)) {
             return $defaultErrorResponses;
         }
-        
+
         // FormRequestがある場合は、422エラーも含める
         $responses = $defaultErrorResponses;
         if (isset($allErrorResponses['422'])) {
             $responses['422'] = $allErrorResponses['422'];
         }
-        
+
         return $responses;
     }
 

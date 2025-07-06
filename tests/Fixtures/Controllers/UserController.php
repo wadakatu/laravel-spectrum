@@ -9,12 +9,12 @@ class UserController
 {
     public function index() {}
 
-    public function store(StoreUserRequest $request) 
+    public function store(StoreUserRequest $request)
     {
         return new UserResource([]);
     }
 
-    public function show($user) 
+    public function show($user)
     {
         return new UserResource([]);
     }

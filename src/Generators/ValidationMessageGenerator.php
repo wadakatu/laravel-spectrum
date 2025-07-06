@@ -2,8 +2,8 @@
 
 namespace LaravelPrism\Generators;
 
-use LaravelPrism\Support\ValidationRules;
 use Illuminate\Support\Str;
+use LaravelPrism\Support\ValidationRules;
 
 class ValidationMessageGenerator
 {
@@ -13,45 +13,46 @@ class ValidationMessageGenerator
     public function generateMessages(array $rules, array $customMessages = []): array
     {
         $messages = [];
-        
+
         foreach ($rules as $field => $fieldRules) {
             $messages[$field] = $this->generateFieldMessages($field, $fieldRules, $customMessages);
         }
-        
+
         return $messages;
     }
-    
+
     /**
      * フィールドごとのエラーメッセージを生成
      */
     protected function generateFieldMessages(string $field, $rules, array $customMessages): array
     {
         $messages = [];
-        
+
         // ルールを配列に正規化
         if (is_string($rules)) {
             $rules = explode('|', $rules);
         }
-        
+
         $fieldType = ValidationRules::inferFieldType($rules);
         $humanField = $this->humanizeFieldName($field);
-        
+
         foreach ($rules as $rule) {
             // Rule::unique() のようなオブジェクトの場合はスキップ
-            if (!is_string($rule)) {
+            if (! is_string($rule)) {
                 continue;
             }
-            
+
             $ruleName = ValidationRules::extractRuleName($rule);
             $parameters = ValidationRules::extractRuleParameters($rule);
-            
+
             // カスタムメッセージがある場合
-            $customKey = $field . '.' . $ruleName;
+            $customKey = $field.'.'.$ruleName;
             if (isset($customMessages[$customKey])) {
                 $messages[] = $customMessages[$customKey];
+
                 continue;
             }
-            
+
             // デフォルトメッセージテンプレートを使用
             $template = ValidationRules::getMessageTemplate($ruleName, $fieldType);
             if ($template) {
@@ -59,10 +60,10 @@ class ValidationMessageGenerator
                 $messages[] = $message;
             }
         }
-        
+
         return array_unique($messages);
     }
-    
+
     /**
      * フィールド名を人間が読みやすい形式に変換
      */
@@ -70,7 +71,7 @@ class ValidationMessageGenerator
     {
         return Str::title(str_replace(['_', '.'], ' ', $field));
     }
-    
+
     /**
      * メッセージテンプレートのプレースホルダーを置換
      */
@@ -80,9 +81,9 @@ class ValidationMessageGenerator
             ':attribute' => $humanField,
             ':Attribute' => Str::ucfirst($humanField),
         ];
-        
+
         // パラメータの置換
-        if (!empty($parameters)) {
+        if (! empty($parameters)) {
             $replacements[':min'] = $parameters[0] ?? '';
             $replacements[':max'] = $parameters[0] ?? '';
             $replacements[':size'] = $parameters[0] ?? '';
@@ -91,24 +92,24 @@ class ValidationMessageGenerator
             $replacements[':format'] = $parameters[0] ?? '';
             $replacements[':values'] = implode(', ', $parameters);
         }
-        
+
         return strtr($template, $replacements);
     }
-    
+
     /**
      * フィールドごとのサンプルメッセージを1つ生成（OpenAPIの例として使用）
      */
     public function generateSampleMessage(string $field, $rules): string
     {
         $messages = $this->generateFieldMessages($field, $rules, []);
-        
+
         // 最も一般的なエラー（required）を優先
         foreach ($messages as $message) {
             if (str_contains($message, 'required')) {
                 return $message;
             }
         }
-        
+
         // それ以外は最初のメッセージを返す
         return $messages[0] ?? "The {$field} field is invalid.";
     }

@@ -56,48 +56,50 @@ class ValidationRules
         'alpha_num' => 'The :attribute may only contain letters and numbers.',
         'alpha_dash' => 'The :attribute may only contain letters, numbers, dashes and underscores.',
     ];
-    
+
     /**
      * ルール名を抽出（パラメータを除去）
      */
     public static function extractRuleName(string $rule): string
     {
         $parts = explode(':', $rule);
+
         return $parts[0];
     }
-    
+
     /**
      * ルールのパラメータを抽出
      */
     public static function extractRuleParameters(string $rule): array
     {
-        if (!str_contains($rule, ':')) {
+        if (! str_contains($rule, ':')) {
             return [];
         }
-        
+
         $parts = explode(':', $rule, 2);
+
         return explode(',', $parts[1]);
     }
-    
+
     /**
      * ルールに対応するメッセージテンプレートを取得
      */
     public static function getMessageTemplate(string $ruleName, string $fieldType = 'string'): ?string
     {
-        if (!isset(self::$messageTemplates[$ruleName])) {
+        if (! isset(self::$messageTemplates[$ruleName])) {
             return null;
         }
-        
+
         $template = self::$messageTemplates[$ruleName];
-        
+
         // 型によって異なるメッセージがある場合
         if (is_array($template)) {
             return $template[$fieldType] ?? $template['string'] ?? null;
         }
-        
+
         return $template;
     }
-    
+
     /**
      * フィールドタイプを推測
      */
@@ -105,7 +107,7 @@ class ValidationRules
     {
         foreach ($rules as $rule) {
             $ruleName = self::extractRuleName($rule);
-            
+
             if (in_array($ruleName, ['integer', 'numeric'])) {
                 return 'numeric';
             }
@@ -113,7 +115,7 @@ class ValidationRules
                 return 'array';
             }
         }
-        
+
         return 'string';
     }
 }

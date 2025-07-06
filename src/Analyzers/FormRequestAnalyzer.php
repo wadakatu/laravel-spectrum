@@ -96,79 +96,80 @@ class FormRequestAnalyzer
      */
     public function analyzeWithDetails(string $requestClass): array
     {
-        if (!class_exists($requestClass)) {
+        if (! class_exists($requestClass)) {
             return [];
         }
-        
+
         try {
             $reflection = new \ReflectionClass($requestClass);
-            
+
             // FormRequestを継承していない場合はスキップ
-            if (!$reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+            if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
                 return [];
             }
-            
+
             $filePath = $reflection->getFileName();
-            if (!$filePath || !file_exists($filePath) || $reflection->isAnonymous()) {
+            if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
                 // For anonymous classes or when file path is not available, use reflection-based fallback
                 return $this->analyzeWithDetailsUsingReflection($reflection);
             }
-            
+
             // ファイルをパース
             $code = file_get_contents($filePath);
             $ast = $this->parser->parse($code);
-            
-            if (!$ast) {
+
+            if (! $ast) {
                 return [];
             }
-            
+
             // クラスノードを探す
             $classNode = $this->findClassNode($ast, $reflection->getShortName());
-            if (!$classNode) {
+            if (! $classNode) {
                 return [];
             }
-            
+
             // rules()メソッドを解析
             $rules = $this->extractRules($classNode);
-            
+
             // attributes()メソッドを解析
             $attributes = $this->extractAttributes($classNode);
-            
+
             // messages()メソッドを解析
             $messages = $this->extractMessages($classNode);
-            
+
             return [
                 'rules' => $rules,
                 'attributes' => $attributes,
                 'messages' => $messages,
             ];
-            
+
         } catch (\Exception $e) {
             Log::warning("Failed to analyze FormRequest with details: {$requestClass}", [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
-    
+
     /**
      * messages()メソッドから検証メッセージを抽出
      */
     protected function extractMessages(Node\Stmt\Class_ $class): array
     {
         $messagesMethod = $this->findMethodNode($class, 'messages');
-        if (!$messagesMethod) {
+        if (! $messagesMethod) {
             return [];
         }
-        
+
         $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser();
+        $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
         $traverser->traverse([$messagesMethod]);
-        
+
         return $visitor->getArray();
     }
-    
+
     /**
      * Reflection-based analysis with details for anonymous classes
      */
@@ -177,7 +178,7 @@ class FormRequestAnalyzer
         try {
             // Fallback: try to create instance with mock request
             $instance = $reflection->newInstanceWithoutConstructor();
-            
+
             // Initialize request property to avoid errors
             if ($reflection->hasProperty('request')) {
                 $requestProp = $reflection->getProperty('request');
@@ -185,7 +186,7 @@ class FormRequestAnalyzer
                 $mockRequest = new \Illuminate\Http\Request;
                 $requestProp->setValue($instance, $mockRequest);
             }
-            
+
             // Extract rules using reflection
             $rules = [];
             if ($reflection->hasMethod('rules')) {
@@ -198,7 +199,7 @@ class FormRequestAnalyzer
                     return [];
                 }
             }
-            
+
             // Extract attributes using reflection
             $attributes = [];
             if ($reflection->hasMethod('attributes')) {
@@ -206,7 +207,7 @@ class FormRequestAnalyzer
                 $method->setAccessible(true);
                 $attributes = $method->invoke($instance) ?: [];
             }
-            
+
             // Extract messages using reflection
             $messages = [];
             if ($reflection->hasMethod('messages')) {
@@ -214,13 +215,13 @@ class FormRequestAnalyzer
                 $method->setAccessible(true);
                 $messages = $method->invoke($instance) ?: [];
             }
-            
+
             return [
                 'rules' => $rules,
                 'attributes' => $attributes,
                 'messages' => $messages,
             ];
-            
+
         } catch (\Exception $e) {
             return [];
         }
