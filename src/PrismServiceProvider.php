@@ -3,6 +3,7 @@
 namespace LaravelPrism;
 
 use Illuminate\Support\ServiceProvider;
+use LaravelPrism\Analyzers\AuthenticationAnalyzer;
 use LaravelPrism\Analyzers\ControllerAnalyzer;
 use LaravelPrism\Analyzers\FormRequestAnalyzer;
 use LaravelPrism\Analyzers\ResourceAnalyzer;
@@ -11,6 +12,7 @@ use LaravelPrism\Console\GenerateDocsCommand;
 use LaravelPrism\Generators\ErrorResponseGenerator;
 use LaravelPrism\Generators\OpenApiGenerator;
 use LaravelPrism\Generators\SchemaGenerator;
+use LaravelPrism\Generators\SecuritySchemeGenerator;
 use LaravelPrism\Generators\ValidationMessageGenerator;
 use LaravelPrism\Support\TypeInference;
 
@@ -32,6 +34,8 @@ class PrismServiceProvider extends ServiceProvider
         $this->app->singleton(SchemaGenerator::class);
         $this->app->singleton(ValidationMessageGenerator::class);
         $this->app->singleton(ErrorResponseGenerator::class);
+        $this->app->singleton(AuthenticationAnalyzer::class);
+        $this->app->singleton(SecuritySchemeGenerator::class);
         $this->app->singleton(OpenApiGenerator::class);
 
         // コマンドの登録

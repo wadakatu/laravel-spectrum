@@ -3,6 +3,7 @@
 namespace LaravelPrism\Generators;
 
 use Illuminate\Support\Str;
+use LaravelPrism\Analyzers\AuthenticationAnalyzer;
 use LaravelPrism\Analyzers\ControllerAnalyzer;
 use LaravelPrism\Analyzers\FormRequestAnalyzer;
 use LaravelPrism\Analyzers\ResourceAnalyzer;
@@ -19,18 +20,26 @@ class OpenApiGenerator
 
     protected ErrorResponseGenerator $errorResponseGenerator;
 
+    protected AuthenticationAnalyzer $authenticationAnalyzer;
+
+    protected SecuritySchemeGenerator $securitySchemeGenerator;
+
     public function __construct(
         FormRequestAnalyzer $requestAnalyzer,
         ResourceAnalyzer $resourceAnalyzer,
         ControllerAnalyzer $controllerAnalyzer,
         SchemaGenerator $schemaGenerator,
-        ErrorResponseGenerator $errorResponseGenerator
+        ErrorResponseGenerator $errorResponseGenerator,
+        AuthenticationAnalyzer $authenticationAnalyzer,
+        SecuritySchemeGenerator $securitySchemeGenerator
     ) {
         $this->requestAnalyzer = $requestAnalyzer;
         $this->resourceAnalyzer = $resourceAnalyzer;
         $this->controllerAnalyzer = $controllerAnalyzer;
         $this->schemaGenerator = $schemaGenerator;
         $this->errorResponseGenerator = $errorResponseGenerator;
+        $this->authenticationAnalyzer = $authenticationAnalyzer;
+        $this->securitySchemeGenerator = $securitySchemeGenerator;
     }
 
     /**
@@ -38,6 +47,12 @@ class OpenApiGenerator
      */
     public function generate(array $routes): array
     {
+        // カスタム認証スキームを読み込む
+        $this->authenticationAnalyzer->loadCustomSchemes();
+
+        // 認証情報を分析
+        $authenticationInfo = $this->authenticationAnalyzer->analyze($routes);
+
         $openapi = [
             'openapi' => '3.0.0',
             'info' => [
@@ -54,15 +69,27 @@ class OpenApiGenerator
             'paths' => [],
             'components' => [
                 'schemas' => [],
-                'securitySchemes' => $this->generateSecuritySchemes(),
+                'securitySchemes' => $this->securitySchemeGenerator->generateSecuritySchemes(
+                    $authenticationInfo['schemes']
+                ),
             ],
         ];
 
-        foreach ($routes as $route) {
+        // グローバル認証設定
+        $globalAuth = $this->authenticationAnalyzer->getGlobalAuthentication();
+        if ($globalAuth && $globalAuth['required']) {
+            $openapi['security'] = $this->securitySchemeGenerator->generateEndpointSecurity($globalAuth);
+        }
+
+        foreach ($routes as $index => $route) {
             $path = $this->convertToOpenApiPath($route['uri']);
 
             foreach ($route['httpMethods'] as $method) {
-                $operation = $this->generateOperation($route, strtolower($method));
+                $operation = $this->generateOperation(
+                    $route,
+                    strtolower($method),
+                    $authenticationInfo['routes'][$index] ?? null
+                );
 
                 if ($operation) {
                     $openapi['paths'][$path][strtolower($method)] = $operation;
@@ -76,7 +103,7 @@ class OpenApiGenerator
     /**
      * 単一のオペレーションを生成
      */
-    protected function generateOperation(array $route, string $method): array
+    protected function generateOperation(array $route, string $method, ?array $authentication = null): array
     {
         $controllerInfo = $this->controllerAnalyzer->analyze(
             $route['controller'],
@@ -100,8 +127,11 @@ class OpenApiGenerator
         }
 
         // セキュリティの適用
-        if ($this->requiresAuth($route)) {
-            $operation['security'] = [['bearerAuth' => []]];
+        if ($authentication) {
+            $security = $this->securitySchemeGenerator->generateEndpointSecurity($authentication);
+            if (! empty($security)) {
+                $operation['security'] = $security;
+            }
         }
 
         return $operation;
@@ -298,23 +328,17 @@ class OpenApiGenerator
      */
     protected function requiresAuth(array $route): bool
     {
-        $authMiddleware = ['auth', 'auth:api', 'auth:sanctum'];
+        $authMiddleware = ['auth', 'auth:api', 'auth:sanctum', 'passport', 'auth.basic'];
 
-        return ! empty(array_intersect($route['middleware'], $authMiddleware));
-    }
+        return ! empty(array_filter($route['middleware'], function ($mw) use ($authMiddleware) {
+            foreach ($authMiddleware as $auth) {
+                if ($mw === $auth || \Illuminate\Support\Str::startsWith($mw, $auth.':')) {
+                    return true;
+                }
+            }
 
-    /**
-     * セキュリティスキームを生成
-     */
-    protected function generateSecuritySchemes(): array
-    {
-        return [
-            'bearerAuth' => [
-                'type' => 'http',
-                'scheme' => 'bearer',
-                'bearerFormat' => 'JWT',
-            ],
-        ];
+            return false;
+        }));
     }
 
     /**
