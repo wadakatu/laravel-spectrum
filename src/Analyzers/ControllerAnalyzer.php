@@ -29,6 +29,7 @@ class ControllerAnalyzer
             'formRequest' => null,
             'resource' => null,
             'returnsCollection' => false,
+            'fractal' => null,
         ];
 
         // パラメータからFormRequestを検出
@@ -60,6 +61,9 @@ class ControllerAnalyzer
             }
         }
 
+        // Fractal使用を検出
+        $this->detectFractalUsage($source, $result, $reflection);
+
         return $result;
     }
 
@@ -83,9 +87,21 @@ class ControllerAnalyzer
      */
     protected function resolveClassName(string $shortName, ReflectionClass $reflection): ?string
     {
+        // 完全修飾名の場合
+        if (strpos($shortName, '\\') !== false) {
+            // 先頭の\を除去
+            $shortName = ltrim($shortName, '\\');
+            if (class_exists($shortName)) {
+                return $shortName;
+            }
+        }
+
+        // クラス名のみを取得
+        $className = basename(str_replace('\\', '/', $shortName));
+
         // 同じ名前空間のクラスを試す
         $namespace = $reflection->getNamespaceName();
-        $fullName = $namespace.'\\'.$shortName;
+        $fullName = $namespace.'\\'.$className;
         if (class_exists($fullName)) {
             return $fullName;
         }
@@ -94,10 +110,54 @@ class ControllerAnalyzer
         $filename = $reflection->getFileName();
         $content = file_get_contents($filename);
 
-        if (preg_match('/use\s+([\w\\\\]+\\\\'.$shortName.');/', $content, $matches)) {
+        if (preg_match('/use\s+([\w\\\\]+\\\\'.$className.');/', $content, $matches)) {
             return $matches[1];
         }
 
         return null;
+    }
+
+    /**
+     * Fractal使用を検出
+     */
+    protected function detectFractalUsage(string $source, array &$result, ReflectionClass $reflection): void
+    {
+        // fractal()->item() パターン
+        if (preg_match('/fractal\(\)->item\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $transformerClass = $this->resolveClassName($matches[1], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                $result['fractal'] = [
+                    'transformer' => $transformerClass,
+                    'collection' => false,
+                    'type' => 'item',
+                    'hasIncludes' => strpos($source, 'parseIncludes') !== false,
+                ];
+            }
+        }
+        // fractal()->collection() パターン
+        elseif (preg_match('/fractal\(\)->collection\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $transformerClass = $this->resolveClassName($matches[1], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                $result['fractal'] = [
+                    'transformer' => $transformerClass,
+                    'collection' => true,
+                    'type' => 'collection',
+                    'hasIncludes' => strpos($source, 'parseIncludes') !== false,
+                ];
+            }
+        }
+        // fractal()をチェーン呼び出しするパターン
+        elseif (preg_match('/fractal\(\)\s*->\s*(item|collection)\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $type = $matches[1];
+            $transformerClass = $this->resolveClassName($matches[2], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                $result['fractal'] = [
+                    'transformer' => $transformerClass,
+                    'collection' => $type === 'collection',
+                    'type' => $type,
+                    'hasIncludes' => strpos($source, 'parseIncludes') !== false,
+                ];
+            }
+        }
     }
 }
