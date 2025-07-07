@@ -14,7 +14,6 @@ jobs:
       matrix:
         php: [8.1, 8.2, 8.3]
         laravel: [10.*, 11.*, 12.*]
-        stability: [prefer-lowest, prefer-stable]
         include:
           - laravel: 10.*
             testbench: 8.*
@@ -30,7 +29,7 @@ jobs:
           - php: 8.1
             laravel: 12.*
 
-    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }}
+    name: P${{ matrix.php }} - L${{ matrix.laravel }}
 
     steps:
       - name: Checkout code
@@ -54,23 +53,17 @@ jobs:
           if [[ "${{ matrix.php }}" == "8.1" ]]; then
             composer remove laravel/pint phpstan/phpstan --dev --no-update
           fi
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+          composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: List Installed Dependencies
         run: composer show -D
 
       - name: Execute tests
-        run: |
-          # Use legacy config for older PHPUnit versions to avoid warnings
-          if [[ "${{ matrix.stability }}" == "prefer-lowest" ]]; then
-            vendor/bin/phpunit --configuration phpunit-legacy.xml
-          else
-            vendor/bin/phpunit --coverage-clover coverage.xml
-          fi
+        run: vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
-        if: matrix.php == '8.3' && matrix.laravel == '12.*' && matrix.stability == 'prefer-stable'
+        if: matrix.php == '8.3' && matrix.laravel == '12.*'
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
