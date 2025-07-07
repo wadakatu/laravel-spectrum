@@ -33,8 +33,8 @@ class ErrorResponseIntegrationTest extends TestCase
     public function it_includes_error_responses_in_generated_openapi_spec()
     {
         // テスト用のルートを作成
-        Route::post('api/users', 'LaravelPrism\Tests\Fixtures\Controllers\UserController@store')->name('users.store');
-        Route::get('api/users/{user}', 'LaravelPrism\Tests\Fixtures\Controllers\UserController@show')
+        Route::post('api/users', 'LaravelSpectrum\Tests\Fixtures\Controllers\UserController@store')->name('users.store');
+        Route::get('api/users/{user}', 'LaravelSpectrum\Tests\Fixtures\Controllers\UserController@show')
             ->middleware('auth:sanctum')
             ->name('users.show');
 

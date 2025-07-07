@@ -157,10 +157,10 @@ class OpenApiGeneratorTest extends TestCase
 
     protected function mockControllerAnalysis(string $method, array $result): void
     {
-        $controllerAnalyzer = Mockery::mock('LaravelPrism\Analyzers\ControllerAnalyzer');
+        $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');
         $controllerAnalyzer->shouldReceive('analyze')
             ->andReturn($result);
 
-        $this->app->instance('LaravelPrism\Analyzers\ControllerAnalyzer', $controllerAnalyzer);
+        $this->app->instance('LaravelSpectrum\Analyzers\ControllerAnalyzer', $controllerAnalyzer);
     }
 }
