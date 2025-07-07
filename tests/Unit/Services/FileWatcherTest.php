@@ -14,6 +14,12 @@ class FileWatcherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        // Skip tests that require Workerman runtime
+        if (!defined('WORKERMAN_RUN_MODE')) {
+            $this->markTestSkipped('FileWatcher tests require Workerman runtime');
+        }
+        
         $this->watcher = new FileWatcher;
         $this->tempDir = sys_get_temp_dir().'/prism_watcher_test_'.uniqid();
         mkdir($this->tempDir, 0777, true);

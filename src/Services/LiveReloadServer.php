@@ -2,17 +2,16 @@
 
 namespace LaravelPrism\Services;
 
-use Ratchet\ConnectionInterface;
-use Ratchet\Http\HttpServer;
-use Ratchet\MessageComponentInterface;
-use Ratchet\Server\IoServer;
-use Ratchet\WebSocket\WsServer;
-use React\EventLoop\Loop;
-use React\Socket\Server as ReactServer;
+use Workerman\Worker;
+use Workerman\Connection\TcpConnection;
+use Workerman\Protocols\Http\Request;
+use Workerman\Protocols\Http\Response;
 
-class LiveReloadServer implements MessageComponentInterface
+class LiveReloadServer
 {
     protected $clients;
+    protected $httpWorker;
+    protected $wsWorker;
 
     public function __construct()
     {
@@ -26,64 +25,61 @@ class LiveReloadServer implements MessageComponentInterface
 
         // Start WebSocket server for Live Reload
         $this->startWebSocketServer($host, $port + 1);
+
+        // Run all workers
+        Worker::runAll();
     }
 
     private function startHttpServer(string $host, int $port): void
     {
-        $server = new ReactServer("{$host}:{$port}", Loop::get());
+        $this->httpWorker = new Worker("http://{$host}:{$port}");
+        $this->httpWorker->count = 1;
 
-        $server->on('connection', function ($connection) {
-            $connection->on('data', function ($data) use ($connection) {
-                $request = $this->parseHttpRequest($data);
+        $this->httpWorker->onMessage = function (TcpConnection $connection, Request $request) {
+            $path = $request->path();
 
-                if ($request['path'] === '/') {
-                    $connection->write($this->getSwaggerUIResponse());
-                } elseif ($request['path'] === '/openapi.json') {
-                    $connection->write($this->getOpenApiResponse());
-                } else {
-                    $connection->write($this->get404Response());
-                }
-
-                $connection->end();
-            });
-        });
+            if ($path === '/') {
+                $connection->send(new Response(200, [
+                    'Content-Type' => 'text/html; charset=utf-8',
+                ], $this->getSwaggerUIHtml()));
+            } elseif ($path === '/openapi.json') {
+                $jsonPath = storage_path('app/prism/openapi.json');
+                $json = file_exists($jsonPath) ? file_get_contents($jsonPath) : '{}';
+                
+                $connection->send(new Response(200, [
+                    'Content-Type' => 'application/json',
+                    'Access-Control-Allow-Origin' => '*',
+                ], $json));
+            } else {
+                $connection->send(new Response(404, [], '404 Not Found'));
+            }
+        };
     }
 
     private function startWebSocketServer(string $host, int $port): void
     {
-        $wsServer = new WsServer($this);
-        $httpServer = new HttpServer($wsServer);
+        $this->wsWorker = new Worker("websocket://{$host}:{$port}");
+        $this->wsWorker->count = 1;
 
-        IoServer::factory(
-            $httpServer,
-            $port,
-            $host
-        );
-    }
+        $this->wsWorker->onConnect = function (TcpConnection $connection) {
+            $this->clients->attach($connection);
+            $resourceId = spl_object_id($connection);
+            echo "New connection! ({$resourceId})\n";
+        };
 
-    public function onOpen(ConnectionInterface $conn): void
-    {
-        $this->clients->attach($conn);
-        $resourceId = spl_object_id($conn);
-        echo "New connection! ({$resourceId})\n";
-    }
+        $this->wsWorker->onMessage = function (TcpConnection $connection, $data) {
+            // Client messages are ignored
+        };
 
-    public function onMessage(ConnectionInterface $from, $msg): void
-    {
-        // Client messages are ignored
-    }
+        $this->wsWorker->onClose = function (TcpConnection $connection) {
+            $this->clients->detach($connection);
+            $resourceId = spl_object_id($connection);
+            echo "Connection {$resourceId} has disconnected\n";
+        };
 
-    public function onClose(ConnectionInterface $conn): void
-    {
-        $this->clients->detach($conn);
-        $resourceId = spl_object_id($conn);
-        echo "Connection {$resourceId} has disconnected\n";
-    }
-
-    public function onError(ConnectionInterface $conn, \Exception $e): void
-    {
-        echo "An error has occurred: {$e->getMessage()}\n";
-        $conn->close();
+        $this->wsWorker->onError = function (TcpConnection $connection, $code, $msg) {
+            echo "Error: {$msg}\n";
+        };
     }
 
     public function notifyClients(array $data): void
@@ -93,74 +89,6 @@ class LiveReloadServer implements MessageComponentInterface
         foreach ($this->clients as $client) {
             $client->send($message);
         }
-    }
-
-    private function getSwaggerUIResponse(): string
-    {
-        $html = $this->getSwaggerUIHtml();
-
-        $headers = [
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html; charset=utf-8',
-            'Content-Length: '.strlen($html),
-            'Connection: close',
-        ];
-
-        return implode("\r\n", $headers)."\r\n\r\n".$html;
-    }
-
-    private function getOpenApiResponse(): string
-    {
-        $jsonPath = storage_path('app/prism/openapi.json');
-        $json = file_exists($jsonPath) ? file_get_contents($jsonPath) : '{}';
-
-        $headers = [
-            'HTTP/1.1 200 OK',
-            'Content-Type: application/json',
-            'Content-Length: '.strlen($json),
-            'Access-Control-Allow-Origin: *',
-            'Connection: close',
-        ];
-
-        return implode("\r\n", $headers)."\r\n\r\n".$json;
-    }
-
-    private function get404Response(): string
-    {
-        $body = '404 Not Found';
-
-        $headers = [
-            'HTTP/1.1 404 Not Found',
-            'Content-Type: text/plain',
-            'Content-Length: '.strlen($body),
-            'Connection: close',
-        ];
-
-        return implode("\r\n", $headers)."\r\n\r\n".$body;
-    }
-
-    private function parseHttpRequest(string $data): array
-    {
-        $lines = explode("\r\n", $data);
-        $firstLine = explode(' ', $lines[0]);
-
-        $method = $firstLine[0];
-        $path = $firstLine[1] ?? '';
-
-        $headers = [];
-        for ($i = 1; $i < count($lines); $i++) {
-            if (empty($lines[$i])) {
-                break;
-            }
-            [$key, $value] = explode(': ', $lines[$i], 2);
-            $headers[$key] = $value;
-        }
-
-        return [
-            'method' => $method,
-            'path' => $path,
-            'headers' => $headers,
-        ];
     }
 
     private function getSwaggerUIHtml(): string

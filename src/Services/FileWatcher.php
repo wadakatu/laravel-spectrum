@@ -2,8 +2,8 @@
 
 namespace LaravelPrism\Services;
 
-use React\EventLoop\Loop;
 use Symfony\Component\Finder\Finder;
+use Workerman\Timer;
 
 class FileWatcher
 {
@@ -21,8 +21,8 @@ class FileWatcher
         // Initialize file hashes
         $this->initializeFileHashes($paths);
 
-        // Set up polling timer
-        Loop::addPeriodicTimer($this->pollInterval, function () use ($paths, $callback) {
+        // Set up polling timer using Workerman
+        Timer::add($this->pollInterval, function () use ($paths, $callback) {
             $this->checkForChanges($paths, $callback);
         });
     }
