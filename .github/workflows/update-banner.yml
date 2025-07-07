@@ -40,11 +40,8 @@ jobs:
         BRANCH_NAME="update-banner-$(date +%s)"
         git checkout -b $BRANCH_NAME
         
-        # Update banner
-        # The version text is on a separate line in the SVG
-        sed -i "/<text x=\"100\" y=\"250\"/,/<\/text>/{
-          s|v[0-9]\+\.[0-9]\+\.[0-9]\+|${{ steps.get_version.outputs.VERSION }}|
-        }" assets/banner.svg
+        # Update banner version
+        sed -i '/id="version"/s/v1\.0\.0/${{ steps.get_version.outputs.VERSION }}/g' assets/banner.svg
         
         # Commit and push
         git add assets/banner.svg
