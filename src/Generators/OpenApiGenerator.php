@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use LaravelPrism\Analyzers\AuthenticationAnalyzer;
 use LaravelPrism\Analyzers\ControllerAnalyzer;
 use LaravelPrism\Analyzers\FormRequestAnalyzer;
+use LaravelPrism\Analyzers\InlineValidationAnalyzer;
 use LaravelPrism\Analyzers\ResourceAnalyzer;
 
 class OpenApiGenerator
@@ -15,6 +16,8 @@ class OpenApiGenerator
     protected ResourceAnalyzer $resourceAnalyzer;
 
     protected ControllerAnalyzer $controllerAnalyzer;
+
+    protected InlineValidationAnalyzer $inlineValidationAnalyzer;
 
     protected SchemaGenerator $schemaGenerator;
 
@@ -28,6 +31,7 @@ class OpenApiGenerator
         FormRequestAnalyzer $requestAnalyzer,
         ResourceAnalyzer $resourceAnalyzer,
         ControllerAnalyzer $controllerAnalyzer,
+        InlineValidationAnalyzer $inlineValidationAnalyzer,
         SchemaGenerator $schemaGenerator,
         ErrorResponseGenerator $errorResponseGenerator,
         AuthenticationAnalyzer $authenticationAnalyzer,
@@ -36,6 +40,7 @@ class OpenApiGenerator
         $this->requestAnalyzer = $requestAnalyzer;
         $this->resourceAnalyzer = $resourceAnalyzer;
         $this->controllerAnalyzer = $controllerAnalyzer;
+        $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
         $this->schemaGenerator = $schemaGenerator;
         $this->errorResponseGenerator = $errorResponseGenerator;
         $this->authenticationAnalyzer = $authenticationAnalyzer;
@@ -142,11 +147,18 @@ class OpenApiGenerator
      */
     protected function generateRequestBody(array $controllerInfo): ?array
     {
-        if (empty($controllerInfo['formRequest'])) {
-            return null;
-        }
+        $parameters = [];
 
-        $parameters = $this->requestAnalyzer->analyze($controllerInfo['formRequest']);
+        // FormRequestがある場合
+        if (! empty($controllerInfo['formRequest'])) {
+            $parameters = $this->requestAnalyzer->analyze($controllerInfo['formRequest']);
+        }
+        // インラインバリデーションがある場合
+        elseif (! empty($controllerInfo['inlineValidation'])) {
+            $parameters = $this->inlineValidationAnalyzer->generateParameters(
+                $controllerInfo['inlineValidation']
+            );
+        }
 
         if (empty($parameters)) {
             return null;
@@ -190,28 +202,36 @@ class OpenApiGenerator
         $method = strtolower($route['httpMethods'][0]);
         $requiresAuth = $this->requiresAuth($route);
 
-        // FormRequestがある場合は、そのルールから422エラーを生成
-        $formRequestData = null;
+        // バリデーションデータを取得
+        $validationData = null;
+
         if (! empty($controllerInfo['formRequest'])) {
-            $formRequestData = $this->requestAnalyzer->analyzeWithDetails($controllerInfo['formRequest']);
+            $validationData = $this->requestAnalyzer->analyzeWithDetails($controllerInfo['formRequest']);
+        } elseif (! empty($controllerInfo['inlineValidation'])) {
+            // インラインバリデーションのデータをFormRequestの形式に変換
+            $validationData = [
+                'rules' => $controllerInfo['inlineValidation']['rules'] ?? [],
+                'messages' => $controllerInfo['inlineValidation']['messages'] ?? [],
+                'attributes' => $controllerInfo['inlineValidation']['attributes'] ?? [],
+            ];
         }
 
         // エラーレスポンスを生成
-        $allErrorResponses = $this->errorResponseGenerator->generateErrorResponses($formRequestData);
+        $allErrorResponses = $this->errorResponseGenerator->generateErrorResponses($validationData);
 
         // デフォルトのエラーレスポンスを取得
         $defaultErrorResponses = $this->errorResponseGenerator->getDefaultErrorResponses(
             $method,
             $requiresAuth,
-            ! empty($formRequestData)
+            ! empty($validationData)
         );
 
-        // FormRequestがない場合は、デフォルトのエラーレスポンスのみを使用
-        if (empty($formRequestData)) {
+        // バリデーションがない場合は、デフォルトのエラーレスポンスのみを使用
+        if (empty($validationData)) {
             return $defaultErrorResponses;
         }
 
-        // FormRequestがある場合は、422エラーも含める
+        // バリデーションがある場合は、422エラーも含める
         $responses = $defaultErrorResponses;
         if (isset($allErrorResponses['422'])) {
             $responses['422'] = $allErrorResponses['422'];
