@@ -96,7 +96,7 @@ class WatchCommand extends Command
             app_path('Http/Requests'),
             app_path('Http/Resources'),
             base_path('routes'),
-        ]);
+        ]) ?? [];
     }
 
     private function clearRelatedCache(string $path): void
