@@ -1,11 +1,11 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Console;
+namespace LaravelSpectrum\Tests\Unit\Console;
 
-use LaravelPrism\Console\WatchCommand;
-use LaravelPrism\Services\DocumentationCache;
-use LaravelPrism\Services\FileWatcher;
-use LaravelPrism\Services\LiveReloadServer;
+use LaravelSpectrum\Console\WatchCommand;
+use LaravelSpectrum\Services\DocumentationCache;
+use LaravelSpectrum\Services\FileWatcher;
+use LaravelSpectrum\Services\LiveReloadServer;
 use Mockery;
 use Orchestra\Testbench\TestCase;
 
@@ -26,7 +26,7 @@ class WatchCommandTest extends TestCase
         $command = new WatchCommand($fileWatcher, $server, $cache);
 
         $this->assertInstanceOf(WatchCommand::class, $command);
-        $this->assertEquals('prism:watch', $command->getName());
+        $this->assertEquals('spectrum:watch', $command->getName());
         $this->assertEquals('Start real-time documentation preview', $command->getDescription());
     }
 
@@ -197,7 +197,7 @@ class WatchCommandTest extends TestCase
         $command = new WatchCommand($fileWatcher, $server, $cache);
 
         // Set custom config
-        config(['prism.watch.paths' => [
+        config(['spectrum.watch.paths' => [
             '/custom/path1',
             '/custom/path2',
         ]]);
@@ -220,7 +220,7 @@ class WatchCommandTest extends TestCase
         $command = new WatchCommand($fileWatcher, $server, $cache);
 
         // Clear config to use defaults
-        config(['prism.watch.paths' => null]);
+        config(['spectrum.watch.paths' => null]);
 
         $reflection = new \ReflectionClass($command);
         $method = $reflection->getMethod('getWatchPaths');

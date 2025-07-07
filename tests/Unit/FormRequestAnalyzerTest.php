@@ -1,14 +1,14 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit;
+namespace LaravelSpectrum\Tests\Unit;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use LaravelPrism\Analyzers\FormRequestAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Support\TypeInference;
-use LaravelPrism\Tests\Fixtures\StoreUserRequest;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
+use LaravelSpectrum\Tests\TestCase;
 
 class FormRequestAnalyzerTest extends TestCase
 {

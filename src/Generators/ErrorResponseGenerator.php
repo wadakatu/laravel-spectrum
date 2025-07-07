@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Generators;
+namespace LaravelSpectrum\Generators;
 
 class ErrorResponseGenerator
 {

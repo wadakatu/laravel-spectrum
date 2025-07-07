@@ -1,8 +1,8 @@
 <?php
 
-namespace LaravelPrism\Analyzers;
+namespace LaravelSpectrum\Analyzers;
 
-use LaravelPrism\Support\TypeInference;
+use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;

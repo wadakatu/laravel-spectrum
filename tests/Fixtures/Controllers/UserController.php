@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Fixtures\Controllers;
+namespace LaravelSpectrum\Tests\Fixtures\Controllers;
 
-use LaravelPrism\Tests\Fixtures\StoreUserRequest;
-use LaravelPrism\Tests\Fixtures\UserResource;
+use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
+use LaravelSpectrum\Tests\Fixtures\UserResource;
 
 class UserController
 {

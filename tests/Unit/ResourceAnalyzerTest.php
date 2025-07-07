@@ -1,15 +1,15 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit;
+namespace LaravelSpectrum\Tests\Unit;
 
-use LaravelPrism\Analyzers\ResourceAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\Fixtures\BooleanTestResource;
-use LaravelPrism\Tests\Fixtures\CollectionTestResource;
-use LaravelPrism\Tests\Fixtures\DateTestResource;
-use LaravelPrism\Tests\Fixtures\NestedTestResource;
-use LaravelPrism\Tests\Fixtures\UserResource;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\ResourceAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\Fixtures\BooleanTestResource;
+use LaravelSpectrum\Tests\Fixtures\CollectionTestResource;
+use LaravelSpectrum\Tests\Fixtures\DateTestResource;
+use LaravelSpectrum\Tests\Fixtures\NestedTestResource;
+use LaravelSpectrum\Tests\Fixtures\UserResource;
+use LaravelSpectrum\Tests\TestCase;
 use Tests\Unit\Analyzers\Fixtures\ConditionalFieldsResource;
 use Tests\Unit\Analyzers\Fixtures\DateFormattingResource;
 use Tests\Unit\Analyzers\Fixtures\MethodChainResource;

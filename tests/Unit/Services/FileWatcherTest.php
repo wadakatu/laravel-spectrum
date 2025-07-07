@@ -1,8 +1,8 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Services;
+namespace LaravelSpectrum\Tests\Unit\Services;
 
-use LaravelPrism\Services\FileWatcher;
+use LaravelSpectrum\Services\FileWatcher;
 use Orchestra\Testbench\TestCase;
 
 class FileWatcherTest extends TestCase
@@ -15,7 +15,7 @@ class FileWatcherTest extends TestCase
     {
         parent::setUp();
         $this->watcher = new FileWatcher;
-        $this->tempDir = sys_get_temp_dir().'/prism_watcher_test_'.uniqid();
+        $this->tempDir = sys_get_temp_dir().'/spectrum_watcher_test_'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

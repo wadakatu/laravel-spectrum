@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Generators;
+namespace LaravelSpectrum\Tests\Unit\Generators;
 
-use LaravelPrism\Generators\ErrorResponseGenerator;
-use LaravelPrism\Generators\ValidationMessageGenerator;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Generators\ErrorResponseGenerator;
+use LaravelSpectrum\Generators\ValidationMessageGenerator;
+use LaravelSpectrum\Tests\TestCase;
 
 class ErrorResponseGeneratorTest extends TestCase
 {

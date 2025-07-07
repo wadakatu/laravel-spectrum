@@ -1,16 +1,16 @@
 <?php
 
-namespace LaravelPrism\Console;
+namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use LaravelPrism\Analyzers\RouteAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Generators\OpenApiGenerator;
+use LaravelSpectrum\Analyzers\RouteAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Generators\OpenApiGenerator;
 
 class GenerateDocsCommand extends Command
 {
-    protected $signature = 'prism:generate 
+    protected $signature = 'spectrum:generate 
                             {--format=json : Output format (json|yaml)}
                             {--output= : Output file path}
                             {--no-cache : Disable cache}
@@ -44,7 +44,7 @@ class GenerateDocsCommand extends Command
         }
 
         if ($this->option('no-cache')) {
-            config(['prism.cache.enabled' => false]);
+            config(['spectrum.cache.enabled' => false]);
         }
 
         $startTime = microtime(true);
@@ -54,7 +54,7 @@ class GenerateDocsCommand extends Command
         $routes = $this->routeAnalyzer->analyze();
 
         if (empty($routes)) {
-            $this->warn('No API routes found. Make sure your routes match the patterns in config/prism.php');
+            $this->warn('No API routes found. Make sure your routes match the patterns in config/spectrum.php');
 
             return 1;
         }
@@ -95,7 +95,7 @@ class GenerateDocsCommand extends Command
     {
         $format = $this->option('format');
 
-        return storage_path("app/prism/openapi.{$format}");
+        return storage_path("app/spectrum/openapi.{$format}");
     }
 
     protected function formatOutput(array $openapi, string $format): string

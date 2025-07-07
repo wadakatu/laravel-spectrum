@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase;
@@ -14,7 +14,7 @@ class WatchCommandIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        $this->tempDir = sys_get_temp_dir().'/prism_watch_test_'.uniqid();
+        $this->tempDir = sys_get_temp_dir().'/spectrum_watch_test_'.uniqid();
         File::makeDirectory($this->tempDir, 0777, true, true);
         File::makeDirectory($this->tempDir.'/app/Http/Controllers', 0777, true, true);
         File::makeDirectory($this->tempDir.'/app/Http/Requests', 0777, true, true);
@@ -22,7 +22,7 @@ class WatchCommandIntegrationTest extends TestCase
 
         // Set up config
         config([
-            'prism.watch.paths' => [
+            'spectrum.watch.paths' => [
                 $this->tempDir.'/app/Http/Controllers',
                 $this->tempDir.'/app/Http/Requests',
                 $this->tempDir.'/routes',

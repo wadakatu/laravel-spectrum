@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Analyzers;
+namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use LaravelPrism\Cache\DocumentationCache;
+use LaravelSpectrum\Cache\DocumentationCache;
 
 class RouteAnalyzer
 {
@@ -74,7 +74,7 @@ class RouteAnalyzer
     protected function isApiRoute($route): bool
     {
         $uri = $route->uri();
-        $configPatterns = config('prism.route_patterns', ['api/*']);
+        $configPatterns = config('spectrum.route_patterns', ['api/*']);
 
         foreach ($configPatterns as $pattern) {
             if (Str::is($pattern, $uri)) {

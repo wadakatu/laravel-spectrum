@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Tests\Fixtures;
+namespace LaravelSpectrum\Tests\Fixtures;
 
 use Illuminate\Foundation\Http\FormRequest;
 

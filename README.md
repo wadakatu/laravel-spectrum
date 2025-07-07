@@ -1,11 +1,11 @@
-# Laravel Prism
+# Laravel Spectrum
 
-[![Tests](https://github.com/wadakatu/laravel-prism/workflows/Tests/badge.svg)](https://github.com/wadakatu/laravel-prism/actions)
-[![Code Coverage](https://codecov.io/gh/wadakatu/laravel-prism/branch/main/graph/badge.svg)](https://codecov.io/gh/wadakatu/laravel-prism)
-[![Latest Stable Version](https://poser.pugx.org/wadakatu/laravel-prism/v)](https://packagist.org/packages/wadakatu/laravel-prism)
-[![Total Downloads](https://poser.pugx.org/wadakatu/laravel-prism/downloads)](https://packagist.org/packages/wadakatu/laravel-prism)
-[![License](https://poser.pugx.org/wadakatu/laravel-prism/license)](https://packagist.org/packages/wadakatu/laravel-prism)
-[![PHP Version Require](https://poser.pugx.org/wadakatu/laravel-prism/require/php)](https://packagist.org/packages/wadakatu/laravel-prism)
+[![Tests](https://github.com/wadakatu/laravel-spectrum/workflows/Tests/badge.svg)](https://github.com/wadakatu/laravel-spectrum/actions)
+[![Code Coverage](https://codecov.io/gh/wadakatu/laravel-spectrum/branch/main/graph/badge.svg)](https://codecov.io/gh/wadakatu/laravel-spectrum)
+[![Latest Stable Version](https://poser.pugx.org/wadakatu/laravel-spectrum/v)](https://packagist.org/packages/wadakatu/laravel-spectrum)
+[![Total Downloads](https://poser.pugx.org/wadakatu/laravel-spectrum/downloads)](https://packagist.org/packages/wadakatu/laravel-spectrum)
+[![License](https://poser.pugx.org/wadakatu/laravel-spectrum/license)](https://packagist.org/packages/wadakatu/laravel-spectrum)
+[![PHP Version Require](https://poser.pugx.org/wadakatu/laravel-spectrum/require/php)](https://packagist.org/packages/wadakatu/laravel-spectrum)
 
 > 🎯 **Zero-annotation API documentation generator for Laravel & Lumen**
 > 
@@ -68,13 +68,13 @@ Automatically detects and documents your API routes without any annotations or c
 
 ```bash
 # Generate your API documentation instantly
-php artisan prism:generate
+php artisan spectrum:generate
 
 # Watch mode for real-time updates
-php artisan prism:watch
+php artisan spectrum:watch
 ```
 
-![Laravel Prism Demo](https://user-images.githubusercontent.com/your-demo.gif)
+![Laravel Spectrum Demo](https://user-images.githubusercontent.com/your-demo.gif)
 
 ## 🔧 Requirements
 
@@ -85,7 +85,7 @@ php artisan prism:watch
 ## 📦 Installation
 
 ```bash
-composer require wadakatu/laravel-prism
+composer require wadakatu/laravel-spectrum
 ```
 
 That's it! No configuration needed to get started.
@@ -96,20 +96,20 @@ That's it! No configuration needed to get started.
 
 ```bash
 # Generate OpenAPI documentation
-php artisan prism:generate
+php artisan spectrum:generate
 
 # Generate in YAML format
-php artisan prism:generate --format=yaml
+php artisan spectrum:generate --format=yaml
 
 # Custom output path
-php artisan prism:generate --output=public/api-docs.json
+php artisan spectrum:generate --output=public/api-docs.json
 ```
 
 ### 2. Real-time Preview (Development)
 
 ```bash
 # Start the watcher with live reload
-php artisan prism:watch
+php artisan spectrum:watch
 
 # Visit http://localhost:8080 to see your documentation
 ```
@@ -252,13 +252,13 @@ Route::middleware('auth.apikey')->group(function () {
 Publish the configuration file for advanced customization:
 
 ```bash
-php artisan vendor:publish --tag=prism-config
+php artisan vendor:publish --tag=spectrum-config
 ```
 
 ### Configuration Options
 
 ```php
-// config/prism.php
+// config/spectrum.php
 return [
     // API Information
     'title' => env('APP_NAME', 'Laravel API'),
@@ -308,7 +308,7 @@ return [
     
     // Cache Configuration
     'cache' => [
-        'enabled' => env('PRISM_CACHE_ENABLED', true),
+        'enabled' => env('SPECTRUM_CACHE_ENABLED', true),
         'ttl' => 3600, // 1 hour
     ],
     
@@ -326,7 +326,7 @@ return [
 ### Custom Type Mappings
 
 ```php
-// config/prism.php
+// config/spectrum.php
 'type_mappings' => [
     'json' => ['type' => 'object'],
     'uuid' => ['type' => 'string', 'format' => 'uuid'],
@@ -398,7 +398,7 @@ class Handler extends ExceptionHandler
 php artisan route:list --path=api
 
 # Clear cache
-php artisan prism:clear-cache
+php artisan spectrum:clear-cache
 ```
 
 **Q: FormRequest validation rules not detected**
@@ -420,8 +420,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Setup development environment
-git clone https://github.com/wadakatu/laravel-prism.git
-cd laravel-prism
+git clone https://github.com/wadakatu/laravel-spectrum.git
+cd laravel-spectrum
 composer install
 
 # Run tests
@@ -443,5 +443,5 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 <p align="center">
   Made with ❤️ by Wadakatu
   <br>
-  <a href="https://github.com/wadakatu/laravel-prism">Star ⭐ this repo</a> if you find it helpful!
+  <a href="https://github.com/wadakatu/laravel-spectrum">Star ⭐ this repo</a> if you find it helpful!
 </p>

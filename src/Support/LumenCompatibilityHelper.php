@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Support;
+namespace LaravelSpectrum\Support;
 
 use Illuminate\Support\Facades\Route;
 
@@ -22,11 +22,11 @@ class LumenCompatibilityHelper
     {
         if (self::isLumen()) {
             // Lumenの場合、デフォルトでAPIルートのみ
-            return config('prism.route_patterns', ['*']);
+            return config('spectrum.route_patterns', ['*']);
         }
 
         // Laravelの場合
-        return config('prism.route_patterns', ['api/*']);
+        return config('spectrum.route_patterns', ['api/*']);
     }
 
     /**

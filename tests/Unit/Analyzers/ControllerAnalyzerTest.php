@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Analyzers;
+namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
-use LaravelPrism\Analyzers\ControllerAnalyzer;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\ControllerAnalyzer;
+use LaravelSpectrum\Tests\TestCase;
 
 class ControllerAnalyzerTest extends TestCase
 {

@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Analyzers;
+namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
-use LaravelPrism\Cache\DocumentationCache;
+use LaravelSpectrum\Cache\DocumentationCache;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;

@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Cache;
+namespace LaravelSpectrum\Cache;
 
 use Illuminate\Support\Facades\File;
 
@@ -12,8 +12,8 @@ class DocumentationCache
 
     public function __construct()
     {
-        $this->cacheDir = config('prism.cache.directory', storage_path('app/prism/cache'));
-        $this->enabled = config('prism.cache.enabled', true);
+        $this->cacheDir = config('spectrum.cache.directory', storage_path('app/spectrum/cache'));
+        $this->enabled = config('spectrum.cache.enabled', true);
 
         if ($this->enabled) {
             File::ensureDirectoryExists($this->cacheDir);
@@ -103,7 +103,7 @@ class DocumentationCache
         ];
 
         // カスタムルートファイルも含める
-        $customRoutes = config('prism.route_files', []);
+        $customRoutes = config('spectrum.route_files', []);
         $routeFiles = array_merge($routeFiles, $customRoutes);
 
         $existingFiles = array_filter($routeFiles, 'file_exists');

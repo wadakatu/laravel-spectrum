@@ -1,11 +1,11 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\Fixtures\Controllers\UserController;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
+use LaravelSpectrum\Tests\TestCase;
 
 class CacheCommandTest extends TestCase
 {
@@ -33,7 +33,7 @@ class CacheCommandTest extends TestCase
         $cache->remember('test_key', fn () => 'test_data');
 
         // Act
-        $this->artisan('prism:cache clear')
+        $this->artisan('spectrum:cache clear')
             ->expectsOutput('🧹 Clearing cache...')
             ->expectsOutput('✅ Cache cleared successfully')
             ->assertSuccessful();
@@ -52,7 +52,7 @@ class CacheCommandTest extends TestCase
         $cache->remember('key2', fn () => 'data2');
 
         // Act
-        $this->artisan('prism:cache stats')
+        $this->artisan('spectrum:cache stats')
             ->expectsOutput('📊 Cache Statistics')
             ->expectsOutput('==================')
             ->expectsOutput('Status: Enabled')
@@ -67,7 +67,7 @@ class CacheCommandTest extends TestCase
         Route::get('api/users', [UserController::class, 'index']);
 
         // Act
-        $this->artisan('prism:cache warm')
+        $this->artisan('spectrum:cache warm')
             ->expectsOutput('🔥 Warming cache...')
             ->expectsOutputToContain('✅ Cache warmed:')
             ->assertSuccessful();
@@ -80,7 +80,7 @@ class CacheCommandTest extends TestCase
     /** @test */
     public function it_shows_error_for_invalid_action()
     {
-        $this->artisan('prism:cache invalid')
+        $this->artisan('spectrum:cache invalid')
             ->expectsOutput('Invalid action. Use: clear, stats, or warm')
             ->assertFailed();
     }

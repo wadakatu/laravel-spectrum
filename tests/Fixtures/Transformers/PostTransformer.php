@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Tests\Fixtures\Transformers;
+namespace LaravelSpectrum\Tests\Fixtures\Transformers;
 
 use League\Fractal\TransformerAbstract;
 

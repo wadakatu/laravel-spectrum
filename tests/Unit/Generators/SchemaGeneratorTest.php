@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Generators;
+namespace LaravelSpectrum\Tests\Unit\Generators;
 
-use LaravelPrism\Generators\SchemaGenerator;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Generators\SchemaGenerator;
+use LaravelSpectrum\Tests\TestCase;
 
 class SchemaGeneratorTest extends TestCase
 {

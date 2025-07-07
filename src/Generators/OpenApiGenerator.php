@@ -1,13 +1,13 @@
 <?php
 
-namespace LaravelPrism\Generators;
+namespace LaravelSpectrum\Generators;
 
 use Illuminate\Support\Str;
-use LaravelPrism\Analyzers\AuthenticationAnalyzer;
-use LaravelPrism\Analyzers\ControllerAnalyzer;
-use LaravelPrism\Analyzers\FormRequestAnalyzer;
-use LaravelPrism\Analyzers\InlineValidationAnalyzer;
-use LaravelPrism\Analyzers\ResourceAnalyzer;
+use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
+use LaravelSpectrum\Analyzers\ControllerAnalyzer;
+use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 
 class OpenApiGenerator
 {
@@ -61,9 +61,9 @@ class OpenApiGenerator
         $openapi = [
             'openapi' => '3.0.0',
             'info' => [
-                'title' => config('prism.title', config('app.name').' API'),
-                'version' => config('prism.version', '1.0.0'),
-                'description' => config('prism.description', ''),
+                'title' => config('spectrum.title', config('app.name').' API'),
+                'version' => config('spectrum.version', '1.0.0'),
+                'description' => config('spectrum.description', ''),
             ],
             'servers' => [
                 [

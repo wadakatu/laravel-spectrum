@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Analyzers\AST\Visitors;
+namespace LaravelSpectrum\Analyzers\AST\Visitors;
 
 use PhpParser\Node;
 use PhpParser\NodeTraverser;

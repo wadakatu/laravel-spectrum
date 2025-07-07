@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\TestCase;
 
 class AuthenticationIntegrationTest extends TestCase
 {
@@ -74,7 +74,7 @@ class AuthenticationIntegrationTest extends TestCase
         });
 
         // OAuth2設定
-        config(['prism.authentication.oauth2' => [
+        config(['spectrum.authentication.oauth2' => [
             'authorization_url' => 'https://example.com/oauth/authorize',
             'token_url' => 'https://example.com/oauth/token',
             'scopes' => [

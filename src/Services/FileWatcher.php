@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Services;
+namespace LaravelSpectrum\Services;
 
 use Symfony\Component\Finder\Finder;
 use Workerman\Timer;

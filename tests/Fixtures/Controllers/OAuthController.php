@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Tests\Fixtures\Controllers;
+namespace LaravelSpectrum\Tests\Fixtures\Controllers;
 
 use Illuminate\Http\JsonResponse;
 

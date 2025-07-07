@@ -1,8 +1,8 @@
 <?php
 
-namespace LaravelPrism\Analyzers;
+namespace LaravelSpectrum\Analyzers;
 
-use LaravelPrism\Support\AuthenticationDetector;
+use LaravelSpectrum\Support\AuthenticationDetector;
 
 class AuthenticationAnalyzer
 {
@@ -65,7 +65,7 @@ class AuthenticationAnalyzer
      */
     public function loadCustomSchemes(): void
     {
-        $customSchemes = config('prism.authentication.custom_schemes', []);
+        $customSchemes = config('spectrum.authentication.custom_schemes', []);
 
         foreach ($customSchemes as $middleware => $scheme) {
             AuthenticationDetector::addCustomScheme($middleware, $scheme);
@@ -77,7 +77,7 @@ class AuthenticationAnalyzer
      */
     public function getGlobalAuthentication(): ?array
     {
-        $globalAuth = config('prism.authentication.global');
+        $globalAuth = config('spectrum.authentication.global');
 
         if (! $globalAuth || ! $globalAuth['enabled']) {
             return null;
@@ -94,7 +94,7 @@ class AuthenticationAnalyzer
      */
     public function getPatternBasedAuthentication(string $uri): ?array
     {
-        $patterns = config('prism.authentication.patterns', []);
+        $patterns = config('spectrum.authentication.patterns', []);
 
         foreach ($patterns as $pattern => $auth) {
             if (\Illuminate\Support\Str::is($pattern, $uri)) {

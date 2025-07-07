@@ -1,14 +1,14 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
-use LaravelPrism\Analyzers\ControllerAnalyzer;
-use LaravelPrism\Analyzers\FormRequestAnalyzer;
-use LaravelPrism\Analyzers\InlineValidationAnalyzer;
-use LaravelPrism\Generators\OpenApiGenerator;
-use LaravelPrism\Support\LumenCompatibilityHelper;
-use LaravelPrism\Support\TypeInference;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\ControllerAnalyzer;
+use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Support\LumenCompatibilityHelper;
+use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Tests\TestCase;
 
 class LumenCompatibilityTest extends TestCase
 {
@@ -22,7 +22,7 @@ class LumenCompatibilityTest extends TestCase
     /** @test */
     public function it_returns_correct_route_patterns_for_laravel()
     {
-        config(['prism.route_patterns' => ['api/*']]);
+        config(['spectrum.route_patterns' => ['api/*']]);
 
         $patterns = LumenCompatibilityHelper::getRoutePatterns();
 

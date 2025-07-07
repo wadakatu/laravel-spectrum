@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Analyzers;
+namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
-use LaravelPrism\Analyzers\AuthenticationAnalyzer;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
+use LaravelSpectrum\Tests\TestCase;
 
 class AuthenticationAnalyzerTest extends TestCase
 {
@@ -78,7 +78,7 @@ class AuthenticationAnalyzerTest extends TestCase
     /** @test */
     public function it_loads_custom_schemes_from_config()
     {
-        config(['prism.authentication.custom_schemes' => [
+        config(['spectrum.authentication.custom_schemes' => [
             'jwt-auth' => [
                 'type' => 'http',
                 'scheme' => 'bearer',
@@ -104,7 +104,7 @@ class AuthenticationAnalyzerTest extends TestCase
     /** @test */
     public function it_gets_global_authentication_when_enabled()
     {
-        config(['prism.authentication.global' => [
+        config(['spectrum.authentication.global' => [
             'enabled' => true,
             'scheme' => [
                 'type' => 'http',
@@ -125,7 +125,7 @@ class AuthenticationAnalyzerTest extends TestCase
     /** @test */
     public function it_returns_null_when_global_authentication_is_disabled()
     {
-        config(['prism.authentication.global' => [
+        config(['spectrum.authentication.global' => [
             'enabled' => false,
         ]]);
 

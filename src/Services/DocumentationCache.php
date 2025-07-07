@@ -1,12 +1,12 @@
 <?php
 
-namespace LaravelPrism\Services;
+namespace LaravelSpectrum\Services;
 
 use Illuminate\Support\Facades\Cache;
 
 class DocumentationCache
 {
-    private string $prefix = 'prism:';
+    private string $prefix = 'spectrum:';
 
     private int $ttl = 3600; // 1 hour
 
@@ -27,7 +27,7 @@ class DocumentationCache
 
     public function flush(): bool
     {
-        // Clear all prism cache entries
+        // Clear all spectrum cache entries
         return Cache::flush();
     }
 
