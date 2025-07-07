@@ -38,9 +38,9 @@ class LumenCompatibilityHelper
     {
         if (self::isLumen()) {
             // Lumenの場合
+            /** @var mixed $app */
             $app = app();
 
-            // @phpstan-ignore-next-line
             return $app->router->getRoutes();
         }
 
