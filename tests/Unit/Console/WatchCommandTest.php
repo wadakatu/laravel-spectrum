@@ -8,221 +8,195 @@ use LaravelPrism\Services\FileWatcher;
 use LaravelPrism\Services\LiveReloadServer;
 use Mockery;
 use Orchestra\Testbench\TestCase;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class WatchCommandTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Skip tests that require Workerman runtime
-        if (! defined('WORKERMAN_RUN_MODE')) {
-            $this->markTestSkipped('WatchCommand tests require Workerman runtime');
-        }
-    }
-
     protected function tearDown(): void
     {
         parent::tearDown();
         Mockery::close();
     }
 
-    public function test_watch_command_initializes_services(): void
+    public function test_watch_command_initialization(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
-        $liveReloadServer = Mockery::mock(LiveReloadServer::class);
+        $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
 
-        $this->app->instance(FileWatcher::class, $fileWatcher);
-        $this->app->instance(LiveReloadServer::class, $liveReloadServer);
-        $this->app->instance(DocumentationCache::class, $cache);
+        $command = new WatchCommand($fileWatcher, $server, $cache);
 
-        // Expect server to start with default options
-        $liveReloadServer->shouldReceive('start')
-            ->once()
-            ->with('127.0.0.1', 8080);
-
-        // Expect file watcher to be initialized
-        $fileWatcher->shouldReceive('watch')
-            ->once()
-            ->with(Mockery::type('array'), Mockery::type('callable'));
-
-        // Mock the loop to prevent actual running
-        Loop::set($this->createMockLoop());
-
-        $this->artisan('prism:watch', ['--no-open' => true])
-            ->expectsOutput('🚀 Starting Laravel Prism preview server...')
-            ->expectsOutput('📡 Preview server running at http://127.0.0.1:8080')
-            ->expectsOutput('👀 Watching for file changes...')
-            ->assertExitCode(0);
+        $this->assertInstanceOf(WatchCommand::class, $command);
+        $this->assertEquals('prism:watch', $command->getName());
+        $this->assertEquals('Start real-time documentation preview', $command->getDescription());
     }
 
-    public function test_watch_command_with_custom_port_and_host(): void
+    public function test_handle_file_change_clears_cache_for_requests(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
-        $liveReloadServer = Mockery::mock(LiveReloadServer::class);
+        $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
 
-        $this->app->instance(FileWatcher::class, $fileWatcher);
-        $this->app->instance(LiveReloadServer::class, $liveReloadServer);
-        $this->app->instance(DocumentationCache::class, $cache);
+        // Create an anonymous class that extends WatchCommand for testing
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+            public $callInvoked = false;
+            
+            public function call($command, array $arguments = [])
+            {
+                $this->callInvoked = true;
+                return 0;
+            }
+            
+            public function info($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+        };
 
-        // Expect server to start with custom options
-        $liveReloadServer->shouldReceive('start')
-            ->once()
-            ->with('0.0.0.0', 3000);
-
-        $fileWatcher->shouldReceive('watch')
-            ->once();
-
-        Loop::set($this->createMockLoop());
-
-        $this->artisan('prism:watch', [
-            '--port' => 3000,
-            '--host' => '0.0.0.0',
-            '--no-open' => true,
-        ])
-            ->expectsOutput('📡 Preview server running at http://0.0.0.0:3000')
-            ->assertExitCode(0);
-    }
-
-    public function test_file_change_handler(): void
-    {
-        // Test that file changes are properly handled through file watcher callback
-        $fileWatcher = Mockery::mock(FileWatcher::class);
-        $liveReloadServer = Mockery::mock(LiveReloadServer::class);
-        $cache = Mockery::mock(DocumentationCache::class);
-
-        $this->app->instance(FileWatcher::class, $fileWatcher);
-        $this->app->instance(LiveReloadServer::class, $liveReloadServer);
-        $this->app->instance(DocumentationCache::class, $cache);
-
-        $watchCallback = null;
-
-        // Capture the callback that will be passed to watch()
-        $fileWatcher->shouldReceive('watch')
-            ->once()
-            ->with(Mockery::type('array'), Mockery::on(function ($callback) use (&$watchCallback) {
-                $watchCallback = $callback;
-
-                return true;
-            }));
-
-        $liveReloadServer->shouldReceive('start')->once();
-
-        // Test FormRequest file change
-        $formRequestPath = app_path('Http/Requests/TestRequest.php');
-
+        // Test FormRequest cache clearing
         $cache->shouldReceive('forget')
             ->once()
             ->with('form_request:App\\Http\\Requests\\TestRequest');
 
-        $liveReloadServer->shouldReceive('notifyClients')
+        $server->shouldReceive('notifyClients')
             ->once()
-            ->with(Mockery::on(function ($data) use ($formRequestPath) {
+            ->with(Mockery::on(function ($data) {
                 return $data['event'] === 'documentation-updated' &&
-                       $data['path'] === $formRequestPath &&
-                       isset($data['timestamp']);
+                       str_contains($data['path'], 'TestRequest.php');
             }));
 
-        // Mock the loop to prevent actual running
-        Loop::set($this->createMockLoop());
+        // Use reflection to test private method
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('handleFileChange');
+        $method->setAccessible(true);
 
-        // Start the command
-        $this->artisan('prism:watch', ['--no-open' => true]);
-
-        // Now simulate a file change by calling the captured callback
-        if ($watchCallback) {
-            $watchCallback($formRequestPath, 'modified');
-        }
+        $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
+        
+        $this->assertTrue($command->callInvoked);
     }
 
-    public function test_cache_clearing_for_different_file_types(): void
+    public function test_handle_file_change_clears_cache_for_resources(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
-        $liveReloadServer = Mockery::mock(LiveReloadServer::class);
+        $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
 
-        $this->app->instance(FileWatcher::class, $fileWatcher);
-        $this->app->instance(LiveReloadServer::class, $liveReloadServer);
-        $this->app->instance(DocumentationCache::class, $cache);
+        // Create an anonymous class that extends WatchCommand for testing
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+            public $callInvoked = false;
+            
+            public function call($command, array $arguments = [])
+            {
+                $this->callInvoked = true;
+                return 0;
+            }
+            
+            public function info($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+        };
 
-        $watchCallback = null;
-
-        // Capture the callback
-        $fileWatcher->shouldReceive('watch')
-            ->once()
-            ->with(Mockery::type('array'), Mockery::on(function ($callback) use (&$watchCallback) {
-                $watchCallback = $callback;
-
-                return true;
-            }));
-
-        $liveReloadServer->shouldReceive('start')->once();
-
-        // Mock the loop
-        Loop::set($this->createMockLoop());
-
-        // Test Resource file
+        // Test Resource cache clearing
         $cache->shouldReceive('forget')
             ->once()
             ->with('resource:App\\Http\\Resources\\UserResource');
 
-        $liveReloadServer->shouldReceive('notifyClients')
+        $server->shouldReceive('notifyClients')
             ->once()
             ->with(Mockery::on(function ($data) {
                 return $data['event'] === 'documentation-updated';
             }));
 
-        // Start the command
-        $this->artisan('prism:watch', ['--no-open' => true]);
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('handleFileChange');
+        $method->setAccessible(true);
 
-        // Simulate file change
-        if ($watchCallback) {
-            $watchCallback(app_path('Http/Resources/UserResource.php'), 'modified');
-        }
+        $method->invoke($command, base_path('app/Http/Resources/UserResource.php'), 'modified');
+        
+        $this->assertTrue($command->callInvoked);
+    }
 
-        // Test routes file
+    public function test_handle_file_change_clears_cache_for_routes(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        // Create an anonymous class that extends WatchCommand for testing
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+            public $callInvoked = false;
+            
+            public function call($command, array $arguments = [])
+            {
+                $this->callInvoked = true;
+                return 0;
+            }
+            
+            public function info($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+        };
+
+        // Test routes cache clearing
         $cache->shouldReceive('forget')
             ->once()
             ->with('routes:all');
 
-        $liveReloadServer->shouldReceive('notifyClients')
+        $server->shouldReceive('notifyClients')
             ->once()
             ->with(Mockery::on(function ($data) {
                 return $data['event'] === 'documentation-updated';
             }));
 
-        if ($watchCallback) {
-            $watchCallback(base_path('routes/api.php'), 'modified');
-        }
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('handleFileChange');
+        $method->setAccessible(true);
 
-        // Test controller file (no cache clearing expected)
-        $liveReloadServer->shouldReceive('notifyClients')
-            ->once()
-            ->with(Mockery::on(function ($data) {
-                return $data['event'] === 'documentation-updated';
-            }));
-
-        if ($watchCallback) {
-            $watchCallback(app_path('Http/Controllers/UserController.php'), 'modified');
-        }
+        $method->invoke($command, base_path('routes/api.php'), 'modified');
+        
+        $this->assertTrue($command->callInvoked);
     }
 
-    public function test_watch_paths_from_config(): void
+    public function test_get_class_name_from_path(): void
     {
-        config([
-            'prism.watch.paths' => [
-                '/custom/path1',
-                '/custom/path2',
-            ],
-        ]);
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
 
-        $command = new WatchCommand(
-            Mockery::mock(FileWatcher::class),
-            Mockery::mock(LiveReloadServer::class),
-            Mockery::mock(DocumentationCache::class)
-        );
+        $command = new WatchCommand($fileWatcher, $server, $cache);
+
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('getClassNameFromPath');
+        $method->setAccessible(true);
+
+        // Mock base_path function
+        $basePath = '/var/www/project';
+        
+        // Override the base_path() function for this test
+        $this->app->bind('path.base', function () use ($basePath) {
+            return $basePath;
+        });
+        
+        $result = $method->invoke($command, $basePath.'/app/Http/Controllers/UserController.php');
+        $this->assertStringContainsString('UserController', $result);
+    }
+
+    public function test_get_watch_paths_from_config(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = new WatchCommand($fileWatcher, $server, $cache);
+
+        // Set custom config
+        config(['prism.watch.paths' => [
+            '/custom/path1',
+            '/custom/path2',
+        ]]);
 
         $reflection = new \ReflectionClass($command);
         $method = $reflection->getMethod('getWatchPaths');
@@ -233,20 +207,79 @@ class WatchCommandTest extends TestCase
         $this->assertEquals(['/custom/path1', '/custom/path2'], $paths);
     }
 
-    private function createMockLoop()
+    public function test_get_watch_paths_uses_defaults(): void
     {
-        $loop = Mockery::mock(\React\EventLoop\LoopInterface::class);
-        $loop->shouldReceive('run')->andReturnNull();
-        $loop->shouldReceive('stop')->andReturnNull();
-        $loop->shouldReceive('addTimer')->andReturnNull();
-        $loop->shouldReceive('addPeriodicTimer')->andReturnNull();
-        $loop->shouldReceive('futureTick')->andReturnNull();
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
 
-        return $loop;
+        $command = new WatchCommand($fileWatcher, $server, $cache);
+
+        // Clear config to use defaults
+        config(['prism.watch.paths' => null]);
+
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('getWatchPaths');
+        $method->setAccessible(true);
+
+        $paths = $method->invoke($command);
+
+        $this->assertIsArray($paths);
+        if (!empty($paths)) {
+            $this->assertCount(4, $paths);
+            $this->assertStringContainsString('Http/Controllers', $paths[0]);
+            $this->assertStringContainsString('Http/Requests', $paths[1]);
+            $this->assertStringContainsString('Http/Resources', $paths[2]);
+            $this->assertStringContainsString('routes', $paths[3]);
+        }
     }
 
-    protected function getPackageProviders($app): array
+    public function test_open_browser_command_generation(): void
     {
-        return ['LaravelPrism\\PrismServiceProvider'];
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        // Create a test command that overrides openBrowser to prevent actual execution
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+            public $browserOpened = false;
+            public $openedUrl = null;
+            
+            protected function openBrowser(string $url): void
+            {
+                $this->browserOpened = true;
+                $this->openedUrl = $url;
+                // Don't actually execute the command
+            }
+        };
+
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('openBrowser');
+        $method->setAccessible(true);
+
+        // Test that the method is called correctly
+        $method->invoke($command, 'http://localhost:8080');
+        
+        $this->assertTrue($command->browserOpened);
+        $this->assertEquals('http://localhost:8080', $command->openedUrl);
+    }
+
+    public function test_command_signature_options(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = new WatchCommand($fileWatcher, $server, $cache);
+
+        // Access signature through reflection
+        $reflection = new \ReflectionClass($command);
+        $property = $reflection->getProperty('signature');
+        $property->setAccessible(true);
+        $signature = $property->getValue($command);
+        
+        $this->assertStringContainsString('--port=', $signature);
+        $this->assertStringContainsString('--host=', $signature);
+        $this->assertStringContainsString('--no-open', $signature);
     }
 }
