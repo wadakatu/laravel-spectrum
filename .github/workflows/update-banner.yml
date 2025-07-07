@@ -5,6 +5,9 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-banner:
     runs-on: ubuntu-latest
@@ -12,7 +15,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
+        # Use the default GITHUB_TOKEN for authentication
         token: ${{ secrets.GITHUB_TOKEN }}
+        # Checkout the default branch
+        ref: ${{ github.event.repository.default_branch }}
+        # Fetch full history to avoid detached HEAD
+        fetch-depth: 0
     
     - name: Get latest release version
       id: get_version
@@ -24,10 +32,16 @@ jobs:
       run: |
         sed -i "s|<text x=\"100\" y=\"250\"[^>]*>[^<]*</text>|<text x=\"100\" y=\"250\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"16\" fill=\"#00FF00\">${{ steps.get_version.outputs.VERSION }}</text>|g" assets/banner.svg
     
-    - name: Commit changes
+    - name: Commit and push changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add assets/banner.svg
-        git diff --staged --quiet || git commit -m "chore: update banner version to ${{ steps.get_version.outputs.VERSION }}"
-        git push
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # Check if there are changes
+        if [[ -n $(git status --porcelain assets/banner.svg) ]]; then
+          git add assets/banner.svg
+          git commit -m "chore: update banner version to ${{ steps.get_version.outputs.VERSION }}"
+          git push
+        else
+          echo "No changes to commit"
+        fi
