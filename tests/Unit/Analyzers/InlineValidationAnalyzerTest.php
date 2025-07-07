@@ -193,7 +193,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals('name', $nameParam['name']);
         $this->assertEquals('string', $nameParam['type']);
         $this->assertTrue($nameParam['required']);
-        $this->assertEquals(255, $nameParam['maximum']);
+        $this->assertEquals(255, $nameParam['maxLength']);
         $this->assertStringContainsString('Full Name', $nameParam['description']);
 
         // Check age parameter

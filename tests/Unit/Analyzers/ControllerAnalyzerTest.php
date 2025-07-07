@@ -12,7 +12,7 @@ class ControllerAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new ControllerAnalyzer;
+        $this->analyzer = app(ControllerAnalyzer::class);
     }
 
     /** @test */
