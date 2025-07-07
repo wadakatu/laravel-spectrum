@@ -1,5 +1,9 @@
 # Laravel Spectrum
 
+<p align="center">
+  <img src="assets/banner.svg" alt="Laravel Spectrum Banner" width="100%">
+</p>
+
 [![Tests](https://github.com/wadakatu/laravel-spectrum/workflows/Tests/badge.svg)](https://github.com/wadakatu/laravel-spectrum/actions)
 [![Code Coverage](https://codecov.io/gh/wadakatu/laravel-spectrum/branch/main/graph/badge.svg)](https://codecov.io/gh/wadakatu/laravel-spectrum)
 [![Latest Stable Version](https://poser.pugx.org/wadakatu/laravel-spectrum/v)](https://packagist.org/packages/wadakatu/laravel-spectrum)
