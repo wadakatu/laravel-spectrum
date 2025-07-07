@@ -41,13 +41,25 @@ jobs:
     - name: Check current version in banner
       id: check_current
       run: |
-        # Extract current version from banner
-        CURRENT_VERSION=$(grep -oP '(?<=<text[^>]*>)[^<]*(?=</text>)' assets/banner.svg | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+        # Debug: Show the relevant line from banner
+        echo "Banner version line:"
+        grep '<text x="100" y="250"' assets/banner.svg || echo "Version line not found"
+        
+        # Extract current version from banner using sed
+        CURRENT_VERSION=$(sed -n 's/.*<text x="100" y="250"[^>]*>\([^<]*\)<\/text>.*/\1/p' assets/banner.svg | head -1)
+        
+        # If empty, try to find any version pattern
+        if [ -z "$CURRENT_VERSION" ]; then
+          echo "Version not found at expected location, searching for v*.*.* pattern..."
+          CURRENT_VERSION=$(grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' assets/banner.svg | head -1 || echo "v0.0.0")
+        fi
+        
         echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "Current version in banner: $CURRENT_VERSION"
+        echo "New version will be: ${{ steps.get_version.outputs.VERSION }}"
     
     - name: Update banner and create PR
-      if: steps.check_current.outputs.CURRENT_VERSION != steps.get_version.outputs.VERSION
+      if: ${{ steps.check_current.outputs.CURRENT_VERSION != steps.get_version.outputs.VERSION }}
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -92,14 +104,10 @@ jobs:
       if: always()
       continue-on-error: true
       run: |
-        # Delete branches older than 7 days
-        git for-each-ref --format='%(refname:short) %(committerdate:unix)' refs/remotes/origin | \
-        grep 'update-banner-' | \
-        while read branch timestamp; do
-          branch_name=$(echo $branch | sed 's/origin\///')
-          age_days=$(( ($(date +%s) - $timestamp) / 86400 ))
-          if [ $age_days -gt 7 ]; then
-            echo "Deleting old branch: $branch_name (age: $age_days days)"
-            git push origin --delete "$branch_name" || true
-          fi
+        # List and delete old update-banner branches
+        gh api repos/${{ github.repository }}/branches --paginate | \
+        jq -r '.[] | select(.name | startswith("update-banner-")) | .name' | \
+        while read branch; do
+          echo "Deleting old branch: $branch"
+          git push origin --delete "$branch" || true
         done
