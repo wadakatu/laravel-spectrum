@@ -59,6 +59,6 @@ class WatchCommandIntegrationTest extends TestCase
 
     protected function getPackageProviders($app): array
     {
-        return ['LaravelPrism\\PrismServiceProvider'];
+        return ['LaravelSpectrum\\SpectrumServiceProvider'];
     }
 }
