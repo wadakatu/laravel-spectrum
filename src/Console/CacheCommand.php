@@ -1,16 +1,16 @@
 <?php
 
-namespace LaravelPrism\Console;
+namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
-use LaravelPrism\Cache\DocumentationCache;
+use LaravelSpectrum\Cache\DocumentationCache;
 
 class CacheCommand extends Command
 {
-    protected $signature = 'prism:cache
+    protected $signature = 'spectrum:cache
                             {action : Action to perform (clear|stats|warm)}';
 
-    protected $description = 'Manage Laravel Prism cache';
+    protected $description = 'Manage Laravel Spectrum cache';
 
     private DocumentationCache $cache;
 
@@ -73,7 +73,7 @@ class CacheCommand extends Command
         // キャッシュをクリアしてから再生成
         $this->cache->clear();
 
-        $this->call('prism:generate', [
+        $this->call('spectrum:generate', [
             '--quiet' => true,
         ]);
 

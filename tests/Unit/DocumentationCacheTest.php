@@ -1,11 +1,11 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit;
+namespace LaravelSpectrum\Tests\Unit;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\File;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\TestCase;
 
 class DocumentationCacheTest extends TestCase
 {
@@ -134,7 +134,7 @@ class DocumentationCacheTest extends TestCase
     /** @test */
     public function it_handles_corrupted_cache_gracefully()
     {
-        $cacheDir = config('prism.cache.directory', storage_path('app/prism/cache'));
+        $cacheDir = config('spectrum.cache.directory', storage_path('app/spectrum/cache'));
         $cacheFile = $cacheDir.'/'.sha1('corrupt_key').'.cache';
 
         // 破損したキャッシュファイルを作成
@@ -158,7 +158,7 @@ class DocumentationCacheTest extends TestCase
     public function it_respects_cache_enabled_setting()
     {
         // キャッシュを無効化
-        config(['prism.cache.enabled' => false]);
+        config(['spectrum.cache.enabled' => false]);
         $cache = new DocumentationCache;
 
         $callCount = 0;

@@ -3,10 +3,10 @@
 namespace Tests\Unit\Analyzers\AST;
 
 use Illuminate\Foundation\Http\FormRequest;
-use LaravelPrism\Analyzers\FormRequestAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Support\TypeInference;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Tests\TestCase;
 
 class ConditionalRulesTest extends TestCase
 {

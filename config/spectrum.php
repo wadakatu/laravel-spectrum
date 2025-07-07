@@ -151,7 +151,7 @@ return [
         | The directory where cache files will be stored.
         |
         */
-        'directory' => storage_path('app/prism/cache'),
+        'directory' => storage_path('app/spectrum/cache'),
 
         /*
         |--------------------------------------------------------------------------

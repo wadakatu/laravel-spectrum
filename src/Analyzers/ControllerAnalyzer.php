@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Analyzers;
+namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
 use PhpParser\Node;

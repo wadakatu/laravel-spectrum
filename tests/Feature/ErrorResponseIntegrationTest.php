@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\TestCase;
 
 class ErrorResponseIntegrationTest extends TestCase
 {
@@ -22,8 +22,8 @@ class ErrorResponseIntegrationTest extends TestCase
         app(DocumentationCache::class)->clear();
 
         // テスト後のクリーンアップ
-        if (\Illuminate\Support\Facades\File::exists(storage_path('app/prism'))) {
-            \Illuminate\Support\Facades\File::deleteDirectory(storage_path('app/prism'));
+        if (\Illuminate\Support\Facades\File::exists(storage_path('app/spectrum'))) {
+            \Illuminate\Support\Facades\File::deleteDirectory(storage_path('app/spectrum'));
         }
 
         parent::tearDown();
@@ -33,16 +33,16 @@ class ErrorResponseIntegrationTest extends TestCase
     public function it_includes_error_responses_in_generated_openapi_spec()
     {
         // テスト用のルートを作成
-        Route::post('api/users', 'LaravelPrism\Tests\Fixtures\Controllers\UserController@store')->name('users.store');
-        Route::get('api/users/{user}', 'LaravelPrism\Tests\Fixtures\Controllers\UserController@show')
+        Route::post('api/users', 'LaravelSpectrum\Tests\Fixtures\Controllers\UserController@store')->name('users.store');
+        Route::get('api/users/{user}', 'LaravelSpectrum\Tests\Fixtures\Controllers\UserController@show')
             ->middleware('auth:sanctum')
             ->name('users.show');
 
         // OpenAPI仕様を生成
-        $this->artisan('prism:generate')->assertExitCode(0);
+        $this->artisan('spectrum:generate')->assertExitCode(0);
 
         // 生成されたファイルを読み込む
-        $openapi = json_decode(file_get_contents(storage_path('app/prism/openapi.json')), true);
+        $openapi = json_decode(file_get_contents(storage_path('app/spectrum/openapi.json')), true);
 
         // POST /api/users のエラーレスポンスを確認
         $postResponses = $openapi['paths']['/api/users']['post']['responses'];

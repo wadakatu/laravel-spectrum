@@ -1,11 +1,11 @@
 <?php
 
-namespace LaravelPrism\Analyzers;
+namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Support\TypeInference;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;

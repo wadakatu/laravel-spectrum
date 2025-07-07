@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Generators;
+namespace LaravelSpectrum\Generators;
 
 use Illuminate\Support\Str;
-use LaravelPrism\Support\ValidationRules;
+use LaravelSpectrum\Support\ValidationRules;
 
 class ValidationMessageGenerator
 {

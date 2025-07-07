@@ -1,5 +1,5 @@
 {
-    "name": "wadakatu/laravel-prism",
+    "name": "wadakatu/laravel-spectrum",
     "description": "Zero-annotation API documentation generator for Laravel and Lumen",
     "keywords": [
         "laravel",
@@ -19,12 +19,12 @@
             "email": "wadakatukoyo330@gmail.com"
         }
     ],
-    "homepage": "https://github.com/wadakatu/laravel-prism",
+    "homepage": "https://github.com/wadakatu/laravel-spectrum",
     "support": {
-        "issues": "https://github.com/wadakatu/laravel-prism/issues",
-        "source": "https://github.com/wadakatu/laravel-prism",
-        "docs": "https://github.com/wadakatu/laravel-prism#readme",
-        "changelog": "https://github.com/wadakatu/laravel-prism/releases"
+        "issues": "https://github.com/wadakatu/laravel-spectrum/issues",
+        "source": "https://github.com/wadakatu/laravel-spectrum",
+        "docs": "https://github.com/wadakatu/laravel-spectrum#readme",
+        "changelog": "https://github.com/wadakatu/laravel-spectrum/releases"
     },
     "require": {
         "php": "^8.1",
@@ -43,12 +43,12 @@
     },
     "autoload": {
         "psr-4": {
-            "LaravelPrism\\": "src/"
+            "LaravelSpectrum\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "LaravelPrism\\Tests\\": "tests/",
+            "LaravelSpectrum\\Tests\\": "tests/",
             "Tests\\Unit\\Analyzers\\Fixtures\\": "tests/Unit/Analyzers/Fixtures/",
             "League\\Fractal\\": "tests/Fixtures/vendor/league/fractal/"
         }
@@ -73,7 +73,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "LaravelPrism\\PrismServiceProvider"
+                "LaravelSpectrum\\SpectrumServiceProvider"
             ]
         }
     },

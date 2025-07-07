@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Support;
+namespace LaravelSpectrum\Tests\Unit\Support;
 
-use LaravelPrism\Support\AuthenticationDetector;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Support\AuthenticationDetector;
+use LaravelSpectrum\Tests\TestCase;
 
 class AuthenticationDetectorTest extends TestCase
 {

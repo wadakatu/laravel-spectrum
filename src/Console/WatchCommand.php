@@ -1,16 +1,16 @@
 <?php
 
-namespace LaravelPrism\Console;
+namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
-use LaravelPrism\Services\DocumentationCache;
-use LaravelPrism\Services\FileWatcher;
-use LaravelPrism\Services\LiveReloadServer;
+use LaravelSpectrum\Services\DocumentationCache;
+use LaravelSpectrum\Services\FileWatcher;
+use LaravelSpectrum\Services\LiveReloadServer;
 use Workerman\Worker;
 
 class WatchCommand extends Command
 {
-    protected $signature = 'prism:watch
+    protected $signature = 'spectrum:watch
                             {--port=8080 : Port for the preview server}
                             {--host=127.0.0.1 : Host for the preview server}
                             {--no-open : Don\'t open browser automatically}';
@@ -39,7 +39,7 @@ class WatchCommand extends Command
         $this->info('🚀 Starting Laravel Prism preview server...');
 
         // Initial generation
-        $this->call('prism:generate', ['--quiet' => true]);
+        $this->call('spectrum:generate', ['--quiet' => true]);
 
         // Open browser
         if (! $this->option('no-open')) {
@@ -76,7 +76,7 @@ class WatchCommand extends Command
 
         // Regenerate (incremental)
         $startTime = microtime(true);
-        $this->call('prism:generate', ['--quiet' => true]);
+        $this->call('spectrum:generate', ['--quiet' => true]);
         $duration = round(microtime(true) - $startTime, 2);
 
         $this->info("✅ Documentation updated in {$duration}s");
@@ -91,7 +91,7 @@ class WatchCommand extends Command
 
     private function getWatchPaths(): array
     {
-        return config('prism.watch.paths', [
+        return config('spectrum.watch.paths', [
             app_path('Http/Controllers'),
             app_path('Http/Requests'),
             app_path('Http/Resources'),

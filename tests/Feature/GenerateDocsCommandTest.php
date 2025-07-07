@@ -1,12 +1,12 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\Fixtures\Controllers\UserController;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
+use LaravelSpectrum\Tests\TestCase;
 
 class GenerateDocsCommandTest extends TestCase
 {
@@ -21,8 +21,8 @@ class GenerateDocsCommandTest extends TestCase
     protected function tearDown(): void
     {
         // テスト後のクリーンアップ
-        if (File::exists(storage_path('app/prism'))) {
-            File::deleteDirectory(storage_path('app/prism'));
+        if (File::exists(storage_path('app/spectrum'))) {
+            File::deleteDirectory(storage_path('app/spectrum'));
         }
 
         // Clear cache after test
@@ -39,16 +39,16 @@ class GenerateDocsCommandTest extends TestCase
         Route::post('api/users', [UserController::class, 'store']);
 
         // Act
-        $this->artisan('prism:generate')
+        $this->artisan('spectrum:generate')
             ->expectsOutput('🔍 Analyzing routes...')
             ->expectsOutput('Found 2 API routes')
             ->expectsOutput('📝 Generating OpenAPI specification...')
             ->assertSuccessful();
 
         // Assert
-        $this->assertFileExists(storage_path('app/prism/openapi.json'));
+        $this->assertFileExists(storage_path('app/spectrum/openapi.json'));
 
-        $content = File::get(storage_path('app/prism/openapi.json'));
+        $content = File::get(storage_path('app/spectrum/openapi.json'));
         $openapi = json_decode($content, true);
 
         $this->assertEquals('3.0.0', $openapi['openapi']);
@@ -65,7 +65,7 @@ class GenerateDocsCommandTest extends TestCase
         app(DocumentationCache::class)->remember('test_key', fn () => 'test_data');
 
         // Act
-        $this->artisan('prism:generate --clear-cache')
+        $this->artisan('spectrum:generate --clear-cache')
             ->expectsOutput('🧹 Clearing cache...')
             ->expectsOutput('🔍 Analyzing routes...')
             ->assertSuccessful();
@@ -82,7 +82,7 @@ class GenerateDocsCommandTest extends TestCase
         Route::get('api/users', [UserController::class, 'index']);
 
         // Act
-        $this->artisan('prism:generate --no-cache')
+        $this->artisan('spectrum:generate --no-cache')
             ->expectsOutput('🔍 Analyzing routes...')
             ->doesntExpectOutput('💾 Cache:')
             ->assertSuccessful();
@@ -95,13 +95,13 @@ class GenerateDocsCommandTest extends TestCase
         Route::get('api/users', [UserController::class, 'index']);
 
         // Act
-        $this->artisan('prism:generate', ['--format' => 'yaml'])
+        $this->artisan('spectrum:generate', ['--format' => 'yaml'])
             ->assertSuccessful();
 
         // Assert
-        $this->assertFileExists(storage_path('app/prism/openapi.yaml'));
+        $this->assertFileExists(storage_path('app/spectrum/openapi.yaml'));
 
-        $content = File::get(storage_path('app/prism/openapi.yaml'));
+        $content = File::get(storage_path('app/spectrum/openapi.yaml'));
         $this->assertStringContainsString('openapi: 3.0.0', $content);
     }
 
@@ -113,7 +113,7 @@ class GenerateDocsCommandTest extends TestCase
         $customPath = storage_path('custom/api-docs.json');
 
         // Act
-        $this->artisan('prism:generate', ['--output' => $customPath])
+        $this->artisan('spectrum:generate', ['--output' => $customPath])
             ->assertSuccessful();
 
         // Assert
@@ -130,8 +130,8 @@ class GenerateDocsCommandTest extends TestCase
         // Arrange - No routes configured
 
         // Act
-        $this->artisan('prism:generate')
-            ->expectsOutput('No API routes found. Make sure your routes match the patterns in config/prism.php')
+        $this->artisan('spectrum:generate')
+            ->expectsOutput('No API routes found. Make sure your routes match the patterns in config/spectrum.php')
             ->assertFailed();
     }
 }

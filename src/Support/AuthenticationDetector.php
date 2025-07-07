@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Support;
+namespace LaravelSpectrum\Support;
 
 use Illuminate\Support\Str;
 

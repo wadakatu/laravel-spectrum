@@ -1,15 +1,15 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Analyzers\RouteAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Generators\OpenApiGenerator;
-use LaravelPrism\Tests\Fixtures\Controllers\ProfileController;
-use LaravelPrism\Tests\Fixtures\Controllers\UserController;
-use LaravelPrism\Tests\Fixtures\StoreUserRequest;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\RouteAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Tests\Fixtures\Controllers\ProfileController;
+use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
+use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
+use LaravelSpectrum\Tests\TestCase;
 use Mockery;
 
 class OpenApiGeneratorTest extends TestCase
@@ -120,9 +120,9 @@ class OpenApiGeneratorTest extends TestCase
     public function it_includes_api_info_and_servers()
     {
         // Arrange
-        config(['prism.title' => 'Test API']);
-        config(['prism.version' => '2.0.0']);
-        config(['prism.description' => 'Test API Description']);
+        config(['spectrum.title' => 'Test API']);
+        config(['spectrum.version' => '2.0.0']);
+        config(['spectrum.description' => 'Test API Description']);
         config(['app.url' => 'https://example.com']);
 
         Route::get('api/test', [UserController::class, 'index']);
@@ -157,10 +157,10 @@ class OpenApiGeneratorTest extends TestCase
 
     protected function mockControllerAnalysis(string $method, array $result): void
     {
-        $controllerAnalyzer = Mockery::mock('LaravelPrism\Analyzers\ControllerAnalyzer');
+        $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');
         $controllerAnalyzer->shouldReceive('analyze')
             ->andReturn($result);
 
-        $this->app->instance('LaravelPrism\Analyzers\ControllerAnalyzer', $controllerAnalyzer);
+        $this->app->instance('LaravelSpectrum\Analyzers\ControllerAnalyzer', $controllerAnalyzer);
     }
 }

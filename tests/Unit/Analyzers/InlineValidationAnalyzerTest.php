@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Analyzers;
+namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
-use LaravelPrism\Analyzers\InlineValidationAnalyzer;
-use LaravelPrism\Support\TypeInference;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Tests\TestCase;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;

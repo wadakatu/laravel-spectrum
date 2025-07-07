@@ -1,12 +1,12 @@
 <?php
 
-namespace LaravelPrism\Tests\Performance;
+namespace LaravelSpectrum\Tests\Performance;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Analyzers\RouteAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\Fixtures\Controllers\UserController;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\RouteAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
+use LaravelSpectrum\Tests\TestCase;
 
 class CachePerformanceTest extends TestCase
 {
@@ -36,7 +36,7 @@ class CachePerformanceTest extends TestCase
         }
 
         // キャッシュなしの時間を計測
-        config(['prism.cache.enabled' => false]);
+        config(['spectrum.cache.enabled' => false]);
         $analyzer = app(RouteAnalyzer::class);
 
         $startTime = microtime(true);
@@ -44,7 +44,7 @@ class CachePerformanceTest extends TestCase
         $withoutCache = microtime(true) - $startTime;
 
         // キャッシュありの時間を計測
-        config(['prism.cache.enabled' => true]);
+        config(['spectrum.cache.enabled' => true]);
         app()->forgetInstance(RouteAnalyzer::class);
         $analyzer = app(RouteAnalyzer::class);
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelPrism\Services;
+namespace LaravelSpectrum\Services;
 
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
@@ -45,7 +45,7 @@ class LiveReloadServer
                     'Content-Type' => 'text/html; charset=utf-8',
                 ], $this->getSwaggerUIHtml()));
             } elseif ($path === '/openapi.json') {
-                $jsonPath = storage_path('app/prism/openapi.json');
+                $jsonPath = storage_path('app/spectrum/openapi.json');
                 $json = file_exists($jsonPath) ? file_get_contents($jsonPath) : '{}';
 
                 $connection->send(new Response(200, [
@@ -96,8 +96,8 @@ class LiveReloadServer
     private function getSwaggerUIHtml(): string
     {
         // Check if we're in a Laravel app with view support
-        if (function_exists('view') && view()->exists('prism::live-preview')) {
-            return view('prism::live-preview', ['wsPort' => 8081])->render();
+        if (function_exists('view') && view()->exists('spectrum::live-preview')) {
+            return view('spectrum::live-preview', ['wsPort' => 8081])->render();
         }
 
         // Fallback HTML for testing

@@ -1,12 +1,12 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Analyzers;
+namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
-use LaravelPrism\Analyzers\FractalTransformerAnalyzer;
-use LaravelPrism\Tests\Fixtures\Transformers\ComplexTransformer;
-use LaravelPrism\Tests\Fixtures\Transformers\PostTransformer;
-use LaravelPrism\Tests\Fixtures\Transformers\UserTransformer;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer;
+use LaravelSpectrum\Tests\TestCase;
 
 class FractalTransformerAnalyzerTest extends TestCase
 {

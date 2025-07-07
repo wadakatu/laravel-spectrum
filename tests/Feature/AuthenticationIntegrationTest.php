@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Tests\Feature;
+namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\TestCase;
 
 class AuthenticationIntegrationTest extends TestCase
 {
@@ -29,14 +29,14 @@ class AuthenticationIntegrationTest extends TestCase
     {
         // テスト用のルートを作成
         Route::middleware(['auth:sanctum'])->group(function () {
-            Route::get('api/profile', '\\LaravelPrism\\Tests\\Fixtures\\Controllers\\ProfileController@show')->name('profile.show');
-            Route::put('api/profile', '\\LaravelPrism\\Tests\\Fixtures\\Controllers\\ProfileController@update')->name('profile.update');
+            Route::get('api/profile', '\\LaravelSpectrum\\Tests\\Fixtures\\Controllers\\ProfileController@show')->name('profile.show');
+            Route::put('api/profile', '\\LaravelSpectrum\\Tests\\Fixtures\\Controllers\\ProfileController@update')->name('profile.update');
         });
 
-        Route::get('api/public/posts', '\\LaravelPrism\\Tests\\Fixtures\\Controllers\\PostController@index')->name('posts.index');
+        Route::get('api/public/posts', '\\LaravelSpectrum\\Tests\\Fixtures\\Controllers\\PostController@index')->name('posts.index');
 
         Route::middleware(['auth:api'])->group(function () {
-            Route::get('api/admin/users', '\\LaravelPrism\\Tests\\Fixtures\\Controllers\\AdminController@users')
+            Route::get('api/admin/users', '\\LaravelSpectrum\\Tests\\Fixtures\\Controllers\\AdminController@users')
                 ->middleware('role:admin')
                 ->name('admin.users');
         });
@@ -70,11 +70,11 @@ class AuthenticationIntegrationTest extends TestCase
     {
         // Passport認証のルート
         Route::middleware(['passport'])->group(function () {
-            Route::get('api/oauth/test', '\\LaravelPrism\\Tests\\Fixtures\\Controllers\\OAuthController@test');
+            Route::get('api/oauth/test', '\\LaravelSpectrum\\Tests\\Fixtures\\Controllers\\OAuthController@test');
         });
 
         // OAuth2設定
-        config(['prism.authentication.oauth2' => [
+        config(['spectrum.authentication.oauth2' => [
             'authorization_url' => 'https://example.com/oauth/authorize',
             'token_url' => 'https://example.com/oauth/token',
             'scopes' => [

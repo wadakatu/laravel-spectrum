@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Analyzers;
+namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
-use LaravelPrism\Analyzers\ControllerAnalyzer;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\ControllerAnalyzer;
+use LaravelSpectrum\Tests\TestCase;
 
 class ControllerAnalyzerTest extends TestCase
 {
@@ -22,7 +22,7 @@ class ControllerAnalyzerTest extends TestCase
         $result = $this->analyzer->analyze($controller, 'show');
 
         $this->assertArrayHasKey('fractal', $result);
-        $this->assertEquals('LaravelPrism\Tests\Fixtures\Transformers\UserTransformer', $result['fractal']['transformer']);
+        $this->assertEquals('LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer', $result['fractal']['transformer']);
         $this->assertFalse($result['fractal']['collection']);
         $this->assertEquals('item', $result['fractal']['type']);
     }
@@ -34,7 +34,7 @@ class ControllerAnalyzerTest extends TestCase
         $result = $this->analyzer->analyze($controller, 'index');
 
         $this->assertArrayHasKey('fractal', $result);
-        $this->assertEquals('LaravelPrism\Tests\Fixtures\Transformers\UserTransformer', $result['fractal']['transformer']);
+        $this->assertEquals('LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer', $result['fractal']['transformer']);
         $this->assertTrue($result['fractal']['collection']);
         $this->assertEquals('collection', $result['fractal']['type']);
     }
@@ -46,7 +46,7 @@ class ControllerAnalyzerTest extends TestCase
         $result = $this->analyzer->analyze($controller, 'withIncludes');
 
         $this->assertArrayHasKey('fractal', $result);
-        $this->assertEquals('LaravelPrism\Tests\Fixtures\Transformers\PostTransformer', $result['fractal']['transformer']);
+        $this->assertEquals('LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer', $result['fractal']['transformer']);
         $this->assertTrue($result['fractal']['hasIncludes']);
     }
 
@@ -71,14 +71,14 @@ class TestFractalController
     {
         $user = User::find($id);
 
-        return fractal()->item($user, new \LaravelPrism\Tests\Fixtures\Transformers\UserTransformer);
+        return fractal()->item($user, new \LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer);
     }
 
     public function index()
     {
         $users = User::all();
 
-        return fractal()->collection($users, new \LaravelPrism\Tests\Fixtures\Transformers\UserTransformer);
+        return fractal()->collection($users, new \LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer);
     }
 
     public function withIncludes()
@@ -86,7 +86,7 @@ class TestFractalController
         $posts = Post::all();
 
         return fractal()
-            ->collection($posts, new \LaravelPrism\Tests\Fixtures\Transformers\PostTransformer)
+            ->collection($posts, new \LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer)
             ->parseIncludes(request()->get('include', ''))
             ->respond();
     }
@@ -97,7 +97,7 @@ class TestMixedController
     public function mixed()
     {
         if (request()->wantsJson()) {
-            return fractal()->item($user, new \LaravelPrism\Tests\Fixtures\Transformers\UserTransformer);
+            return fractal()->item($user, new \LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer);
         }
 
         return new UserResource($user);

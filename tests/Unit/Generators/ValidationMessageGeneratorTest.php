@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Generators;
+namespace LaravelSpectrum\Tests\Unit\Generators;
 
-use LaravelPrism\Generators\ValidationMessageGenerator;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Generators\ValidationMessageGenerator;
+use LaravelSpectrum\Tests\TestCase;
 
 class ValidationMessageGeneratorTest extends TestCase
 {

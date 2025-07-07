@@ -1,8 +1,8 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Services;
+namespace LaravelSpectrum\Tests\Unit\Services;
 
-use LaravelPrism\Services\LiveReloadServer;
+use LaravelSpectrum\Services\LiveReloadServer;
 use Orchestra\Testbench\TestCase;
 
 class LiveReloadServerTest extends TestCase

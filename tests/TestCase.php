@@ -1,10 +1,10 @@
 <?php
 
-namespace LaravelPrism\Tests;
+namespace LaravelSpectrum\Tests;
 
-use LaravelPrism\Analyzers\RouteAnalyzer;
-use LaravelPrism\Generators\OpenApiGenerator;
-use LaravelPrism\PrismServiceProvider;
+use LaravelSpectrum\Analyzers\RouteAnalyzer;
+use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\SpectrumServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -12,13 +12,13 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app)
     {
         return [
-            PrismServiceProvider::class,
+            SpectrumServiceProvider::class,
         ];
     }
 
     protected function defineEnvironment($app)
     {
-        $app['config']->set('prism.route_patterns', ['api/*']);
+        $app['config']->set('spectrum.route_patterns', ['api/*']);
     }
 
     protected function generateOpenApi(): array

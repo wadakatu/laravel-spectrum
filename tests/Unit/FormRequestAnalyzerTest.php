@@ -1,14 +1,14 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit;
+namespace LaravelSpectrum\Tests\Unit;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use LaravelPrism\Analyzers\FormRequestAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Support\TypeInference;
-use LaravelPrism\Tests\Fixtures\StoreUserRequest;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
+use LaravelSpectrum\Tests\TestCase;
 
 class FormRequestAnalyzerTest extends TestCase
 {
@@ -165,7 +165,7 @@ class FormRequestAnalyzerTest extends TestCase
     public function it_handles_rule_objects()
     {
         // Skip test if using file-based analyzer since it can't instantiate Rule objects
-        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelPrism\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
+        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
             $this->markTestSkipped('Current implementation cannot handle Rule objects');
         }
 
@@ -203,7 +203,7 @@ class FormRequestAnalyzerTest extends TestCase
     public function it_handles_dynamic_rules()
     {
         // Skip test if using file-based analyzer
-        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelPrism\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
+        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
             $this->markTestSkipped('Current implementation cannot handle dynamic rules');
         }
 
@@ -244,7 +244,7 @@ class FormRequestAnalyzerTest extends TestCase
         }
 
         // Skip test if using file-based analyzer
-        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelPrism\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
+        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
             $this->markTestSkipped('Current implementation cannot handle match expressions');
         }
 

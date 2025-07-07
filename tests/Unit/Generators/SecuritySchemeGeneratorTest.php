@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit\Generators;
+namespace LaravelSpectrum\Tests\Unit\Generators;
 
-use LaravelPrism\Generators\SecuritySchemeGenerator;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Generators\SecuritySchemeGenerator;
+use LaravelSpectrum\Tests\TestCase;
 
 class SecuritySchemeGeneratorTest extends TestCase
 {

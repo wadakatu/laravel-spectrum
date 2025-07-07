@@ -1,16 +1,16 @@
 <?php
 
-namespace LaravelPrism\Tests\Unit;
+namespace LaravelSpectrum\Tests\Unit;
 
 use Illuminate\Support\Facades\Route;
-use LaravelPrism\Analyzers\RouteAnalyzer;
-use LaravelPrism\Cache\DocumentationCache;
-use LaravelPrism\Tests\Fixtures\Controllers\CommentController;
-use LaravelPrism\Tests\Fixtures\Controllers\PageController;
-use LaravelPrism\Tests\Fixtures\Controllers\ProfileController;
-use LaravelPrism\Tests\Fixtures\Controllers\SearchController;
-use LaravelPrism\Tests\Fixtures\Controllers\UserController;
-use LaravelPrism\Tests\TestCase;
+use LaravelSpectrum\Analyzers\RouteAnalyzer;
+use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Tests\Fixtures\Controllers\CommentController;
+use LaravelSpectrum\Tests\Fixtures\Controllers\PageController;
+use LaravelSpectrum\Tests\Fixtures\Controllers\ProfileController;
+use LaravelSpectrum\Tests\Fixtures\Controllers\SearchController;
+use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
+use LaravelSpectrum\Tests\TestCase;
 
 class RouteAnalyzerTest extends TestCase
 {
@@ -69,7 +69,7 @@ class RouteAnalyzerTest extends TestCase
     public function it_filters_routes_by_configured_patterns()
     {
         // Arrange
-        config(['prism.route_patterns' => ['api/v1/*']]);
+        config(['spectrum.route_patterns' => ['api/v1/*']]);
         Route::get('api/v1/users', [UserController::class, 'index']);
         Route::get('api/v2/users', [UserController::class, 'index']);
 
