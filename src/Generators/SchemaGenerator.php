@@ -17,11 +17,40 @@ class SchemaGenerator
                 continue;
             }
 
-            $properties[$parameter['name']] = [
+            $property = [
                 'type' => $parameter['type'] ?? 'string',
-                'description' => $parameter['description'] ?? null,
-                'example' => $parameter['example'] ?? null,
             ];
+
+            // Add optional properties if they exist
+            if (isset($parameter['description'])) {
+                $property['description'] = $parameter['description'];
+            }
+            if (isset($parameter['example'])) {
+                $property['example'] = $parameter['example'];
+            }
+            if (isset($parameter['format'])) {
+                $property['format'] = $parameter['format'];
+            }
+            if (isset($parameter['enum'])) {
+                $property['enum'] = $parameter['enum'];
+            }
+            if (isset($parameter['minimum'])) {
+                $property['minimum'] = $parameter['minimum'];
+            }
+            if (isset($parameter['maximum'])) {
+                $property['maximum'] = $parameter['maximum'];
+            }
+            if (isset($parameter['minLength'])) {
+                $property['minLength'] = $parameter['minLength'];
+            }
+            if (isset($parameter['maxLength'])) {
+                $property['maxLength'] = $parameter['maxLength'];
+            }
+            if (isset($parameter['pattern'])) {
+                $property['pattern'] = $parameter['pattern'];
+            }
+
+            $properties[$parameter['name']] = $property;
 
             if ($parameter['required'] ?? false) {
                 $required[] = $parameter['name'];
