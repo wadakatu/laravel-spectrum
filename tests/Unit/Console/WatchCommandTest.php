@@ -8,8 +8,6 @@ use LaravelPrism\Services\FileWatcher;
 use LaravelPrism\Services\LiveReloadServer;
 use Mockery;
 use Orchestra\Testbench\TestCase;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
 
 class WatchCommandTest extends TestCase
 {
@@ -39,15 +37,17 @@ class WatchCommandTest extends TestCase
         $cache = Mockery::mock(DocumentationCache::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
             public $callInvoked = false;
-            
+
             public function call($command, array $arguments = [])
             {
                 $this->callInvoked = true;
+
                 return 0;
             }
-            
+
             public function info($string, $verbosity = null)
             {
                 // Do nothing
@@ -72,7 +72,7 @@ class WatchCommandTest extends TestCase
         $method->setAccessible(true);
 
         $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
-        
+
         $this->assertTrue($command->callInvoked);
     }
 
@@ -83,15 +83,17 @@ class WatchCommandTest extends TestCase
         $cache = Mockery::mock(DocumentationCache::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
             public $callInvoked = false;
-            
+
             public function call($command, array $arguments = [])
             {
                 $this->callInvoked = true;
+
                 return 0;
             }
-            
+
             public function info($string, $verbosity = null)
             {
                 // Do nothing
@@ -114,7 +116,7 @@ class WatchCommandTest extends TestCase
         $method->setAccessible(true);
 
         $method->invoke($command, base_path('app/Http/Resources/UserResource.php'), 'modified');
-        
+
         $this->assertTrue($command->callInvoked);
     }
 
@@ -125,15 +127,17 @@ class WatchCommandTest extends TestCase
         $cache = Mockery::mock(DocumentationCache::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
             public $callInvoked = false;
-            
+
             public function call($command, array $arguments = [])
             {
                 $this->callInvoked = true;
+
                 return 0;
             }
-            
+
             public function info($string, $verbosity = null)
             {
                 // Do nothing
@@ -156,7 +160,7 @@ class WatchCommandTest extends TestCase
         $method->setAccessible(true);
 
         $method->invoke($command, base_path('routes/api.php'), 'modified');
-        
+
         $this->assertTrue($command->callInvoked);
     }
 
@@ -174,12 +178,12 @@ class WatchCommandTest extends TestCase
 
         // Mock base_path function
         $basePath = '/var/www/project';
-        
+
         // Override the base_path() function for this test
         $this->app->bind('path.base', function () use ($basePath) {
             return $basePath;
         });
-        
+
         $result = $method->invoke($command, $basePath.'/app/Http/Controllers/UserController.php');
         $this->assertStringContainsString('UserController', $result);
     }
@@ -225,7 +229,7 @@ class WatchCommandTest extends TestCase
         $paths = $method->invoke($command);
 
         $this->assertIsArray($paths);
-        if (!empty($paths)) {
+        if (! empty($paths)) {
             $this->assertCount(4, $paths);
             $this->assertStringContainsString('Http/Controllers', $paths[0]);
             $this->assertStringContainsString('Http/Requests', $paths[1]);
@@ -241,10 +245,12 @@ class WatchCommandTest extends TestCase
         $cache = Mockery::mock(DocumentationCache::class);
 
         // Create a test command that overrides openBrowser to prevent actual execution
-        $command = new class($fileWatcher, $server, $cache) extends WatchCommand {
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
             public $browserOpened = false;
+
             public $openedUrl = null;
-            
+
             protected function openBrowser(string $url): void
             {
                 $this->browserOpened = true;
@@ -259,7 +265,7 @@ class WatchCommandTest extends TestCase
 
         // Test that the method is called correctly
         $method->invoke($command, 'http://localhost:8080');
-        
+
         $this->assertTrue($command->browserOpened);
         $this->assertEquals('http://localhost:8080', $command->openedUrl);
     }
@@ -277,7 +283,7 @@ class WatchCommandTest extends TestCase
         $property = $reflection->getProperty('signature');
         $property->setAccessible(true);
         $signature = $property->getValue($command);
-        
+
         $this->assertStringContainsString('--port=', $signature);
         $this->assertStringContainsString('--host=', $signature);
         $this->assertStringContainsString('--no-open', $signature);
