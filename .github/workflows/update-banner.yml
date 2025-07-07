@@ -40,8 +40,8 @@ jobs:
         BRANCH_NAME="update-banner-$(date +%s)"
         git checkout -b $BRANCH_NAME
         
-        # Update banner
-        sed -i "s|<text x=\"100\" y=\"250\"[^>]*>[^<]*</text>|<text x=\"100\" y=\"250\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"16\" fill=\"#00FF00\">${{ steps.get_version.outputs.VERSION }}</text>|g" assets/banner.svg
+        # Update banner version
+        sed -i '/id="version"/s/v1\.0\.0/${{ steps.get_version.outputs.VERSION }}/g' assets/banner.svg
         
         # Commit and push
         git add assets/banner.svg
