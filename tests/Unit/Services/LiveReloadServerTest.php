@@ -12,12 +12,12 @@ class LiveReloadServerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Skip tests that require Workerman runtime
-        if (!defined('WORKERMAN_RUN_MODE')) {
+        if (! defined('WORKERMAN_RUN_MODE')) {
             $this->markTestSkipped('LiveReloadServer tests require Workerman runtime');
         }
-        
+
         $this->server = new LiveReloadServer;
     }
 
@@ -30,13 +30,13 @@ class LiveReloadServerTest extends TestCase
     {
         // Just verify the method exists and accepts array
         $this->assertTrue(method_exists($this->server, 'notifyClients'));
-        
+
         // Call it without expecting any output (no clients connected)
         $this->server->notifyClients([
             'event' => 'test',
-            'data' => 'test data'
+            'data' => 'test data',
         ]);
-        
+
         $this->assertTrue(true); // If we got here without error, test passes
     }
 
@@ -46,9 +46,9 @@ class LiveReloadServerTest extends TestCase
         $reflection = new \ReflectionClass($this->server);
         $method = $reflection->getMethod('getSwaggerUIHtml');
         $method->setAccessible(true);
-        
+
         $html = $method->invoke($this->server);
-        
+
         $this->assertStringContainsString('<!DOCTYPE html>', $html);
         $this->assertStringContainsString('swagger-ui', $html);
         $this->assertStringContainsString('WebSocket', $html);

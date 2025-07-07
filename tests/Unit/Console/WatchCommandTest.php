@@ -16,7 +16,7 @@ class WatchCommandTest extends TestCase
         parent::setUp();
 
         // Skip tests that require Workerman runtime
-        if (!defined('WORKERMAN_RUN_MODE')) {
+        if (! defined('WORKERMAN_RUN_MODE')) {
             $this->markTestSkipped('WatchCommand tests require Workerman runtime');
         }
     }

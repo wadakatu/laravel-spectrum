@@ -51,9 +51,9 @@ class WatchCommand extends Command
         $this->info('Press Ctrl+C to stop');
 
         // Create a worker for file watching
-        $watchWorker = new Worker();
+        $watchWorker = new Worker;
         $watchWorker->name = 'FileWatcher';
-        $watchWorker->onWorkerStart = function() {
+        $watchWorker->onWorkerStart = function () {
             // Start file watching
             $this->watcher->watch($this->getWatchPaths(), function ($path, $event) {
                 $this->handleFileChange($path, $event);

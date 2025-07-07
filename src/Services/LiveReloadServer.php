@@ -2,15 +2,17 @@
 
 namespace LaravelPrism\Services;
 
-use Workerman\Worker;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
+use Workerman\Worker;
 
 class LiveReloadServer
 {
     protected $clients;
+
     protected $httpWorker;
+
     protected $wsWorker;
 
     public function __construct()
@@ -45,7 +47,7 @@ class LiveReloadServer
             } elseif ($path === '/openapi.json') {
                 $jsonPath = storage_path('app/prism/openapi.json');
                 $json = file_exists($jsonPath) ? file_get_contents($jsonPath) : '{}';
-                
+
                 $connection->send(new Response(200, [
                     'Content-Type' => 'application/json',
                     'Access-Control-Allow-Origin' => '*',
