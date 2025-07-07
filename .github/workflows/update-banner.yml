@@ -1,0 +1,33 @@
+name: Update Banner Version
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  update-banner:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Get latest release version
+      id: get_version
+      run: |
+        VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Update banner SVG
+      run: |
+        sed -i "s|<text x=\"100\" y=\"250\"[^>]*>[^<]*</text>|<text x=\"100\" y=\"250\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"16\" fill=\"#00FF00\">${{ steps.get_version.outputs.VERSION }}</text>|g" assets/banner.svg
+    
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add assets/banner.svg
+        git diff --staged --quiet || git commit -m "chore: update banner version to ${{ steps.get_version.outputs.VERSION }}"
+        git push
