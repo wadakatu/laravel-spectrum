@@ -3,11 +3,29 @@
 namespace LaravelPrism\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
+use PhpParser\Node;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
 use ReflectionClass;
 use ReflectionMethod;
 
 class ControllerAnalyzer
 {
+    protected FormRequestAnalyzer $formRequestAnalyzer;
+
+    protected InlineValidationAnalyzer $inlineValidationAnalyzer;
+
+    protected Parser $parser;
+
+    public function __construct(
+        FormRequestAnalyzer $formRequestAnalyzer,
+        InlineValidationAnalyzer $inlineValidationAnalyzer
+    ) {
+        $this->formRequestAnalyzer = $formRequestAnalyzer;
+        $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
+        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+    }
+
     /**
      * コントローラーメソッドを解析してFormRequestとResourceを抽出
      */
@@ -27,6 +45,7 @@ class ControllerAnalyzer
 
         $result = [
             'formRequest' => null,
+            'inlineValidation' => null,
             'resource' => null,
             'returnsCollection' => false,
             'fractal' => null,
@@ -41,6 +60,15 @@ class ControllerAnalyzer
                     $result['formRequest'] = $className;
                     break;
                 }
+            }
+        }
+
+        // メソッドのASTを取得してインラインバリデーションを検出
+        $methodNode = $this->getMethodNode($reflection, $method);
+        if ($methodNode) {
+            $inlineValidation = $this->inlineValidationAnalyzer->analyze($methodNode);
+            if (! empty($inlineValidation)) {
+                $result['inlineValidation'] = $inlineValidation;
             }
         }
 
@@ -112,6 +140,64 @@ class ControllerAnalyzer
 
         if (preg_match('/use\s+([\w\\\\]+\\\\'.$className.');/', $content, $matches)) {
             return $matches[1];
+        }
+
+        return null;
+    }
+
+    /**
+     * メソッドのASTノードを取得
+     */
+    protected function getMethodNode(ReflectionClass $reflection, string $methodName): ?Node\Stmt\ClassMethod
+    {
+        try {
+            $filename = $reflection->getFileName();
+            if (! $filename) {
+                return null;
+            }
+
+            $code = file_get_contents($filename);
+            $ast = $this->parser->parse($code);
+
+            if (! $ast) {
+                return null;
+            }
+
+            // クラスとメソッドを探す
+            foreach ($ast as $node) {
+                if ($node instanceof Node\Stmt\Class_ || $node instanceof Node\Stmt\Namespace_) {
+                    $classNode = $this->findClassNode($node, $reflection->getShortName());
+                    if ($classNode) {
+                        foreach ($classNode->stmts as $stmt) {
+                            if ($stmt instanceof Node\Stmt\ClassMethod && $stmt->name->name === $methodName) {
+                                return $stmt;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // パースエラーの場合はnullを返す
+        }
+
+        return null;
+    }
+
+    /**
+     * クラスノードを探す
+     */
+    protected function findClassNode(Node $node, string $className): ?Node\Stmt\Class_
+    {
+        if ($node instanceof Node\Stmt\Class_ && $node->name && $node->name->name === $className) {
+            return $node;
+        }
+
+        if ($node instanceof Node\Stmt\Namespace_) {
+            foreach ($node->stmts as $stmt) {
+                if ($stmt instanceof Node\Stmt\Class_ && $stmt->name && $stmt->name->name === $className) {
+                    return $stmt;
+                }
+            }
         }
 
         return null;
