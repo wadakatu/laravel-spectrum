@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use LaravelPrism\Services\DocumentationCache;
 use LaravelPrism\Services\FileWatcher;
 use LaravelPrism\Services\LiveReloadServer;
-use React\EventLoop\Loop;
+use Workerman\Worker;
 
 class WatchCommand extends Command
 {
@@ -41,9 +41,6 @@ class WatchCommand extends Command
         // Initial generation
         $this->call('prism:generate', ['--quiet' => true]);
 
-        // Start server
-        $this->server->start($host, $port);
-
         // Open browser
         if (! $this->option('no-open')) {
             $this->openBrowser("http://{$host}:{$port}");
@@ -53,13 +50,19 @@ class WatchCommand extends Command
         $this->info('👀 Watching for file changes...');
         $this->info('Press Ctrl+C to stop');
 
-        // Start file watching
-        $this->watcher->watch($this->getWatchPaths(), function ($path, $event) {
-            $this->handleFileChange($path, $event);
-        });
+        // Create a worker for file watching
+        $watchWorker = new Worker;
+        $watchWorker->name = 'FileWatcher';
+        $watchWorker->onWorkerStart = function () {
+            // Start file watching
+            $this->watcher->watch($this->getWatchPaths(), function ($path, $event) {
+                $this->handleFileChange($path, $event);
+            });
+        };
 
-        // Start event loop
-        Loop::get()->run();
+        // Start server and workers
+        // This will block and run the event loop
+        $this->server->start($host, $port);
 
         return 0;
     }
@@ -93,7 +96,7 @@ class WatchCommand extends Command
             app_path('Http/Requests'),
             app_path('Http/Resources'),
             base_path('routes'),
-        ]);
+        ]) ?? [];
     }
 
     private function clearRelatedCache(string $path): void

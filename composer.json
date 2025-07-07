@@ -1,19 +1,39 @@
 {
-    "name": "laravel-prism/laravel-prism",
-    "description": "Zero-annotation API documentation generator for Laravel",
+    "name": "wadakatu/laravel-prism",
+    "description": "Zero-annotation API documentation generator for Laravel and Lumen",
+    "keywords": [
+        "laravel",
+        "lumen",
+        "api",
+        "documentation",
+        "openapi",
+        "swagger",
+        "generator",
+        "zero-annotation"
+    ],
     "type": "library",
-    "keywords": ["laravel", "api", "documentation", "openapi", "swagger"],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "wadakatu",
+            "email": "wadakatukoyo330@gmail.com"
+        }
+    ],
+    "homepage": "https://github.com/wadakatu/laravel-prism",
+    "support": {
+        "issues": "https://github.com/wadakatu/laravel-prism/issues",
+        "source": "https://github.com/wadakatu/laravel-prism",
+        "docs": "https://github.com/wadakatu/laravel-prism#readme",
+        "changelog": "https://github.com/wadakatu/laravel-prism/releases"
+    },
     "require": {
         "php": "^8.1",
         "illuminate/support": "^10.0|^11.0|^12.0",
         "illuminate/routing": "^10.0|^11.0|^12.0",
         "illuminate/console": "^10.0|^11.0|^12.0",
         "nikic/php-parser": "^5.5",
-        "react/event-loop": "^1.3",
-        "react/socket": "^1.12",
-        "cboden/ratchet": "^0.4",
-        "symfony/finder": "^6.0|^7.0"
+        "symfony/finder": "^6.0|^7.0",
+        "workerman/workerman": "^4.1|^5.0"
     },
     "require-dev": {
         "orchestra/testbench": "^8.0|^9.0|^10.0",
@@ -33,13 +53,6 @@
             "League\\Fractal\\": "tests/Fixtures/vendor/league/fractal/"
         }
     },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "LaravelPrism\\PrismServiceProvider"
-            ]
-        }
-    },
     "scripts": {
         "test": "vendor/bin/phpunit",
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
@@ -54,6 +67,16 @@
         "format:fix": "Format the code using Laravel Pint",
         "analyze": "Analyse the code using PHPStan"
     },
-    "minimum-stability": "dev",
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LaravelPrism\\PrismServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
