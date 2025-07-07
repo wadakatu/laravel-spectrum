@@ -79,7 +79,7 @@ php artisan prism:watch
 ## 🔧 Requirements
 
 - **PHP** 8.1 or higher
-- **Laravel** 10.x, 11.x, or 12.x / **Lumen** 10.x, 11.x
+- **Laravel** 10.x, 11.x, or 12.x / **Lumen** 10.x, 11.x, 12.x
 - **Composer** 2.0 or higher
 
 ## 📦 Installation
