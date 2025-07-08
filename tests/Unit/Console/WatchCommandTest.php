@@ -56,13 +56,16 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function option($key = null)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                if ($key === 'verbose') {
-                    return false;
-                }
-
-                return null;
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->output = new class
+                {
+                    public function isVerbose()
+                    {
+                        return false;
+                    }
+                };
             }
         };
 
@@ -116,13 +119,16 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function option($key = null)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                if ($key === 'verbose') {
-                    return false;
-                }
-
-                return null;
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->output = new class
+                {
+                    public function isVerbose()
+                    {
+                        return false;
+                    }
+                };
             }
         };
 
@@ -180,13 +186,16 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function option($key = null)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                if ($key === 'verbose') {
-                    return false;
-                }
-
-                return null;
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->output = new class
+                {
+                    public function isVerbose()
+                    {
+                        return false;
+                    }
+                };
             }
         };
 
@@ -238,13 +247,16 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function option($key = null)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                if ($key === 'verbose') {
-                    return false;
-                }
-
-                return null;
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->output = new class
+                {
+                    public function isVerbose()
+                    {
+                        return false;
+                    }
+                };
             }
         };
 
