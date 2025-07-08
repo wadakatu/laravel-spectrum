@@ -13,8 +13,7 @@ class WatchCommand extends Command
     protected $signature = 'spectrum:watch
                             {--port=8080 : Port for the preview server}
                             {--host=127.0.0.1 : Host for the preview server}
-                            {--no-open : Don\'t open browser automatically}
-                            {--verbose : Show detailed cache information}';
+                            {--no-open : Don\'t open browser automatically}';
 
     protected $description = 'Start real-time documentation preview';
 
@@ -152,7 +151,7 @@ class WatchCommand extends Command
                 $this->info('  🧹 Cleared routes cache');
 
                 // 追加のデバッグ情報
-                if ($this->option('verbose')) {
+                if ($this->output->isVerbose()) {
                     $this->checkCacheAfterClear();
                 }
             } else {
@@ -167,7 +166,7 @@ class WatchCommand extends Command
                 $this->info('  🧹 Cleared routes cache (Controller changed)');
 
                 // 追加のデバッグ情報
-                if ($this->option('verbose')) {
+                if ($this->output->isVerbose()) {
                     $this->checkCacheAfterClear();
                 }
             } else {
@@ -256,8 +255,8 @@ class WatchCommand extends Command
                 $count = count($files);
                 $this->info("📊 Cached entries: {$count}");
 
-                // 全てのキャッシュキーを表示
-                if ($count > 0) {
+                // 全てのキャッシュキーを表示（verboseモード時のみ）
+                if ($count > 0 && $this->output->isVerbose()) {
                     $keys = $this->cache->getAllCacheKeys();
                     $this->info('📋 Cache keys:');
                     foreach ($keys as $key) {
