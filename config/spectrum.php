@@ -72,7 +72,7 @@ return [
     'tags' => [
         // Exact match example:
         // 'api/v1/auth/login' => 'Authentication',
-        
+
         // Wildcard example:
         // 'api/v1/auth/*' => 'Authentication',
         // 'api/v1/admin/*' => 'Administration',

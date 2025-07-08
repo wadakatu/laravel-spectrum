@@ -2,14 +2,14 @@
 
 namespace Tests\Unit\Generators;
 
-use LaravelSpectrum\Generators\OpenApiGenerator;
-use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
-use LaravelSpectrum\Analyzers\ResourceAnalyzer;
-use LaravelSpectrum\Analyzers\ControllerAnalyzer;
-use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
-use LaravelSpectrum\Generators\SchemaGenerator;
-use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
+use LaravelSpectrum\Analyzers\ControllerAnalyzer;
+use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\Analyzers\ResourceAnalyzer;
+use LaravelSpectrum\Generators\ErrorResponseGenerator;
+use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
@@ -18,13 +18,21 @@ use ReflectionClass;
 class OpenApiGeneratorTagsTest extends TestCase
 {
     protected OpenApiGenerator $generator;
+
     protected $mockFormRequestAnalyzer;
+
     protected $mockResourceAnalyzer;
+
     protected $mockControllerAnalyzer;
+
     protected $mockInlineValidationAnalyzer;
+
     protected $mockSchemaGenerator;
+
     protected $mockErrorResponseGenerator;
+
     protected $mockAuthenticationAnalyzer;
+
     protected $mockSecuritySchemeGenerator;
 
     protected function setUp(): void
@@ -68,7 +76,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['Post'], $tags);
     }
 
@@ -82,7 +90,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['Post', 'Comment'], $tags);
     }
 
@@ -96,7 +104,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['User'], $tags);
     }
 
@@ -106,7 +114,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         // テスト用の設定値をセット
         $this->app['config']->set('spectrum.tags', [
             'api/v1/auth/*' => 'Authentication',
-            'api/v1/admin/*' => 'Administration'
+            'api/v1/admin/*' => 'Administration',
         ]);
 
         $route = [
@@ -116,7 +124,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['Authentication'], $tags);
     }
 
@@ -130,7 +138,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['Post', 'Comment', 'Like'], $tags);
     }
 
@@ -144,7 +152,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['User'], $tags);
     }
 
@@ -158,7 +166,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['User'], $tags);
     }
 
@@ -172,7 +180,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['Post'], $tags);
     }
 
@@ -191,7 +199,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         ];
 
         $tags = $this->callProtectedMethod($this->generator, 'generateTags', [$route]);
-        
+
         $this->assertEquals(['Authentication'], $tags);
     }
 
@@ -200,6 +208,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $reflection = new ReflectionClass($object);
         $method = $reflection->getMethod($methodName);
         $method->setAccessible(true);
+
         return $method->invokeArgs($object, $parameters);
     }
 }
