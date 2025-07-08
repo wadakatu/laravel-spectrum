@@ -265,4 +265,73 @@ class DependencyResource {
 
         $this->assertEquals(1, $callCount);
     }
+
+    /** @test */
+    public function it_forgets_cache_entries()
+    {
+        // キャッシュにデータを保存
+        $this->cache->remember('routes:all', fn () => ['route1', 'route2']);
+
+        // キャッシュが存在することを確認
+        $callCount = 0;
+        $this->cache->remember('routes:all', function () use (&$callCount) {
+            $callCount++;
+
+            return ['route3'];
+        });
+        $this->assertEquals(0, $callCount); // キャッシュから取得
+
+        // キャッシュを削除
+        $result = $this->cache->forget('routes:all');
+        $this->assertTrue($result);
+
+        // キャッシュが削除されたことを確認
+        $callCount = 0;
+        $data = $this->cache->remember('routes:all', function () use (&$callCount) {
+            $callCount++;
+
+            return ['route3'];
+        });
+        $this->assertEquals(1, $callCount); // コールバックが実行される
+        $this->assertEquals(['route3'], $data);
+    }
+
+    /** @test */
+    public function it_returns_false_when_forgetting_non_existent_cache()
+    {
+        $result = $this->cache->forget('non_existent_key');
+        $this->assertFalse($result);
+    }
+
+    /** @test */
+    public function it_forgets_cache_by_pattern()
+    {
+        // 複数のリソースキャッシュを作成
+        $this->cache->remember('resource:UserResource', fn () => ['user']);
+        $this->cache->remember('resource:PostResource', fn () => ['post']);
+        $this->cache->remember('resource:CommentResource', fn () => ['comment']);
+        $this->cache->remember('form_request:UserRequest', fn () => ['request']);
+
+        // パターンマッチでresource:*を削除
+        $count = $this->cache->forgetByPattern('resource:');
+        $this->assertEquals(3, $count);
+
+        // リソースキャッシュが削除されたことを確認
+        $callCount = 0;
+        $this->cache->remember('resource:UserResource', function () use (&$callCount) {
+            $callCount++;
+
+            return ['new_user'];
+        });
+        $this->assertEquals(1, $callCount);
+
+        // フォームリクエストキャッシュは残っていることを確認
+        $callCount = 0;
+        $this->cache->remember('form_request:UserRequest', function () use (&$callCount) {
+            $callCount++;
+
+            return ['new_request'];
+        });
+        $this->assertEquals(0, $callCount); // キャッシュから取得
+    }
 }

@@ -13,7 +13,8 @@ class WatchCommand extends Command
     protected $signature = 'spectrum:watch
                             {--port=8080 : Port for the preview server}
                             {--host=127.0.0.1 : Host for the preview server}
-                            {--no-open : Don\'t open browser automatically}';
+                            {--no-open : Don\'t open browser automatically}
+                            {--verbose : Show detailed cache information}';
 
     protected $description = 'Start real-time documentation preview';
 
@@ -37,6 +38,9 @@ class WatchCommand extends Command
         $port = (int) $this->option('port');
 
         $this->info('🚀 Starting Laravel Spectrum preview server...');
+
+        // キャッシュ状態を確認
+        $this->checkCacheStatus();
 
         // Initial generation (キャッシュ有効)
         $this->call('spectrum:generate', ['--quiet' => true]);
@@ -110,25 +114,34 @@ class WatchCommand extends Command
         // For FormRequests
         if (str_contains($path, 'Requests')) {
             $className = $this->getClassNameFromPath($path);
-            if ($this->cache->forget("form_request:{$className}")) {
+            $cacheKey = "form_request:{$className}";
+
+            if ($this->cache->forget($cacheKey)) {
                 $clearedCount++;
                 $this->info("  🧹 Cleared cache for FormRequest: {$className}");
+            } else {
+                $this->info("  ℹ️  No cache found for FormRequest: {$className}");
             }
         }
 
         // For Resources
         elseif (str_contains($path, 'Resources')) {
             $className = $this->getClassNameFromPath($path);
-            if ($this->cache->forget("resource:{$className}")) {
+            $cacheKey = "resource:{$className}";
+
+            if ($this->cache->forget($cacheKey)) {
                 $clearedCount++;
                 $this->info("  🧹 Cleared cache for Resource: {$className}");
+            } else {
+                $this->info("  ℹ️  No cache found for Resource: {$className}");
             }
 
             // Resourceが他のResourceに依存している可能性があるため、
             // このResourceを使用している可能性のある他のResourceのキャッシュもクリア
-            $clearedCount += $this->cache->forgetByPattern('resource:');
-            if ($clearedCount > 1) {
-                $this->info('  🧹 Cleared related Resource caches');
+            $relatedCount = $this->cache->forgetByPattern('resource:');
+            if ($relatedCount > 0) {
+                $clearedCount += $relatedCount;
+                $this->info("  🧹 Cleared {$relatedCount} related Resource caches");
             }
         }
 
@@ -137,6 +150,13 @@ class WatchCommand extends Command
             if ($this->cache->forget('routes:all')) {
                 $clearedCount++;
                 $this->info('  🧹 Cleared routes cache');
+
+                // 追加のデバッグ情報
+                if ($this->option('verbose')) {
+                    $this->checkCacheAfterClear();
+                }
+            } else {
+                $this->info('  ℹ️  No routes cache found to clear');
             }
         }
 
@@ -145,11 +165,37 @@ class WatchCommand extends Command
             if ($this->cache->forget('routes:all')) {
                 $clearedCount++;
                 $this->info('  🧹 Cleared routes cache (Controller changed)');
+
+                // 追加のデバッグ情報
+                if ($this->option('verbose')) {
+                    $this->checkCacheAfterClear();
+                }
+            } else {
+                $this->info('  ℹ️  No routes cache found to clear (Controller changed)');
             }
         }
 
         if ($clearedCount === 0) {
-            $this->info('  ℹ️  No cache entries to clear');
+            $this->info('  ℹ️  No cache entries were cleared');
+        } else {
+            $this->info("  ✅ Total cleared: {$clearedCount} cache entries");
+        }
+    }
+
+    private function checkCacheAfterClear(): void
+    {
+        try {
+            $reflection = new \ReflectionProperty($this->cache, 'cacheDir');
+            $reflection->setAccessible(true);
+            $cacheDir = $reflection->getValue($this->cache);
+
+            if (is_dir($cacheDir)) {
+                $files = glob($cacheDir.'/*.cache');
+                $count = count($files);
+                $this->info("  📊 Remaining cache entries: {$count}");
+            }
+        } catch (\Exception $e) {
+            // 無視
         }
     }
 
@@ -179,6 +225,50 @@ class WatchCommand extends Command
 
         if ($command) {
             exec($command);
+        }
+    }
+
+    private function checkCacheStatus(): void
+    {
+        $cacheEnabled = config('spectrum.cache.enabled', true);
+
+        if (! $cacheEnabled) {
+            $this->warn('⚠️  Cache is disabled. Enable it in config/spectrum.php for better performance.');
+
+            return;
+        }
+
+        // DocumentationCacheのstatusを確認
+        try {
+            $reflection = new \ReflectionProperty($this->cache, 'enabled');
+            $reflection->setAccessible(true);
+            $isEnabled = $reflection->getValue($this->cache);
+
+            $reflection = new \ReflectionProperty($this->cache, 'cacheDir');
+            $reflection->setAccessible(true);
+            $cacheDir = $reflection->getValue($this->cache);
+
+            $this->info("📁 Cache directory: {$cacheDir}");
+            $this->info('💾 Cache enabled: '.($isEnabled ? 'Yes' : 'No'));
+
+            if (is_dir($cacheDir)) {
+                $files = glob($cacheDir.'/*.cache');
+                $count = count($files);
+                $this->info("📊 Cached entries: {$count}");
+
+                // 全てのキャッシュキーを表示
+                if ($count > 0) {
+                    $keys = $this->cache->getAllCacheKeys();
+                    $this->info('📋 Cache keys:');
+                    foreach ($keys as $key) {
+                        $this->info("   - {$key}");
+                    }
+                }
+            } else {
+                $this->info('📊 Cache directory does not exist yet');
+            }
+        } catch (\Exception $e) {
+            $this->error('Failed to check cache status: '.$e->getMessage());
         }
     }
 }
