@@ -160,4 +160,39 @@ class SchemaGeneratorTest extends TestCase
         $this->assertEquals('object', $dataProperties['flags']['type']);
         $this->assertArrayHasKey('is_active', $dataProperties['flags']['properties']);
     }
+
+    /** @test */
+    public function it_generates_schema_from_resource_without_example_keys()
+    {
+        $resourceStructure = [
+            'id' => ['type' => 'integer'],
+            'name' => ['type' => 'string'],
+            'email' => ['type' => 'string', 'example' => 'user@example.com'],
+            'created_at' => ['type' => 'string'],
+        ];
+
+        $schema = $this->generator->generateFromResource($resourceStructure);
+
+        $this->assertEquals('object', $schema['type']);
+        $this->assertArrayHasKey('properties', $schema);
+        
+        // Check that properties exist
+        $this->assertArrayHasKey('id', $schema['properties']);
+        $this->assertArrayHasKey('name', $schema['properties']);
+        $this->assertArrayHasKey('email', $schema['properties']);
+        $this->assertArrayHasKey('created_at', $schema['properties']);
+        
+        // Check types
+        $this->assertEquals('integer', $schema['properties']['id']['type']);
+        $this->assertEquals('string', $schema['properties']['name']['type']);
+        $this->assertEquals('string', $schema['properties']['email']['type']);
+        $this->assertEquals('string', $schema['properties']['created_at']['type']);
+        
+        // Check example key existence
+        $this->assertArrayNotHasKey('example', $schema['properties']['id']);
+        $this->assertArrayNotHasKey('example', $schema['properties']['name']);
+        $this->assertArrayHasKey('example', $schema['properties']['email']);
+        $this->assertEquals('user@example.com', $schema['properties']['email']['example']);
+        $this->assertArrayNotHasKey('example', $schema['properties']['created_at']);
+    }
 }
