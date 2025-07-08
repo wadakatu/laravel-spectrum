@@ -80,11 +80,11 @@ class SchemaGenerator
             $schema = [
                 'type' => $info['type'],
             ];
-            
+
             if (isset($info['example'])) {
                 $schema['example'] = $info['example'];
             }
-            
+
             $properties[$field] = $schema;
         }
 
