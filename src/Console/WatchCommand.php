@@ -39,7 +39,7 @@ class WatchCommand extends Command
         $this->info('🚀 Starting Laravel Spectrum preview server...');
 
         // Initial generation
-        $this->call('spectrum:generate', ['--quiet' => true]);
+        $this->call('spectrum:generate', ['--quiet' => true, '--no-cache' => true]);
 
         // Set WorkerMan to daemon mode for development
         global $argv;
@@ -75,12 +75,12 @@ class WatchCommand extends Command
     {
         $this->info("📝 File {$event}: {$path}");
 
-        // Clear related cache
-        $this->clearRelatedCache($path);
+        // Note: Cache is disabled in watch mode, so no need to clear it
+        // $this->clearRelatedCache($path);
 
         // Regenerate (incremental)
         $startTime = microtime(true);
-        $this->call('spectrum:generate', ['--quiet' => true]);
+        $this->call('spectrum:generate', ['--quiet' => true, '--no-cache' => true]);
         $duration = round(microtime(true) - $startTime, 2);
 
         $this->info("✅ Documentation updated in {$duration}s");

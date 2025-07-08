@@ -30,7 +30,7 @@ class WatchCommandTest extends TestCase
         $this->assertEquals('Start real-time documentation preview', $command->getDescription());
     }
 
-    public function test_handle_file_change_clears_cache_for_requests(): void
+    public function test_handle_file_change_regenerates_docs_for_requests(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
@@ -40,10 +40,12 @@ class WatchCommandTest extends TestCase
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
+            public $callArguments = [];
 
             public function call($command, array $arguments = [])
             {
                 $this->callInvoked = true;
+                $this->callArguments = $arguments;
 
                 return 0;
             }
@@ -54,10 +56,7 @@ class WatchCommandTest extends TestCase
             }
         };
 
-        // Test FormRequest cache clearing
-        $cache->shouldReceive('forget')
-            ->once()
-            ->with('form_request:App\\Http\\Requests\\TestRequest');
+        // No cache clearing expected since we're using --no-cache option
 
         $server->shouldReceive('notifyClients')
             ->once()
@@ -74,9 +73,10 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
+        $this->assertEquals(['--quiet' => true, '--no-cache' => true], $command->callArguments);
     }
 
-    public function test_handle_file_change_clears_cache_for_resources(): void
+    public function test_handle_file_change_regenerates_docs_for_resources(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
@@ -86,10 +86,12 @@ class WatchCommandTest extends TestCase
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
+            public $callArguments = [];
 
             public function call($command, array $arguments = [])
             {
                 $this->callInvoked = true;
+                $this->callArguments = $arguments;
 
                 return 0;
             }
@@ -100,10 +102,7 @@ class WatchCommandTest extends TestCase
             }
         };
 
-        // Test Resource cache clearing
-        $cache->shouldReceive('forget')
-            ->once()
-            ->with('resource:App\\Http\\Resources\\UserResource');
+        // No cache clearing expected since we're using --no-cache option
 
         $server->shouldReceive('notifyClients')
             ->once()
@@ -118,9 +117,10 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Resources/UserResource.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
+        $this->assertEquals(['--quiet' => true, '--no-cache' => true], $command->callArguments);
     }
 
-    public function test_handle_file_change_clears_cache_for_routes(): void
+    public function test_handle_file_change_regenerates_docs_for_routes(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
@@ -130,10 +130,12 @@ class WatchCommandTest extends TestCase
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
+            public $callArguments = [];
 
             public function call($command, array $arguments = [])
             {
                 $this->callInvoked = true;
+                $this->callArguments = $arguments;
 
                 return 0;
             }
@@ -144,10 +146,7 @@ class WatchCommandTest extends TestCase
             }
         };
 
-        // Test routes cache clearing
-        $cache->shouldReceive('forget')
-            ->once()
-            ->with('routes:all');
+        // No cache clearing expected since we're using --no-cache option
 
         $server->shouldReceive('notifyClients')
             ->once()
@@ -162,6 +161,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('routes/api.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
+        $this->assertEquals(['--quiet' => true, '--no-cache' => true], $command->callArguments);
     }
 
     public function test_get_class_name_from_path(): void
