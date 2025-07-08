@@ -101,7 +101,9 @@ class RouteAnalyzer
                 'name' => $name,
                 'required' => ! $isOptional,
                 'in' => 'path',
-                'type' => 'string', // デフォルト、後で型推論で上書き可能
+                'schema' => [
+                    'type' => 'string', // デフォルト、後で型推論で上書き可能
+                ],
             ];
         }
 
