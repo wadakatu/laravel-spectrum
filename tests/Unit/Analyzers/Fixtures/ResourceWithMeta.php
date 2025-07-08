@@ -19,7 +19,7 @@ class ResourceWithMeta extends JsonResource
         return [
             'meta' => [
                 'version' => '1.0',
-                'author' => 'Laravel Prism',
+                'author' => 'Laravel Spectrum',
             ],
         ];
     }

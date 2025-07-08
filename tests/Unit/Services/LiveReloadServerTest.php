@@ -80,7 +80,7 @@ class LiveReloadServerTest extends TestCase
 
         // Test that HTML contains necessary elements
         $this->assertStringContainsString('<!DOCTYPE html>', $html);
-        $this->assertStringContainsString('<title>Laravel Prism - Live Preview</title>', $html);
+        $this->assertStringContainsString('<title>Laravel Spectrum - Live Preview</title>', $html);
         $this->assertStringContainsString('swagger-ui', $html);
         $this->assertStringContainsString('WebSocket', $html);
         $this->assertStringContainsString('ws://localhost:8081', $html);
@@ -102,7 +102,7 @@ class LiveReloadServerTest extends TestCase
 
         // Verify fallback HTML is returned
         $this->assertStringContainsString('<!DOCTYPE html>', $html);
-        $this->assertStringContainsString('<title>Laravel Prism - Live Preview</title>', $html);
+        $this->assertStringContainsString('<title>Laravel Spectrum - Live Preview</title>', $html);
         $this->assertStringContainsString('swagger-ui', $html);
     }
 

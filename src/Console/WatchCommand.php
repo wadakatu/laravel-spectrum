@@ -36,7 +36,7 @@ class WatchCommand extends Command
         $host = (string) $this->option('host');
         $port = (int) $this->option('port');
 
-        $this->info('🚀 Starting Laravel Prism preview server...');
+        $this->info('🚀 Starting Laravel Spectrum preview server...');
 
         // Initial generation
         $this->call('spectrum:generate', ['--quiet' => true]);
