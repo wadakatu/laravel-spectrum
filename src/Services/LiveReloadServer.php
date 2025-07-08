@@ -171,12 +171,11 @@ class LiveReloadServer
                 deepLinking: true,
                 presets: [
                     SwaggerUIBundle.presets.apis,
-                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                    SwaggerUIStandalonePreset
                 ],
                 plugins: [
                     SwaggerUIBundle.plugins.DownloadUrl
-                ],
-                layout: "StandaloneLayout"
+                ]
             });
         }
         
