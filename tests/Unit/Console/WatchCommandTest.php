@@ -40,6 +40,7 @@ class WatchCommandTest extends TestCase
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
+
             public $callArguments = [];
 
             public function call($command, array $arguments = [])
@@ -86,6 +87,7 @@ class WatchCommandTest extends TestCase
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
+
             public $callArguments = [];
 
             public function call($command, array $arguments = [])
@@ -130,6 +132,7 @@ class WatchCommandTest extends TestCase
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
+
             public $callArguments = [];
 
             public function call($command, array $arguments = [])

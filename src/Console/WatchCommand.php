@@ -75,9 +75,6 @@ class WatchCommand extends Command
     {
         $this->info("📝 File {$event}: {$path}");
 
-        // Note: Cache is disabled in watch mode, so no need to clear it
-        // $this->clearRelatedCache($path);
-
         // Regenerate (incremental)
         $startTime = microtime(true);
         $this->call('spectrum:generate', ['--quiet' => true, '--no-cache' => true]);
@@ -101,26 +98,6 @@ class WatchCommand extends Command
             app_path('Http/Resources'),
             base_path('routes'),
         ]) ?? [];
-    }
-
-    private function clearRelatedCache(string $path): void
-    {
-        // For FormRequests
-        if (str_contains($path, 'Requests')) {
-            $className = $this->getClassNameFromPath($path);
-            $this->cache->forget("form_request:{$className}");
-        }
-
-        // For Resources
-        elseif (str_contains($path, 'Resources')) {
-            $className = $this->getClassNameFromPath($path);
-            $this->cache->forget("resource:{$className}");
-        }
-
-        // For route files
-        elseif (str_contains($path, 'routes')) {
-            $this->cache->forget('routes:all');
-        }
     }
 
     private function getClassNameFromPath(string $path): string
