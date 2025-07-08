@@ -2,8 +2,8 @@
 
 namespace LaravelSpectrum\Tests\Unit\Console;
 
-use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
 use Mockery;
@@ -113,7 +113,7 @@ class WatchCommandTest extends TestCase
             ->once()
             ->with('resource:App\Http\Resources\UserResource')
             ->andReturn(true);
-        
+
         // Test pattern-based cache clearing for related resources
         $cache->shouldReceive('forgetByPattern')
             ->once()

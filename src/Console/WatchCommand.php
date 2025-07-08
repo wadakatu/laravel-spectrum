@@ -106,7 +106,7 @@ class WatchCommand extends Command
     private function clearRelatedCache(string $path): void
     {
         $clearedCount = 0;
-        
+
         // For FormRequests
         if (str_contains($path, 'Requests')) {
             $className = $this->getClassNameFromPath($path);
@@ -123,12 +123,12 @@ class WatchCommand extends Command
                 $clearedCount++;
                 $this->info("  🧹 Cleared cache for Resource: {$className}");
             }
-            
+
             // Resourceが他のResourceに依存している可能性があるため、
             // このResourceを使用している可能性のある他のResourceのキャッシュもクリア
-            $clearedCount += $this->cache->forgetByPattern("resource:");
+            $clearedCount += $this->cache->forgetByPattern('resource:');
             if ($clearedCount > 1) {
-                $this->info("  🧹 Cleared related Resource caches");
+                $this->info('  🧹 Cleared related Resource caches');
             }
         }
 
@@ -136,20 +136,20 @@ class WatchCommand extends Command
         elseif (str_contains($path, 'routes')) {
             if ($this->cache->forget('routes:all')) {
                 $clearedCount++;
-                $this->info("  🧹 Cleared routes cache");
+                $this->info('  🧹 Cleared routes cache');
             }
         }
-        
+
         // For Controllers (コントローラーが変更された場合もルートキャッシュをクリア)
         elseif (str_contains($path, 'Controllers')) {
             if ($this->cache->forget('routes:all')) {
                 $clearedCount++;
-                $this->info("  🧹 Cleared routes cache (Controller changed)");
+                $this->info('  🧹 Cleared routes cache (Controller changed)');
             }
         }
-        
+
         if ($clearedCount === 0) {
-            $this->info("  ℹ️  No cache entries to clear");
+            $this->info('  ℹ️  No cache entries to clear');
         }
     }
 

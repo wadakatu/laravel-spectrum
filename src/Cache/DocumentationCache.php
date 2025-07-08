@@ -232,11 +232,11 @@ class DocumentationCache
     public function forget(string $key): bool
     {
         $cacheFile = $this->getCachePath($key);
-        
+
         if (File::exists($cacheFile)) {
             return File::delete($cacheFile);
         }
-        
+
         return false;
     }
 
@@ -248,15 +248,15 @@ class DocumentationCache
         if (! File::isDirectory($this->cacheDir)) {
             return 0;
         }
-        
+
         $count = 0;
         $files = File::files($this->cacheDir);
-        
+
         foreach ($files as $file) {
             try {
                 $cacheData = unserialize(File::get($file->getPathname()));
                 $key = $cacheData['metadata']['key'] ?? '';
-                
+
                 if (str_contains($key, $pattern)) {
                     File::delete($file->getPathname());
                     $count++;
@@ -266,7 +266,7 @@ class DocumentationCache
                 File::delete($file->getPathname());
             }
         }
-        
+
         return $count;
     }
 
