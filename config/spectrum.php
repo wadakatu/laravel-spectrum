@@ -160,7 +160,7 @@ return [
         | documentation generation.
         |
         */
-        'enabled' => env('PRISM_CACHE_ENABLED', true),
+        'enabled' => env('SPECTRUM_CACHE_ENABLED', true),
 
         /*
         |--------------------------------------------------------------------------
@@ -180,7 +180,7 @@ return [
         | Time to live for cache files in seconds. Set to null for no expiration.
         |
         */
-        'ttl' => env('PRISM_CACHE_TTL', null),
+        'ttl' => env('SPECTRUM_CACHE_TTL', null),
 
         /*
         |--------------------------------------------------------------------------
@@ -271,7 +271,7 @@ return [
         |--------------------------------------------------------------------------
         */
         'lumen' => [
-            'enabled' => env('PRISM_LUMEN_MODE', false),
+            'enabled' => env('SPECTRUM_LUMEN_MODE', false),
             'default_middleware' => ['api'], // Lumenのデフォルトミドルウェア
         ],
     ],
