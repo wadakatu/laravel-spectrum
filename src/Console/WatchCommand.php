@@ -41,6 +41,10 @@ class WatchCommand extends Command
         // Initial generation
         $this->call('spectrum:generate', ['--quiet' => true]);
 
+        // Set WorkerMan to daemon mode for development
+        global $argv;
+        $argv = ['spectrum:watch', 'start'];
+
         // Open browser
         if (! $this->option('no-open')) {
             $this->openBrowser("http://{$host}:{$port}");
