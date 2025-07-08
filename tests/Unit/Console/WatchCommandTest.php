@@ -3,7 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Console;
 
 use LaravelSpectrum\Console\WatchCommand;
-use LaravelSpectrum\Services\DocumentationCache;
+use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
 use Mockery;
@@ -30,7 +30,7 @@ class WatchCommandTest extends TestCase
         $this->assertEquals('Start real-time documentation preview', $command->getDescription());
     }
 
-    public function test_handle_file_change_regenerates_docs_for_requests(): void
+    public function test_handle_file_change_clears_cache_and_regenerates_for_requests(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
@@ -57,7 +57,11 @@ class WatchCommandTest extends TestCase
             }
         };
 
-        // No cache clearing expected since we're using --no-cache option
+        // Test FormRequest cache clearing
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('form_request:App\Http\Requests\TestRequest')
+            ->andReturn(true);
 
         $server->shouldReceive('notifyClients')
             ->once()
@@ -74,10 +78,10 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true, '--no-cache' => true], $command->callArguments);
+        $this->assertEquals(['--quiet' => true], $command->callArguments);
     }
 
-    public function test_handle_file_change_regenerates_docs_for_resources(): void
+    public function test_handle_file_change_clears_cache_and_regenerates_for_resources(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
@@ -104,7 +108,17 @@ class WatchCommandTest extends TestCase
             }
         };
 
-        // No cache clearing expected since we're using --no-cache option
+        // Test Resource cache clearing
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('resource:App\Http\Resources\UserResource')
+            ->andReturn(true);
+        
+        // Test pattern-based cache clearing for related resources
+        $cache->shouldReceive('forgetByPattern')
+            ->once()
+            ->with('resource:')
+            ->andReturn(0);
 
         $server->shouldReceive('notifyClients')
             ->once()
@@ -119,10 +133,10 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Resources/UserResource.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true, '--no-cache' => true], $command->callArguments);
+        $this->assertEquals(['--quiet' => true], $command->callArguments);
     }
 
-    public function test_handle_file_change_regenerates_docs_for_routes(): void
+    public function test_handle_file_change_clears_cache_and_regenerates_for_routes(): void
     {
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
@@ -149,7 +163,11 @@ class WatchCommandTest extends TestCase
             }
         };
 
-        // No cache clearing expected since we're using --no-cache option
+        // Test routes cache clearing
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('routes:all')
+            ->andReturn(true);
 
         $server->shouldReceive('notifyClients')
             ->once()
@@ -164,7 +182,56 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('routes/api.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true, '--no-cache' => true], $command->callArguments);
+        $this->assertEquals(['--quiet' => true], $command->callArguments);
+    }
+
+    public function test_handle_file_change_clears_cache_for_controllers(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        // Create an anonymous class that extends WatchCommand for testing
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
+            public $callInvoked = false;
+
+            public $callArguments = [];
+
+            public function call($command, array $arguments = [])
+            {
+                $this->callInvoked = true;
+                $this->callArguments = $arguments;
+
+                return 0;
+            }
+
+            public function info($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+        };
+
+        // Test routes cache clearing when controller changes
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('routes:all')
+            ->andReturn(true);
+
+        $server->shouldReceive('notifyClients')
+            ->once()
+            ->with(Mockery::on(function ($data) {
+                return $data['event'] === 'documentation-updated';
+            }));
+
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('handleFileChange');
+        $method->setAccessible(true);
+
+        $method->invoke($command, base_path('app/Http/Controllers/UserController.php'), 'modified');
+
+        $this->assertTrue($command->callInvoked);
+        $this->assertEquals(['--quiet' => true], $command->callArguments);
     }
 
     public function test_get_class_name_from_path(): void
