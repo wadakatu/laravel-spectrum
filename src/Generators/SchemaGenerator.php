@@ -77,10 +77,15 @@ class SchemaGenerator
         $properties = [];
 
         foreach ($resourceStructure as $field => $info) {
-            $properties[$field] = [
+            $schema = [
                 'type' => $info['type'],
-                'example' => $info['example'],
             ];
+
+            if (isset($info['example'])) {
+                $schema['example'] = $info['example'];
+            }
+
+            $properties[$field] = $schema;
         }
 
         return [

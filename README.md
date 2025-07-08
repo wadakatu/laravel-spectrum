@@ -93,7 +93,7 @@ php artisan spectrum:watch
 ## 📦 Installation
 
 ```bash
-composer require wadakatu/laravel-spectrum
+composer require wadakatu/laravel-spectrum --dev
 ```
 
 That's it! No configuration needed to get started.
