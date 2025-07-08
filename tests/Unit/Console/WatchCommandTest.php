@@ -59,7 +59,8 @@ class WatchCommandTest extends TestCase
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
-                $this->output = new class {
+                $this->output = new class
+                {
                     public function isVerbose()
                     {
                         return false;
@@ -121,7 +122,8 @@ class WatchCommandTest extends TestCase
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
-                $this->output = new class {
+                $this->output = new class
+                {
                     public function isVerbose()
                     {
                         return false;
@@ -187,7 +189,8 @@ class WatchCommandTest extends TestCase
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
-                $this->output = new class {
+                $this->output = new class
+                {
                     public function isVerbose()
                     {
                         return false;
@@ -247,7 +250,8 @@ class WatchCommandTest extends TestCase
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
-                $this->output = new class {
+                $this->output = new class
+                {
                     public function isVerbose()
                     {
                         return false;
