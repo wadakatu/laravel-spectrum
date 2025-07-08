@@ -271,11 +271,12 @@ class DependencyResource {
     {
         // キャッシュにデータを保存
         $this->cache->remember('routes:all', fn () => ['route1', 'route2']);
-        
+
         // キャッシュが存在することを確認
         $callCount = 0;
         $this->cache->remember('routes:all', function () use (&$callCount) {
             $callCount++;
+
             return ['route3'];
         });
         $this->assertEquals(0, $callCount); // キャッシュから取得
@@ -288,6 +289,7 @@ class DependencyResource {
         $callCount = 0;
         $data = $this->cache->remember('routes:all', function () use (&$callCount) {
             $callCount++;
+
             return ['route3'];
         });
         $this->assertEquals(1, $callCount); // コールバックが実行される
@@ -318,6 +320,7 @@ class DependencyResource {
         $callCount = 0;
         $this->cache->remember('resource:UserResource', function () use (&$callCount) {
             $callCount++;
+
             return ['new_user'];
         });
         $this->assertEquals(1, $callCount);
@@ -326,6 +329,7 @@ class DependencyResource {
         $callCount = 0;
         $this->cache->remember('form_request:UserRequest', function () use (&$callCount) {
             $callCount++;
+
             return ['new_request'];
         });
         $this->assertEquals(0, $callCount); // キャッシュから取得

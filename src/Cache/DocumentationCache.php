@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Cache;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class DocumentationCache
 {
@@ -232,27 +233,27 @@ class DocumentationCache
     public function forget(string $key): bool
     {
         // キャッシュが無効な場合は何もしない
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return false;
         }
-        
+
         $cacheFile = $this->getCachePath($key);
 
         if (File::exists($cacheFile)) {
             $result = File::delete($cacheFile);
-            
+
             // デバッグ用のログ出力（開発環境のみ）
             if (app()->environment('local') && config('app.debug')) {
                 $status = $result ? 'deleted' : 'failed to delete';
-                \Log::debug("DocumentationCache::forget({$key}) - File: {$cacheFile} - Status: {$status}");
+                Log::debug("DocumentationCache::forget({$key}) - File: {$cacheFile} - Status: {$status}");
             }
-            
+
             return $result;
         }
-        
+
         // デバッグ用のログ出力（開発環境のみ）
         if (app()->environment('local') && config('app.debug')) {
-            \Log::debug("DocumentationCache::forget({$key}) - File not found: {$cacheFile}");
+            Log::debug("DocumentationCache::forget({$key}) - File not found: {$cacheFile}");
         }
 
         return false;
@@ -392,7 +393,7 @@ class DocumentationCache
 
         return array_unique($dependencies);
     }
-    
+
     /**
      * 全てのキャッシュエントリのキーを取得
      */
@@ -401,10 +402,10 @@ class DocumentationCache
         if (! File::isDirectory($this->cacheDir)) {
             return [];
         }
-        
+
         $keys = [];
         $files = File::files($this->cacheDir);
-        
+
         foreach ($files as $file) {
             try {
                 $cacheData = unserialize(File::get($file->getPathname()));
@@ -416,10 +417,10 @@ class DocumentationCache
                 // 無視
             }
         }
-        
+
         return $keys;
     }
-    
+
     /**
      * キャッシュが有効かどうかを確認
      */
@@ -427,5 +428,4 @@ class DocumentationCache
     {
         return $this->enabled;
     }
-
 }
