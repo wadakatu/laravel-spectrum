@@ -42,7 +42,8 @@ class WatchCommand extends Command
         $this->checkCacheStatus();
 
         // Initial generation (キャッシュ有効)
-        $this->call('spectrum:generate', ['--quiet' => true]);
+        $this->info('📄 Generating initial documentation...');
+        $this->call('spectrum:generate');
 
         // Set WorkerMan to daemon mode for development
         global $argv;
@@ -83,10 +84,38 @@ class WatchCommand extends Command
 
         // Regenerate (キャッシュ有効で差分更新)
         $startTime = microtime(true);
-        $this->call('spectrum:generate', ['--quiet' => true]);
+        $this->info('  🔄 Regenerating documentation...');
+        $exitCode = $this->call('spectrum:generate');
         $duration = round(microtime(true) - $startTime, 2);
 
+        if ($exitCode !== 0) {
+            $this->error('  ❌ Failed to regenerate documentation');
+
+            return;
+        }
+
         $this->info("✅ Documentation updated in {$duration}s");
+
+        // 生成されたファイルの確認
+        $possiblePaths = [];
+        if (function_exists('storage_path')) {
+            $possiblePaths[] = storage_path('app/spectrum/openapi.json');
+        }
+        $possiblePaths[] = getcwd().'/storage/spectrum/openapi.json';
+
+        $fileFound = false;
+        foreach ($possiblePaths as $jsonPath) {
+            if (file_exists($jsonPath)) {
+                $fileSize = filesize($jsonPath);
+                $this->info("  📄 File updated: {$jsonPath} (".number_format($fileSize).' bytes)');
+                $fileFound = true;
+                break;
+            }
+        }
+
+        if (! $fileFound) {
+            $this->error('  ⚠️  Warning: openapi.json file not found after generation');
+        }
 
         // Notify via WebSocket
         $this->server->notifyClients([
