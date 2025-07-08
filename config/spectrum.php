@@ -62,6 +62,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tag Mappings
+    |--------------------------------------------------------------------------
+    |
+    | Custom tag mappings for organizing your API endpoints. You can use
+    | exact matches or wildcards (*) to map routes to specific tags.
+    |
+    */
+    'tags' => [
+        // Exact match example:
+        // 'api/v1/auth/login' => 'Authentication',
+
+        // Wildcard example:
+        // 'api/v1/auth/*' => 'Authentication',
+        // 'api/v1/admin/*' => 'Administration',
+        // 'api/v1/billing/*' => 'Billing',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Configuration
     |--------------------------------------------------------------------------
     |

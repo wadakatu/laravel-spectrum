@@ -314,6 +314,19 @@ return [
         ],
     ],
     
+    // Tag Mappings for Organizing Endpoints
+    'tags' => [
+        // Exact match
+        'api/v1/auth/login' => 'Authentication',
+        'api/v1/auth/logout' => 'Authentication',
+        
+        // Wildcard patterns
+        'api/v1/auth/*' => 'Authentication',
+        'api/v1/admin/*' => 'Administration',
+        'api/v1/billing/*' => 'Billing',
+        'api/v1/users/*' => 'User Management',
+    ],
+    
     // Cache Configuration
     'cache' => [
         'enabled' => env('SPECTRUM_CACHE_ENABLED', true),
@@ -339,6 +352,32 @@ return [
     'json' => ['type' => 'object'],
     'uuid' => ['type' => 'string', 'format' => 'uuid'],
     'decimal' => ['type' => 'number', 'format' => 'float'],
+],
+```
+
+### Automatic Tag Generation
+
+Laravel Spectrum automatically generates tags for your API endpoints to keep them organized:
+
+- **Automatic extraction**: Tags are extracted from URL paths (e.g., `/api/posts/{post}` → `Post`)
+- **Multi-level support**: Nested resources generate multiple tags (e.g., `/api/posts/{post}/comments` → `['Post', 'Comment']`)
+- **Parameter removal**: Route parameters like `{post}` are automatically cleaned up
+- **Controller fallback**: When URLs are generic, the controller name is used as a fallback
+- **Custom mappings**: Override automatic tags using configuration
+
+```php
+// config/spectrum.php
+'tags' => [
+    // Group all authentication endpoints
+    'api/v1/auth/*' => 'Authentication',
+    
+    // Specific endpoint mapping
+    'api/v1/users/profile' => 'User Profile',
+    
+    // Multiple endpoints to same tag
+    'api/v1/orders/*' => 'Orders',
+    'api/v1/invoices/*' => 'Billing',
+    'api/v1/payments/*' => 'Billing',
 ],
 ```
 

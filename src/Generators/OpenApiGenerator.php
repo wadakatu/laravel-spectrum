@@ -326,13 +326,56 @@ class OpenApiGenerator
      */
     protected function generateTags(array $route): array
     {
+        // 設定ファイルからカスタムマッピングを取得
+        $customMappings = config('spectrum.tags', []);
+
+        // 完全一致のマッピングをチェック
+        if (isset($customMappings[$route['uri']])) {
+            return (array) $customMappings[$route['uri']];
+        }
+
+        // ワイルドカードマッピングをチェック
+        foreach ($customMappings as $pattern => $tag) {
+            if (Str::is($pattern, $route['uri'])) {
+                return (array) $tag;
+            }
+        }
+
+        // URIからセグメントを取得
         $segments = explode('/', trim($route['uri'], '/'));
+        $tags = [];
 
-        // 'api/v1/users' -> 'Users'
-        $tag = end($segments);
-        $tag = Str::studly(Str::singular($tag));
+        // 一般的なプレフィックスを除外
+        $ignorePrefixes = ['api', 'v1', 'v2', 'v3'];
+        $segments = array_values(array_filter($segments, function ($segment) use ($ignorePrefixes) {
+            return ! in_array($segment, $ignorePrefixes);
+        }));
 
-        return [$tag];
+        // セグメントからタグを生成
+        foreach ($segments as $segment) {
+            // パラメータ（{param}形式）を除外
+            if (preg_match('/^\{[^}]+\}$/', $segment)) {
+                continue;
+            }
+
+            // パラメータを含むセグメントから名前部分を抽出
+            $cleanSegment = preg_replace('/\{[^}]+\}/', '', $segment);
+            if (! empty($cleanSegment)) {
+                $tags[] = Str::studly(Str::singular($cleanSegment));
+            }
+        }
+
+        // タグが空の場合、コントローラー名をフォールバックとして使用
+        if (empty($tags) && isset($route['controller'])) {
+            $controllerName = class_basename($route['controller']);
+            $controllerName = str_replace('Controller', '', $controllerName);
+            if (! empty($controllerName)) {
+                $tags[] = Str::studly(Str::singular($controllerName));
+            }
+        }
+
+        // 重複を除去して返す
+        return array_values(array_unique($tags));
     }
 
     /**
