@@ -55,6 +55,14 @@ class WatchCommandTest extends TestCase
             {
                 // Do nothing
             }
+            
+            public function option($key = null)
+            {
+                if ($key === 'verbose') {
+                    return false;
+                }
+                return null;
+            }
         };
 
         // Test FormRequest cache clearing
@@ -105,6 +113,14 @@ class WatchCommandTest extends TestCase
             public function info($string, $verbosity = null)
             {
                 // Do nothing
+            }
+            
+            public function option($key = null)
+            {
+                if ($key === 'verbose') {
+                    return false;
+                }
+                return null;
             }
         };
 
@@ -161,6 +177,14 @@ class WatchCommandTest extends TestCase
             {
                 // Do nothing
             }
+            
+            public function option($key = null)
+            {
+                if ($key === 'verbose') {
+                    return false;
+                }
+                return null;
+            }
         };
 
         // Test routes cache clearing
@@ -209,6 +233,14 @@ class WatchCommandTest extends TestCase
             public function info($string, $verbosity = null)
             {
                 // Do nothing
+            }
+            
+            public function option($key = null)
+            {
+                if ($key === 'verbose') {
+                    return false;
+                }
+                return null;
             }
         };
 
