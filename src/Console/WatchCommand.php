@@ -3,7 +3,7 @@
 namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
-use LaravelSpectrum\Services\DocumentationCache;
+use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
 use Workerman\Worker;
@@ -38,7 +38,7 @@ class WatchCommand extends Command
 
         $this->info('🚀 Starting Laravel Spectrum preview server...');
 
-        // Initial generation
+        // Initial generation (キャッシュ有効)
         $this->call('spectrum:generate', ['--quiet' => true]);
 
         // Set WorkerMan to daemon mode for development
@@ -75,10 +75,10 @@ class WatchCommand extends Command
     {
         $this->info("📝 File {$event}: {$path}");
 
-        // Clear related cache
+        // 変更されたファイルに関連するキャッシュのみクリア
         $this->clearRelatedCache($path);
 
-        // Regenerate (incremental)
+        // Regenerate (キャッシュ有効で差分更新)
         $startTime = microtime(true);
         $this->call('spectrum:generate', ['--quiet' => true]);
         $duration = round(microtime(true) - $startTime, 2);
@@ -105,21 +105,51 @@ class WatchCommand extends Command
 
     private function clearRelatedCache(string $path): void
     {
+        $clearedCount = 0;
+
         // For FormRequests
         if (str_contains($path, 'Requests')) {
             $className = $this->getClassNameFromPath($path);
-            $this->cache->forget("form_request:{$className}");
+            if ($this->cache->forget("form_request:{$className}")) {
+                $clearedCount++;
+                $this->info("  🧹 Cleared cache for FormRequest: {$className}");
+            }
         }
 
         // For Resources
         elseif (str_contains($path, 'Resources')) {
             $className = $this->getClassNameFromPath($path);
-            $this->cache->forget("resource:{$className}");
+            if ($this->cache->forget("resource:{$className}")) {
+                $clearedCount++;
+                $this->info("  🧹 Cleared cache for Resource: {$className}");
+            }
+
+            // Resourceが他のResourceに依存している可能性があるため、
+            // このResourceを使用している可能性のある他のResourceのキャッシュもクリア
+            $clearedCount += $this->cache->forgetByPattern('resource:');
+            if ($clearedCount > 1) {
+                $this->info('  🧹 Cleared related Resource caches');
+            }
         }
 
         // For route files
         elseif (str_contains($path, 'routes')) {
-            $this->cache->forget('routes:all');
+            if ($this->cache->forget('routes:all')) {
+                $clearedCount++;
+                $this->info('  🧹 Cleared routes cache');
+            }
+        }
+
+        // For Controllers (コントローラーが変更された場合もルートキャッシュをクリア)
+        elseif (str_contains($path, 'Controllers')) {
+            if ($this->cache->forget('routes:all')) {
+                $clearedCount++;
+                $this->info('  🧹 Cleared routes cache (Controller changed)');
+            }
+        }
+
+        if ($clearedCount === 0) {
+            $this->info('  ℹ️  No cache entries to clear');
         }
     }
 
