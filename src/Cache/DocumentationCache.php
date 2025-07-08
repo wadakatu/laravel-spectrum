@@ -13,7 +13,12 @@ class DocumentationCache
 
     public function __construct()
     {
-        $this->cacheDir = config('spectrum.cache.directory', storage_path('app/spectrum/cache'));
+        // パッケージ開発環境と通常環境の両方に対応
+        $defaultCacheDir = function_exists('storage_path')
+            ? storage_path('app/spectrum/cache')
+            : getcwd().'/storage/spectrum/cache';
+
+        $this->cacheDir = config('spectrum.cache.directory', $defaultCacheDir);
         $this->enabled = config('spectrum.cache.enabled', true);
 
         if ($this->enabled) {

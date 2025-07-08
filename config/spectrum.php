@@ -170,7 +170,9 @@ return [
         | The directory where cache files will be stored.
         |
         */
-        'directory' => storage_path('app/spectrum/cache'),
+        'directory' => function_exists('storage_path')
+            ? storage_path('app/spectrum/cache')
+            : getcwd().'/storage/spectrum/cache',
 
         /*
         |--------------------------------------------------------------------------
