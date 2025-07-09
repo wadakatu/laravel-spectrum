@@ -35,21 +35,18 @@ class DocumentationCache
             return $callback();
         }
 
-        // 依存ファイルが変更されていないかチェック
-        if ($this->isDependenciesChanged($key, $dependencies)) {
-            $result = $callback();
-            $this->put($key, $result, $dependencies);
-
-            return $result;
-        }
-
-        // キャッシュから取得
+        // まずキャッシュの存在を確認
         $cached = $this->get($key);
+
+        // キャッシュが存在する場合のみ依存関係をチェック
         if ($cached !== null) {
-            return $cached;
+            // 依存ファイルが変更されていないかチェック
+            if (! $this->isDependenciesChanged($key, $dependencies)) {
+                return $cached;
+            }
         }
 
-        // キャッシュミスの場合は生成
+        // キャッシュが存在しないか、依存関係が変更された場合は再生成
         $result = $callback();
         $this->put($key, $result, $dependencies);
 

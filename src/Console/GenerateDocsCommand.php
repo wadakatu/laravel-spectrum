@@ -51,6 +51,13 @@ class GenerateDocsCommand extends Command
 
         $this->info('🔍 Analyzing routes...');
 
+        // デバッグモードでキャッシュの使用状況を表示
+        if ($this->output->isVerbose()) {
+            $cacheKeys = $this->cache->getAllCacheKeys();
+            $hasRoutesCache = in_array('routes:all', $cacheKeys);
+            $this->info('  📊 Using cached routes: '.($hasRoutesCache ? 'Yes' : 'No'));
+        }
+
         $routes = $this->routeAnalyzer->analyze();
 
         if (empty($routes)) {
