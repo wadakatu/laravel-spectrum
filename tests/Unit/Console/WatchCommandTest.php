@@ -55,7 +55,7 @@ class WatchCommandTest extends TestCase
             {
                 // Do nothing
             }
-            
+
             public function error($string, $verbosity = null)
             {
                 // Do nothing
@@ -70,7 +70,7 @@ class WatchCommandTest extends TestCase
                     {
                         return false;
                     }
-                    
+
                     public function writeln($messages, $options = 0)
                     {
                         // Do nothing
@@ -128,7 +128,7 @@ class WatchCommandTest extends TestCase
             {
                 // Do nothing
             }
-            
+
             public function error($string, $verbosity = null)
             {
                 // Do nothing
@@ -143,7 +143,7 @@ class WatchCommandTest extends TestCase
                     {
                         return false;
                     }
-                    
+
                     public function writeln($messages, $options = 0)
                     {
                         // Do nothing
@@ -205,7 +205,7 @@ class WatchCommandTest extends TestCase
             {
                 // Do nothing
             }
-            
+
             public function error($string, $verbosity = null)
             {
                 // Do nothing
@@ -220,7 +220,7 @@ class WatchCommandTest extends TestCase
                     {
                         return false;
                     }
-                    
+
                     public function writeln($messages, $options = 0)
                     {
                         // Do nothing
@@ -276,7 +276,7 @@ class WatchCommandTest extends TestCase
             {
                 // Do nothing
             }
-            
+
             public function error($string, $verbosity = null)
             {
                 // Do nothing
@@ -291,7 +291,7 @@ class WatchCommandTest extends TestCase
                     {
                         return false;
                     }
-                    
+
                     public function writeln($messages, $options = 0)
                     {
                         // Do nothing
