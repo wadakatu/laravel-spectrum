@@ -45,8 +45,23 @@ class LiveReloadServer
                     'Content-Type' => 'text/html; charset=utf-8',
                 ], $this->getSwaggerUIHtml()));
             } elseif ($path === '/openapi.json') {
-                $jsonPath = storage_path('app/spectrum/openapi.json');
-                $json = file_exists($jsonPath) ? file_get_contents($jsonPath) : '{}';
+                // パッケージ開発環境と通常環境の両方に対応
+                $possiblePaths = [];
+
+                if (function_exists('storage_path')) {
+                    $possiblePaths[] = storage_path('app/spectrum/openapi.json');
+                }
+
+                // パッケージ開発環境用のパス
+                $possiblePaths[] = getcwd().'/storage/spectrum/openapi.json';
+
+                $json = '{}';
+                foreach ($possiblePaths as $jsonPath) {
+                    if (file_exists($jsonPath)) {
+                        $json = file_get_contents($jsonPath);
+                        break;
+                    }
+                }
 
                 $connection->send(new Response(200, [
                     'Content-Type' => 'application/json',
@@ -210,7 +225,21 @@ class LiveReloadServer
                 
                 // Reload Swagger UI
                 setTimeout(() => {
-                    ui.specActions.download();
+                    // ブラウザキャッシュを回避するため、タイムスタンプを追加
+                    const timestamp = new Date().getTime();
+                    
+                    // Fetch APIでキャッシュを無効化して取得
+                    fetch(`/openapi.json?t=${timestamp}`, { cache: 'no-cache' })
+                        .then(response => response.json())
+                        .then(spec => {
+                            // Swagger UIを新しいspecで更新
+                            ui.specActions.updateLoadingStatus('loading');
+                            ui.specActions.updateSpec(JSON.stringify(spec));
+                            ui.specActions.updateLoadingStatus('success');
+                        })
+                        .catch(error => {
+                            console.error('Failed to reload spec:', error);
+                        });
                 }, 500);
             }
         };

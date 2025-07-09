@@ -73,9 +73,22 @@ class GenerateDocsCommand extends Command
 
         // ファイルの保存
         $content = $this->formatOutput($openapi, $this->option('format'));
-        File::put($outputPath, $content);
+        $result = File::put($outputPath, $content);
+
+        if ($result === false) {
+            $this->error("❌ Failed to write documentation to: {$outputPath}");
+
+            return 1;
+        }
 
         $this->info("✅ Documentation generated: {$outputPath}");
+
+        // デバッグ情報
+        if (! $this->option('quiet')) {
+            $fileSize = File::size($outputPath);
+            $this->info('   📁 File size: '.number_format($fileSize).' bytes');
+            $this->info('   📍 Absolute path: '.realpath($outputPath));
+        }
 
         $endTime = microtime(true);
         $duration = round($endTime - $startTime, 2);
@@ -95,7 +108,16 @@ class GenerateDocsCommand extends Command
     {
         $format = $this->option('format');
 
-        return storage_path("app/spectrum/openapi.{$format}");
+        // パッケージ開発環境かどうかを判定
+        if (function_exists('storage_path')) {
+            return storage_path("app/spectrum/openapi.{$format}");
+        }
+
+        // パッケージ開発環境の場合は、現在のディレクトリに生成
+        $outputDir = getcwd().'/storage/spectrum';
+        File::ensureDirectoryExists($outputDir);
+
+        return $outputDir."/openapi.{$format}";
     }
 
     protected function formatOutput(array $openapi, string $format): string

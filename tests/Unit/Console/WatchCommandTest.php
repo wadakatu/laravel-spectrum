@@ -56,6 +56,11 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
+            public function error($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
@@ -64,6 +69,11 @@ class WatchCommandTest extends TestCase
                     public function isVerbose()
                     {
                         return false;
+                    }
+
+                    public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
                     }
                 };
             }
@@ -90,7 +100,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true], $command->callArguments);
+        $this->assertEquals([], $command->callArguments);
     }
 
     public function test_handle_file_change_clears_cache_and_regenerates_for_resources(): void
@@ -119,6 +129,11 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
+            public function error($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
@@ -127,6 +142,11 @@ class WatchCommandTest extends TestCase
                     public function isVerbose()
                     {
                         return false;
+                    }
+
+                    public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
                     }
                 };
             }
@@ -157,7 +177,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Resources/UserResource.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true], $command->callArguments);
+        $this->assertEquals([], $command->callArguments);
     }
 
     public function test_handle_file_change_clears_cache_and_regenerates_for_routes(): void
@@ -186,6 +206,11 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
+            public function error($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
@@ -194,6 +219,11 @@ class WatchCommandTest extends TestCase
                     public function isVerbose()
                     {
                         return false;
+                    }
+
+                    public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
                     }
                 };
             }
@@ -218,7 +248,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('routes/api.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true], $command->callArguments);
+        $this->assertEquals([], $command->callArguments);
     }
 
     public function test_handle_file_change_clears_cache_for_controllers(): void
@@ -247,6 +277,11 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
+            public function error($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
@@ -255,6 +290,11 @@ class WatchCommandTest extends TestCase
                     public function isVerbose()
                     {
                         return false;
+                    }
+
+                    public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
                     }
                 };
             }
@@ -279,7 +319,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Controllers/UserController.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals(['--quiet' => true], $command->callArguments);
+        $this->assertEquals([], $command->callArguments);
     }
 
     public function test_get_class_name_from_path(): void
