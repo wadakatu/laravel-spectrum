@@ -175,6 +175,14 @@ class WatchCommand extends Command
 
         // For route files
         elseif (str_contains($path, 'routes')) {
+            // キャッシュクリア前の状態を確認（デバッグ用）
+            if ($this->output->isVerbose()) {
+                $this->info('  🔍 Checking routes cache before clear...');
+                $allKeys = $this->cache->getAllCacheKeys();
+                $hasRoutesCache = in_array('routes:all', $allKeys);
+                $this->info('  📊 Routes cache exists: '.($hasRoutesCache ? 'Yes' : 'No'));
+            }
+
             if ($this->cache->forget('routes:all')) {
                 $clearedCount++;
                 $this->info('  🧹 Cleared routes cache');
@@ -190,6 +198,14 @@ class WatchCommand extends Command
 
         // For Controllers (コントローラーが変更された場合もルートキャッシュをクリア)
         elseif (str_contains($path, 'Controllers')) {
+            // キャッシュクリア前の状態を確認（デバッグ用）
+            if ($this->output->isVerbose()) {
+                $this->info('  🔍 Checking routes cache before clear (Controller change)...');
+                $allKeys = $this->cache->getAllCacheKeys();
+                $hasRoutesCache = in_array('routes:all', $allKeys);
+                $this->info('  📊 Routes cache exists: '.($hasRoutesCache ? 'Yes' : 'No'));
+            }
+
             if ($this->cache->forget('routes:all')) {
                 $clearedCount++;
                 $this->info('  🧹 Cleared routes cache (Controller changed)');
