@@ -28,6 +28,62 @@ class RouteAnalyzer
     }
 
     /**
+     * Laravelのルートコレクションを強制的にリロード
+     */
+    public function reloadRoutes(): void
+    {
+        // ルートコレクションをクリア
+        $router = app('router');
+
+        // ルートコレクションのリセット
+        $routeCollection = $router->getRoutes();
+        $reflection = new \ReflectionProperty($routeCollection, 'routes');
+        $reflection->setAccessible(true);
+        $reflection->setValue($routeCollection, []);
+
+        $reflection = new \ReflectionProperty($routeCollection, 'allRoutes');
+        $reflection->setAccessible(true);
+        $reflection->setValue($routeCollection, []);
+
+        $reflection = new \ReflectionProperty($routeCollection, 'nameList');
+        $reflection->setAccessible(true);
+        $reflection->setValue($routeCollection, []);
+
+        $reflection = new \ReflectionProperty($routeCollection, 'actionList');
+        $reflection->setAccessible(true);
+        $reflection->setValue($routeCollection, []);
+
+        // ルートファイルを再読み込み
+        $this->loadRouteFiles();
+    }
+
+    /**
+     * ルートファイルを再読み込み
+     */
+    protected function loadRouteFiles(): void
+    {
+        // api.phpを優先的に読み込む
+        $apiRoutePath = base_path('routes/api.php');
+        if (file_exists($apiRoutePath)) {
+            require $apiRoutePath;
+        }
+
+        // web.phpも読み込む（APIルートが含まれている場合があるため）
+        $webRoutePath = base_path('routes/web.php');
+        if (file_exists($webRoutePath)) {
+            require $webRoutePath;
+        }
+
+        // カスタムルートファイルも読み込む
+        $customRoutes = config('spectrum.route_files', []);
+        foreach ($customRoutes as $routeFile) {
+            if (file_exists($routeFile)) {
+                require $routeFile;
+            }
+        }
+    }
+
+    /**
      * 実際のルート解析処理
      */
     protected function performAnalysis(): array
