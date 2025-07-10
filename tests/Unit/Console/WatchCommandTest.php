@@ -104,7 +104,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals([], $command->callArguments);
+        $this->assertEquals(['--no-cache' => true], $command->callArguments);
     }
 
     public function test_handle_file_change_clears_cache_and_regenerates_for_resources(): void
@@ -182,7 +182,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Resources/UserResource.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals([], $command->callArguments);
+        $this->assertEquals(['--no-cache' => true], $command->callArguments);
     }
 
     public function test_handle_file_change_clears_cache_and_regenerates_for_routes(): void
@@ -273,7 +273,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('routes/api.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals([], $command->callArguments);
+        $this->assertEquals(['--no-cache' => true], $command->callArguments);
     }
 
     public function test_handle_file_change_clears_cache_for_controllers(): void
@@ -345,7 +345,7 @@ class WatchCommandTest extends TestCase
         $method->invoke($command, base_path('app/Http/Controllers/UserController.php'), 'modified');
 
         $this->assertTrue($command->callInvoked);
-        $this->assertEquals([], $command->callArguments);
+        $this->assertEquals(['--no-cache' => true], $command->callArguments);
     }
 
     public function test_get_class_name_from_path(): void
