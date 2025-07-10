@@ -45,6 +45,7 @@ class GenerateDocsCommand extends Command
 
         if ($this->option('no-cache')) {
             config(['spectrum.cache.enabled' => false]);
+            $this->cache->disable();
         }
 
         $startTime = microtime(true);
@@ -58,7 +59,7 @@ class GenerateDocsCommand extends Command
             $this->info('  📊 Using cached routes: '.($hasRoutesCache ? 'Yes' : 'No'));
         }
 
-        $routes = $this->routeAnalyzer->analyze();
+        $routes = $this->routeAnalyzer->analyze(! $this->option('no-cache'));
 
         if (empty($routes)) {
             $this->warn('No API routes found. Make sure your routes match the patterns in config/spectrum.php');

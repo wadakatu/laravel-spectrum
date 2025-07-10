@@ -430,4 +430,20 @@ class DocumentationCache
     {
         return $this->enabled;
     }
+
+    /**
+     * キャッシュを一時的に無効化
+     */
+    public function disable(): void
+    {
+        $this->enabled = false;
+    }
+
+    /**
+     * キャッシュを有効化
+     */
+    public function enable(): void
+    {
+        $this->enabled = config('spectrum.cache.enabled', true);
+    }
 }
