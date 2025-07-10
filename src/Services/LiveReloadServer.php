@@ -246,24 +246,36 @@ class LiveReloadServer
                     notification.classList.remove('show');
                 }, 3000);
                 
-                // Reload Swagger UI
-                setTimeout(() => {
-                    // ブラウザキャッシュを回避するため、タイムスタンプを追加
-                    const timestamp = new Date().getTime();
-                    
-                    // Fetch APIでキャッシュを無効化して取得
-                    fetch(`/openapi.json?t=${timestamp}`, { cache: 'no-cache' })
-                        .then(response => response.json())
-                        .then(spec => {
-                            // Swagger UIを新しいspecで更新
-                            ui.specActions.updateLoadingStatus('loading');
-                            ui.specActions.updateSpec(JSON.stringify(spec));
-                            ui.specActions.updateLoadingStatus('success');
-                        })
-                        .catch(error => {
-                            console.error('Failed to reload spec:', error);
-                        });
-                }, 500);
+                // ルートファイルが変更された場合は強制リロード
+                if (data.forceReload || (data.path && data.path.includes('routes'))) {
+                    console.log('Route file changed, forcing page reload...');
+                    console.log('Changed file:', data.path);
+                    console.log('Timestamp:', data.timestamp);
+                    notification.textContent = '🔄 Reloading page...';
+                    setTimeout(() => {
+                        // 強制的にキャッシュを無視してリロード
+                        window.location.href = window.location.href + '?t=' + new Date().getTime();
+                    }, 500);
+                } else {
+                    // その他のファイルの場合はSwagger UIのみ更新
+                    setTimeout(() => {
+                        // ブラウザキャッシュを回避するため、タイムスタンプを追加
+                        const timestamp = new Date().getTime();
+                        
+                        // Fetch APIでキャッシュを無効化して取得
+                        fetch(`/openapi.json?t=${timestamp}`, { cache: 'no-cache' })
+                            .then(response => response.json())
+                            .then(spec => {
+                                // Swagger UIを新しいspecで更新
+                                ui.specActions.updateLoadingStatus('loading');
+                                ui.specActions.updateSpec(JSON.stringify(spec));
+                                ui.specActions.updateLoadingStatus('success');
+                            })
+                            .catch(error => {
+                                console.error('Failed to reload spec:', error);
+                            });
+                    }, 500);
+                }
             }
         };
         

@@ -3,6 +3,8 @@
 namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Route;
+use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
@@ -23,12 +25,15 @@ class WatchCommand extends Command
 
     private DocumentationCache $cache;
 
-    public function __construct(FileWatcher $watcher, LiveReloadServer $server, DocumentationCache $cache)
+    private RouteAnalyzer $routeAnalyzer;
+
+    public function __construct(FileWatcher $watcher, LiveReloadServer $server, DocumentationCache $cache, RouteAnalyzer $routeAnalyzer)
     {
         parent::__construct();
         $this->watcher = $watcher;
         $this->server = $server;
         $this->cache = $cache;
+        $this->routeAnalyzer = $routeAnalyzer;
     }
 
     public function handle(): int
@@ -104,6 +109,14 @@ class WatchCommand extends Command
             // ルートファイルが変更された場合は、念のためキャッシュディレクトリ全体をクリア
             $this->cache->clear();
             $this->info('  🧹 All caches cleared for route changes');
+
+            // Laravelのルートコレクションも強制的にリロード
+            $this->info('  🔃 Reloading Laravel routes...');
+
+            // Laravelのルートコレクションを強制的にリロード
+            $this->routeAnalyzer->reloadRoutes();
+
+            $this->info('  ✅ Routes reloaded from files');
         }
 
         $exitCode = $this->call('spectrum:generate');
@@ -139,11 +152,18 @@ class WatchCommand extends Command
         }
 
         // Notify via WebSocket
-        $this->server->notifyClients([
+        $notificationData = [
             'event' => 'documentation-updated',
             'path' => $path,
             'timestamp' => now()->toIso8601String(),
-        ]);
+        ];
+
+        // ルートファイルが変更された場合は強制リロードフラグを追加
+        if (str_contains($path, 'routes')) {
+            $notificationData['forceReload'] = true;
+        }
+
+        $this->server->notifyClients($notificationData);
     }
 
     private function getWatchPaths(): array
