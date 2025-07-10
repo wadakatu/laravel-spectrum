@@ -20,8 +20,12 @@ class RouteAnalyzer
     /**
      * APIルートを解析して構造化された配列を返す
      */
-    public function analyze(): array
+    public function analyze(bool $useCache = true): array
     {
+        if (! $useCache || ! $this->cache->isEnabled()) {
+            return $this->performAnalysis();
+        }
+
         return $this->cache->rememberRoutes(function () {
             return $this->performAnalysis();
         });
