@@ -56,17 +56,40 @@ class LiveReloadServer
                 $possiblePaths[] = getcwd().'/storage/spectrum/openapi.json';
 
                 $json = '{}';
+                $lastModified = 0;
                 foreach ($possiblePaths as $jsonPath) {
                     if (file_exists($jsonPath)) {
+                        // ファイルシステムキャッシュをクリア
+                        clearstatcache(true, $jsonPath);
+                        
+                        // 最新のファイル内容を読み込む
                         $json = file_get_contents($jsonPath);
+                        $lastModified = filemtime($jsonPath);
+                        
+                        // デバッグ情報
+                        error_log("LiveReloadServer: Serving {$jsonPath} (modified: ".date('Y-m-d H:i:s', $lastModified).", size: ".strlen($json)." bytes)");
                         break;
                     }
                 }
 
-                $connection->send(new Response(200, [
+                // キャッシュを完全に無効化するヘッダー
+                $headers = [
                     'Content-Type' => 'application/json',
                     'Access-Control-Allow-Origin' => '*',
-                ], $json));
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0',
+                    'X-Content-Type-Options' => 'nosniff',
+                ];
+                
+                // ETagとLast-Modifiedヘッダーを追加
+                if ($lastModified > 0) {
+                    $etag = md5($json);
+                    $headers['ETag'] = '"'.$etag.'"';
+                    $headers['Last-Modified'] = gmdate('D, d M Y H:i:s', $lastModified).' GMT';
+                }
+
+                $connection->send(new Response(200, $headers, $json));
             } else {
                 $connection->send(new Response(404, [], '404 Not Found'));
             }
