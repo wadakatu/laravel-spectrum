@@ -61,13 +61,13 @@ class LiveReloadServer
                     if (file_exists($jsonPath)) {
                         // ファイルシステムキャッシュをクリア
                         clearstatcache(true, $jsonPath);
-                        
+
                         // 最新のファイル内容を読み込む
                         $json = file_get_contents($jsonPath);
                         $lastModified = filemtime($jsonPath);
-                        
+
                         // デバッグ情報
-                        error_log("LiveReloadServer: Serving {$jsonPath} (modified: ".date('Y-m-d H:i:s', $lastModified).", size: ".strlen($json)." bytes)");
+                        error_log("LiveReloadServer: Serving {$jsonPath} (modified: ".date('Y-m-d H:i:s', $lastModified).', size: '.strlen($json).' bytes)');
                         break;
                     }
                 }
@@ -81,7 +81,7 @@ class LiveReloadServer
                     'Expires' => '0',
                     'X-Content-Type-Options' => 'nosniff',
                 ];
-                
+
                 // ETagとLast-Modifiedヘッダーを追加
                 if ($lastModified > 0) {
                     $etag = md5($json);

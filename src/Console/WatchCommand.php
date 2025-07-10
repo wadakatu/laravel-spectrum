@@ -88,7 +88,7 @@ class WatchCommand extends Command
             $allKeys = $this->cache->getAllCacheKeys();
             $hasRoutesCache = in_array('routes:all', $allKeys);
             $this->info('  📊 Routes cache still exists: '.($hasRoutesCache ? 'Yes ⚠️' : 'No ✅'));
-            
+
             if ($hasRoutesCache) {
                 $this->warn('  ⚠️  Routes cache was not properly cleared!');
             }
@@ -97,7 +97,7 @@ class WatchCommand extends Command
         // Regenerate (キャッシュ有効で差分更新)
         $startTime = microtime(true);
         $this->info('  🔄 Regenerating documentation...');
-        
+
         // 強制的にキャッシュを無効化するオプションを追加
         if (str_contains($path, 'routes')) {
             $this->info('  💨 Forcing route cache refresh...');
@@ -105,7 +105,7 @@ class WatchCommand extends Command
             $this->cache->clear();
             $this->info('  🧹 All caches cleared for route changes');
         }
-        
+
         $exitCode = $this->call('spectrum:generate');
         $duration = round(microtime(true) - $startTime, 2);
 
