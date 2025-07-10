@@ -119,11 +119,26 @@ class WatchCommand extends Command
             $this->info('  ✅ Routes reloaded from files');
         }
 
-        $exitCode = $this->call('spectrum:generate');
+        $exitCode = $this->call('spectrum:generate', ['--no-cache' => true]);
         $duration = round(microtime(true) - $startTime, 2);
 
         if ($exitCode !== 0) {
             $this->error('  ❌ Failed to regenerate documentation');
+            $this->error('  💡 Try running the command with verbose mode: php artisan spectrum:watch -vvv');
+
+            // ログファイルの最新エントリを確認
+            $logFile = storage_path('logs/laravel.log');
+            if (file_exists($logFile)) {
+                $lastLines = array_slice(file($logFile), -10);
+                if (! empty($lastLines)) {
+                    $this->error('  📋 Recent log entries:');
+                    foreach ($lastLines as $line) {
+                        if (str_contains($line, 'ERROR') || str_contains($line, 'Failed')) {
+                            $this->error('    '.trim($line));
+                        }
+                    }
+                }
+            }
 
             return;
         }

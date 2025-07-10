@@ -32,31 +32,34 @@ class RouteAnalyzer
      */
     public function reloadRoutes(): void
     {
-        // ルートコレクションをクリア
+        // 現在のルートコレクションをバックアップ
         $router = app('router');
+        $oldRoutes = clone $router->getRoutes();
 
-        // ルートコレクションのリセット
-        $routeCollection = $router->getRoutes();
+        try {
+            // 新しいルートコレクションを作成
+            $newRouteCollection = new \Illuminate\Routing\RouteCollection;
+            $router->setRoutes($newRouteCollection);
 
-        // ルートコレクションの全プロパティをリセット
-        $propertiesToReset = ['routes', 'allRoutes', 'nameList', 'actionList'];
+            // ルートファイルを再読み込み
+            $this->loadRouteFiles();
 
-        foreach ($propertiesToReset as $property) {
-            try {
-                $reflection = new \ReflectionProperty($routeCollection, $property);
-                $reflection->setAccessible(true);
-                $reflection->setValue($routeCollection, []);
-            } catch (\ReflectionException $e) {
-                // プロパティが存在しない場合は無視
-                continue;
+            // 成功したら新しいルートコレクションを使用
+            Route::getRoutes()->refreshNameLookups();
+            Route::getRoutes()->refreshActionLookups();
+        } catch (\Throwable $e) {
+            // エラーが発生した場合は元のルートコレクションに戻す
+            $router->setRoutes($oldRoutes);
+
+            if (function_exists('logger')) {
+                logger()->error('Failed to reload routes', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
+
+            throw $e;
         }
-
-        // ルートファイルを再読み込み
-        $this->loadRouteFiles();
-
-        // ルートコレクションを再構築
-        $router->setRoutes($routeCollection);
     }
 
     /**
@@ -98,8 +101,23 @@ class RouteAnalyzer
                 opcache_invalidate($routeFile, true);
             }
 
-            // ルートファイルを読み込む
-            require $routeFile;
+            // ルートファイルを読み込む（エラーハンドリング付き）
+            try {
+                // ファイルが存在することを再確認
+                if (file_exists($routeFile)) {
+                    // ルートファイルを読み込む
+                    require $routeFile;
+                }
+            } catch (\Throwable $e) {
+                // エラーが発生した場合はログに記録
+                if (function_exists('logger')) {
+                    logger()->error('Failed to load route file: '.$routeFile, [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+                // エラーをスローしないで続行
+            }
         }
     }
 
