@@ -211,6 +211,11 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
+            public function warn($string, $verbosity = null)
+            {
+                // Do nothing
+            }
+
             public function __construct($fileWatcher, $server, $cache)
             {
                 parent::__construct($fileWatcher, $server, $cache);
@@ -234,6 +239,14 @@ class WatchCommandTest extends TestCase
             ->once()
             ->with('routes:all')
             ->andReturn(true);
+
+        // Mock getAllCacheKeys method for cache verification
+        $cache->shouldReceive('getAllCacheKeys')
+            ->andReturn([]);
+
+        // Mock clear method for forced cache clearing
+        $cache->shouldReceive('clear')
+            ->once();
 
         $server->shouldReceive('notifyClients')
             ->once()
