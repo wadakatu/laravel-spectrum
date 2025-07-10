@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Services\FileWatcher;
@@ -111,7 +112,10 @@ class WatchCommand extends Command
 
             // Laravelのルートコレクションも強制的にリロード
             $this->info('  🔃 Reloading Laravel routes...');
+
+            // Laravelのルートコレクションを強制的にリロード
             $this->routeAnalyzer->reloadRoutes();
+
             $this->info('  ✅ Routes reloaded from files');
         }
 

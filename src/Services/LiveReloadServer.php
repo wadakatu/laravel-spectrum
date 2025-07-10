@@ -249,9 +249,12 @@ class LiveReloadServer
                 // ルートファイルが変更された場合は強制リロード
                 if (data.forceReload || (data.path && data.path.includes('routes'))) {
                     console.log('Route file changed, forcing page reload...');
+                    console.log('Changed file:', data.path);
+                    console.log('Timestamp:', data.timestamp);
                     notification.textContent = '🔄 Reloading page...';
                     setTimeout(() => {
-                        location.reload(true);
+                        // 強制的にキャッシュを無視してリロード
+                        window.location.href = window.location.href + '?t=' + new Date().getTime();
                     }, 500);
                 } else {
                     // その他のファイルの場合はSwagger UIのみ更新
