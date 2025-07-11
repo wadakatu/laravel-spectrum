@@ -98,20 +98,24 @@
         };
         
         ws.onmessage = (event) => {
+            console.log('WebSocket message received:', event.data);
             const data = JSON.parse(event.data);
+            
+            console.log('Parsed data:', data);
             
             if (data.event === 'documentation-updated') {
                 console.log('Documentation updated:', data.path);
+                console.log('Will reload page in 500ms...');
                 
                 // Show notification
                 notification.classList.add('show');
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 3000);
+                notification.textContent = '🔄 Reloading page...';
                 
-                // Reload Swagger UI
+                // Auto reload page
                 setTimeout(() => {
-                    ui.specActions.download();
+                    console.log('Reloading page now...');
+                    // Force reload with cache bypass
+                    window.location.href = window.location.href + '?t=' + new Date().getTime();
                 }, 500);
             }
         };
