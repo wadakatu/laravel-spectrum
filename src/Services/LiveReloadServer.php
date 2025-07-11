@@ -140,9 +140,10 @@ class LiveReloadServer
             if ($this->httpWorker) {
                 $address = $this->httpWorker->getSocketName();
                 if (preg_match('/:(\\d+)$/', $address, $matches)) {
-                    $wsPort = (int)$matches[1] + 1;
+                    $wsPort = (int) $matches[1] + 1;
                 }
             }
+
             return view('spectrum::live-preview', ['wsPort' => $wsPort])->render();
         }
 
