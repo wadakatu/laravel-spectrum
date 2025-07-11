@@ -171,7 +171,7 @@ class WatchCommand extends Command
         $this->server->notifyClients($notificationData);
     }
 
-    private function runGenerateCommand(array $options = []): int
+    protected function runGenerateCommand(array $options = []): int
     {
         // Build the command array
         $command = [PHP_BINARY, 'artisan', 'spectrum:generate'];

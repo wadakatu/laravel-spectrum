@@ -2,7 +2,6 @@
 
 namespace LaravelSpectrum\Tests\Unit\Console;
 
-use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Services\FileWatcher;
@@ -23,10 +22,8 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
-        $command = new WatchCommand($fileWatcher, $server, $cache, $routeAnalyzer);
+        $command = new WatchCommand($fileWatcher, $server, $cache);
 
         $this->assertInstanceOf(WatchCommand::class, $command);
         $this->assertEquals('spectrum:watch', $command->getName());
@@ -38,19 +35,18 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache, $routeAnalyzer) extends WatchCommand
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
 
             public $callArguments = [];
 
-            public function call($command, array $arguments = [])
+            protected function runGenerateCommand(array $options = []): int
             {
                 $this->callInvoked = true;
-                $this->callArguments = $arguments;
+                $this->callArguments = $options;
 
                 return 0;
             }
@@ -65,9 +61,9 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function __construct($fileWatcher, $server, $cache, $routeAnalyzer)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                parent::__construct($fileWatcher, $server, $cache, $routeAnalyzer);
+                parent::__construct($fileWatcher, $server, $cache);
                 $this->output = new class
                 {
                     public function isVerbose()
@@ -76,6 +72,11 @@ class WatchCommandTest extends TestCase
                     }
 
                     public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
+                    }
+
+                    public function write($messages, $newline = false, $options = 0)
                     {
                         // Do nothing
                     }
@@ -101,9 +102,13 @@ class WatchCommandTest extends TestCase
         $method = $reflection->getMethod('handleFileChange');
         $method->setAccessible(true);
 
-        $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
+        try {
+            $method->invoke($command, base_path('app/Http/Requests/TestRequest.php'), 'modified');
+        } catch (\Exception $e) {
+            $this->fail('Exception thrown: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine());
+        }
 
-        $this->assertTrue($command->callInvoked);
+        $this->assertTrue($command->callInvoked, 'runGenerateCommand was not called');
         $this->assertEquals(['--no-cache' => true], $command->callArguments);
     }
 
@@ -112,19 +117,18 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache, $routeAnalyzer) extends WatchCommand
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
 
             public $callArguments = [];
 
-            public function call($command, array $arguments = [])
+            protected function runGenerateCommand(array $options = []): int
             {
                 $this->callInvoked = true;
-                $this->callArguments = $arguments;
+                $this->callArguments = $options;
 
                 return 0;
             }
@@ -139,9 +143,9 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function __construct($fileWatcher, $server, $cache, $routeAnalyzer)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                parent::__construct($fileWatcher, $server, $cache, $routeAnalyzer);
+                parent::__construct($fileWatcher, $server, $cache);
                 $this->output = new class
                 {
                     public function isVerbose()
@@ -150,6 +154,11 @@ class WatchCommandTest extends TestCase
                     }
 
                     public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
+                    }
+
+                    public function write($messages, $newline = false, $options = 0)
                     {
                         // Do nothing
                     }
@@ -190,19 +199,18 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache, $routeAnalyzer) extends WatchCommand
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
 
             public $callArguments = [];
 
-            public function call($command, array $arguments = [])
+            protected function runGenerateCommand(array $options = []): int
             {
                 $this->callInvoked = true;
-                $this->callArguments = $arguments;
+                $this->callArguments = $options;
 
                 return 0;
             }
@@ -222,9 +230,9 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function __construct($fileWatcher, $server, $cache, $routeAnalyzer)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                parent::__construct($fileWatcher, $server, $cache, $routeAnalyzer);
+                parent::__construct($fileWatcher, $server, $cache);
                 $this->output = new class
                 {
                     public function isVerbose()
@@ -233,6 +241,11 @@ class WatchCommandTest extends TestCase
                     }
 
                     public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
+                    }
+
+                    public function write($messages, $newline = false, $options = 0)
                     {
                         // Do nothing
                     }
@@ -252,10 +265,6 @@ class WatchCommandTest extends TestCase
 
         // Mock clear method for forced cache clearing
         $cache->shouldReceive('clear')
-            ->once();
-
-        // Mock reloadRoutes method for route reloading
-        $routeAnalyzer->shouldReceive('reloadRoutes')
             ->once();
 
         $server->shouldReceive('notifyClients')
@@ -281,19 +290,18 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
         // Create an anonymous class that extends WatchCommand for testing
-        $command = new class($fileWatcher, $server, $cache, $routeAnalyzer) extends WatchCommand
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $callInvoked = false;
 
             public $callArguments = [];
 
-            public function call($command, array $arguments = [])
+            protected function runGenerateCommand(array $options = []): int
             {
                 $this->callInvoked = true;
-                $this->callArguments = $arguments;
+                $this->callArguments = $options;
 
                 return 0;
             }
@@ -308,9 +316,9 @@ class WatchCommandTest extends TestCase
                 // Do nothing
             }
 
-            public function __construct($fileWatcher, $server, $cache, $routeAnalyzer)
+            public function __construct($fileWatcher, $server, $cache)
             {
-                parent::__construct($fileWatcher, $server, $cache, $routeAnalyzer);
+                parent::__construct($fileWatcher, $server, $cache);
                 $this->output = new class
                 {
                     public function isVerbose()
@@ -319,6 +327,11 @@ class WatchCommandTest extends TestCase
                     }
 
                     public function writeln($messages, $options = 0)
+                    {
+                        // Do nothing
+                    }
+
+                    public function write($messages, $newline = false, $options = 0)
                     {
                         // Do nothing
                     }
@@ -353,10 +366,8 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
-        $command = new WatchCommand($fileWatcher, $server, $cache, $routeAnalyzer);
+        $command = new WatchCommand($fileWatcher, $server, $cache);
 
         $reflection = new \ReflectionClass($command);
         $method = $reflection->getMethod('getClassNameFromPath');
@@ -379,10 +390,8 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
-        $command = new WatchCommand($fileWatcher, $server, $cache, $routeAnalyzer);
+        $command = new WatchCommand($fileWatcher, $server, $cache);
 
         // Set custom config
         config(['spectrum.watch.paths' => [
@@ -404,10 +413,8 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
-        $command = new WatchCommand($fileWatcher, $server, $cache, $routeAnalyzer);
+        $command = new WatchCommand($fileWatcher, $server, $cache);
 
         // Clear config to use defaults
         config(['spectrum.watch.paths' => null]);
@@ -433,10 +440,9 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
         // Create a test command that overrides openBrowser to prevent actual execution
-        $command = new class($fileWatcher, $server, $cache, $routeAnalyzer) extends WatchCommand
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public $browserOpened = false;
 
@@ -466,10 +472,8 @@ class WatchCommandTest extends TestCase
         $fileWatcher = Mockery::mock(FileWatcher::class);
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
-        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
 
-        $command = new WatchCommand($fileWatcher, $server, $cache, $routeAnalyzer);
+        $command = new WatchCommand($fileWatcher, $server, $cache);
 
         // Access signature through reflection
         $reflection = new \ReflectionClass($command);
