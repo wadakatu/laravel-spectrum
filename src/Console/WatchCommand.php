@@ -4,10 +4,10 @@ namespace LaravelSpectrum\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
-use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
+use Symfony\Component\Process\Process;
 use Workerman\Worker;
 
 class WatchCommand extends Command
@@ -25,15 +25,12 @@ class WatchCommand extends Command
 
     private DocumentationCache $cache;
 
-    private RouteAnalyzer $routeAnalyzer;
-
-    public function __construct(FileWatcher $watcher, LiveReloadServer $server, DocumentationCache $cache, RouteAnalyzer $routeAnalyzer)
+    public function __construct(FileWatcher $watcher, LiveReloadServer $server, DocumentationCache $cache)
     {
         parent::__construct();
         $this->watcher = $watcher;
         $this->server = $server;
         $this->cache = $cache;
-        $this->routeAnalyzer = $routeAnalyzer;
     }
 
     public function handle(): int
@@ -110,16 +107,9 @@ class WatchCommand extends Command
             $this->cache->clear();
             $this->info('  🧹 All caches cleared for route changes');
 
-            // Laravelのルートコレクションも強制的にリロード
-            $this->info('  🔃 Reloading Laravel routes...');
-
-            // Laravelのルートコレクションを強制的にリロード
-            $this->routeAnalyzer->reloadRoutes();
-
-            $this->info('  ✅ Routes reloaded from files');
         }
 
-        $exitCode = $this->call('spectrum:generate', ['--no-cache' => true]);
+        $exitCode = $this->runGenerateCommand(['--no-cache' => true]);
         $duration = round(microtime(true) - $startTime, 2);
 
         if ($exitCode !== 0) {
@@ -179,6 +169,40 @@ class WatchCommand extends Command
         }
 
         $this->server->notifyClients($notificationData);
+    }
+
+    protected function runGenerateCommand(array $options = []): int
+    {
+        // Build the command array
+        $command = [PHP_BINARY, 'artisan', 'spectrum:generate'];
+
+        // Add options
+        foreach ($options as $key => $value) {
+            if (is_bool($value) && $value) {
+                $command[] = $key;
+            } elseif (! is_bool($value)) {
+                $command[] = $key;
+                $command[] = $value;
+            }
+        }
+
+        // Create the process
+        $process = new Process($command, base_path());
+        $process->setTimeout(null); // No timeout
+
+        // Run the process with real-time output
+        try {
+            $process->run(function ($type, $buffer) {
+                // Output directly to console
+                $this->output->write($buffer);
+            });
+
+            return $process->getExitCode();
+        } catch (\Exception $e) {
+            $this->error('Failed to run generate command: '.$e->getMessage());
+
+            return 1;
+        }
     }
 
     private function getWatchPaths(): array
