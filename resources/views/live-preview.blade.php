@@ -114,8 +114,11 @@
                 // Auto reload page
                 setTimeout(() => {
                     console.log('Reloading page now...');
-                    // Force reload with cache bypass
-                    window.location.href = window.location.href + '?t=' + new Date().getTime();
+                    // Remove existing query parameters and add new timestamp
+                    const url = new URL(window.location.href);
+                    url.search = ''; // Clear all query parameters
+                    url.searchParams.set('t', new Date().getTime().toString());
+                    window.location.href = url.href;
                 }, 500);
             }
         };

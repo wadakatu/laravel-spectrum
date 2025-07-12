@@ -15,11 +15,14 @@ class LiveReloadServer
 
     protected $wsWorker;
 
+    protected static $instance;
+
     public function __construct()
     {
         if (! self::$clients) {
             self::$clients = new \SplObjectStorage;
         }
+        self::$instance = $this;
     }
 
     /**
@@ -32,6 +35,10 @@ class LiveReloadServer
 
     public function start(string $host, int $port): void
     {
+        // Define global websocket clients storage
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
         // Start HTTP server for Swagger UI
         $this->startHttpServer($host, $port);
 
@@ -108,13 +115,53 @@ class LiveReloadServer
 
     private function startWebSocketServer(string $host, int $port): void
     {
+        global $wsClients;
+
         $this->wsWorker = new Worker("websocket://{$host}:{$port}");
         $this->wsWorker->count = 1;
+        $this->wsWorker->name = 'WebSocket-Server';
 
-        $this->wsWorker->onConnect = function (TcpConnection $connection) {
+        // Store wsClients reference in worker for access in callbacks
+        // @phpstan-ignore-next-line
+        $this->wsWorker->wsClients = &$wsClients;
+
+        // Set up timer to check for messages
+        $this->wsWorker->onWorkerStart = function ($worker) use (&$wsClients) {
+            // Check for messages every 100ms
+            \Workerman\Timer::add(0.1, function () use (&$wsClients) {
+                $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+
+                if (file_exists($tempFile)) {
+                    $messages = file($tempFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+                    if (! empty($messages)) {
+                        // Clear the file
+                        file_put_contents($tempFile, '');
+
+                        foreach ($messages as $message) {
+                            echo "[WebSocket Worker] Broadcasting message: {$message}\n";
+                            $clientCount = count($wsClients);
+                            echo "[WebSocket Worker] Sending to {$clientCount} clients\n";
+
+                            foreach ($wsClients as $client) {
+                                try {
+                                    $client->send($message);
+                                    echo "[WebSocket Worker] Message sent to client\n";
+                                } catch (\Exception $e) {
+                                    echo "[WebSocket Worker] Failed to send: {$e->getMessage()}\n";
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        $this->wsWorker->onConnect = function (TcpConnection $connection) use (&$wsClients) {
+            $wsClients->attach($connection);
             self::$clients->attach($connection);
             $resourceId = spl_object_id($connection);
-            $clientCount = count(self::$clients);
+            $clientCount = count($wsClients);
             echo "New connection! ({$resourceId}) - Total clients: {$clientCount}\n";
         };
 
@@ -122,10 +169,11 @@ class LiveReloadServer
             // Client messages are ignored
         };
 
-        $this->wsWorker->onClose = function (TcpConnection $connection) {
+        $this->wsWorker->onClose = function (TcpConnection $connection) use (&$wsClients) {
+            $wsClients->detach($connection);
             self::$clients->detach($connection);
             $resourceId = spl_object_id($connection);
-            $clientCount = count(self::$clients);
+            $clientCount = count($wsClients);
             echo "Connection {$resourceId} has disconnected - Remaining clients: {$clientCount}\n";
         };
 
@@ -137,18 +185,13 @@ class LiveReloadServer
     public function notifyClients(array $data): void
     {
         $message = json_encode($data);
-        $clientCount = count(self::$clients);
+        echo "[LiveReloadServer] Writing notification to file: {$message}\n";
 
-        echo "[LiveReloadServer] Notifying {$clientCount} clients with message: {$message}\n";
+        // Write message to a temporary file for WebSocket worker to read
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+        file_put_contents($tempFile, $message."\n", FILE_APPEND | LOCK_EX);
 
-        foreach (self::$clients as $client) {
-            try {
-                $client->send($message);
-                echo "[LiveReloadServer] Message sent to client\n";
-            } catch (\Exception $e) {
-                echo "[LiveReloadServer] Failed to send message: {$e->getMessage()}\n";
-            }
-        }
+        echo "[LiveReloadServer] Notification written to {$tempFile}\n";
     }
 
     private function getSwaggerUIHtml(): string
@@ -282,7 +325,10 @@ class LiveReloadServer
                 
                 setTimeout(() => {
                     // 強制的にキャッシュを無視してリロード
-                    window.location.href = window.location.href + '?t=' + new Date().getTime();
+                    const url = new URL(window.location.href);
+                    url.search = ''; // Clear all query parameters
+                    url.searchParams.set('t', new Date().getTime().toString());
+                    window.location.href = url.href;
                 }, 500);
             }
         };
