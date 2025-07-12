@@ -11,9 +11,12 @@ class InlineValidationAnalyzer
 {
     protected TypeInference $typeInference;
 
-    public function __construct(TypeInference $typeInference)
+    protected EnumAnalyzer $enumAnalyzer;
+
+    public function __construct(TypeInference $typeInference, ?EnumAnalyzer $enumAnalyzer = null)
     {
         $this->typeInference = $typeInference;
+        $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
     }
 
     /**
@@ -127,12 +130,24 @@ class InlineValidationAnalyzer
                     if ($value instanceof Node\Scalar\String_) {
                         $rules[$key] = $value->value;
                     }
+                    // 連結演算子の場合
+                    elseif ($value instanceof Node\Expr\BinaryOp\Concat) {
+                        $printer = new \PhpParser\PrettyPrinter\Standard;
+                        $rules[$key] = $printer->prettyPrintExpr($value);
+                    }
                     // ルールが配列の場合
                     elseif ($value instanceof Node\Expr\Array_) {
                         $ruleArray = [];
                         foreach ($value->items as $ruleItem) {
                             if ($ruleItem->value instanceof Node\Scalar\String_) {
                                 $ruleArray[] = $ruleItem->value->value;
+                            }
+                            // Handle Rule::enum() or new Enum() instances
+                            elseif ($ruleItem->value instanceof Node\Expr\StaticCall ||
+                                    $ruleItem->value instanceof Node\Expr\New_) {
+                                // Convert AST node to string representation
+                                $printer = new \PhpParser\PrettyPrinter\Standard;
+                                $ruleArray[] = $printer->prettyPrintExpr($ruleItem->value);
                             }
                         }
                         $rules[$key] = $ruleArray;
@@ -227,20 +242,52 @@ class InlineValidationAnalyzer
     /**
      * バリデーションルールからパラメータ情報を生成
      */
-    public function generateParameters(array $validation): array
+    public function generateParameters(array $validation, ?string $namespace = null, array $useStatements = []): array
     {
         $parameters = [];
 
         foreach ($validation['rules'] as $field => $rules) {
+            // Check if this is a concatenated string expression
+            $isConcatenated = is_string($rules) && preg_match('/[\'"].*\|.*[\'"].*\..*::class/', $rules);
+
             // ルールを正規化（文字列でも配列でも処理できるように）
-            $rulesList = is_array($rules) ? $rules : explode('|', $rules);
+            if ($isConcatenated) {
+                // For concatenated strings, check the whole expression first
+                $rulesList = [$rules];
+            } else {
+                $rulesList = is_array($rules) ? $rules : explode('|', $rules);
+            }
+
+            // Check for enum rules
+            $enumInfo = null;
+            foreach ($rulesList as $singleRule) {
+                $enumResult = $this->enumAnalyzer->analyzeValidationRule($singleRule, $namespace, $useStatements);
+                if ($enumResult) {
+                    $enumInfo = $enumResult;
+                    break;
+                }
+            }
+
+            // If concatenated and we found enum, extract other rules from the string part
+            if ($isConcatenated && $enumInfo) {
+                // Extract the string part before concatenation
+                if (preg_match('/[\'"]([^\'"]*)[\'"]\s*\./', $rules, $matches)) {
+                    $stringPart = $matches[1];
+                    $additionalRules = explode('|', $stringPart);
+                    // Merge with the full rule for other processing
+                    $rulesList = array_merge($additionalRules, [$rules]);
+                }
+            } elseif (! $isConcatenated) {
+                // Normal processing for non-concatenated rules
+                $rulesList = is_array($rules) ? $rules : explode('|', $rules);
+            }
 
             $parameter = [
                 'name' => $field,
                 'type' => $this->typeInference->inferFromRules($rulesList),
                 'required' => in_array('required', $rulesList) || $this->hasRequiredIf($rulesList),
                 'rules' => $rules,
-                'description' => $this->generateDescription($field, $rulesList, $validation['attributes'] ?? []),
+                'description' => $this->generateDescription($field, $rulesList, $validation['attributes'] ?? [], $namespace, $useStatements),
             ];
 
             // Add format for special validation rules
@@ -258,7 +305,7 @@ class InlineValidationAnalyzer
 
             // バリデーションルールから追加情報を抽出
             foreach ($rulesList as $rule) {
-                if (strpos($rule, ':') !== false) {
+                if (is_string($rule) && strpos($rule, ':') !== false) {
                     [$ruleName, $ruleValue] = explode(':', $rule, 2);
 
                     switch ($ruleName) {
@@ -283,6 +330,11 @@ class InlineValidationAnalyzer
                 }
             }
 
+            // Add enum information if found
+            if ($enumInfo) {
+                $parameter['enum'] = $enumInfo;
+            }
+
             $parameters[] = $parameter;
         }
 
@@ -295,7 +347,7 @@ class InlineValidationAnalyzer
     protected function hasRequiredIf(array $rules): bool
     {
         foreach ($rules as $rule) {
-            if (strpos($rule, 'required_') === 0) {
+            if (is_string($rule) && strpos($rule, 'required_') === 0) {
                 return true;
             }
         }
@@ -306,7 +358,7 @@ class InlineValidationAnalyzer
     /**
      * フィールドの説明を生成
      */
-    protected function generateDescription(string $field, array $rules, array $attributes): string
+    protected function generateDescription(string $field, array $rules, array $attributes, ?string $namespace = null, array $useStatements = []): string
     {
         // カスタム属性名があれば使用
         $fieldName = $attributes[$field] ?? str_replace('_', ' ', ucfirst($field));
@@ -314,16 +366,25 @@ class InlineValidationAnalyzer
         $descriptions = [];
 
         foreach ($rules as $rule) {
-            if ($rule === 'required') {
-                $descriptions[] = 'Required';
-            } elseif (strpos($rule, 'min:') === 0) {
-                $min = explode(':', $rule)[1];
-                $descriptions[] = "Minimum: {$min}";
-            } elseif (strpos($rule, 'max:') === 0) {
-                $max = explode(':', $rule)[1];
-                $descriptions[] = "Maximum: {$max}";
-            } elseif ($rule === 'email') {
-                $descriptions[] = 'Must be a valid email address';
+            if (is_string($rule)) {
+                if ($rule === 'required') {
+                    $descriptions[] = 'Required';
+                } elseif (strpos($rule, 'min:') === 0) {
+                    $min = explode(':', $rule)[1];
+                    $descriptions[] = "Minimum: {$min}";
+                } elseif (strpos($rule, 'max:') === 0) {
+                    $max = explode(':', $rule)[1];
+                    $descriptions[] = "Maximum: {$max}";
+                } elseif ($rule === 'email') {
+                    $descriptions[] = 'Must be a valid email address';
+                }
+            }
+
+            // Check for enum rule and add enum class name to description
+            $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);
+            if ($enumResult) {
+                $enumClassName = class_basename($enumResult['class']);
+                $descriptions[] = "({$enumClassName})";
             }
         }
 
