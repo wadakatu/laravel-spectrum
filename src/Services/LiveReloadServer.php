@@ -22,6 +22,14 @@ class LiveReloadServer
         }
     }
 
+    /**
+     * Reset clients for testing purposes
+     */
+    public static function resetClients(): void
+    {
+        self::$clients = new \SplObjectStorage;
+    }
+
     public function start(string $host, int $port): void
     {
         // Start HTTP server for Swagger UI
