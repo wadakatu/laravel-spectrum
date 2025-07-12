@@ -23,37 +23,32 @@ class LiveReloadServerTest extends TestCase
 
     public function test_notify_clients_with_no_clients(): void
     {
+        // Clean up any existing message file
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+
         // Test that notifyClients doesn't throw error when no clients are connected
         $this->server->notifyClients([
             'event' => 'test-event',
             'data' => 'test-data',
         ]);
 
-        // If we get here without error, test passes
-        $this->assertTrue(true);
+        // Verify file was created
+        $this->assertFileExists($tempFile);
+
+        // Clean up
+        unlink($tempFile);
     }
 
     public function test_notify_clients_encodes_json_properly(): void
     {
-        // Use reflection to access private property
-        $reflection = new \ReflectionClass($this->server);
-        $clientsProperty = $reflection->getProperty('clients');
-        $clientsProperty->setAccessible(true);
-
-        // Create a mock connection with a send method
-        $mockConnection = new class
-        {
-            public $sentMessage = null;
-
-            public function send($message)
-            {
-                $this->sentMessage = $message;
-            }
-        };
-
-        // Add mock to clients
-        $clients = $clientsProperty->getValue($this->server);
-        $clients->attach($mockConnection);
+        // Clean up any existing message file
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
 
         // Test notification
         $this->server->notifyClients([
@@ -62,12 +57,21 @@ class LiveReloadServerTest extends TestCase
             'timestamp' => '2023-01-01T00:00:00Z',
         ]);
 
-        // Verify the message was encoded correctly
-        $this->assertNotNull($mockConnection->sentMessage);
-        $decoded = json_decode($mockConnection->sentMessage, true);
+        // Verify the message was written to file
+        $this->assertFileExists($tempFile);
+
+        // Read and verify the message content
+        $content = file_get_contents($tempFile);
+        $messages = explode("\n", trim($content));
+        $this->assertCount(1, $messages);
+
+        $decoded = json_decode($messages[0], true);
         $this->assertEquals('documentation-updated', $decoded['event']);
         $this->assertEquals('/test/path.php', $decoded['path']);
         $this->assertEquals('2023-01-01T00:00:00Z', $decoded['timestamp']);
+
+        // Clean up
+        unlink($tempFile);
     }
 
     public function test_swagger_ui_html_generation(): void
