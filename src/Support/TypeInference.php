@@ -12,6 +12,11 @@ class TypeInference
     public function inferFromRules(array $rules): string
     {
         foreach ($rules as $rule) {
+            // Skip non-string rules (e.g., Rule::enum() objects)
+            if (! is_string($rule)) {
+                continue;
+            }
+
             if ($rule === 'integer' || $rule === 'int') {
                 return 'integer';
             }
@@ -45,6 +50,11 @@ class TypeInference
     {
         // 型別のサンプル
         foreach ($rules as $rule) {
+            // Skip non-string rules
+            if (! is_string($rule)) {
+                continue;
+            }
+
             if ($rule === 'integer' || $rule === 'int') {
                 return $this->generateIntegerExample($field, $rules);
             }
@@ -109,11 +119,13 @@ class TypeInference
         $max = 100;
 
         foreach ($rules as $rule) {
-            if (Str::startsWith($rule, 'min:')) {
-                $min = (int) Str::after($rule, 'min:');
-            }
-            if (Str::startsWith($rule, 'max:')) {
-                $max = (int) Str::after($rule, 'max:');
+            if (is_string($rule)) {
+                if (Str::startsWith($rule, 'min:')) {
+                    $min = (int) Str::after($rule, 'min:');
+                }
+                if (Str::startsWith($rule, 'max:')) {
+                    $max = (int) Str::after($rule, 'max:');
+                }
             }
         }
 

@@ -176,6 +176,11 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
             return $this->evaluateStaticCall($expr);
         }
 
+        // new演算子による Enumルールのインスタンス生成
+        if ($expr instanceof Node\Expr\New_) {
+            return $this->evaluateNewExpression($expr);
+        }
+
         // その他の複雑な式は文字列として保存
         if ($expr instanceof Node\Expr) {
             return $this->printer->prettyPrintExpr($expr);
@@ -192,6 +197,15 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         // Rule::unique('users')->ignore($id) のような呼び出しを文字列化
         // TODO: より詳細な解析が可能
         return $this->printer->prettyPrintExpr($call);
+    }
+
+    /**
+     * new式を評価
+     */
+    private function evaluateNewExpression(Node\Expr\New_ $new): string
+    {
+        // new Enum(StatusEnum::class) のような呼び出しを文字列化
+        return $this->printer->prettyPrintExpr($new);
     }
 
     public function getRules(): array
