@@ -9,7 +9,7 @@ use Workerman\Worker;
 
 class LiveReloadServer
 {
-    protected $clients;
+    protected static $clients;
 
     protected $httpWorker;
 
@@ -17,7 +17,17 @@ class LiveReloadServer
 
     public function __construct()
     {
-        $this->clients = new \SplObjectStorage;
+        if (! self::$clients) {
+            self::$clients = new \SplObjectStorage;
+        }
+    }
+
+    /**
+     * Reset clients for testing purposes
+     */
+    public static function resetClients(): void
+    {
+        self::$clients = new \SplObjectStorage;
     }
 
     public function start(string $host, int $port): void
@@ -102,9 +112,10 @@ class LiveReloadServer
         $this->wsWorker->count = 1;
 
         $this->wsWorker->onConnect = function (TcpConnection $connection) {
-            $this->clients->attach($connection);
+            self::$clients->attach($connection);
             $resourceId = spl_object_id($connection);
-            echo "New connection! ({$resourceId})\n";
+            $clientCount = count(self::$clients);
+            echo "New connection! ({$resourceId}) - Total clients: {$clientCount}\n";
         };
 
         $this->wsWorker->onMessage = function (TcpConnection $connection, $data) {
@@ -112,9 +123,10 @@ class LiveReloadServer
         };
 
         $this->wsWorker->onClose = function (TcpConnection $connection) {
-            $this->clients->detach($connection);
+            self::$clients->detach($connection);
             $resourceId = spl_object_id($connection);
-            echo "Connection {$resourceId} has disconnected\n";
+            $clientCount = count(self::$clients);
+            echo "Connection {$resourceId} has disconnected - Remaining clients: {$clientCount}\n";
         };
 
         $this->wsWorker->onError = function (TcpConnection $connection, $code, $msg) {
@@ -125,9 +137,17 @@ class LiveReloadServer
     public function notifyClients(array $data): void
     {
         $message = json_encode($data);
+        $clientCount = count(self::$clients);
 
-        foreach ($this->clients as $client) {
-            $client->send($message);
+        echo "[LiveReloadServer] Notifying {$clientCount} clients with message: {$message}\n";
+
+        foreach (self::$clients as $client) {
+            try {
+                $client->send($message);
+                echo "[LiveReloadServer] Message sent to client\n";
+            } catch (\Exception $e) {
+                echo "[LiveReloadServer] Failed to send message: {$e->getMessage()}\n";
+            }
         }
     }
 

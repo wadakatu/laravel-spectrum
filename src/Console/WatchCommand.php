@@ -168,7 +168,9 @@ class WatchCommand extends Command
             $notificationData['forceReload'] = true;
         }
 
+        $this->info('  📡 Sending WebSocket notification...');
         $this->server->notifyClients($notificationData);
+        $this->info('  ✅ WebSocket notification sent');
     }
 
     protected function runGenerateCommand(array $options = []): int

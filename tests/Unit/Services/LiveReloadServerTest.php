@@ -12,6 +12,7 @@ class LiveReloadServerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        LiveReloadServer::resetClients();
         $this->server = new LiveReloadServer;
     }
 
@@ -108,11 +109,11 @@ class LiveReloadServerTest extends TestCase
 
     public function test_clients_storage_initialization(): void
     {
-        $reflection = new \ReflectionClass($this->server);
+        $reflection = new \ReflectionClass(LiveReloadServer::class);
         $clientsProperty = $reflection->getProperty('clients');
         $clientsProperty->setAccessible(true);
 
-        $clients = $clientsProperty->getValue($this->server);
+        $clients = $clientsProperty->getValue(null);
 
         $this->assertInstanceOf(\SplObjectStorage::class, $clients);
         $this->assertEquals(0, $clients->count());
