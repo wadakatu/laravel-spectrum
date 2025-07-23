@@ -49,6 +49,13 @@ class FileUploadDetector
             if ($this->hasFileRule($fieldRules)) {
                 $fileRules[$field] = $this->normalizeRules($fieldRules);
             }
+
+            // Check for nested array patterns (e.g., variants.*.image)
+            if (preg_match('/^(.+)\.\*\.(.+)$/', $field, $matches)) {
+                if ($this->hasFileRule($fieldRules)) {
+                    $fileRules[$field] = $this->normalizeRules($fieldRules);
+                }
+            }
         }
 
         return $fileRules;
@@ -182,5 +189,38 @@ class FileUploadDetector
         }
 
         return $flattened;
+    }
+
+    /**
+     * Detect complex file upload patterns
+     *
+     * @param  array<string, mixed>  $rules
+     * @return array<string, array<string>>
+     */
+    public function detectFilePatterns(array $rules): array
+    {
+        $patterns = [
+            'single_files' => [],
+            'array_files' => [],
+            'nested_files' => [],
+        ];
+
+        foreach ($rules as $field => $fieldRules) {
+            if (! $this->hasFileRule($fieldRules)) {
+                continue;
+            }
+
+            if (str_contains($field, '.*')) {
+                if (substr_count($field, '.*') > 1) {
+                    $patterns['nested_files'][] = $field;
+                } else {
+                    $patterns['array_files'][] = $field;
+                }
+            } else {
+                $patterns['single_files'][] = $field;
+            }
+        }
+
+        return $patterns;
     }
 }
