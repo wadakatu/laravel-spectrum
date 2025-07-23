@@ -2,8 +2,8 @@
 
 namespace LaravelSpectrum\Tests\Unit\Support;
 
-use PHPUnit\Framework\TestCase;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
+use PHPUnit\Framework\TestCase;
 
 class QueryParameterTypeInferenceTest extends TestCase
 {
@@ -12,10 +12,10 @@ class QueryParameterTypeInferenceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->inference = new QueryParameterTypeInference();
+        $this->inference = new QueryParameterTypeInference;
     }
 
-    public function testInferFromMethod(): void
+    public function test_infer_from_method(): void
     {
         $this->assertEquals('boolean', $this->inference->inferFromMethod('boolean'));
         $this->assertEquals('boolean', $this->inference->inferFromMethod('bool'));
@@ -31,7 +31,7 @@ class QueryParameterTypeInferenceTest extends TestCase
         $this->assertNull($this->inference->inferFromMethod('get'));
     }
 
-    public function testInferFromDefaultValue(): void
+    public function test_infer_from_default_value(): void
     {
         $this->assertEquals('boolean', $this->inference->inferFromDefaultValue(true));
         $this->assertEquals('boolean', $this->inference->inferFromDefaultValue(false));
@@ -45,47 +45,47 @@ class QueryParameterTypeInferenceTest extends TestCase
         $this->assertEquals('string', $this->inference->inferFromDefaultValue(''));
     }
 
-    public function testInferFromContext(): void
+    public function test_infer_from_context(): void
     {
         // Numeric operations
         $context = ['numeric_operation' => 'integer'];
         $this->assertEquals('integer', $this->inference->inferFromContext($context));
-        
+
         $context = ['numeric_operation' => 'float'];
         $this->assertEquals('number', $this->inference->inferFromContext($context));
-        
+
         // Array operations
         $context = ['array_operation' => true];
         $this->assertEquals('array', $this->inference->inferFromContext($context));
-        
+
         // Boolean context
         $context = ['boolean_context' => true];
         $this->assertEquals('boolean', $this->inference->inferFromContext($context));
-        
+
         // WHERE clause context - ID fields
         $context = ['where_clause' => ['column' => 'user_id']];
         $this->assertEquals('integer', $this->inference->inferFromContext($context));
-        
+
         $context = ['where_clause' => ['column' => 'product_count']];
         $this->assertEquals('integer', $this->inference->inferFromContext($context));
-        
+
         // WHERE clause context - Date fields
         $context = ['where_clause' => ['column' => 'created_at']];
         $this->assertEquals('string', $this->inference->inferFromContext($context));
-        
+
         // WHERE clause context - Price fields
         $context = ['where_clause' => ['column' => 'price']];
         $this->assertEquals('number', $this->inference->inferFromContext($context));
-        
+
         // WHERE clause context - Boolean fields
         $context = ['where_clause' => ['column' => 'active']];
         $this->assertEquals('boolean', $this->inference->inferFromContext($context));
-        
+
         $context = ['where_clause' => ['column' => 'published']];
         $this->assertEquals('boolean', $this->inference->inferFromContext($context));
     }
 
-    public function testInferFromValidationRules(): void
+    public function test_infer_from_validation_rules(): void
     {
         $this->assertEquals('integer', $this->inference->inferFromValidationRules(['integer']));
         $this->assertEquals('integer', $this->inference->inferFromValidationRules(['required', 'integer', 'min:1']));
@@ -102,80 +102,80 @@ class QueryParameterTypeInferenceTest extends TestCase
         $this->assertEquals('string', $this->inference->inferFromValidationRules(['in:active,inactive']));
     }
 
-    public function testDetectEnumValues(): void
+    public function test_detect_enum_values(): void
     {
         $context = ['enum_values' => ['active', 'inactive', 'pending']];
         $this->assertEquals(['active', 'inactive', 'pending'], $this->inference->detectEnumValues($context));
-        
+
         $context = ['in_array' => ['small', 'medium', 'large']];
         $this->assertEquals(['small', 'medium', 'large'], $this->inference->detectEnumValues($context));
-        
+
         $context = ['switch_cases' => ['asc', 'desc']];
         $this->assertEquals(['asc', 'desc'], $this->inference->detectEnumValues($context));
-        
+
         $context = [];
         $this->assertNull($this->inference->detectEnumValues($context));
     }
 
-    public function testGetFormatForType(): void
+    public function test_get_format_for_type(): void
     {
         // Date operations
         $this->assertEquals('date-time', $this->inference->getFormatForType('string', ['date_operation' => true]));
-        
+
         // Validation rules
         $this->assertEquals('email', $this->inference->getFormatForType('string', ['validation_rules' => ['email']]));
         $this->assertEquals('uri', $this->inference->getFormatForType('string', ['validation_rules' => ['url']]));
         $this->assertEquals('uuid', $this->inference->getFormatForType('string', ['validation_rules' => ['uuid']]));
         $this->assertEquals('date-time', $this->inference->getFormatForType('string', ['validation_rules' => ['date_format:Y-m-d H:i:s']]));
         $this->assertEquals('date', $this->inference->getFormatForType('string', ['validation_rules' => ['date']]));
-        
+
         // No format
         $this->assertNull($this->inference->getFormatForType('integer', []));
         $this->assertNull($this->inference->getFormatForType('string', []));
     }
 
-    public function testGetConstraintsFromRules(): void
+    public function test_get_constraints_from_rules(): void
     {
         $rules = ['min:5'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['minimum' => 5], $constraints);
-        
+
         $rules = ['max:100'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['maximum' => 100], $constraints);
-        
+
         $rules = ['between:10,50'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['minimum' => 10, 'maximum' => 50], $constraints);
-        
+
         $rules = ['size:10'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['minLength' => 10, 'maxLength' => 10], $constraints);
-        
+
         $rules = ['in:active,inactive,pending'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['enum' => ['active', 'inactive', 'pending']], $constraints);
-        
+
         $rules = ['regex:/^[A-Z]+$/'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['pattern' => '/^[A-Z]+$/'], $constraints);
-        
+
         // Multiple rules
         $rules = ['integer', 'min:1', 'max:100'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['minimum' => 1, 'maximum' => 100], $constraints);
     }
 
-    public function testComplexTypeInference(): void
+    public function test_complex_type_inference(): void
     {
         // Validation rules should take precedence
         $rules = ['integer', 'min:1'];
         $this->assertEquals('integer', $this->inference->inferFromValidationRules($rules));
-        
+
         // Enum detection
         $rules = ['string', 'in:small,medium,large'];
         $this->assertEquals('string', $this->inference->inferFromValidationRules($rules));
-        
+
         // Mixed rules
         $rules = ['required', 'numeric', 'between:0,100'];
         $this->assertEquals('number', $this->inference->inferFromValidationRules($rules));

@@ -110,10 +110,10 @@ class ControllerAnalyzer
 
         // Query Parameter使用を検出
         $queryParams = $this->queryParameterAnalyzer->analyze($methodReflection);
-        if (!empty($queryParams['parameters'])) {
+        if (! empty($queryParams['parameters'])) {
             // バリデーションルールとマージ
             $validationRules = [];
-            
+
             // FormRequestからのバリデーションルール
             if ($result['formRequest']) {
                 try {
@@ -125,17 +125,17 @@ class ControllerAnalyzer
                     // Ignore errors
                 }
             }
-            
+
             // インラインバリデーションルール
             if ($result['inlineValidation'] && isset($result['inlineValidation']['rules'])) {
                 $validationRules = array_merge($validationRules, $result['inlineValidation']['rules']);
             }
-            
+
             // バリデーションルールがある場合はマージ
-            if (!empty($validationRules)) {
+            if (! empty($validationRules)) {
                 $queryParams = $this->queryParameterAnalyzer->mergeWithValidation($queryParams, $validationRules);
             }
-            
+
             $result['queryParameters'] = $queryParams['parameters'];
         }
 

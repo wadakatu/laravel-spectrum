@@ -331,7 +331,7 @@ class OpenApiGenerator
      */
     protected function generateOperationId(array $route, string $method): string
     {
-        if (!empty($route['name'])) {
+        if (! empty($route['name'])) {
             return Str::camel($route['name']);
         }
 
@@ -421,9 +421,9 @@ class OpenApiGenerator
     protected function generateParameters(array $route, array $controllerInfo): array
     {
         $parameters = $route['parameters'];
-        
+
         // Query Parametersを追加
-        if (!empty($controllerInfo['queryParameters'])) {
+        if (! empty($controllerInfo['queryParameters'])) {
             foreach ($controllerInfo['queryParameters'] as $queryParam) {
                 $parameter = [
                     'name' => $queryParam['name'],
@@ -433,22 +433,22 @@ class OpenApiGenerator
                         'type' => $queryParam['type'],
                     ],
                 ];
-                
+
                 // デフォルト値を追加
                 if (isset($queryParam['default'])) {
                     $parameter['schema']['default'] = $queryParam['default'];
                 }
-                
+
                 // Enum値を追加
                 if (isset($queryParam['enum'])) {
                     $parameter['schema']['enum'] = $queryParam['enum'];
                 }
-                
+
                 // 説明を追加
                 if (isset($queryParam['description'])) {
                     $parameter['description'] = $queryParam['description'];
                 }
-                
+
                 // バリデーション制約を追加
                 if (isset($queryParam['validation_rules'])) {
                     $typeInference = app(QueryParameterTypeInference::class);
@@ -457,27 +457,27 @@ class OpenApiGenerator
                         $parameter['schema'][$key] = $value;
                     }
                 }
-                
+
                 $parameters[] = $parameter;
             }
         }
-        
+
         return $parameters;
     }
-    
+
     /**
      * バリデーションルールから制約を抽出
      */
     protected function extractConstraintsFromRules(array $rules): array
     {
         $constraints = [];
-        
+
         foreach ($rules as $rule) {
             if (is_string($rule)) {
                 $parts = explode(':', $rule);
                 $ruleName = $parts[0];
                 $parameters = isset($parts[1]) ? explode(',', $parts[1]) : [];
-                
+
                 switch ($ruleName) {
                     case 'min':
                         if (isset($parameters[0])) {
@@ -498,7 +498,7 @@ class OpenApiGenerator
                 }
             }
         }
-        
+
         return $constraints;
     }
 

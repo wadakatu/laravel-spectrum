@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
@@ -20,12 +20,12 @@ class ProductController extends Controller
         $sort = $request->input('sort', 'relevance');
         $page = $request->integer('page', 1);
         $perPage = $request->integer('per_page', 20);
-        
+
         // Validate sort parameter
-        if (!in_array($sort, ['relevance', 'price', 'name', 'date'])) {
+        if (! in_array($sort, ['relevance', 'price', 'name', 'date'])) {
             $sort = 'relevance';
         }
-        
+
         // Mock response
         return response()->json([
             'data' => [
@@ -59,7 +59,7 @@ class ProductController extends Controller
             ],
         ]);
     }
-    
+
     /**
      * Filter products with array parameters
      */
@@ -69,10 +69,10 @@ class ProductController extends Controller
         $brands = $request->array('brands');
         $colors = $request->input('colors');
         $priceRange = $request->input('price_range');
-        
+
         // Price range handling
         if ($priceRange && in_array($priceRange, ['0-50', '50-100', '100-500', '500+'])) {
-            [$min, $max] = match($priceRange) {
+            [$min, $max] = match ($priceRange) {
                 '0-50' => [0, 50],
                 '50-100' => [50, 100],
                 '100-500' => [100, 500],
@@ -81,7 +81,7 @@ class ProductController extends Controller
         } else {
             $min = $max = null;
         }
-        
+
         return response()->json([
             'data' => [],
             'filters' => [
