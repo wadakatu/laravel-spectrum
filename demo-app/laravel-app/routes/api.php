@@ -33,3 +33,4 @@ Route::prefix('products')->group(function () {
     Route::get('/search', [ProductController::class, 'search']);
     Route::get('/filter', [ProductController::class, 'filter']);
 });
+Route::get('/match-test', [\App\Http\Controllers\TestMatchController::class, 'matchTest']);
