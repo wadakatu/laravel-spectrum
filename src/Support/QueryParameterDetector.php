@@ -15,7 +15,6 @@ use PhpParser\Node\Scalar\DNumber;
 use PhpParser\Node\Scalar\LNumber;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\If_;
-use PhpParser\Node\Stmt\Match_;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -25,8 +24,6 @@ use PhpParser\ParserFactory;
 class QueryParameterDetector
 {
     private array $detectedParams = [];
-
-    private array $currentContext = [];
 
     private array $variableAssignments = [];
 
@@ -82,55 +79,6 @@ class QueryParameterDetector
         }
     }
 
-    /**
-     * Find method node in AST
-     */
-    private function findMethodNode(array $ast, string $className, string $methodName): ?Node
-    {
-        // For anonymous classes, search differently
-        if (str_contains($className, '@anonymous')) {
-            return $this->findAnonymousClassMethod($ast, $methodName);
-        }
-
-        foreach ($ast as $node) {
-            if ($node instanceof Node\Stmt\Namespace_) {
-                foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof Node\Stmt\Class_ &&
-                        $stmt->name &&
-                        $stmt->name->toString() === class_basename($className)) {
-                        foreach ($stmt->stmts as $classStmt) {
-                            if ($classStmt instanceof Node\Stmt\ClassMethod &&
-                                $classStmt->name->toString() === $methodName) {
-                                return $classStmt;
-                            }
-                        }
-                    }
-                }
-            } elseif ($node instanceof Node\Stmt\Class_ &&
-                     $node->name &&
-                     $node->name->toString() === class_basename($className)) {
-                foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof Node\Stmt\ClassMethod &&
-                        $stmt->name->toString() === $methodName) {
-                        return $stmt;
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Find method in anonymous class
-     */
-    private function findAnonymousClassMethod(array $ast, string $methodName): ?Node
-    {
-        // This approach won't work for anonymous classes in test files
-        // because the AST is for the entire file, not just the anonymous class
-        // We need a different approach for anonymous classes
-        return null;
-    }
 
     /**
      * Detect Request method calls from AST
@@ -138,7 +86,6 @@ class QueryParameterDetector
     public function detectRequestCalls(array $ast): array
     {
         $this->detectedParams = [];
-        $this->currentContext = [];
         $this->variableAssignments = [];
 
         $traverser = new NodeTraverser;
@@ -190,8 +137,8 @@ class QueryParameterDetector
                     $this->detector->processInArrayCall($node);
                 }
 
-                // Track if/switch/match for context
-                if ($node instanceof If_ || $node instanceof Switch_ || $node instanceof Match_) {
+                // Track if/switch for context
+                if ($node instanceof If_ || $node instanceof Switch_) {
                     $this->detector->analyzeConditionalContext($node);
                 }
 
@@ -240,7 +187,7 @@ class QueryParameterDetector
             'name' => $paramName,
             'method' => $methodName,
             'default' => isset($args[1]) ? $this->extractValue($args[1]->value) : null,
-            'context' => $this->getCurrentContext($node),
+            'context' => [],
         ];
 
         // Special handling for has() and filled()
@@ -276,7 +223,7 @@ class QueryParameterDetector
             'name' => $paramName,
             'method' => $methodName,
             'default' => isset($args[1]) ? $this->extractValue($args[1]->value) : null,
-            'context' => $this->getCurrentContext($node),
+            'context' => [],
         ];
     }
 
@@ -295,7 +242,7 @@ class QueryParameterDetector
             'name' => $propName,
             'method' => 'magic',
             'default' => null,
-            'context' => $this->getCurrentContext($node),
+            'context' => [],
         ];
     }
 
@@ -326,7 +273,7 @@ class QueryParameterDetector
                     'name' => $propName,
                     'method' => 'magic',
                     'default' => $default,
-                    'context' => $this->getCurrentContext($node),
+                    'context' => [],
                 ];
             }
         }
@@ -498,27 +445,21 @@ class QueryParameterDetector
         }
 
         $values = [];
-        foreach ($node->items as $item) {
-            if ($item instanceof ArrayItem) {
-                $value = $this->extractValue($item->value);
-                if ($value !== null) {
-                    $values[] = $value;
-                }
+        /** @var (?ArrayItem)[] $items */
+        $items = $node->items;
+        foreach ($items as $item) {
+            if ($item === null) {
+                continue;
+            }
+            $value = $this->extractValue($item->value);
+            if ($value !== null) {
+                $values[] = $value;
             }
         }
 
         return $values;
     }
 
-    /**
-     * Get current context for a node
-     */
-    private function getCurrentContext(Node $node): array
-    {
-        // This would analyze the surrounding code context
-        // For now, return empty array
-        return [];
-    }
 
     /**
      * Track variable assignments
