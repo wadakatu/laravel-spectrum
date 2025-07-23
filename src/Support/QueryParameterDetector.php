@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Support;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\PropertyFetch;
@@ -27,6 +28,7 @@ class QueryParameterDetector
 {
     private array $detectedParams = [];
     private array $currentContext = [];
+    private array $variableAssignments = [];
     private Parser $parser;
     
     public function __construct()
@@ -136,6 +138,7 @@ class QueryParameterDetector
     {
         $this->detectedParams = [];
         $this->currentContext = [];
+        $this->variableAssignments = [];
         
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new class($this) extends NodeVisitorAbstract {
@@ -145,6 +148,11 @@ class QueryParameterDetector
             
             public function enterNode(Node $node)
             {
+                // Track variable assignments
+                if ($node instanceof Node\Expr\Assign) {
+                    $this->detector->trackVariableAssignment($node);
+                }
+                
                 // Detect method calls on $request variable
                 if ($node instanceof MethodCall && 
                     $node->var instanceof Variable && 
@@ -378,11 +386,20 @@ class QueryParameterDetector
             $paramName = $this->traceVariableToRequest($varName);
             
             if ($paramName) {
-                $enumValues = [];
+                // Get existing enum values if any
+                $existingEnumValues = [];
+                foreach ($this->detectedParams as $param) {
+                    if ($param['name'] === $paramName && isset($param['context']['enum_values'])) {
+                        $existingEnumValues = $param['context']['enum_values'];
+                        break;
+                    }
+                }
+                
+                $enumValues = $existingEnumValues;
                 foreach ($node->cases as $case) {
                     if ($case->cond) {
                         $value = $this->extractValue($case->cond);
-                        if ($value !== null) {
+                        if ($value !== null && !in_array($value, $enumValues)) {
                             $enumValues[] = $value;
                         }
                     }
@@ -494,21 +511,51 @@ class QueryParameterDetector
     }
 
     /**
+     * Track variable assignments
+     */
+    public function trackVariableAssignment(Node\Expr\Assign $node): void
+    {
+        if (!($node->var instanceof Variable)) {
+            return;
+        }
+        
+        $varName = $node->var->name;
+        
+        // Check if assignment is from a request method
+        if ($node->expr instanceof MethodCall &&
+            $node->expr->var instanceof Variable &&
+            $node->expr->var->name === 'request') {
+            
+            $methodName = $node->expr->name instanceof Node\Identifier ? $node->expr->name->toString() : null;
+            if ($methodName && $this->isRequestMethod($methodName) && !empty($node->expr->args)) {
+                $paramName = $this->extractStringValue($node->expr->args[0]->value);
+                if ($paramName) {
+                    $this->variableAssignments[$varName] = $paramName;
+                }
+            }
+        }
+        
+        // Check if assignment is from a request property (magic access)
+        if ($node->expr instanceof PropertyFetch &&
+            $node->expr->var instanceof Variable &&
+            $node->expr->var->name === 'request' &&
+            $node->expr->name instanceof Node\Identifier) {
+            
+            $this->variableAssignments[$varName] = $node->expr->name->toString();
+        }
+    }
+    
+    /**
      * Trace variable back to request call
      */
     private function traceVariableToRequest(string $varName): ?string
     {
-        // For simple cases, look for the most recent parameter with a matching context
-        // This is a simplified approach that works for common patterns
-        $lastParam = null;
-        foreach ($this->detectedParams as $param) {
-            // Check if this could be the variable we're looking for
-            // In practice, this would need more sophisticated data flow analysis
-            $lastParam = $param;
+        // Check our tracked assignments
+        if (isset($this->variableAssignments[$varName])) {
+            return $this->variableAssignments[$varName];
         }
         
-        // Return the last detected parameter's name as a simple heuristic
-        return $lastParam ? $lastParam['name'] : null;
+        return null;
     }
 
     /**
@@ -560,6 +607,6 @@ class QueryParameterDetector
      */
     private function isTypedMethod(string $method): bool
     {
-        return in_array($method, ['boolean', 'bool', 'integer', 'int', 'float', 'double', 'array', 'date']);
+        return in_array($method, ['boolean', 'bool', 'integer', 'int', 'float', 'double', 'string', 'array', 'date']);
     }
 }

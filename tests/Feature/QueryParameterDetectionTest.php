@@ -87,7 +87,7 @@ class QueryParameterDetectionTest extends TestCase
         $this->assertNotNull($sortParam);
         $this->assertEquals('string', $sortParam['schema']['type']);
         $this->assertEquals('relevance', $sortParam['schema']['default']);
-        $this->assertEquals(['relevance', 'date', 'popularity'], $sortParam['schema']['enum']);
+        $this->assertEqualsCanonicalizing(['relevance', 'date', 'popularity'], $sortParam['schema']['enum']);
         
         // Check for typed parameters
         $categoryIdParam = $this->findParameter($operation['parameters'], 'category_id');
@@ -141,7 +141,7 @@ class QueryParameterDetectionTest extends TestCase
         $priceRangeParam = $this->findParameter($operation['parameters'], 'price_range');
         $this->assertNotNull($priceRangeParam);
         $this->assertEquals('string', $priceRangeParam['schema']['type']);
-        $this->assertEquals(['0-50', '50-100', '100-500', '500+'], $priceRangeParam['schema']['enum']);
+        $this->assertEqualsCanonicalizing(['0-50', '50-100', '100-500', '500+'], $priceRangeParam['schema']['enum']);
     }
 
     public function testMergesQueryParametersWithValidationRules(): void
