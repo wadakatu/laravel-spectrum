@@ -12,7 +12,7 @@ class InlineValidationAnalyzer
     protected TypeInference $typeInference;
 
     protected EnumAnalyzer $enumAnalyzer;
-    
+
     protected FileUploadAnalyzer $fileUploadAnalyzer;
 
     public function __construct(TypeInference $typeInference, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null)
@@ -248,7 +248,7 @@ class InlineValidationAnalyzer
     public function generateParameters(array $validation, ?string $namespace = null, array $useStatements = []): array
     {
         $parameters = [];
-        
+
         // Analyze file upload fields
         $fileFields = $this->fileUploadAnalyzer->analyzeRules($validation['rules']);
 
@@ -257,7 +257,7 @@ class InlineValidationAnalyzer
             if (isset($fileFields[$field])) {
                 $fileInfo = $fileFields[$field];
                 $rulesList = is_array($rules) ? $rules : explode('|', $rules);
-                
+
                 $parameter = [
                     'name' => $field,
                     'type' => 'file',
@@ -267,11 +267,12 @@ class InlineValidationAnalyzer
                     'rules' => $rules,
                     'description' => $this->generateFileDescription($field, $fileInfo, $validation['attributes'] ?? []),
                 ];
-                
+
                 $parameters[] = $parameter;
+
                 continue;
             }
-            
+
             // Check if this is a concatenated string expression
             $isConcatenated = is_string($rules) && preg_match('/[\'"].*\|.*[\'"].*\..*::class/', $rules);
 
@@ -415,7 +416,7 @@ class InlineValidationAnalyzer
 
         return $fieldName.(! empty($descriptions) ? ' - '.implode(', ', $descriptions) : '');
     }
-    
+
     /**
      * ファイルフィールドの説明を生成
      */
@@ -423,24 +424,24 @@ class InlineValidationAnalyzer
     {
         // カスタム属性名があれば使用
         $fieldName = $attributes[$field] ?? str_replace('_', ' ', ucfirst($field));
-        
+
         $parts = [];
-        
-        if (!empty($fileInfo['mimes'])) {
-            $parts[] = 'Allowed types: ' . implode(', ', $fileInfo['mimes']);
+
+        if (! empty($fileInfo['mimes'])) {
+            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
         }
-        
+
         if (isset($fileInfo['max_size'])) {
             $maxSize = $this->formatFileSize($fileInfo['max_size']);
             $parts[] = "Max size: {$maxSize}";
         }
-        
+
         if (isset($fileInfo['min_size'])) {
             $minSize = $this->formatFileSize($fileInfo['min_size']);
             $parts[] = "Min size: {$minSize}";
         }
-        
-        if (!empty($fileInfo['dimensions'])) {
+
+        if (! empty($fileInfo['dimensions'])) {
             if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
                 $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
             }
@@ -451,10 +452,10 @@ class InlineValidationAnalyzer
                 $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
             }
         }
-        
-        return $fieldName . (!empty($parts) ? ' - ' . implode('. ', $parts) : '');
+
+        return $fieldName.(! empty($parts) ? ' - '.implode('. ', $parts) : '');
     }
-    
+
     /**
      * Format file size to human readable format
      */
@@ -462,19 +463,22 @@ class InlineValidationAnalyzer
     {
         if ($bytes >= 1073741824) {
             $size = $bytes / 1073741824;
+
             return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
         }
-        
+
         if ($bytes >= 1048576) {
             $size = $bytes / 1048576;
+
             return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
         }
-        
+
         if ($bytes >= 1024) {
             $size = $bytes / 1024;
+
             return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
         }
-        
+
         return sprintf('%dB', $bytes);
     }
 }

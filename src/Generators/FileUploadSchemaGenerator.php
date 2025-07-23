@@ -7,7 +7,7 @@ namespace LaravelSpectrum\Generators;
 class FileUploadSchemaGenerator
 {
     /**
-     * @param array<string, mixed> $fileField
+     * @param  array<string, mixed>  $fileField
      * @return array<string, mixed>
      */
     public function generate(array $fileField): array
@@ -26,8 +26,8 @@ class FileUploadSchemaGenerator
     }
 
     /**
-     * @param array<string, mixed> $fields
-     * @param array<string, mixed> $fileFields
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, mixed>  $fileFields
      * @return array<string, mixed>
      */
     public function generateMultipartSchema(array $fields, array $fileFields): array
@@ -49,28 +49,28 @@ class FileUploadSchemaGenerator
     }
 
     /**
-     * @param array<string, mixed> $fileField
+     * @param  array<string, mixed>  $fileField
      */
     private function generateDescription(array $fileField): string
     {
         $parts = [];
 
         // Allowed types
-        if (!empty($fileField['mimes'])) {
-            $parts[] = 'Allowed types: ' . implode(', ', $fileField['mimes']);
+        if (! empty($fileField['mimes'])) {
+            $parts[] = 'Allowed types: '.implode(', ', $fileField['mimes']);
         }
 
         // File size constraints
         if (isset($fileField['max_size'])) {
-            $parts[] = 'Max size: ' . $this->formatFileSize($fileField['max_size']);
+            $parts[] = 'Max size: '.$this->formatFileSize($fileField['max_size']);
         }
-        
+
         if (isset($fileField['min_size'])) {
-            $parts[] = 'Min size: ' . $this->formatFileSize($fileField['min_size']);
+            $parts[] = 'Min size: '.$this->formatFileSize($fileField['min_size']);
         }
 
         // Dimension constraints
-        if (!empty($fileField['dimensions'])) {
+        if (! empty($fileField['dimensions'])) {
             $dimensionParts = $this->formatDimensions($fileField['dimensions']);
             $parts = array_merge($parts, $dimensionParts);
         }
@@ -79,7 +79,7 @@ class FileUploadSchemaGenerator
     }
 
     /**
-     * @param array<string, mixed> $dimensions
+     * @param  array<string, mixed>  $dimensions
      * @return array<string>
      */
     private function formatDimensions(array $dimensions): array
@@ -121,25 +121,28 @@ class FileUploadSchemaGenerator
     {
         if ($bytes >= 1073741824) {
             $size = $bytes / 1073741824;
+
             return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
         }
-        
+
         if ($bytes >= 1048576) {
             $size = $bytes / 1048576;
+
             return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
         }
-        
+
         if ($bytes >= 1024) {
             $size = $bytes / 1024;
+
             return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
         }
-        
+
         return sprintf('%dB', $bytes);
     }
 
     /**
-     * @param array<string, mixed> $fields
-     * @param array<string, mixed> $fileFields
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, mixed>  $fileFields
      * @return array<string, mixed>
      */
     private function mergeProperties(array $fields, array $fileFields): array
@@ -151,11 +154,11 @@ class FileUploadSchemaGenerator
             $properties[$name] = [
                 'type' => $field['type'] ?? 'string',
             ];
-            
+
             if (isset($field['maxLength'])) {
                 $properties[$name]['maxLength'] = $field['maxLength'];
             }
-            
+
             // Add other properties as needed
             foreach (['minLength', 'pattern', 'enum', 'format', 'minimum', 'maximum'] as $prop) {
                 if (isset($field[$prop])) {
@@ -173,8 +176,8 @@ class FileUploadSchemaGenerator
     }
 
     /**
-     * @param array<string, mixed> $fields
-     * @param array<string, mixed> $fileFields
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, mixed>  $fileFields
      * @return array<string>
      */
     private function extractRequired(array $fields, array $fileFields): array

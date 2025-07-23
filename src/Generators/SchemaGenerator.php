@@ -5,12 +5,12 @@ namespace LaravelSpectrum\Generators;
 class SchemaGenerator
 {
     protected FileUploadSchemaGenerator $fileUploadSchemaGenerator;
-    
+
     public function __construct(?FileUploadSchemaGenerator $fileUploadSchemaGenerator = null)
     {
         $this->fileUploadSchemaGenerator = $fileUploadSchemaGenerator ?? new FileUploadSchemaGenerator;
     }
-    
+
     /**
      * パラメータからスキーマを生成
      */
@@ -20,7 +20,7 @@ class SchemaGenerator
         $hasFileUpload = false;
         $fileFields = [];
         $normalFields = [];
-        
+
         foreach ($parameters as $parameter) {
             if (isset($parameter['type']) && $parameter['type'] === 'file') {
                 $hasFileUpload = true;
@@ -29,12 +29,12 @@ class SchemaGenerator
                 $normalFields[] = $parameter;
             }
         }
-        
+
         // If we have file uploads, we need to generate multipart/form-data schema
         if ($hasFileUpload) {
             return $this->generateMultipartSchema($normalFields, $fileFields);
         }
-        
+
         // Otherwise, generate normal JSON schema
         $properties = [];
         $required = [];
@@ -105,7 +105,7 @@ class SchemaGenerator
 
         return $schema;
     }
-    
+
     /**
      * Generate multipart/form-data schema
      */
@@ -113,18 +113,18 @@ class SchemaGenerator
     {
         $normalFieldsFormatted = [];
         $fileFieldsFormatted = [];
-        
+
         // Format normal fields
         foreach ($normalFields as $field) {
-            if (!isset($field['name'])) {
+            if (! isset($field['name'])) {
                 continue;
             }
-            
+
             $fieldData = [
                 'type' => $field['type'] ?? 'string',
                 'required' => $field['required'] ?? false,
             ];
-            
+
             if (isset($field['description'])) {
                 $fieldData['description'] = $field['description'];
             }
@@ -140,26 +140,26 @@ class SchemaGenerator
                     $fieldData['type'] = $field['enum']['type'];
                 }
             }
-            
+
             $normalFieldsFormatted[$field['name']] = $fieldData;
         }
-        
+
         // Format file fields
         foreach ($fileFields as $field) {
-            if (!isset($field['name'])) {
+            if (! isset($field['name'])) {
                 continue;
             }
-            
+
             $fileFieldData = [
                 'type' => 'string',
                 'format' => 'binary',
                 'required' => $field['required'] ?? false,
             ];
-            
+
             if (isset($field['description'])) {
                 $fileFieldData['description'] = $field['description'];
             }
-            
+
             // Handle array files (multiple uploads)
             if (isset($field['file_info']) && $field['file_info']['multiple']) {
                 $fileFieldsFormatted[$field['name']] = [
@@ -174,7 +174,7 @@ class SchemaGenerator
                 $fileFieldsFormatted[$field['name']] = $fileFieldData;
             }
         }
-        
+
         return $this->fileUploadSchemaGenerator->generateMultipartSchema($normalFieldsFormatted, $fileFieldsFormatted);
     }
 

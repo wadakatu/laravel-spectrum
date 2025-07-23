@@ -9,7 +9,7 @@ use Illuminate\Validation\Rules\File;
 class FileUploadAnalyzer
 {
     private const FILE_RULES = ['file', 'image', 'mimes', 'mimetypes'];
-    
+
     private const IMAGE_MIME_TYPES = [
         'image/jpeg',
         'image/png',
@@ -18,7 +18,7 @@ class FileUploadAnalyzer
         'image/svg+xml',
         'image/webp',
     ];
-    
+
     private const MIME_TYPE_MAPPING = [
         'jpg' => 'image/jpeg',
         'jpeg' => 'image/jpeg',
@@ -47,7 +47,7 @@ class FileUploadAnalyzer
     ];
 
     /**
-     * @param array<string, mixed> $rules
+     * @param  array<string, mixed>  $rules
      * @return array<string, array<string, mixed>>
      */
     public function analyzeRules(array $rules): array
@@ -56,7 +56,7 @@ class FileUploadAnalyzer
 
         foreach ($rules as $field => $fieldRules) {
             $analysis = $this->analyzeFieldRules($field, $fieldRules);
-            
+
             if ($analysis !== null) {
                 $fileFields[$field] = $analysis;
             }
@@ -66,12 +66,12 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param array<string, mixed> $fileRules
+     * @param  array<string, mixed>  $fileRules
      * @return array<string>
      */
     public function inferMimeTypes(array $fileRules): array
     {
-        if (isset($fileRules['mime_types']) && !empty($fileRules['mime_types'])) {
+        if (isset($fileRules['mime_types']) && ! empty($fileRules['mime_types'])) {
             return $fileRules['mime_types'];
         }
 
@@ -79,9 +79,9 @@ class FileUploadAnalyzer
             return self::IMAGE_MIME_TYPES;
         }
 
-        if (isset($fileRules['mimes']) && !empty($fileRules['mimes'])) {
+        if (isset($fileRules['mimes']) && ! empty($fileRules['mimes'])) {
             return array_map(
-                fn($ext) => self::MIME_TYPE_MAPPING[$ext] ?? 'application/octet-stream',
+                fn ($ext) => self::MIME_TYPE_MAPPING[$ext] ?? 'application/octet-stream',
                 $fileRules['mimes']
             );
         }
@@ -95,15 +95,13 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param string $field
-     * @param mixed $fieldRules
      * @return array<string, mixed>|null
      */
     private function analyzeFieldRules(string $field, mixed $fieldRules): ?array
     {
         $rulesArray = $this->normalizeRules($fieldRules);
-        
-        if (!$this->hasFileRule($rulesArray)) {
+
+        if (! $this->hasFileRule($rulesArray)) {
             return null;
         }
 
@@ -122,7 +120,7 @@ class FileUploadAnalyzer
             $this->processRule($rule, $analysis);
         }
 
-        if (!empty($analysis['mimes'])) {
+        if (! empty($analysis['mimes'])) {
             $analysis['mime_types'] = $this->inferMimeTypes($analysis);
         } elseif ($analysis['is_image'] && empty($analysis['mime_types'])) {
             $analysis['mime_types'] = self::IMAGE_MIME_TYPES;
@@ -132,7 +130,6 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param mixed $rules
      * @return array<mixed>
      */
     private function normalizeRules(mixed $rules): array
@@ -149,7 +146,7 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param array<mixed> $rules
+     * @param  array<mixed>  $rules
      */
     private function hasFileRule(array $rules): bool
     {
@@ -166,6 +163,7 @@ class FileUploadAnalyzer
     {
         if (is_string($rule)) {
             $ruleName = explode(':', $rule)[0];
+
             return in_array($ruleName, self::FILE_RULES, true);
         }
 
@@ -177,8 +175,7 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param mixed $rule
-     * @param array<string, mixed> $analysis
+     * @param  array<string, mixed>  $analysis
      */
     private function processRule(mixed $rule, array &$analysis): void
     {
@@ -190,7 +187,7 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param array<string, mixed> $analysis
+     * @param  array<string, mixed>  $analysis
      */
     private function processStringRule(string $rule, array &$analysis): void
     {
@@ -223,20 +220,19 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @param File $rule
-     * @param array<string, mixed> $analysis
+     * @param  array<string, mixed>  $analysis
      */
     private function processFileRuleObject(File $rule, array &$analysis): void
     {
         $reflection = new \ReflectionClass($rule);
-        
+
         try {
             $property = $reflection->getProperty('allowedMimetypes');
             $property->setAccessible(true);
             $mimetypes = $property->getValue($rule);
-            if (!empty($mimetypes)) {
+            if (! empty($mimetypes)) {
                 // If these look like file extensions rather than MIME types
-                if (isset($mimetypes[0]) && !str_contains($mimetypes[0], '/')) {
+                if (isset($mimetypes[0]) && ! str_contains($mimetypes[0], '/')) {
                     $analysis['mimes'] = $mimetypes;
                 } else {
                     $analysis['mime_types'] = $mimetypes;
@@ -245,18 +241,18 @@ class FileUploadAnalyzer
         } catch (\ReflectionException $e) {
             // Property not found
         }
-        
+
         try {
             $property = $reflection->getProperty('allowedExtensions');
             $property->setAccessible(true);
             $extensions = $property->getValue($rule);
-            if (!empty($extensions)) {
+            if (! empty($extensions)) {
                 $analysis['mimes'] = $extensions;
             }
         } catch (\ReflectionException $e) {
             // Property not found
         }
-        
+
         try {
             $property = $reflection->getProperty('minimumFileSize');
             $property->setAccessible(true);
@@ -267,7 +263,7 @@ class FileUploadAnalyzer
         } catch (\ReflectionException $e) {
             // Property not found
         }
-        
+
         try {
             $property = $reflection->getProperty('maximumFileSize');
             $property->setAccessible(true);
@@ -287,13 +283,13 @@ class FileUploadAnalyzer
     {
         $dimensions = [];
         $pairs = explode(',', $parameters);
-        
+
         foreach ($pairs as $pair) {
             $parts = explode('=', $pair, 2);
             if (count($parts) === 2) {
                 $key = trim($parts[0]);
                 $value = trim($parts[1]);
-                
+
                 if ($key === 'ratio') {
                     $dimensions[$key] = $value;
                 } else {
@@ -301,7 +297,7 @@ class FileUploadAnalyzer
                 }
             }
         }
-        
+
         return $dimensions;
     }
 }

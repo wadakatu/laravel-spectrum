@@ -17,7 +17,7 @@ class MultipleFilesRequest extends FormRequest
             'documents.*' => 'file|mimes:pdf,doc,docx|max:20480',
         ];
     }
-    
+
     public function attributes()
     {
         return [

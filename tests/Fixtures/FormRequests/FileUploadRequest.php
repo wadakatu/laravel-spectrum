@@ -16,12 +16,12 @@ class FileUploadRequest extends FormRequest
             'portfolio' => 'nullable|url',
         ];
     }
-    
+
     public function attributes()
     {
         return [
             'name' => 'Full Name',
-            'email' => 'Email Address', 
+            'email' => 'Email Address',
             'avatar' => 'Profile Picture',
             'resume' => 'CV/Resume Document',
             'portfolio' => 'Portfolio Website',

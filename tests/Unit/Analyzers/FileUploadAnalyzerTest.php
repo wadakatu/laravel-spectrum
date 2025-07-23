@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
+use Illuminate\Validation\Rules\File;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use PHPUnit\Framework\TestCase;
-use Illuminate\Validation\Rules\File;
 
 class FileUploadAnalyzerTest extends TestCase
 {
@@ -15,10 +15,10 @@ class FileUploadAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new FileUploadAnalyzer();
+        $this->analyzer = new FileUploadAnalyzer;
     }
 
-    public function testAnalyzesBasicFileRule(): void
+    public function test_analyzes_basic_file_rule(): void
     {
         $rules = [
             'document' => 'required|file|max:2048',
@@ -33,7 +33,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertFalse($result['document']['multiple']);
     }
 
-    public function testAnalyzesImageRule(): void
+    public function test_analyzes_image_rule(): void
     {
         $rules = [
             'avatar' => 'required|image|mimes:jpeg,png|max:1024',
@@ -50,7 +50,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertEquals(1048576, $result['avatar']['max_size']); // 1024 KB in bytes
     }
 
-    public function testAnalyzesMultipleFiles(): void
+    public function test_analyzes_multiple_files(): void
     {
         $rules = [
             'photos' => 'required|array',
@@ -66,7 +66,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertEquals(5242880, $result['photos.*']['max_size']); // 5120 KB in bytes
     }
 
-    public function testAnalyzesMimeTypes(): void
+    public function test_analyzes_mime_types(): void
     {
         $rules = [
             'video' => 'mimetypes:video/mp4,video/avi',
@@ -78,7 +78,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertEquals(['video/mp4', 'video/avi'], $result['video']['mime_types']);
     }
 
-    public function testAnalyzesDimensions(): void
+    public function test_analyzes_dimensions(): void
     {
         $rules = [
             'profile_pic' => 'image|dimensions:min_width=100,min_height=100,ratio=3/2',
@@ -94,7 +94,7 @@ class FileUploadAnalyzerTest extends TestCase
         ], $result['profile_pic']['dimensions']);
     }
 
-    public function testAnalyzesMinMaxSize(): void
+    public function test_analyzes_min_max_size(): void
     {
         $rules = [
             'document' => 'file|min:100|max:10240',
@@ -107,7 +107,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertEquals(10485760, $result['document']['max_size']); // 10240 KB in bytes
     }
 
-    public function testAnalyzesFileRuleObject(): void
+    public function test_analyzes_file_rule_object(): void
     {
         $rules = [
             'video' => [
@@ -127,7 +127,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertEquals(52428800, $result['video']['max_size']); // 50 * 1024 KB in bytes
     }
 
-    public function testAnalyzesMixedFields(): void
+    public function test_analyzes_mixed_fields(): void
     {
         $rules = [
             'title' => 'required|string',
@@ -145,7 +145,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertArrayNotHasKey('description', $result);
     }
 
-    public function testInferMimeTypesForImage(): void
+    public function test_infer_mime_types_for_image(): void
     {
         $fileRules = [
             'type' => 'file',
@@ -163,7 +163,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertContains('image/webp', $result);
     }
 
-    public function testInferMimeTypesFromExtensions(): void
+    public function test_infer_mime_types_from_extensions(): void
     {
         $fileRules = [
             'mimes' => ['pdf', 'doc', 'docx'],
@@ -178,7 +178,7 @@ class FileUploadAnalyzerTest extends TestCase
         ], $result);
     }
 
-    public function testIsMultipleFiles(): void
+    public function test_is_multiple_files(): void
     {
         $this->assertTrue($this->analyzer->isMultipleFiles('photos.*'));
         $this->assertTrue($this->analyzer->isMultipleFiles('documents.*'));
@@ -187,7 +187,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertFalse($this->analyzer->isMultipleFiles('document'));
     }
 
-    public function testAnalyzesOptionalFiles(): void
+    public function test_analyzes_optional_files(): void
     {
         $rules = [
             'profile_image' => 'sometimes|image|mimes:jpeg,png|max:1024',
@@ -202,7 +202,7 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertTrue($result['background_image']['is_image']);
     }
 
-    public function testAnalyzesComplexArrayStructure(): void
+    public function test_analyzes_complex_array_structure(): void
     {
         $rules = [
             'attachments' => 'array|max:5',

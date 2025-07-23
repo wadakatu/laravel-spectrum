@@ -175,7 +175,7 @@ class OpenApiGenerator
         }
 
         $schema = $this->schemaGenerator->generateFromParameters($parameters);
-        
+
         // Check if schema is for multipart/form-data (has 'content' key)
         if (isset($schema['content'])) {
             return [

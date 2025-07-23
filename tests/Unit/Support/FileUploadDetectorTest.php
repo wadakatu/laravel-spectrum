@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Support;
 
+use Illuminate\Validation\Rules\File;
 use LaravelSpectrum\Support\FileUploadDetector;
 use PHPUnit\Framework\TestCase;
-use Illuminate\Validation\Rules\File;
 
 class FileUploadDetectorTest extends TestCase
 {
@@ -15,10 +15,10 @@ class FileUploadDetectorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->detector = new FileUploadDetector();
+        $this->detector = new FileUploadDetector;
     }
 
-    public function testExtractFileRulesFromStringRules(): void
+    public function test_extract_file_rules_from_string_rules(): void
     {
         $rules = [
             'name' => 'required|string',
@@ -37,7 +37,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertContains('file', $fileRules['document']);
     }
 
-    public function testExtractFileRulesFromArrayRules(): void
+    public function test_extract_file_rules_from_array_rules(): void
     {
         $rules = [
             'title' => ['required', 'string', 'max:255'],
@@ -52,7 +52,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertArrayNotHasKey('title', $fileRules);
     }
 
-    public function testExtractFileRulesFromRuleObjects(): void
+    public function test_extract_file_rules_from_rule_objects(): void
     {
         $rules = [
             'video' => [
@@ -70,7 +70,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertInstanceOf(File::class, $fileRules['video'][1]);
     }
 
-    public function testGetMimeTypeMapping(): void
+    public function test_get_mime_type_mapping(): void
     {
         $mapping = $this->detector->getMimeTypeMapping();
 
@@ -83,7 +83,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertEquals('text/csv', $mapping['csv']);
     }
 
-    public function testExtractSizeConstraints(): void
+    public function test_extract_size_constraints(): void
     {
         $rules = ['required', 'file', 'min:100', 'max:2048'];
 
@@ -93,7 +93,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertEquals(2097152, $constraints['max']); // 2048 KB in bytes
     }
 
-    public function testExtractSizeConstraintsFromString(): void
+    public function test_extract_size_constraints_from_string(): void
     {
         $rules = ['required|file|min:50|max:1024'];
 
@@ -103,7 +103,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertEquals(1048576, $constraints['max']); // 1024 KB in bytes
     }
 
-    public function testExtractSizeConstraintsEmpty(): void
+    public function test_extract_size_constraints_empty(): void
     {
         $rules = ['required', 'image'];
 
@@ -113,7 +113,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertArrayNotHasKey('max', $constraints);
     }
 
-    public function testExtractDimensionConstraints(): void
+    public function test_extract_dimension_constraints(): void
     {
         $rules = [
             'required',
@@ -130,7 +130,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertEquals('3/2', $dimensions['ratio']);
     }
 
-    public function testExtractDimensionConstraintsFromString(): void
+    public function test_extract_dimension_constraints_from_string(): void
     {
         $rules = ['required|image|dimensions:width=500,height=500'];
 
@@ -140,7 +140,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertEquals(500, $dimensions['height']);
     }
 
-    public function testExtractDimensionConstraintsEmpty(): void
+    public function test_extract_dimension_constraints_empty(): void
     {
         $rules = ['required', 'file'];
 
@@ -149,7 +149,7 @@ class FileUploadDetectorTest extends TestCase
         $this->assertEmpty($dimensions);
     }
 
-    public function testExtractFileRulesHandlesComplexPatterns(): void
+    public function test_extract_file_rules_handles_complex_patterns(): void
     {
         $rules = [
             'documents' => 'array|max:5',

@@ -346,7 +346,7 @@ class FormRequestAnalyzer
     protected function generateParameters(array $rules, array $attributes = [], ?string $namespace = null, array $useStatements = []): array
     {
         $parameters = [];
-        
+
         // Analyze file upload fields
         $fileFields = $this->fileUploadAnalyzer->analyzeRules($rules);
 
@@ -371,8 +371,9 @@ class FormRequestAnalyzer
                     'description' => $this->generateFileDescriptionWithAttribute($field, $fileInfo, $attributes[$field] ?? null),
                     'validation' => $ruleArray,
                 ];
-                
+
                 $parameters[] = $parameter;
+
                 continue;
             }
 
@@ -472,24 +473,24 @@ class FormRequestAnalyzer
     protected function generateFileDescription(string $field, array $fileInfo): string
     {
         $description = Str::title(str_replace(['_', '-'], ' ', $field));
-        
+
         $parts = [];
-        
-        if (!empty($fileInfo['mimes'])) {
-            $parts[] = 'Allowed types: ' . implode(', ', $fileInfo['mimes']);
+
+        if (! empty($fileInfo['mimes'])) {
+            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
         }
-        
+
         if (isset($fileInfo['max_size'])) {
             $maxSize = $this->formatFileSize($fileInfo['max_size']);
             $parts[] = "Max size: {$maxSize}";
         }
-        
+
         if (isset($fileInfo['min_size'])) {
             $minSize = $this->formatFileSize($fileInfo['min_size']);
             $parts[] = "Min size: {$minSize}";
         }
-        
-        if (!empty($fileInfo['dimensions'])) {
+
+        if (! empty($fileInfo['dimensions'])) {
             if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
                 $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
             }
@@ -500,38 +501,38 @@ class FormRequestAnalyzer
                 $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
             }
         }
-        
-        if (!empty($parts)) {
-            $description .= ' (' . implode('. ', $parts) . ')';
+
+        if (! empty($parts)) {
+            $description .= ' ('.implode('. ', $parts).')';
         }
-        
+
         return $description;
     }
-    
+
     /**
      * ファイルフィールドの説明を生成（属性名付き）
      */
     protected function generateFileDescriptionWithAttribute(string $field, array $fileInfo, ?string $attribute = null): string
     {
         $fieldName = $attribute ?? Str::title(str_replace(['_', '-'], ' ', $field));
-        
+
         $parts = [];
-        
-        if (!empty($fileInfo['mimes'])) {
-            $parts[] = 'Allowed types: ' . implode(', ', $fileInfo['mimes']);
+
+        if (! empty($fileInfo['mimes'])) {
+            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
         }
-        
+
         if (isset($fileInfo['max_size'])) {
             $maxSize = $this->formatFileSize($fileInfo['max_size']);
             $parts[] = "Max size: {$maxSize}";
         }
-        
+
         if (isset($fileInfo['min_size'])) {
             $minSize = $this->formatFileSize($fileInfo['min_size']);
             $parts[] = "Min size: {$minSize}";
         }
-        
-        if (!empty($fileInfo['dimensions'])) {
+
+        if (! empty($fileInfo['dimensions'])) {
             if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
                 $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
             }
@@ -542,10 +543,10 @@ class FormRequestAnalyzer
                 $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
             }
         }
-        
-        return $fieldName . (!empty($parts) ? ' (' . implode('. ', $parts) . ')' : '');
+
+        return $fieldName.(! empty($parts) ? ' ('.implode('. ', $parts).')' : '');
     }
-    
+
     /**
      * Format file size to human readable format
      */
@@ -553,19 +554,22 @@ class FormRequestAnalyzer
     {
         if ($bytes >= 1073741824) {
             $size = $bytes / 1073741824;
+
             return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
         }
-        
+
         if ($bytes >= 1048576) {
             $size = $bytes / 1048576;
+
             return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
         }
-        
+
         if ($bytes >= 1024) {
             $size = $bytes / 1024;
+
             return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
         }
-        
+
         return sprintf('%dB', $bytes);
     }
 

@@ -9,7 +9,7 @@ use Illuminate\Validation\Rules\File;
 class FileUploadDetector
 {
     private const FILE_RULES = ['file', 'image', 'mimes', 'mimetypes'];
-    
+
     private const MIME_TYPE_MAPPING = [
         'jpg' => 'image/jpeg',
         'jpeg' => 'image/jpeg',
@@ -38,7 +38,7 @@ class FileUploadDetector
     ];
 
     /**
-     * @param array<string, mixed> $rules
+     * @param  array<string, mixed>  $rules
      * @return array<string, array<mixed>>
      */
     public function extractFileRules(array $rules): array
@@ -63,7 +63,7 @@ class FileUploadDetector
     }
 
     /**
-     * @param array<mixed> $rules
+     * @param  array<mixed>  $rules
      * @return array<string, int>
      */
     public function extractSizeConstraints(array $rules): array
@@ -89,7 +89,7 @@ class FileUploadDetector
     }
 
     /**
-     * @param array<mixed> $rules
+     * @param  array<mixed>  $rules
      * @return array<string, mixed>
      */
     public function extractDimensionConstraints(array $rules): array
@@ -101,13 +101,13 @@ class FileUploadDetector
             if (is_string($rule) && str_starts_with($rule, 'dimensions:')) {
                 $parameters = substr($rule, 11); // Remove 'dimensions:'
                 $pairs = explode(',', $parameters);
-                
+
                 foreach ($pairs as $pair) {
                     $parts = explode('=', $pair, 2);
                     if (count($parts) === 2) {
                         $key = trim($parts[0]);
                         $value = trim($parts[1]);
-                        
+
                         if ($key === 'ratio') {
                             $dimensions[$key] = $value;
                         } else {
@@ -121,9 +121,6 @@ class FileUploadDetector
         return $dimensions;
     }
 
-    /**
-     * @param mixed $rules
-     */
     private function hasFileRule(mixed $rules): bool
     {
         $normalizedRules = $this->normalizeRules($rules);
@@ -137,13 +134,11 @@ class FileUploadDetector
         return false;
     }
 
-    /**
-     * @param mixed $rule
-     */
     private function isFileRule(mixed $rule): bool
     {
         if (is_string($rule)) {
             $ruleName = explode(':', $rule)[0];
+
             return in_array($ruleName, self::FILE_RULES, true);
         }
 
@@ -155,7 +150,6 @@ class FileUploadDetector
     }
 
     /**
-     * @param mixed $rules
      * @return array<mixed>
      */
     private function normalizeRules(mixed $rules): array
@@ -172,7 +166,7 @@ class FileUploadDetector
     }
 
     /**
-     * @param array<mixed> $rules
+     * @param  array<mixed>  $rules
      * @return array<mixed>
      */
     private function flattenRules(array $rules): array

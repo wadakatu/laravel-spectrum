@@ -14,10 +14,10 @@ class FileUploadSchemaGeneratorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->generator = new FileUploadSchemaGenerator();
+        $this->generator = new FileUploadSchemaGenerator;
     }
 
-    public function testGenerateBasicFileSchema(): void
+    public function test_generate_basic_file_schema(): void
     {
         $fileField = [
             'type' => 'file',
@@ -33,7 +33,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertArrayNotHasKey('description', $schema);
     }
 
-    public function testGenerateFileSchemaWithDescription(): void
+    public function test_generate_file_schema_with_description(): void
     {
         $fileField = [
             'type' => 'file',
@@ -51,7 +51,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertStringContainsString('Max size: 2MB', $schema['description']);
     }
 
-    public function testGenerateFileSchemaWithAllConstraints(): void
+    public function test_generate_file_schema_with_all_constraints(): void
     {
         $fileField = [
             'type' => 'file',
@@ -78,7 +78,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertStringContainsString('Max dimensions: 2000x2000', $schema['description']);
     }
 
-    public function testGenerateMultipartSchema(): void
+    public function test_generate_multipart_schema(): void
     {
         $fields = [
             'title' => [
@@ -111,19 +111,19 @@ class FileUploadSchemaGeneratorTest extends TestCase
 
         $this->assertArrayHasKey('content', $schema);
         $this->assertArrayHasKey('multipart/form-data', $schema['content']);
-        
+
         $multipartSchema = $schema['content']['multipart/form-data']['schema'];
         $this->assertEquals('object', $multipartSchema['type']);
-        
+
         $properties = $multipartSchema['properties'];
         $this->assertArrayHasKey('title', $properties);
         $this->assertArrayHasKey('description', $properties);
         $this->assertArrayHasKey('thumbnail', $properties);
         $this->assertArrayHasKey('document', $properties);
-        
+
         $this->assertEquals('string', $properties['thumbnail']['type']);
         $this->assertEquals('binary', $properties['thumbnail']['format']);
-        
+
         $required = $multipartSchema['required'];
         $this->assertContains('title', $required);
         $this->assertContains('description', $required);
@@ -131,7 +131,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertNotContains('document', $required);
     }
 
-    public function testFormatFileSize(): void
+    public function test_format_file_size(): void
     {
         $reflection = new \ReflectionClass($this->generator);
         $method = $reflection->getMethod('formatFileSize');
@@ -146,7 +146,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertEquals('500B', $method->invoke($this->generator, 500));
     }
 
-    public function testGenerateMultipartSchemaWithArrayFiles(): void
+    public function test_generate_multipart_schema_with_array_files(): void
     {
         $fields = [
             'title' => [
@@ -176,7 +176,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertEquals('binary', $properties['photos']['items']['format']);
     }
 
-    public function testGenerateDescriptionWithRatio(): void
+    public function test_generate_description_with_ratio(): void
     {
         $fileField = [
             'type' => 'file',
@@ -192,7 +192,7 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertStringContainsString('Aspect ratio: 16/9', $schema['description']);
     }
 
-    public function testGenerateDescriptionWithExactDimensions(): void
+    public function test_generate_description_with_exact_dimensions(): void
     {
         $fileField = [
             'type' => 'file',
