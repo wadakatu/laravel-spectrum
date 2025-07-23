@@ -1,5 +1,5 @@
 /vendor/
-/docs/
+/impl_docs/
 /node_modules/
 /.phpunit.cache/
 /.phpunit.result.cache
