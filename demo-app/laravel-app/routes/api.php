@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\PaginationTestController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -26,3 +27,10 @@ Route::prefix('pagination-test')->group(function () {
     Route::get('/cursor', [PaginationTestController::class, 'cursorPagination']);
     Route::get('/query-builder', [PaginationTestController::class, 'withQueryBuilder']);
 });
+
+// Product routes - Query parameter detection test
+Route::prefix('products')->group(function () {
+    Route::get('/search', [ProductController::class, 'search']);
+    Route::get('/filter', [ProductController::class, 'filter']);
+});
+Route::get('/match-test', [\App\Http\Controllers\TestMatchController::class, 'matchTest']);
