@@ -25,13 +25,16 @@ class FormRequestAnalyzer
 
     protected DocumentationCache $cache;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache)
+    protected EnumAnalyzer $enumAnalyzer;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
+        $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
     }
 
     /**
@@ -75,6 +78,9 @@ class FormRequestAnalyzer
                 return [];
             }
 
+            // Extract use statements
+            $useStatements = $this->extractUseStatements($ast);
+
             // クラスノードを探す
             $classNode = $this->findClassNode($ast, $reflection->getShortName());
             if (! $classNode) {
@@ -87,8 +93,11 @@ class FormRequestAnalyzer
             // attributes()メソッドを解析
             $attributes = $this->extractAttributes($classNode);
 
+            // Get namespace for enum resolution
+            $namespace = $reflection->getNamespaceName();
+
             // パラメータ情報を生成
-            return $this->generateParameters($rules, $attributes);
+            return $this->generateParameters($rules, $attributes, $namespace, $useStatements);
 
         } catch (Error $parseError) {
             Log::warning("Failed to parse FormRequest: {$requestClass}", [
@@ -316,9 +325,22 @@ class FormRequestAnalyzer
     }
 
     /**
+     * Extract use statements from AST
+     */
+    protected function extractUseStatements(array $ast): array
+    {
+        $visitor = new AST\Visitors\UseStatementExtractorVisitor;
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        return $visitor->getUseStatements();
+    }
+
+    /**
      * パラメータ情報を生成
      */
-    protected function generateParameters(array $rules, array $attributes = []): array
+    protected function generateParameters(array $rules, array $attributes = [], ?string $namespace = null, array $useStatements = []): array
     {
         $parameters = [];
 
@@ -330,18 +352,45 @@ class FormRequestAnalyzer
 
             $ruleArray = is_array($rule) ? $rule : explode('|', $rule);
 
-            $parameters[] = [
+            // Check for enum rules
+            $enumInfo = null;
+            foreach ($ruleArray as $singleRule) {
+                $enumResult = $this->enumAnalyzer->analyzeValidationRule($singleRule, $namespace, $useStatements);
+                if ($enumResult) {
+                    $enumInfo = $enumResult;
+                    break;
+                }
+            }
+
+            $parameter = [
                 'name' => $field,
                 'in' => 'body',
                 'required' => $this->isRequired($ruleArray),
                 'type' => $this->typeInference->inferFromRules($ruleArray),
-                'description' => $attributes[$field] ?? $this->generateDescription($field, $ruleArray),
+                'description' => $attributes[$field] ?? $this->generateDescription($field, $ruleArray, $namespace, $useStatements),
                 'example' => $this->typeInference->generateExample($field, $ruleArray),
                 'validation' => $ruleArray,
             ];
+
+            // Add enum information if found
+            if ($enumInfo) {
+                $parameter['enum'] = $enumInfo;
+            }
+
+            $parameters[] = $parameter;
         }
 
         return $parameters;
+    }
+
+    /**
+     * Generate parameters from runtime rules (when using reflection on anonymous classes)
+     */
+    protected function generateParametersFromRuntimeRules(array $rules, array $attributes = [], ?string $namespace = null): array
+    {
+        // This method handles rules that contain actual objects (not AST strings)
+        // It's used when we extract rules via reflection instead of AST parsing
+        return $this->generateParameters($rules, $attributes, $namespace);
     }
 
     /**
@@ -366,7 +415,7 @@ class FormRequestAnalyzer
     /**
      * フィールドの説明を生成
      */
-    protected function generateDescription(string $field, array $rules): string
+    protected function generateDescription(string $field, array $rules, ?string $namespace = null, array $useStatements = []): string
     {
         $description = Str::title(str_replace(['_', '-'], ' ', $field));
 
@@ -380,6 +429,13 @@ class FormRequestAnalyzer
                     $min = Str::after($rule, 'min:');
                     $description .= " (最小{$min}文字)";
                 }
+            }
+
+            // Check for enum rule and add enum class name to description
+            $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);
+            if ($enumResult) {
+                $enumClassName = class_basename($enumResult['class']);
+                $description .= " ({$enumClassName})";
             }
         }
 
@@ -417,8 +473,10 @@ class FormRequestAnalyzer
                         if ($classNode) {
                             $rules = $this->extractRules($classNode);
                             $attributes = $this->extractAttributes($classNode);
+                            $namespace = $reflection->getNamespaceName();
+                            $useStatements = $this->extractUseStatements($ast);
 
-                            return $this->generateParameters($rules, $attributes);
+                            return $this->generateParameters($rules, $attributes, $namespace, $useStatements);
                         }
                     }
                 } catch (Error $e) {
@@ -437,7 +495,7 @@ class FormRequestAnalyzer
                 $requestProp->setValue($instance, $mockRequest);
             }
 
-            // Extract rules using reflection
+            // Extract rules using reflection - this will get actual objects, not AST strings
             $rules = [];
             if ($reflection->hasMethod('rules')) {
                 $method = $reflection->getMethod('rules');
@@ -458,7 +516,11 @@ class FormRequestAnalyzer
                 $attributes = $method->invoke($instance) ?: [];
             }
 
-            return $this->generateParameters($rules, $attributes);
+            $namespace = $reflection->getNamespaceName();
+
+            // When using reflection, we get actual rule objects, not AST strings
+            // So we need to pass these objects directly to generateParameters
+            return $this->generateParametersFromRuntimeRules($rules, $attributes, $namespace);
 
         } catch (\Exception $e) {
             return [];
@@ -614,7 +676,17 @@ class FormRequestAnalyzer
 
         // Generate parameters with merged rules for default type info
         foreach ($conditionalRules['merged_rules'] as $field => $mergedRules) {
-            $parameters[] = [
+            // Check for enum rules
+            $enumInfo = null;
+            foreach ($mergedRules as $singleRule) {
+                $enumResult = $this->enumAnalyzer->analyzeValidationRule($singleRule);
+                if ($enumResult) {
+                    $enumInfo = $enumResult;
+                    break;
+                }
+            }
+
+            $parameter = [
                 'name' => $field,
                 'in' => 'body',
                 'required' => $this->isRequiredInAnyCondition($processedFields[$field]['rules_by_condition']),
@@ -624,6 +696,13 @@ class FormRequestAnalyzer
                 'validation' => $mergedRules,
                 'example' => $this->typeInference->generateExample($field, $mergedRules),
             ];
+
+            // Add enum information if found
+            if ($enumInfo) {
+                $parameter['enum'] = $enumInfo;
+            }
+
+            $parameters[] = $parameter;
         }
 
         return $parameters;

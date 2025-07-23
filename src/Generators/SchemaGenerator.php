@@ -32,7 +32,17 @@ class SchemaGenerator
                 $property['format'] = $parameter['format'];
             }
             if (isset($parameter['enum'])) {
-                $property['enum'] = $parameter['enum'];
+                // Handle enum from EnumAnalyzer structure
+                if (is_array($parameter['enum']) && isset($parameter['enum']['values'])) {
+                    $property['enum'] = $parameter['enum']['values'];
+                    // Override type if enum has specific type
+                    if (isset($parameter['enum']['type'])) {
+                        $property['type'] = $parameter['enum']['type'];
+                    }
+                } else {
+                    // Handle simple enum array (for backward compatibility)
+                    $property['enum'] = $parameter['enum'];
+                }
             }
             if (isset($parameter['minimum'])) {
                 $property['minimum'] = $parameter['minimum'];
