@@ -3,6 +3,7 @@
 /node_modules/
 /.phpunit.cache/
 /.phpunit.result.cache
+/demo-app/laravel-app/workerman.artisan.pid
 composer.lock
 package-lock.json
 .DS_Store

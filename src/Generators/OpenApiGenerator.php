@@ -8,6 +8,7 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
+use LaravelSpectrum\Support\PaginationDetector;
 
 class OpenApiGenerator
 {
@@ -27,6 +28,10 @@ class OpenApiGenerator
 
     protected SecuritySchemeGenerator $securitySchemeGenerator;
 
+    protected PaginationSchemaGenerator $paginationSchemaGenerator;
+
+    protected PaginationDetector $paginationDetector;
+
     public function __construct(
         FormRequestAnalyzer $requestAnalyzer,
         ResourceAnalyzer $resourceAnalyzer,
@@ -35,7 +40,9 @@ class OpenApiGenerator
         SchemaGenerator $schemaGenerator,
         ErrorResponseGenerator $errorResponseGenerator,
         AuthenticationAnalyzer $authenticationAnalyzer,
-        SecuritySchemeGenerator $securitySchemeGenerator
+        SecuritySchemeGenerator $securitySchemeGenerator,
+        PaginationSchemaGenerator $paginationSchemaGenerator,
+        PaginationDetector $paginationDetector
     ) {
         $this->requestAnalyzer = $requestAnalyzer;
         $this->resourceAnalyzer = $resourceAnalyzer;
@@ -45,6 +52,8 @@ class OpenApiGenerator
         $this->errorResponseGenerator = $errorResponseGenerator;
         $this->authenticationAnalyzer = $authenticationAnalyzer;
         $this->securitySchemeGenerator = $securitySchemeGenerator;
+        $this->paginationSchemaGenerator = $paginationSchemaGenerator;
+        $this->paginationDetector = $paginationDetector;
     }
 
     /**
@@ -265,14 +274,41 @@ class OpenApiGenerator
             if (! empty($resourceStructure)) {
                 $schema = $this->schemaGenerator->generateFromResource($resourceStructure);
 
-                $response['content'] = [
-                    'application/json' => [
-                        'schema' => $controllerInfo['returnsCollection']
-                            ? ['type' => 'array', 'items' => $schema]
-                            : $schema,
-                    ],
-                ];
+                // Paginationが検出された場合
+                if (! empty($controllerInfo['pagination'])) {
+                    $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
+                    $paginatedSchema = $this->paginationSchemaGenerator->generate($paginationType, $schema);
+
+                    $response['content'] = [
+                        'application/json' => [
+                            'schema' => $paginatedSchema,
+                        ],
+                    ];
+                } else {
+                    $response['content'] = [
+                        'application/json' => [
+                            'schema' => $controllerInfo['returnsCollection']
+                                ? ['type' => 'array', 'items' => $schema]
+                                : $schema,
+                        ],
+                    ];
+                }
             }
+        }
+        // Paginationのみ検出された場合（Resourceなし）
+        elseif (! empty($controllerInfo['pagination'])) {
+            // モデルから基本的なスキーマを生成
+            $modelClass = $controllerInfo['pagination']['model'];
+            $basicSchema = $this->generateBasicModelSchema($modelClass);
+
+            $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
+            $paginatedSchema = $this->paginationSchemaGenerator->generate($paginationType, $basicSchema);
+
+            $response['content'] = [
+                'application/json' => [
+                    'schema' => $paginatedSchema,
+                ],
+            ];
         }
 
         return [
@@ -402,6 +438,25 @@ class OpenApiGenerator
 
             return false;
         }));
+    }
+
+    /**
+     * モデルから基本的なスキーマを生成
+     */
+    protected function generateBasicModelSchema(string $modelClass): array
+    {
+        // シンプルな実装 - モデルクラス名から基本的なスキーマを生成
+        $modelName = class_basename($modelClass);
+
+        return [
+            'type' => 'object',
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                // 他のプロパティは実際のモデルから推測することもできるが、
+                // 今回は基本的な実装にとどめる
+            ],
+            'description' => $modelName.' object',
+        ];
     }
 
     /**

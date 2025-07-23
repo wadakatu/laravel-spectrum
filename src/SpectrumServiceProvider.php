@@ -8,6 +8,7 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\Analyzers\PaginationAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
@@ -16,11 +17,13 @@ use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Generators\PaginationSchemaGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
+use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Support\TypeInference;
 
 class SpectrumServiceProvider extends ServiceProvider
@@ -35,13 +38,16 @@ class SpectrumServiceProvider extends ServiceProvider
         // シングルトンとして登録
         $this->app->singleton(DocumentationCache::class);
         $this->app->singleton(TypeInference::class);
+        $this->app->singleton(PaginationDetector::class);
         $this->app->singleton(RouteAnalyzer::class);
         $this->app->singleton(FormRequestAnalyzer::class);
         $this->app->singleton(InlineValidationAnalyzer::class);
+        $this->app->singleton(PaginationAnalyzer::class);
         $this->app->singleton(ResourceAnalyzer::class);
         $this->app->singleton(FractalTransformerAnalyzer::class);
         $this->app->singleton(ControllerAnalyzer::class);
         $this->app->singleton(SchemaGenerator::class);
+        $this->app->singleton(PaginationSchemaGenerator::class);
         $this->app->singleton(ValidationMessageGenerator::class);
         $this->app->singleton(ErrorResponseGenerator::class);
         $this->app->singleton(AuthenticationAnalyzer::class);
