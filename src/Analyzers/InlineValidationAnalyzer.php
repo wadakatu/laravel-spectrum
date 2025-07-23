@@ -542,6 +542,9 @@ class InlineValidationAnalyzer
         }
 
         if (! empty($fileInfo['dimensions'])) {
+            if (isset($fileInfo['dimensions']['width']) && isset($fileInfo['dimensions']['height'])) {
+                $parts[] = "Dimensions: {$fileInfo['dimensions']['width']}x{$fileInfo['dimensions']['height']}";
+            }
             if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
                 $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
             }
