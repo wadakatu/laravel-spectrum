@@ -34,3 +34,11 @@ Route::prefix('products')->group(function () {
     Route::get('/filter', [ProductController::class, 'filter']);
 });
 Route::get('/match-test', [\App\Http\Controllers\TestMatchController::class, 'matchTest']);
+
+// File upload routes - File upload detection test
+use App\Http\Controllers\FileUploadController;
+
+Route::prefix('uploads')->group(function () {
+    Route::post('/profile', [FileUploadController::class, 'upload']);
+    Route::post('/images', [FileUploadController::class, 'uploadImages']);
+});
