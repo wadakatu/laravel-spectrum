@@ -115,15 +115,15 @@ class FileUploadAnalyzerIntegrationTest extends TestCase
 
         $properties = $schema['content']['multipart/form-data']['schema']['properties'];
 
-        // Check photos array
-        $this->assertArrayHasKey('photos.*', $properties);
-        $this->assertEquals('array', $properties['photos.*']['type']);
-        $this->assertEquals('string', $properties['photos.*']['items']['type']);
-        $this->assertEquals('binary', $properties['photos.*']['items']['format']);
+        // Check photos array - array notation is normalized
+        $this->assertArrayHasKey('photos', $properties);
+        $this->assertEquals('array', $properties['photos']['type']);
+        $this->assertEquals('string', $properties['photos']['items']['type']);
+        $this->assertEquals('binary', $properties['photos']['items']['format']);
 
-        // Check documents array
-        $this->assertArrayHasKey('documents.*', $properties);
-        $this->assertEquals('array', $properties['documents.*']['type']);
+        // Check documents array - array notation is normalized
+        $this->assertArrayHasKey('documents', $properties);
+        $this->assertEquals('array', $properties['documents']['type']);
     }
 
     public function test_inline_validation_with_file_upload(): void
@@ -184,8 +184,10 @@ class FileUploadAnalyzerIntegrationTest extends TestCase
         // File fields
         $this->assertEquals('string', $properties['profile_pic']['type']);
         $this->assertEquals('binary', $properties['profile_pic']['format']);
-        $this->assertEquals('array', $properties['documents.*']['type']);
-        $this->assertEquals('binary', $properties['documents.*']['items']['format']);
+        // Array notation is normalized
+        $this->assertArrayHasKey('documents', $properties);
+        $this->assertEquals('array', $properties['documents']['type']);
+        $this->assertEquals('binary', $properties['documents']['items']['format']);
     }
 
     private function findParameter(array $parameters, string $name): ?array

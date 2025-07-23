@@ -56,4 +56,49 @@ class FileUploadController extends Controller
             ],
         ], 201);
     }
+
+    /**
+     * Upload photo gallery with multiple images
+     *
+     * This endpoint demonstrates array file uploads
+     */
+    public function uploadGallery()
+    {
+        $validated = request()->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'photos.*' => 'required|image|mimes:jpeg,png,webp|max:5120|dimensions:min_width=400,min_height=400',
+            'featured_image' => 'required|image|max:10240|dimensions:width=1920,height=1080',
+        ]);
+
+        return response()->json([
+            'message' => 'Gallery created successfully',
+            'data' => [
+                'title' => $validated['title'],
+                'photo_count' => count(request()->file('photos', [])),
+            ],
+        ], 201);
+    }
+
+    /**
+     * Upload documents with various types
+     *
+     * This endpoint demonstrates mixed file types
+     */
+    public function uploadDocuments()
+    {
+        $validated = request()->validate([
+            'project_name' => 'required|string|max:255',
+            'documents.*' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:20480',
+            'readme' => 'required|file|mimes:md,txt|max:1024',
+        ]);
+
+        return response()->json([
+            'message' => 'Documents uploaded successfully',
+            'data' => [
+                'project_name' => $validated['project_name'],
+                'document_count' => count(request()->file('documents', [])),
+            ],
+        ], 201);
+    }
 }

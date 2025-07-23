@@ -139,9 +139,14 @@ class OpenApiGenerator
 
         // リクエストボディの生成
         if (in_array($method, ['post', 'put', 'patch'])) {
-            $requestBody = $this->generateRequestBody($controllerInfo);
+            $requestBody = $this->generateRequestBody($controllerInfo, $route);
             if ($requestBody) {
                 $operation['requestBody'] = $requestBody;
+
+                // Add consumes for file uploads
+                if (isset($requestBody['content']['multipart/form-data'])) {
+                    $operation['consumes'] = ['multipart/form-data'];
+                }
             }
         }
 
@@ -159,7 +164,7 @@ class OpenApiGenerator
     /**
      * リクエストボディを生成
      */
-    protected function generateRequestBody(array $controllerInfo): ?array
+    protected function generateRequestBody(array $controllerInfo, array $route): ?array
     {
         $parameters = [];
 
@@ -178,15 +183,33 @@ class OpenApiGenerator
             return null;
         }
 
-        $schema = $this->schemaGenerator->generateFromParameters($parameters);
+        // Check if any parameter is a file upload
+        $hasFileUpload = $this->hasFileUploadParameters($parameters);
 
-        // Check if schema is for multipart/form-data (has 'content' key)
-        if (isset($schema['content'])) {
-            return [
-                'required' => true,
-                'content' => $schema['content'],
-            ];
+        if ($hasFileUpload) {
+            // Generate enhanced multipart schema
+            $schema = $this->schemaGenerator->generateFromParameters($parameters);
+
+            // Ensure content is set correctly
+            if (isset($schema['content'])) {
+                $requestBody = [
+                    'required' => true,
+                    'content' => $schema['content'],
+                ];
+
+                // Add description for file upload endpoint
+                $description = $this->generateFileUploadDescription($parameters);
+
+                if ($description) {
+                    $requestBody['description'] = $description;
+                }
+
+                return $requestBody;
+            }
         }
+
+        // Normal JSON schema generation
+        $schema = $this->schemaGenerator->generateFromParameters($parameters);
 
         return [
             'required' => true,
@@ -638,5 +661,41 @@ class OpenApiGenerator
         $resource = preg_replace('/\\{[^}]+\\}/', '', $resource);
 
         return Str::studly(Str::singular($resource));
+    }
+
+    /**
+     * Check if parameters contain file uploads
+     */
+    private function hasFileUploadParameters(array $parameters): bool
+    {
+        foreach ($parameters as $param) {
+            if (isset($param['type']) && $param['type'] === 'file') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate comprehensive description for file upload endpoint
+     */
+    private function generateFileUploadDescription(array $parameters): string
+    {
+        $fileParams = array_filter($parameters, fn ($p) => isset($p['type']) && $p['type'] === 'file');
+
+        if (empty($fileParams)) {
+            return '';
+        }
+
+        $parts = ['This endpoint accepts file uploads.'];
+
+        foreach ($fileParams as $param) {
+            if (isset($param['file_info']['multiple']) && $param['file_info']['multiple']) {
+                $parts[] = "- {$param['name']}: Multiple files allowed";
+            }
+        }
+
+        return implode("\n", $parts);
     }
 }

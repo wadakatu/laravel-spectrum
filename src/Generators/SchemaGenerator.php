@@ -111,71 +111,109 @@ class SchemaGenerator
      */
     protected function generateMultipartSchema(array $normalFields, array $fileFields): array
     {
-        $normalFieldsFormatted = [];
-        $fileFieldsFormatted = [];
+        $properties = [];
+        $required = [];
 
-        // Format normal fields
+        // Process normal fields
         foreach ($normalFields as $field) {
             if (! isset($field['name'])) {
                 continue;
             }
 
-            $fieldData = [
+            $fieldName = $this->normalizeFieldName($field['name']);
+
+            $properties[$fieldName] = [
                 'type' => $field['type'] ?? 'string',
-                'required' => $field['required'] ?? false,
             ];
 
+            // Add other properties
             if (isset($field['description'])) {
-                $fieldData['description'] = $field['description'];
+                $properties[$fieldName]['description'] = $field['description'];
             }
             if (isset($field['maxLength'])) {
-                $fieldData['maxLength'] = $field['maxLength'];
-            }
-            if (isset($field['minLength'])) {
-                $fieldData['minLength'] = $field['minLength'];
+                $properties[$fieldName]['maxLength'] = $field['maxLength'];
             }
             if (isset($field['enum']) && is_array($field['enum']) && isset($field['enum']['values'])) {
-                $fieldData['enum'] = $field['enum']['values'];
-                if (isset($field['enum']['type'])) {
-                    $fieldData['type'] = $field['enum']['type'];
-                }
+                $properties[$fieldName]['enum'] = $field['enum']['values'];
             }
 
-            $normalFieldsFormatted[$field['name']] = $fieldData;
+            if ($field['required'] ?? false) {
+                $required[] = $fieldName;
+            }
         }
 
-        // Format file fields
+        // Process file fields
         foreach ($fileFields as $field) {
             if (! isset($field['name'])) {
                 continue;
             }
 
-            $fileFieldData = [
-                'type' => 'string',
-                'format' => 'binary',
-                'required' => $field['required'] ?? false,
-            ];
+            $fieldName = $this->normalizeFieldName($field['name']);
+            $isArrayField = $this->isArrayField($field['name']);
 
-            if (isset($field['description'])) {
-                $fileFieldData['description'] = $field['description'];
-            }
+            if ($isArrayField) {
+                // Handle array file uploads (e.g., photos.*, documents.*)
+                $baseName = $this->getArrayBaseName($field['name']);
 
-            // Handle array files (multiple uploads)
-            if (isset($field['file_info']) && $field['file_info']['multiple']) {
-                $fileFieldsFormatted[$field['name']] = [
+                $properties[$baseName] = [
                     'type' => 'array',
-                    'items' => $fileFieldData,
-                    'required' => $field['required'] ?? false,
+                    'items' => [
+                        'type' => 'string',
+                        'format' => 'binary',
+                    ],
                 ];
+
                 if (isset($field['description'])) {
-                    $fileFieldsFormatted[$field['name']]['description'] = $field['description'];
+                    $properties[$baseName]['description'] = $field['description'];
+                }
+
+                // Add constraints
+                if (isset($field['file_info'])) {
+                    if (isset($field['file_info']['max_size'])) {
+                        $properties[$baseName]['items']['maxSize'] = $field['file_info']['max_size'];
+                    }
+                    if (! empty($field['file_info']['mime_types'])) {
+                        $properties[$baseName]['items']['contentMediaType'] = implode(', ', $field['file_info']['mime_types']);
+                    }
                 }
             } else {
-                $fileFieldsFormatted[$field['name']] = $fileFieldData;
+                // Single file upload
+                $properties[$fieldName] = [
+                    'type' => 'string',
+                    'format' => 'binary',
+                ];
+
+                if (isset($field['description'])) {
+                    $properties[$fieldName]['description'] = $field['description'];
+                }
+
+                // Add constraints as extensions
+                if (isset($field['file_info'])) {
+                    if (isset($field['file_info']['max_size'])) {
+                        $properties[$fieldName]['maxSize'] = $field['file_info']['max_size'];
+                    }
+                    if (! empty($field['file_info']['mime_types'])) {
+                        $properties[$fieldName]['contentMediaType'] = implode(', ', $field['file_info']['mime_types']);
+                    }
+                }
+            }
+
+            if ($field['required'] ?? false) {
+                $required[] = $isArrayField ? $this->getArrayBaseName($field['name']) : $fieldName;
             }
         }
 
-        return $this->fileUploadSchemaGenerator->generateMultipartSchema($normalFieldsFormatted, $fileFieldsFormatted);
+        return [
+            'content' => [
+                'multipart/form-data' => [
+                    'schema' => [
+                        'type' => 'object',
+                        'properties' => $properties,
+                        'required' => array_unique($required),
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -416,5 +454,30 @@ class SchemaGenerator
         }
 
         return $schema;
+    }
+
+    /**
+     * Normalize field names (e.g., photos.* -> photos)
+     */
+    private function normalizeFieldName(string $name): string
+    {
+        // Remove array notation
+        return str_replace(['.*', '[*]', '[]'], '', $name);
+    }
+
+    /**
+     * Check if field is an array field
+     */
+    private function isArrayField(string $name): bool
+    {
+        return str_contains($name, '.*') || str_contains($name, '[*]') || str_contains($name, '[]');
+    }
+
+    /**
+     * Get base name for array fields
+     */
+    private function getArrayBaseName(string $name): string
+    {
+        return preg_replace('/[\.\[\]]\*?$/', '', $name);
     }
 }
