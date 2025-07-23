@@ -42,3 +42,14 @@ Route::prefix('uploads')->group(function () {
     Route::post('/profile', [FileUploadController::class, 'upload']);
     Route::post('/images', [FileUploadController::class, 'uploadImages']);
 });
+
+// Request validate routes - request()->validate() pattern test
+use App\Http\Controllers\RequestValidateController;
+
+Route::prefix('request-validate')->group(function () {
+    Route::post('/blog/posts', [RequestValidateController::class, 'store']);
+    Route::post('/blog/articles', [RequestValidateController::class, 'storeWithRequestVariable']);
+    Route::post('/user/upload', [RequestValidateController::class, 'upload']);
+    Route::put('/user/profile/{id}', [RequestValidateController::class, 'update']);
+    Route::post('/settings', [RequestValidateController::class, 'testDifferentVariableNames']);
+});
