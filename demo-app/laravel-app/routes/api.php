@@ -42,6 +42,8 @@ use App\Http\Controllers\FileUploadController;
 Route::prefix('uploads')->group(function () {
     Route::post('/profile', [FileUploadController::class, 'upload']);
     Route::post('/images', [FileUploadController::class, 'uploadImages']);
+    Route::post('/gallery', [FileUploadController::class, 'uploadGallery']);
+    Route::post('/documents', [FileUploadController::class, 'uploadDocuments']);
 });
 
 // Request validate routes - request()->validate() pattern test
