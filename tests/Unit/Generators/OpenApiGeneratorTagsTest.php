@@ -8,6 +8,7 @@ use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
+use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Generators\PaginationSchemaGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
@@ -41,6 +42,8 @@ class OpenApiGeneratorTagsTest extends TestCase
 
     protected $mockPaginationDetector;
 
+    protected $mockExampleGenerator;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -55,6 +58,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->mockSecuritySchemeGenerator = Mockery::mock(SecuritySchemeGenerator::class);
         $this->mockPaginationSchemaGenerator = Mockery::mock(PaginationSchemaGenerator::class);
         $this->mockPaginationDetector = Mockery::mock(PaginationDetector::class);
+        $this->mockExampleGenerator = Mockery::mock(ExampleGenerator::class);
 
         $this->generator = new OpenApiGenerator(
             $this->mockFormRequestAnalyzer,
@@ -66,7 +70,8 @@ class OpenApiGeneratorTagsTest extends TestCase
             $this->mockAuthenticationAnalyzer,
             $this->mockSecuritySchemeGenerator,
             $this->mockPaginationSchemaGenerator,
-            $this->mockPaginationDetector
+            $this->mockPaginationDetector,
+            $this->mockExampleGenerator
         );
     }
 

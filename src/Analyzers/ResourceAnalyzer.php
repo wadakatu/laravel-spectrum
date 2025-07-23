@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\HasExamples;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -85,6 +86,21 @@ class ResourceAnalyzer
             $additionalData = $this->analyzeWithMethod($classNode);
             if (! empty($additionalData)) {
                 $structure['with'] = $additionalData;
+            }
+
+            // Check if the resource implements HasExamples interface
+            if ($reflection->implementsInterface(HasExamples::class)) {
+                $structure['hasExamples'] = true;
+                try {
+                    $resource = new $resourceClass(null);
+                    $structure['customExample'] = $resource->getExample();
+                    $structure['customExamples'] = $resource->getExamples();
+                } catch (\Exception $e) {
+                    // Failed to instantiate resource, skip custom examples
+                    Log::debug("Failed to get custom examples from Resource: {$resourceClass}", [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             // 新しいフォーマットを使用する場合はそのまま返す

@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('posts', PostController::class);
     Route::post('users/search/test', [UserController::class, 'search']);
     Route::get('profile', [UserController::class, 'profile']);
+    Route::get('users/{id}/detailed', [UserController::class, 'detailed']);
 });
 
 // Pagination test routes

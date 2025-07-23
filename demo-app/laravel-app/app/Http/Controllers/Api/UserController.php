@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserResourceWithExample;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -31,7 +32,9 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $user = User::findOrFail($id);
+
+        return new UserResource($user);
     }
 
     /**
@@ -70,5 +73,15 @@ class UserController extends Controller
     public function profile(Request $request)
     {
         return new UserResource($request->user());
+    }
+
+    /**
+     * Get detailed user information with custom examples
+     */
+    public function detailed(string $id)
+    {
+        $user = User::findOrFail($id);
+
+        return new UserResourceWithExample($user);
     }
 }
