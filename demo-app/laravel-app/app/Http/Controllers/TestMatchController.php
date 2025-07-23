@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TestMatchController extends Controller
 {
@@ -14,7 +14,7 @@ class TestMatchController extends Controller
     {
         $type = $request->input('type', 'basic');
         $level = $request->integer('level', 1);
-        
+
         // Test match expression for enum detection
         $result = match ($type) {
             'basic' => 'Basic Plan',
@@ -22,7 +22,7 @@ class TestMatchController extends Controller
             'enterprise' => 'Enterprise Plan',
             default => 'Unknown Plan'
         };
-        
+
         // Test nested match
         $discount = match (true) {
             $level >= 10 => 0.20,
@@ -30,11 +30,11 @@ class TestMatchController extends Controller
             $level >= 3 => 0.05,
             default => 0
         };
-        
+
         return response()->json([
             'plan' => $result,
             'level' => $level,
-            'discount' => $discount
+            'discount' => $discount,
         ]);
     }
 }
