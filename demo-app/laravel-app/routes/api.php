@@ -54,3 +54,8 @@ Route::prefix('request-validate')->group(function () {
     Route::put('/user/profile/{id}', [RequestValidateController::class, 'update']);
     Route::post('/settings', [RequestValidateController::class, 'testDifferentVariableNames']);
 });
+
+// Task routes with Enum parameters
+Route::get('/tasks/{status}', [\App\Http\Controllers\TaskController::class, 'index']);
+Route::post('/tasks/{status}/{priority}', [\App\Http\Controllers\TaskController::class, 'store']);
+Route::patch('/tasks/{id}', [\App\Http\Controllers\TaskController::class, 'update']);
