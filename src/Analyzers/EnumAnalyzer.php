@@ -222,8 +222,10 @@ class EnumAnalyzer
 
     /**
      * Extract enum information from class name
+     *
+     * @return array|null ['class' => string, 'values' => array, 'type' => string]
      */
-    private function extractEnumInfo(string $enumClass): ?array
+    public function extractEnumInfo(string $enumClass): ?array
     {
         if (! enum_exists($enumClass)) {
             return null;

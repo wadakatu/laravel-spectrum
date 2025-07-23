@@ -473,6 +473,42 @@ class OpenApiGenerator
     {
         $parameters = $route['parameters'];
 
+        // Enum型パラメータを追加
+        if (! empty($controllerInfo['enumParameters'])) {
+            foreach ($controllerInfo['enumParameters'] as $enumParam) {
+                // ルートパラメータに含まれているか確認
+                $isRouteParam = false;
+                foreach ($parameters as &$routeParam) {
+                    if ($routeParam['name'] === $enumParam['name']) {
+                        $isRouteParam = true;
+                        // 既存のルートパラメータにEnum情報を追加
+                        $routeParam['schema'] = [
+                            'type' => $enumParam['type'],
+                            'enum' => $enumParam['enum'],
+                        ];
+                        if ($enumParam['description']) {
+                            $routeParam['description'] = $enumParam['description'];
+                        }
+                        break;
+                    }
+                }
+
+                // ルートパラメータでない場合は、クエリパラメータとして追加
+                if (! $isRouteParam) {
+                    $parameters[] = [
+                        'name' => $enumParam['name'],
+                        'in' => 'query',
+                        'required' => $enumParam['required'],
+                        'schema' => [
+                            'type' => $enumParam['type'],
+                            'enum' => $enumParam['enum'],
+                        ],
+                        'description' => $enumParam['description'],
+                    ];
+                }
+            }
+        }
+
         // Query Parametersを追加
         if (! empty($controllerInfo['queryParameters'])) {
             foreach ($controllerInfo['queryParameters'] as $queryParam) {
