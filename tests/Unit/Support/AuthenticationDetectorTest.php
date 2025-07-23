@@ -4,10 +4,11 @@ namespace LaravelSpectrum\Tests\Unit\Support;
 
 use LaravelSpectrum\Support\AuthenticationDetector;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class AuthenticationDetectorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_detects_sanctum_authentication()
     {
         $middleware = ['auth:sanctum', 'throttle:api'];
@@ -20,7 +21,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertEquals('sanctumAuth', $scheme['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_passport_authentication()
     {
         $middleware = ['passport', 'scope:read'];
@@ -32,7 +33,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertEquals('passportAuth', $scheme['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_basic_authentication()
     {
         $middleware = ['auth.basic'];
@@ -44,7 +45,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertEquals('basicAuth', $scheme['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_api_key_authentication()
     {
         $middleware = ['check-api-key'];
@@ -56,7 +57,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertEquals('apiKeyAuth', $scheme['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_for_non_auth_middleware()
     {
         $middleware = ['throttle:60,1', 'cors'];
@@ -65,7 +66,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertNull($scheme);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_custom_guard_authentication()
     {
         $middleware = ['auth:admin'];
@@ -77,7 +78,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertEquals('adminAuth', $scheme['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_add_custom_authentication_schemes()
     {
         AuthenticationDetector::addCustomScheme('my-custom-auth', [
@@ -95,7 +96,7 @@ class AuthenticationDetectorTest extends TestCase
         $this->assertEquals('query', $scheme['in']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_multiple_authentication_schemes()
     {
         $middleware = ['auth:sanctum', 'auth.basic', 'throttle'];

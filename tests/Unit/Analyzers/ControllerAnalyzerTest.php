@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ControllerAnalyzerTest extends TestCase
 {
@@ -15,7 +16,7 @@ class ControllerAnalyzerTest extends TestCase
         $this->analyzer = app(ControllerAnalyzer::class);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_fractal_item_usage()
     {
         $controller = TestFractalController::class;
@@ -27,7 +28,7 @@ class ControllerAnalyzerTest extends TestCase
         $this->assertEquals('item', $result['fractal']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_fractal_collection_usage()
     {
         $controller = TestFractalController::class;
@@ -39,7 +40,7 @@ class ControllerAnalyzerTest extends TestCase
         $this->assertEquals('collection', $result['fractal']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_fractal_with_includes()
     {
         $controller = TestFractalController::class;
@@ -50,7 +51,7 @@ class ControllerAnalyzerTest extends TestCase
         $this->assertTrue($result['fractal']['hasIncludes']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_both_resource_and_fractal()
     {
         $controller = TestMixedController::class;

@@ -8,6 +8,7 @@ use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\Fixtures\Controllers\PostController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class RouteAnalyzerWithPrefixTest extends TestCase
 {
@@ -27,7 +28,7 @@ class RouteAnalyzerWithPrefixTest extends TestCase
         $this->analyzer = new RouteAnalyzer($cache);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_routes_with_prefix_groups()
     {
         // Arrange - Laravel 11スタイルのプレフィックスグループ
@@ -59,7 +60,7 @@ class RouteAnalyzerWithPrefixTest extends TestCase
         $this->assertEquals('api/users/{user}', $routes[2]['uri']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_nested_prefix_groups()
     {
         // Arrange - ネストされたプレフィックスグループ
@@ -86,7 +87,7 @@ class RouteAnalyzerWithPrefixTest extends TestCase
         $this->assertEquals('api/v2/users', $routes[2]['uri']);
     }
 
-    /** @test */
+    #[Test]
     public function it_respects_custom_route_patterns_with_prefix()
     {
         // Arrange
@@ -111,7 +112,7 @@ class RouteAnalyzerWithPrefixTest extends TestCase
         $this->assertEquals('api/v2/posts', $routes[1]['uri']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_laravel_11_style_api_routing()
     {
         // Arrange - Laravel 11のwithRouting設定をシミュレート

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\File;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class DocumentationCacheTest extends TestCase
 {
@@ -24,7 +25,7 @@ class DocumentationCacheTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_caches_analysis_results()
     {
         $callCount = 0;
@@ -49,7 +50,7 @@ class DocumentationCacheTest extends TestCase
         $this->assertEquals(1, $callCount); // コールバックは呼ばれない
     }
 
-    /** @test */
+    #[Test]
     public function it_invalidates_cache_when_dependencies_change()
     {
         $tempFile = storage_path('test_dependency.php');
@@ -83,7 +84,7 @@ class DocumentationCacheTest extends TestCase
         File::delete($tempFile);
     }
 
-    /** @test */
+    #[Test]
     public function it_caches_form_request_analysis()
     {
         $testRequest = new class extends FormRequest
@@ -115,7 +116,7 @@ class DocumentationCacheTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    /** @test */
+    #[Test]
     public function it_provides_cache_statistics()
     {
         // いくつかのアイテムをキャッシュ
@@ -131,7 +132,7 @@ class DocumentationCacheTest extends TestCase
         $this->assertNotNull($stats['newest_file']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_corrupted_cache_gracefully()
     {
         $cacheDir = config('spectrum.cache.directory', storage_path('app/spectrum/cache'));
@@ -154,7 +155,7 @@ class DocumentationCacheTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    /** @test */
+    #[Test]
     public function it_respects_cache_enabled_setting()
     {
         // キャッシュを無効化
@@ -179,7 +180,7 @@ class DocumentationCacheTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_resource_dependencies()
     {
         $resourceFile = storage_path('TestResource.php');
@@ -242,7 +243,7 @@ class DependencyResource {
         File::delete($dependencyFile);
     }
 
-    /** @test */
+    #[Test]
     public function it_caches_route_analysis()
     {
         $callCount = 0;
@@ -266,7 +267,7 @@ class DependencyResource {
         $this->assertEquals(1, $callCount);
     }
 
-    /** @test */
+    #[Test]
     public function it_forgets_cache_entries()
     {
         // キャッシュにデータを保存
@@ -296,14 +297,14 @@ class DependencyResource {
         $this->assertEquals(['route3'], $data);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_forgetting_non_existent_cache()
     {
         $result = $this->cache->forget('non_existent_key');
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_forgets_cache_by_pattern()
     {
         // 複数のリソースキャッシュを作成

@@ -10,6 +10,7 @@ use LaravelSpectrum\Tests\Fixtures\DateTestResource;
 use LaravelSpectrum\Tests\Fixtures\NestedTestResource;
 use LaravelSpectrum\Tests\Fixtures\UserResource;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Unit\Analyzers\Fixtures\ConditionalFieldsResource;
 use Tests\Unit\Analyzers\Fixtures\DateFormattingResource;
 use Tests\Unit\Analyzers\Fixtures\MethodChainResource;
@@ -38,7 +39,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->analyzer = new ResourceAnalyzer($cache);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_resource_structure()
     {
         // Act
@@ -52,7 +53,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('string', $structure['name']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_date_fields()
     {
         // Arrange - Resource with date fields
@@ -66,7 +67,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertStringContainsString(' ', $structure['created_at']['example']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_non_resource_class()
     {
         // Act
@@ -77,7 +78,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEmpty($structure);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_nested_properties()
     {
         // Arrange
@@ -93,7 +94,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('integer', $structure['posts_count']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_collection_fields()
     {
         // Arrange
@@ -109,7 +110,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('array', $structure['categories']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_boolean_fields()
     {
         // Arrange
@@ -122,7 +123,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('boolean', $structure['verified']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_simple_resource()
     {
         $result = $this->analyzer->analyze(SimpleUserResource::class, true);
@@ -137,7 +138,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('string', $result['properties']['email']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_conditional_fields()
     {
         $result = $this->analyzer->analyze(ConditionalFieldsResource::class, true);
@@ -149,7 +150,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertTrue($result['properties']['secret']['conditional']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_nested_resources()
     {
         $result = $this->analyzer->analyze(NestedResourcesResource::class, true);
@@ -162,7 +163,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('array', $result['properties']['posts']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_when_loaded_relationships()
     {
         $result = $this->analyzer->analyze(RelationshipResource::class, true);
@@ -173,7 +174,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('posts', $result['properties']['posts']['relation']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_date_formatting()
     {
         $result = $this->analyzer->analyze(DateFormattingResource::class, true);
@@ -182,7 +183,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('date-time', $result['properties']['created_at']['format']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_method_chains()
     {
         $result = $this->analyzer->analyze(MethodChainResource::class, true);
@@ -195,7 +196,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEquals('string', $result['properties']['full_name']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_generate_openapi_schema()
     {
         $result = $this->analyzer->analyze(SimpleUserResource::class, true);
@@ -211,7 +212,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertContains('email', $schema['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_missing_toarray_method_gracefully()
     {
         $result = $this->analyzer->analyze(NoToArrayResource::class);
@@ -219,7 +220,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertEmpty($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_resource_collection()
     {
         $result = $this->analyzer->analyze(UserCollection::class);
@@ -227,7 +228,7 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertTrue($result['isCollection']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_analyze_with_method()
     {
         $result = $this->analyzer->analyze(ResourceWithMeta::class);

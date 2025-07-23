@@ -11,6 +11,7 @@ use LaravelSpectrum\Tests\Fixtures\Controllers\ProfileController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\SearchController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class RouteAnalyzerTest extends TestCase
 {
@@ -30,7 +31,7 @@ class RouteAnalyzerTest extends TestCase
         $this->analyzer = new RouteAnalyzer($cache);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_detect_api_routes()
     {
         // Arrange
@@ -46,7 +47,7 @@ class RouteAnalyzerTest extends TestCase
         $this->assertEquals('api/users', $routes[0]['uri']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_route_parameters()
     {
         // Arrange
@@ -65,7 +66,7 @@ class RouteAnalyzerTest extends TestCase
         $this->assertFalse($routes[1]['parameters'][1]['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_routes_by_configured_patterns()
     {
         // Arrange
@@ -81,7 +82,7 @@ class RouteAnalyzerTest extends TestCase
         $this->assertStringContainsString('api/v1', $routes[0]['uri']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_http_methods()
     {
         // Arrange
@@ -99,7 +100,7 @@ class RouteAnalyzerTest extends TestCase
         $this->assertContains('POST', $routes[2]['httpMethods']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_middleware()
     {
         // Arrange
@@ -115,7 +116,7 @@ class RouteAnalyzerTest extends TestCase
         $this->assertContains('throttle:api', $routes[0]['middleware']);
     }
 
-    /** @test */
+    #[Test]
     public function it_ignores_closure_routes()
     {
         // Arrange

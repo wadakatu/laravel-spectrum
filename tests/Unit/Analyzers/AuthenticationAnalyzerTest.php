@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class AuthenticationAnalyzerTest extends TestCase
 {
@@ -15,7 +16,7 @@ class AuthenticationAnalyzerTest extends TestCase
         $this->analyzer = new AuthenticationAnalyzer;
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_routes_with_authentication()
     {
         $routes = [
@@ -47,7 +48,7 @@ class AuthenticationAnalyzerTest extends TestCase
         $this->assertArrayNotHasKey(1, $result['routes']); // publicルートには認証なし
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_single_route_authentication()
     {
         $route = [
@@ -62,7 +63,7 @@ class AuthenticationAnalyzerTest extends TestCase
         $this->assertTrue($auth['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_for_routes_without_authentication()
     {
         $route = [
@@ -75,7 +76,7 @@ class AuthenticationAnalyzerTest extends TestCase
         $this->assertNull($auth);
     }
 
-    /** @test */
+    #[Test]
     public function it_loads_custom_schemes_from_config()
     {
         config(['spectrum.authentication.custom_schemes' => [
@@ -101,7 +102,7 @@ class AuthenticationAnalyzerTest extends TestCase
         $this->assertEquals('jwtAuth', $auth['scheme']['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_global_authentication_when_enabled()
     {
         config(['spectrum.authentication.global' => [
@@ -122,7 +123,7 @@ class AuthenticationAnalyzerTest extends TestCase
         $this->assertTrue($globalAuth['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_when_global_authentication_is_disabled()
     {
         config(['spectrum.authentication.global' => [

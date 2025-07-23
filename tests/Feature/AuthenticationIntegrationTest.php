@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Tests\Feature;
 use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class AuthenticationIntegrationTest extends TestCase
 {
@@ -24,7 +25,7 @@ class AuthenticationIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_authentication_in_generated_openapi_spec()
     {
         // テスト用のルートを作成
@@ -65,7 +66,7 @@ class AuthenticationIntegrationTest extends TestCase
         $this->assertEquals([['apiAuth' => []]], $adminUsers['security']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_oauth2_authentication_for_passport()
     {
         // Passport認証のルート

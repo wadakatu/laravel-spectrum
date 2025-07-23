@@ -7,6 +7,7 @@ use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ConditionalRulesTest extends TestCase
 {
@@ -26,7 +27,7 @@ class ConditionalRulesTest extends TestCase
         $this->analyzer = new FormRequestAnalyzer(new TypeInference, $cache);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_http_method_conditions()
     {
         $requestClass = new class extends FormRequest
@@ -83,7 +84,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertContains('unique:users', $mergedRules['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_nested_conditions()
     {
         $requestClass = new class extends FormRequest
@@ -129,7 +130,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertEquals('user_method', $adminRuleSet['conditions'][1]['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_early_returns()
     {
         $requestClass = new class extends FormRequest
@@ -174,7 +175,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertEmpty($deleteRules['rules']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_elseif_conditions()
     {
         $requestClass = new class extends FormRequest
@@ -211,7 +212,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertStringContainsString('archived', $putRules['rules']['status']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_request_helper_conditions()
     {
         $requestClass = new class extends FormRequest
@@ -241,7 +242,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertEquals('POST', $postRules['conditions'][0]['method']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_array_validation_rules()
     {
         $requestClass = new class extends FormRequest
@@ -275,7 +276,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertContains('max:50', $postRules['rules']['tags.*']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_parameters_from_conditional_rules()
     {
         $requestClass = new class extends FormRequest
@@ -315,7 +316,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertTrue($emailParam['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_falls_back_to_regular_extraction_when_no_conditions()
     {
         $requestClass = new class extends FormRequest
@@ -341,7 +342,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertEmpty($result['conditional_rules']['rules_sets'][0]['conditions']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_complex_conditions()
     {
         $requestClass = new class extends FormRequest
@@ -371,7 +372,7 @@ class ConditionalRulesTest extends TestCase
         $this->assertStringContainsString('isPremium', $premiumRules['conditions'][0]['expression']);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_probability_correctly()
     {
         $requestClass = new class extends FormRequest

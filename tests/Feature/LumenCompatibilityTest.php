@@ -9,17 +9,18 @@ use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Support\LumenCompatibilityHelper;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class LumenCompatibilityTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_detects_lumen_environment()
     {
         // In test environment, we should not be in Lumen
         $this->assertFalse(LumenCompatibilityHelper::isLumen());
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_correct_route_patterns_for_laravel()
     {
         config(['spectrum.route_patterns' => ['api/*']]);
@@ -29,7 +30,7 @@ class LumenCompatibilityTest extends TestCase
         $this->assertEquals(['api/*'], $patterns);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_routes_collection()
     {
         $routes = LumenCompatibilityHelper::getRoutes();
@@ -37,7 +38,7 @@ class LumenCompatibilityTest extends TestCase
         $this->assertNotNull($routes);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_openapi_with_inline_validation()
     {
         // Create a test controller with inline validation
@@ -173,7 +174,7 @@ class LumenCompatibilityTest extends TestCase
         unlink($tempFile);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_validator_make_pattern()
     {
         $controllerInfo = [
@@ -228,7 +229,7 @@ class LumenCompatibilityTest extends TestCase
         $this->assertStringContainsString('Validation', $operation['responses']['422']['description']);
     }
 
-    /** @test */
+    #[Test]
     public function it_prefers_form_request_over_inline_validation()
     {
         $controllerInfo = [
@@ -296,7 +297,7 @@ class LumenCompatibilityTest extends TestCase
         $this->assertArrayNotHasKey('name', $schema['properties']); // From inline validation, should not be present
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_custom_validation_messages_and_attributes()
     {
         $inlineValidationAnalyzer = new InlineValidationAnalyzer(new TypeInference);

@@ -16,6 +16,7 @@ use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 
 class OpenApiGeneratorTagsTest extends TestCase
@@ -81,7 +82,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_removes_parameters_from_tags()
     {
         $route = [
@@ -95,7 +96,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['Post'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_nested_resources_with_multiple_tags()
     {
         $route = [
@@ -109,7 +110,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['Post', 'Comment'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_controller_name_as_fallback_for_generic_paths()
     {
         $route = [
@@ -123,7 +124,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['User'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_respects_custom_tag_mappings_from_config()
     {
         // テスト用の設定値をセット
@@ -143,7 +144,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['Authentication'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_deeply_nested_resources()
     {
         $route = [
@@ -157,7 +158,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['Post', 'Comment', 'Like'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_simple_resource_paths()
     {
         $route = [
@@ -171,7 +172,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['User'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_ignores_common_prefixes()
     {
         $route = [
@@ -185,7 +186,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['User'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_optional_parameters()
     {
         $route = [
@@ -199,7 +200,7 @@ class OpenApiGeneratorTagsTest extends TestCase
         $this->assertEquals(['Post'], $tags);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_custom_tag_mapping_with_exact_match()
     {
         $this->app['config']->set('spectrum.tags', [
