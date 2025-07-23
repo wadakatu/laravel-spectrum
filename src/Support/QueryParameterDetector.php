@@ -14,6 +14,7 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Scalar\DNumber;
 use PhpParser\Node\Scalar\LNumber;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\NodeTraverser;
@@ -136,8 +137,8 @@ class QueryParameterDetector
                     $this->detector->processInArrayCall($node);
                 }
 
-                // Track if/switch for context
-                if ($node instanceof If_ || $node instanceof Switch_) {
+                // Track if/switch/match for context
+                if ($node instanceof If_ || $node instanceof Switch_ || $node instanceof Match_) {
                     $this->detector->analyzeConditionalContext($node);
                 }
 
@@ -351,6 +352,36 @@ class QueryParameterDetector
                         $value = $this->extractValue($case->cond);
                         if ($value !== null && ! in_array($value, $enumValues)) {
                             $enumValues[] = $value;
+                        }
+                    }
+                }
+                if (! empty($enumValues)) {
+                    $this->updateParameterContext($paramName, ['enum_values' => $enumValues]);
+                }
+            }
+        } elseif ($node instanceof Match_ && $node->cond instanceof Variable) {
+            // Check if match is on a request parameter
+            $varName = $node->cond->name;
+            $paramName = $this->traceVariableToRequest($varName);
+
+            if ($paramName) {
+                // Get existing enum values if any
+                $existingEnumValues = [];
+                foreach ($this->detectedParams as $param) {
+                    if ($param['name'] === $paramName && isset($param['context']['enum_values'])) {
+                        $existingEnumValues = $param['context']['enum_values'];
+                        break;
+                    }
+                }
+
+                $enumValues = $existingEnumValues;
+                foreach ($node->arms as $arm) {
+                    if ($arm->conds !== null) {
+                        foreach ($arm->conds as $cond) {
+                            $value = $this->extractValue($cond);
+                            if ($value !== null && ! in_array($value, $enumValues)) {
+                                $enumValues[] = $value;
+                            }
                         }
                     }
                 }
