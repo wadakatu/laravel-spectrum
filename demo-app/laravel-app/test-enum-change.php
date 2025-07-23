@@ -7,7 +7,7 @@ $app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-echo "Cache enabled: " . (config('spectrum.cache.enabled') ? 'YES' : 'NO') . "\n\n";
+echo 'Cache enabled: '.(config('spectrum.cache.enabled') ? 'YES' : 'NO')."\n\n";
 
 // Initial analysis
 $analyzer = new \LaravelSpectrum\Analyzers\FormRequestAnalyzer(
@@ -26,14 +26,14 @@ foreach ($result1 as $param) {
     }
 }
 if ($roleEnum) {
-    echo "Role enum values: " . json_encode($roleEnum['values']) . "\n";
+    echo 'Role enum values: '.json_encode($roleEnum['values'])."\n";
 } else {
     echo "Role enum not found\n";
 }
 
 echo "\n=== Modifying FormRequest (adding new enum value) ===\n";
 echo "Please manually edit StoreUserRequest and change UserRole enum usage,\n";
-echo "then press Enter to continue...";
+echo 'then press Enter to continue...';
 fgets(STDIN);
 
 // Re-analyze after change
@@ -53,7 +53,7 @@ foreach ($result2 as $param) {
     }
 }
 if ($roleEnum2) {
-    echo "Role enum values after change: " . json_encode($roleEnum2['values']) . "\n";
+    echo 'Role enum values after change: '.json_encode($roleEnum2['values'])."\n";
 } else {
     echo "Role enum not found after change\n";
 }

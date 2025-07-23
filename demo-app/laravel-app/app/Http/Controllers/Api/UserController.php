@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
-use App\Models\User;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -56,7 +56,7 @@ class UserController extends Controller
             'query' => 'required|string|min:3|max:100',
             'per_page' => 'integer|between:10,100',
             'sort_by' => 'in:name,email,created_at',
-            'sort_order' => [new \Illuminate\Validation\Rules\Enum()]
+            'sort_order' => [new \Illuminate\Validation\Rules\Enum],
         ]);
 
         $users = User::where('name', 'like', "%{$request->query}%")

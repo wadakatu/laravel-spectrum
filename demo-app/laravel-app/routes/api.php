@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\{UserController, PostController, AuthController};
 
 // Public routes
 Route::post('auth/login', [AuthController::class, 'login']);

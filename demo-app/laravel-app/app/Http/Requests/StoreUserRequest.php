@@ -36,7 +36,7 @@ class StoreUserRequest extends FormRequest
             'profile.avatar' => 'nullable|url',
             'profile.website' => 'nullable|url',
             'tags' => 'array',
-            'tags.*' => 'exists:tags,id'
+            'tags.*' => 'exists:tags,id',
         ];
     }
 

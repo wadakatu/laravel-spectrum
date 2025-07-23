@@ -12,9 +12,9 @@ $routes = \Illuminate\Support\Facades\Route::getRoutes();
 
 foreach ($routes as $route) {
     if (str_starts_with($route->uri(), 'api/')) {
-        echo "URI: " . $route->uri() . "\n";
-        echo "Action: " . json_encode($route->getAction()) . "\n";
-        echo "Controller: " . ($route->getController() ? get_class($route->getController()) : 'null') . "\n";
+        echo 'URI: '.$route->uri()."\n";
+        echo 'Action: '.json_encode($route->getAction())."\n";
+        echo 'Controller: '.($route->getController() ? get_class($route->getController()) : 'null')."\n";
         echo "---\n";
         break;
     }
