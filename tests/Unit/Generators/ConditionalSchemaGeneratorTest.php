@@ -4,6 +4,7 @@ namespace Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ConditionalSchemaGeneratorTest extends TestCase
 {
@@ -15,7 +16,7 @@ class ConditionalSchemaGeneratorTest extends TestCase
         $this->generator = new SchemaGenerator;
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_oneof_schema_for_conditional_parameters()
     {
         $parameters = [
@@ -80,7 +81,7 @@ class ConditionalSchemaGeneratorTest extends TestCase
         $this->assertContains('password', $postSchema['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_regular_schema_when_no_conditions()
     {
         $parameters = [
@@ -108,7 +109,7 @@ class ConditionalSchemaGeneratorTest extends TestCase
         $this->assertArrayHasKey('email', $schema['properties']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_non_http_method_conditions()
     {
         $parameters = [
@@ -136,7 +137,7 @@ class ConditionalSchemaGeneratorTest extends TestCase
         $this->assertArrayHasKey('admin_field', $schema['properties']);
     }
 
-    /** @test */
+    #[Test]
     public function it_merges_duplicate_fields_correctly()
     {
         $parameters = [

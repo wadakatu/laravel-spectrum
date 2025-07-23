@@ -7,6 +7,7 @@ use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class CachePerformanceTest extends TestCase
 {
@@ -26,7 +27,7 @@ class CachePerformanceTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_improves_generation_performance()
     {
         // 大量のルートを作成

@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Feature;
 
 use LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ControllerEnumParameterTest extends TestCase
 {
@@ -15,7 +16,7 @@ class ControllerEnumParameterTest extends TestCase
         $router->get('api/status', [EnumTestController::class, 'getStatus']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_enum_parameters_in_controller_methods()
     {
         // Act
@@ -58,7 +59,7 @@ class ControllerEnumParameterTest extends TestCase
         $this->assertEquals(['active', 'inactive', 'pending'], $statusParam['schema']['enum']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_enum_response_schemas()
     {
         // Act

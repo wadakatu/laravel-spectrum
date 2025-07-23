@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class SecuritySchemeGeneratorTest extends TestCase
 {
@@ -15,7 +16,7 @@ class SecuritySchemeGeneratorTest extends TestCase
         $this->generator = new SecuritySchemeGenerator;
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_bearer_token_security_scheme()
     {
         $authSchemes = [
@@ -36,7 +37,7 @@ class SecuritySchemeGeneratorTest extends TestCase
         $this->assertEquals('JWT', $securitySchemes['bearerAuth']['bearerFormat']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_api_key_security_scheme()
     {
         $authSchemes = [
@@ -56,7 +57,7 @@ class SecuritySchemeGeneratorTest extends TestCase
         $this->assertEquals('X-API-Key', $securitySchemes['apiKeyAuth']['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_oauth2_security_scheme()
     {
         $authSchemes = [
@@ -84,7 +85,7 @@ class SecuritySchemeGeneratorTest extends TestCase
         $this->assertArrayHasKey('flows', $securitySchemes['oauth2']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_endpoint_security()
     {
         $authentication = [
@@ -103,7 +104,7 @@ class SecuritySchemeGeneratorTest extends TestCase
         $this->assertEquals([], $security[0]['bearerAuth']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_oauth2_endpoint_security_with_scopes()
     {
         $authentication = [
@@ -122,7 +123,7 @@ class SecuritySchemeGeneratorTest extends TestCase
         $this->assertEquals(['read', 'write'], $security[0]['oauth2']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_non_required_authentication()
     {
         $authentication = [

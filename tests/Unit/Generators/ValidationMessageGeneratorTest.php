@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ValidationMessageGeneratorTest extends TestCase
 {
@@ -15,7 +16,7 @@ class ValidationMessageGeneratorTest extends TestCase
         $this->generator = new ValidationMessageGenerator;
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_messages_for_required_rule()
     {
         $rules = ['name' => 'required|string'];
@@ -24,7 +25,7 @@ class ValidationMessageGeneratorTest extends TestCase
         $this->assertContains('The Name field is required.', $messages['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_messages_for_email_rule()
     {
         $rules = ['email' => 'required|email'];
@@ -33,7 +34,7 @@ class ValidationMessageGeneratorTest extends TestCase
         $this->assertContains('The Email must be a valid email address.', $messages['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_messages_for_min_rule_with_different_types()
     {
         // 文字列の場合
@@ -52,7 +53,7 @@ class ValidationMessageGeneratorTest extends TestCase
         $this->assertContains('The Tags must have at least 2 items.', $messages['tags']);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_custom_messages_when_provided()
     {
         $rules = ['email' => 'required|email'];
@@ -63,7 +64,7 @@ class ValidationMessageGeneratorTest extends TestCase
         $this->assertContains('メールアドレスは必須です。', $messages['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_humanizes_field_names()
     {
         $rules = [
@@ -77,7 +78,7 @@ class ValidationMessageGeneratorTest extends TestCase
         $this->assertContains('The User Email field is required.', $messages['user.email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_sample_message()
     {
         $sampleMessage = $this->generator->generateSampleMessage('email', 'required|email');

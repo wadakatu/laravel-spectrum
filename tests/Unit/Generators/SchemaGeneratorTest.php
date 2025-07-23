@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class SchemaGeneratorTest extends TestCase
 {
@@ -15,7 +16,7 @@ class SchemaGeneratorTest extends TestCase
         $this->generator = new SchemaGenerator;
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_schema_from_fractal_transformer()
     {
         $fractalData = [
@@ -41,7 +42,7 @@ class SchemaGeneratorTest extends TestCase
         $this->assertArrayHasKey('email', $schema['properties']['data']['properties']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_schema_with_available_includes()
     {
         $fractalData = [
@@ -72,7 +73,7 @@ class SchemaGeneratorTest extends TestCase
         $this->assertStringContainsString('Default include', $schema['properties']['data']['properties']['profile']['description']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_collection_schema_for_fractal()
     {
         $fractalData = [
@@ -94,7 +95,7 @@ class SchemaGeneratorTest extends TestCase
         $this->assertEquals('object', $schema['properties']['data']['items']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_adds_pagination_metadata_for_collections()
     {
         $fractalData = [
@@ -119,7 +120,7 @@ class SchemaGeneratorTest extends TestCase
         $this->assertArrayHasKey('total_pages', $pagination['properties']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_nested_properties_in_fractal()
     {
         $fractalData = [
@@ -161,7 +162,7 @@ class SchemaGeneratorTest extends TestCase
         $this->assertArrayHasKey('is_active', $dataProperties['flags']['properties']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_schema_from_resource_without_example_keys()
     {
         $resourceStructure = [

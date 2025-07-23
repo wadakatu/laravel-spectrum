@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class CacheCommandTest extends TestCase
 {
@@ -25,7 +26,7 @@ class CacheCommandTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_clear_cache()
     {
         // Arrange - Create some cache
@@ -43,7 +44,7 @@ class CacheCommandTest extends TestCase
         $this->assertEquals(0, $stats['total_files']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_show_cache_statistics()
     {
         // Arrange - Create some cache
@@ -60,7 +61,7 @@ class CacheCommandTest extends TestCase
             ->assertSuccessful();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_warm_cache()
     {
         // Arrange
@@ -77,7 +78,7 @@ class CacheCommandTest extends TestCase
         $this->assertGreaterThan(0, $stats['total_files']);
     }
 
-    /** @test */
+    #[Test]
     public function it_shows_error_for_invalid_action()
     {
         $this->artisan('spectrum:cache invalid')

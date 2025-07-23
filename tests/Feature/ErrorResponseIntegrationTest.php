@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Tests\Feature;
 use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ErrorResponseIntegrationTest extends TestCase
 {
@@ -29,7 +30,7 @@ class ErrorResponseIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_error_responses_in_generated_openapi_spec()
     {
         // テスト用のルートを作成

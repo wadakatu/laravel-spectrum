@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class GenerateDocsCommandTest extends TestCase
 {
@@ -31,7 +32,7 @@ class GenerateDocsCommandTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_openapi_documentation()
     {
         // Arrange
@@ -55,7 +56,7 @@ class GenerateDocsCommandTest extends TestCase
         $this->assertArrayHasKey('/api/users', $openapi['paths']);
     }
 
-    /** @test */
+    #[Test]
     public function it_clears_cache_when_clear_cache_option_is_specified()
     {
         // Arrange
@@ -75,7 +76,7 @@ class GenerateDocsCommandTest extends TestCase
         $this->assertEquals(1, $stats['total_files']); // Only the newly created cache
     }
 
-    /** @test */
+    #[Test]
     public function it_disables_cache_when_no_cache_option_is_specified()
     {
         // Arrange
@@ -88,7 +89,7 @@ class GenerateDocsCommandTest extends TestCase
             ->assertSuccessful();
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_yaml_format_when_specified()
     {
         // Arrange
@@ -105,7 +106,7 @@ class GenerateDocsCommandTest extends TestCase
         $this->assertStringContainsString('openapi: 3.0.0', $content);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_custom_output_path_when_specified()
     {
         // Arrange
@@ -124,7 +125,7 @@ class GenerateDocsCommandTest extends TestCase
         File::deleteDirectory(storage_path('custom'));
     }
 
-    /** @test */
+    #[Test]
     public function it_shows_warning_when_no_routes_found()
     {
         // Arrange - No routes configured

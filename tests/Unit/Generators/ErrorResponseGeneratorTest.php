@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ErrorResponseGeneratorTest extends TestCase
 {
@@ -17,7 +18,7 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->generator = new ErrorResponseGenerator($messageGenerator);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_401_unauthorized_response()
     {
         $responses = $this->generator->generateErrorResponses();
@@ -27,7 +28,7 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertArrayHasKey('content', $responses['401']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_422_validation_error_response_with_form_request()
     {
         $formRequestData = [
@@ -50,7 +51,7 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertArrayHasKey('password', $errorProperties);
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_error_examples_in_422_response()
     {
         $formRequestData = [
@@ -67,7 +68,7 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertEquals('The Email field is required.', $example['email'][0]);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_default_error_responses_for_authenticated_routes()
     {
         $responses = $this->generator->getDefaultErrorResponses('GET', true, false);
@@ -78,7 +79,7 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertArrayHasKey('500', $responses);
     }
 
-    /** @test */
+    #[Test]
     public function it_excludes_auth_errors_for_public_routes()
     {
         $responses = $this->generator->getDefaultErrorResponses('GET', false, false);
@@ -89,7 +90,7 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertArrayHasKey('500', $responses);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_custom_validation_messages()
     {
         $formRequestData = [

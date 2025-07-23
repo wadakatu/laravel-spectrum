@@ -7,6 +7,7 @@ use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class FractalTransformerAnalyzerTest extends TestCase
 {
@@ -18,7 +19,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->analyzer = new FractalTransformerAnalyzer;
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_basic_fractal_transformer()
     {
         $result = $this->analyzer->analyze(UserTransformer::class);
@@ -41,7 +42,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertEquals('string', $result['properties']['updated_at']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_available_includes()
     {
         $result = $this->analyzer->analyze(UserTransformer::class);
@@ -57,7 +58,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertFalse($result['availableIncludes']['profile']['collection']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_default_includes()
     {
         $result = $this->analyzer->analyze(UserTransformer::class);
@@ -67,7 +68,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertNotContains('posts', $result['defaultIncludes']);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_transformer_with_nullable_fields()
     {
         $result = $this->analyzer->analyze(PostTransformer::class);
@@ -79,7 +80,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertTrue($result['properties']['published_at']['nullable']);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_complex_transformer_with_nested_data()
     {
         $result = $this->analyzer->analyze(ComplexTransformer::class);
@@ -102,21 +103,21 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertEquals('object', $result['properties']['metrics']['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_non_transformer_class()
     {
         $result = $this->analyzer->analyze(\stdClass::class);
         $this->assertEmpty($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_non_existent_class()
     {
         $result = $this->analyzer->analyze('NonExistentClass');
         $this->assertEmpty($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_include_methods_with_null_returns()
     {
         $result = $this->analyzer->analyze(ComplexTransformer::class);
@@ -127,7 +128,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertContains($result['availableIncludes']['nested_resource']['type'], ['object', 'null']);
     }
 
-    /** @test */
+    #[Test]
     public function it_identifies_transformer_classes_from_include_methods()
     {
         $result = $this->analyzer->analyze(UserTransformer::class);
@@ -139,7 +140,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertEquals('ProfileTransformer', $result['availableIncludes']['profile']['transformer']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_appropriate_examples_for_properties()
     {
         $result = $this->analyzer->analyze(UserTransformer::class);

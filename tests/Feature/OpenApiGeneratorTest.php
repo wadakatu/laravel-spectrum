@@ -11,6 +11,7 @@ use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class OpenApiGeneratorTest extends TestCase
 {
@@ -30,7 +31,7 @@ class OpenApiGeneratorTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_valid_openapi_specification()
     {
         // Arrange
@@ -54,7 +55,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayHasKey('post', $openapi['paths']['/api/users']);
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_request_body_for_post_requests()
     {
         // Arrange
@@ -75,7 +76,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayHasKey('application/json', $operation['requestBody']['content']);
     }
 
-    /** @test */
+    #[Test]
     public function it_adds_security_requirements_for_authenticated_routes()
     {
         // Arrange
@@ -92,7 +93,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayHasKey('sanctumAuth', $operation['security'][0]);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_proper_path_parameters()
     {
         // Arrange
@@ -116,7 +117,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertFalse(array_values($commentParam)[0]['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_api_info_and_servers()
     {
         // Arrange
@@ -137,7 +138,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_tags_from_route_uri()
     {
         // Arrange

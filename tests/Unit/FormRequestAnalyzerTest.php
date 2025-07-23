@@ -9,6 +9,7 @@ use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class FormRequestAnalyzerTest extends TestCase
 {
@@ -28,7 +29,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->analyzer = new FormRequestAnalyzer(new TypeInference, $cache);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_validation_rules_from_form_request()
     {
         // Act
@@ -44,7 +45,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEquals('string', $nameParam['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_infers_types_from_validation_rules()
     {
         // Arrange - Create a test FormRequest
@@ -73,7 +74,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEquals('string', $this->findParameterByName($parameters, 'email')['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_descriptions_from_attributes_method()
     {
         // Arrange
@@ -98,7 +99,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEquals('ユーザー名', $nameParam['description']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_array_rules()
     {
         // Arrange
@@ -125,7 +126,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertContains('max:255', $nameParam['validation']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_non_form_request()
     {
         // Act
@@ -136,7 +137,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEmpty($parameters);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_optional_fields()
     {
         // Arrange
@@ -161,7 +162,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertFalse($this->findParameterByName($parameters, 'nullable_field')['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_rule_objects()
     {
         // Skip test if using file-based analyzer since it can't instantiate Rule objects
@@ -199,7 +200,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertTrue($statusParam['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_dynamic_rules()
     {
         // Skip test if using file-based analyzer
@@ -236,7 +237,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertTrue($nameParam['required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_php8_match_expression()
     {
         if (PHP_VERSION_ID < 80000) {
@@ -268,7 +269,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertNotEmpty($parameters);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_nested_array_rules()
     {
         // Arrange
@@ -295,7 +296,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEquals('string', $userNameParam['type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_wildcard_array_rules()
     {
         // Arrange

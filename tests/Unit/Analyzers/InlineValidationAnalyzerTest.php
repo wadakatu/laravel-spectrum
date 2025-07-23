@@ -8,6 +8,7 @@ use LaravelSpectrum\Tests\TestCase;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
+use PHPUnit\Framework\Attributes\Test;
 
 class InlineValidationAnalyzerTest extends TestCase
 {
@@ -22,7 +23,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->analyzer = new InlineValidationAnalyzer(new TypeInference);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_basic_inline_validation()
     {
         $code = '<?php
@@ -45,7 +46,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals('required|email|unique:users', $result['rules']['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_array_format_rules()
     {
         $code = '<?php
@@ -68,7 +69,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals(['required', 'email', 'unique:users,email'], $result['rules']['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_custom_messages()
     {
         $code = '<?php
@@ -94,7 +95,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals('メールアドレスは必須です', $result['messages']['email.required']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_custom_attributes()
     {
         $code = '<?php
@@ -117,7 +118,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals('Full Name', $result['attributes']['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_analyzes_validator_make()
     {
         $code = '<?php
@@ -142,7 +143,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals('required|email', $result['rules']['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_merges_multiple_validations()
     {
         $code = '<?php
@@ -170,7 +171,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals('required|email', $result['rules']['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_parameters_from_validation()
     {
         $validation = [
@@ -212,7 +213,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEquals(['active', 'inactive'], $statusParam['enum']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_conditional_required_rules()
     {
         $validation = [
@@ -228,7 +229,7 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertTrue($parameters[1]['required']); // required_unless is considered required
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_methods_without_validation()
     {
         $code = '<?php
