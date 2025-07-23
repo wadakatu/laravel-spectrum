@@ -27,7 +27,9 @@ class FormRequestAnalyzer
 
     protected EnumAnalyzer $enumAnalyzer;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null)
+    protected FileUploadAnalyzer $fileUploadAnalyzer;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -35,6 +37,7 @@ class FormRequestAnalyzer
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
+        $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
     }
 
     /**
@@ -344,6 +347,9 @@ class FormRequestAnalyzer
     {
         $parameters = [];
 
+        // Analyze file upload fields
+        $fileFields = $this->fileUploadAnalyzer->analyzeRules($rules);
+
         foreach ($rules as $field => $rule) {
             // 特殊なフィールド（_noticeなど）はスキップ
             if (str_starts_with($field, '_')) {
@@ -351,6 +357,25 @@ class FormRequestAnalyzer
             }
 
             $ruleArray = is_array($rule) ? $rule : explode('|', $rule);
+
+            // Check if this is a file upload field
+            if (isset($fileFields[$field])) {
+                $fileInfo = $fileFields[$field];
+                $parameter = [
+                    'name' => $field,
+                    'in' => 'body',
+                    'required' => $this->isRequired($ruleArray),
+                    'type' => 'file',
+                    'format' => 'binary',
+                    'file_info' => $fileInfo,
+                    'description' => $this->generateFileDescriptionWithAttribute($field, $fileInfo, $attributes[$field] ?? null),
+                    'validation' => $ruleArray,
+                ];
+
+                $parameters[] = $parameter;
+
+                continue;
+            }
 
             // Check for enum rules
             $enumInfo = null;
@@ -440,6 +465,112 @@ class FormRequestAnalyzer
         }
 
         return $description;
+    }
+
+    /**
+     * ファイルフィールドの説明を生成
+     */
+    protected function generateFileDescription(string $field, array $fileInfo): string
+    {
+        $description = Str::title(str_replace(['_', '-'], ' ', $field));
+
+        $parts = [];
+
+        if (! empty($fileInfo['mimes'])) {
+            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
+        }
+
+        if (isset($fileInfo['max_size'])) {
+            $maxSize = $this->formatFileSize($fileInfo['max_size']);
+            $parts[] = "Max size: {$maxSize}";
+        }
+
+        if (isset($fileInfo['min_size'])) {
+            $minSize = $this->formatFileSize($fileInfo['min_size']);
+            $parts[] = "Min size: {$minSize}";
+        }
+
+        if (! empty($fileInfo['dimensions'])) {
+            if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
+                $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
+            }
+            if (isset($fileInfo['dimensions']['max_width']) && isset($fileInfo['dimensions']['max_height'])) {
+                $parts[] = "Max dimensions: {$fileInfo['dimensions']['max_width']}x{$fileInfo['dimensions']['max_height']}";
+            }
+            if (isset($fileInfo['dimensions']['ratio'])) {
+                $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
+            }
+        }
+
+        if (! empty($parts)) {
+            $description .= ' ('.implode('. ', $parts).')';
+        }
+
+        return $description;
+    }
+
+    /**
+     * ファイルフィールドの説明を生成（属性名付き）
+     */
+    protected function generateFileDescriptionWithAttribute(string $field, array $fileInfo, ?string $attribute = null): string
+    {
+        $fieldName = $attribute ?? Str::title(str_replace(['_', '-'], ' ', $field));
+
+        $parts = [];
+
+        if (! empty($fileInfo['mimes'])) {
+            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
+        }
+
+        if (isset($fileInfo['max_size'])) {
+            $maxSize = $this->formatFileSize($fileInfo['max_size']);
+            $parts[] = "Max size: {$maxSize}";
+        }
+
+        if (isset($fileInfo['min_size'])) {
+            $minSize = $this->formatFileSize($fileInfo['min_size']);
+            $parts[] = "Min size: {$minSize}";
+        }
+
+        if (! empty($fileInfo['dimensions'])) {
+            if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
+                $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
+            }
+            if (isset($fileInfo['dimensions']['max_width']) && isset($fileInfo['dimensions']['max_height'])) {
+                $parts[] = "Max dimensions: {$fileInfo['dimensions']['max_width']}x{$fileInfo['dimensions']['max_height']}";
+            }
+            if (isset($fileInfo['dimensions']['ratio'])) {
+                $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
+            }
+        }
+
+        return $fieldName.(! empty($parts) ? ' ('.implode('. ', $parts).')' : '');
+    }
+
+    /**
+     * Format file size to human readable format
+     */
+    protected function formatFileSize(int $bytes): string
+    {
+        if ($bytes >= 1073741824) {
+            $size = $bytes / 1073741824;
+
+            return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
+        }
+
+        if ($bytes >= 1048576) {
+            $size = $bytes / 1048576;
+
+            return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
+        }
+
+        if ($bytes >= 1024) {
+            $size = $bytes / 1024;
+
+            return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
+        }
+
+        return sprintf('%dB', $bytes);
     }
 
     /**
