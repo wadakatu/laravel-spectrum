@@ -7,6 +7,30 @@ use Illuminate\Http\Request;
 class RequestValidateController extends Controller
 {
     /**
+     * Store a new blog post using $request->validate()
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeWithRequestVariable(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'slug' => 'required|string|unique:posts',
+            'content' => 'required|string|min:50',
+            'category' => 'required|string|in:tech,business,lifestyle',
+            'featured_image' => 'nullable|image|max:2048',
+        ], [
+            'content.min' => 'The article content must be at least 50 characters long.',
+            'featured_image.max' => 'The featured image must not exceed 2MB.',
+        ]);
+
+        return response()->json([
+            'message' => 'Article created successfully',
+            'data' => $validated,
+        ], 201);
+    }
+
+    /**
      * Store a new blog post using request()->validate()
      *
      * @return \Illuminate\Http\JsonResponse
@@ -80,6 +104,25 @@ class RequestValidateController extends Controller
         return response()->json([
             'message' => 'Profile updated successfully',
             'updated_fields' => array_keys($profileData),
+        ]);
+    }
+
+    /**
+     * Test different request variable names with $req->validate()
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function testDifferentVariableNames(Request $req)
+    {
+        $validated = $req->validate([
+            'setting_name' => 'required|string|max:50',
+            'setting_value' => 'required|string',
+            'is_active' => 'required|boolean',
+        ]);
+
+        return response()->json([
+            'message' => 'Settings saved',
+            'data' => $validated,
         ]);
     }
 }
