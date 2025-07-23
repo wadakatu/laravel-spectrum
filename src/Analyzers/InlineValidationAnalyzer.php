@@ -47,6 +47,19 @@ class InlineValidationAnalyzer
                     return null;
                 }
 
+                // request()->validate() の呼び出しを検出
+                if ($node instanceof Node\Expr\MethodCall &&
+                    $node->var instanceof Node\Expr\FuncCall &&
+                    $node->var->name instanceof Node\Name &&
+                    $node->var->name->toString() === 'request' &&
+                    $node->name instanceof Node\Identifier &&
+                    $node->name->name === 'validate') {
+
+                    $this->extractRequestValidation($node);
+
+                    return null;
+                }
+
                 // Validator::make() の呼び出しも検出
                 if ($node instanceof Node\Expr\StaticCall &&
                     $node->class instanceof Node\Name &&
@@ -79,6 +92,33 @@ class InlineValidationAnalyzer
 
                 $validation = [
                     'type' => 'inline',
+                    'rules' => $this->extractRulesArray($rulesArg),
+                    'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
+                    'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
+                ];
+
+                if (! empty($validation['rules'])) {
+                    $this->validations[] = $validation;
+                }
+            }
+
+            protected function extractRequestValidation(Node\Expr\MethodCall $node)
+            {
+                if (count($node->args) < 1) {
+                    return;
+                }
+
+                // 第1引数がルール配列
+                $rulesArg = $node->args[0]->value;
+
+                // 第2引数がカスタムメッセージ（オプション）
+                $messagesArg = isset($node->args[1]) ? $node->args[1]->value : null;
+
+                // 第3引数がカスタム属性名（オプション）
+                $attributesArg = isset($node->args[2]) ? $node->args[2]->value : null;
+
+                $validation = [
+                    'type' => 'request_validate',
                     'rules' => $this->extractRulesArray($rulesArg),
                     'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
                     'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
