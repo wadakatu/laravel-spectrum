@@ -5,6 +5,7 @@ namespace LaravelSpectrum;
 use Illuminate\Support\ServiceProvider;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
+use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
@@ -55,6 +56,7 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(QueryParameterAnalyzer::class);
         $this->app->singleton(ResourceAnalyzer::class);
         $this->app->singleton(FractalTransformerAnalyzer::class);
+        $this->app->singleton(EnumAnalyzer::class);
         $this->app->singleton(ControllerAnalyzer::class);
         $this->app->singleton(SchemaGenerator::class);
         $this->app->singleton(PaginationSchemaGenerator::class);
