@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class PaginationTestController extends Controller
@@ -46,7 +46,7 @@ class PaginationTestController extends Controller
     public function withQueryBuilder()
     {
         return User::where('email_verified_at', '!=', null)
-                   ->orderBy('created_at', 'desc')
-                   ->paginate();
+            ->orderBy('created_at', 'desc')
+            ->paginate();
     }
 }

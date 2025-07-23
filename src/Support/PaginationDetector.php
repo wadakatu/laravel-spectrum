@@ -13,7 +13,6 @@ use PhpParser\NodeVisitorAbstract;
 
 class PaginationDetector
 {
-
     /**
      * Detect pagination method calls in AST
      *
@@ -128,7 +127,6 @@ class PaginationDetector
 
                 return null;
             }
-
 
             private function isQueryBuilder($node): bool
             {
