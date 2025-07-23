@@ -33,6 +33,8 @@ class OpenApiGenerator
 
     protected PaginationDetector $paginationDetector;
 
+    protected ExampleGenerator $exampleGenerator;
+
     public function __construct(
         FormRequestAnalyzer $requestAnalyzer,
         ResourceAnalyzer $resourceAnalyzer,
@@ -43,7 +45,8 @@ class OpenApiGenerator
         AuthenticationAnalyzer $authenticationAnalyzer,
         SecuritySchemeGenerator $securitySchemeGenerator,
         PaginationSchemaGenerator $paginationSchemaGenerator,
-        PaginationDetector $paginationDetector
+        PaginationDetector $paginationDetector,
+        ExampleGenerator $exampleGenerator
     ) {
         $this->requestAnalyzer = $requestAnalyzer;
         $this->resourceAnalyzer = $resourceAnalyzer;
@@ -55,6 +58,7 @@ class OpenApiGenerator
         $this->securitySchemeGenerator = $securitySchemeGenerator;
         $this->paginationSchemaGenerator = $paginationSchemaGenerator;
         $this->paginationDetector = $paginationDetector;
+        $this->exampleGenerator = $exampleGenerator;
     }
 
     /**
@@ -246,6 +250,14 @@ class OpenApiGenerator
 
         // バリデーションがない場合は、デフォルトのエラーレスポンスのみを使用
         if (empty($validationData)) {
+            // Add examples to default error responses
+            foreach ($defaultErrorResponses as $statusCode => &$errorResponse) {
+                $errorExample = $this->exampleGenerator->generateErrorExample((int) $statusCode);
+                if (isset($errorResponse['content']['application/json'])) {
+                    $errorResponse['content']['application/json']['example'] = $errorExample;
+                }
+            }
+
             return $defaultErrorResponses;
         }
 
@@ -253,6 +265,19 @@ class OpenApiGenerator
         $responses = $defaultErrorResponses;
         if (isset($allErrorResponses['422'])) {
             $responses['422'] = $allErrorResponses['422'];
+            // Add validation error example
+            $validationExample = $this->exampleGenerator->generateErrorExample(422, $validationData['rules'] ?? []);
+            if (isset($responses['422']['content']['application/json'])) {
+                $responses['422']['content']['application/json']['example'] = $validationExample;
+            }
+        }
+
+        // Add examples to other error responses
+        foreach ($responses as $statusCode => &$errorResponse) {
+            if ($statusCode !== '422' && isset($errorResponse['content']['application/json'])) {
+                $errorExample = $this->exampleGenerator->generateErrorExample((int) $statusCode);
+                $errorResponse['content']['application/json']['example'] = $errorExample;
+            }
         }
 
         return $responses;
@@ -283,6 +308,12 @@ class OpenApiGenerator
             if (! empty($resourceStructure)) {
                 $schema = $this->schemaGenerator->generateFromResource($resourceStructure);
 
+                // Generate example from resource
+                $example = $this->exampleGenerator->generateFromResource(
+                    $resourceStructure,
+                    $controllerInfo['resource']
+                );
+
                 // Paginationが検出された場合
                 if (! empty($controllerInfo['pagination'])) {
                     $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
@@ -291,6 +322,11 @@ class OpenApiGenerator
                     $response['content'] = [
                         'application/json' => [
                             'schema' => $paginatedSchema,
+                            'examples' => [
+                                'default' => [
+                                    'value' => $this->exampleGenerator->generateCollectionExample($example, true),
+                                ],
+                            ],
                         ],
                     ];
                 } else {
@@ -299,6 +335,13 @@ class OpenApiGenerator
                             'schema' => $controllerInfo['returnsCollection']
                                 ? ['type' => 'array', 'items' => $schema]
                                 : $schema,
+                            'examples' => [
+                                'default' => [
+                                    'value' => $controllerInfo['returnsCollection']
+                                        ? $this->exampleGenerator->generateCollectionExample($example, false)
+                                        : $example,
+                                ],
+                            ],
                         ],
                     ];
                 }

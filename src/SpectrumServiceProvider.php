@@ -17,6 +17,8 @@ use LaravelSpectrum\Console\CacheCommand;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
+use LaravelSpectrum\Generators\ExampleGenerator;
+use LaravelSpectrum\Generators\ExampleValueFactory;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Generators\PaginationSchemaGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
@@ -24,6 +26,7 @@ use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
+use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
@@ -41,6 +44,7 @@ class SpectrumServiceProvider extends ServiceProvider
         // シングルトンとして登録
         $this->app->singleton(DocumentationCache::class);
         $this->app->singleton(TypeInference::class);
+        $this->app->singleton(FieldNameInference::class);
         $this->app->singleton(PaginationDetector::class);
         $this->app->singleton(QueryParameterDetector::class);
         $this->app->singleton(QueryParameterTypeInference::class);
@@ -58,6 +62,8 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(ErrorResponseGenerator::class);
         $this->app->singleton(AuthenticationAnalyzer::class);
         $this->app->singleton(SecuritySchemeGenerator::class);
+        $this->app->singleton(ExampleValueFactory::class);
+        $this->app->singleton(ExampleGenerator::class);
         $this->app->singleton(OpenApiGenerator::class);
         $this->app->singleton(FileWatcher::class);
         $this->app->singleton(LiveReloadServer::class);
