@@ -4,11 +4,38 @@ namespace LaravelSpectrum\Generators;
 
 class SchemaGenerator
 {
+    protected FileUploadSchemaGenerator $fileUploadSchemaGenerator;
+    
+    public function __construct(?FileUploadSchemaGenerator $fileUploadSchemaGenerator = null)
+    {
+        $this->fileUploadSchemaGenerator = $fileUploadSchemaGenerator ?? new FileUploadSchemaGenerator;
+    }
+    
     /**
      * パラメータからスキーマを生成
      */
     public function generateFromParameters(array $parameters): array
     {
+        // Check if any parameter is a file upload
+        $hasFileUpload = false;
+        $fileFields = [];
+        $normalFields = [];
+        
+        foreach ($parameters as $parameter) {
+            if (isset($parameter['type']) && $parameter['type'] === 'file') {
+                $hasFileUpload = true;
+                $fileFields[] = $parameter;
+            } else {
+                $normalFields[] = $parameter;
+            }
+        }
+        
+        // If we have file uploads, we need to generate multipart/form-data schema
+        if ($hasFileUpload) {
+            return $this->generateMultipartSchema($normalFields, $fileFields);
+        }
+        
+        // Otherwise, generate normal JSON schema
         $properties = [];
         $required = [];
 
@@ -77,6 +104,78 @@ class SchemaGenerator
         }
 
         return $schema;
+    }
+    
+    /**
+     * Generate multipart/form-data schema
+     */
+    protected function generateMultipartSchema(array $normalFields, array $fileFields): array
+    {
+        $normalFieldsFormatted = [];
+        $fileFieldsFormatted = [];
+        
+        // Format normal fields
+        foreach ($normalFields as $field) {
+            if (!isset($field['name'])) {
+                continue;
+            }
+            
+            $fieldData = [
+                'type' => $field['type'] ?? 'string',
+                'required' => $field['required'] ?? false,
+            ];
+            
+            if (isset($field['description'])) {
+                $fieldData['description'] = $field['description'];
+            }
+            if (isset($field['maxLength'])) {
+                $fieldData['maxLength'] = $field['maxLength'];
+            }
+            if (isset($field['minLength'])) {
+                $fieldData['minLength'] = $field['minLength'];
+            }
+            if (isset($field['enum']) && is_array($field['enum']) && isset($field['enum']['values'])) {
+                $fieldData['enum'] = $field['enum']['values'];
+                if (isset($field['enum']['type'])) {
+                    $fieldData['type'] = $field['enum']['type'];
+                }
+            }
+            
+            $normalFieldsFormatted[$field['name']] = $fieldData;
+        }
+        
+        // Format file fields
+        foreach ($fileFields as $field) {
+            if (!isset($field['name'])) {
+                continue;
+            }
+            
+            $fileFieldData = [
+                'type' => 'string',
+                'format' => 'binary',
+                'required' => $field['required'] ?? false,
+            ];
+            
+            if (isset($field['description'])) {
+                $fileFieldData['description'] = $field['description'];
+            }
+            
+            // Handle array files (multiple uploads)
+            if (isset($field['file_info']) && $field['file_info']['multiple']) {
+                $fileFieldsFormatted[$field['name']] = [
+                    'type' => 'array',
+                    'items' => $fileFieldData,
+                    'required' => $field['required'] ?? false,
+                ];
+                if (isset($field['description'])) {
+                    $fileFieldsFormatted[$field['name']]['description'] = $field['description'];
+                }
+            } else {
+                $fileFieldsFormatted[$field['name']] = $fileFieldData;
+            }
+        }
+        
+        return $this->fileUploadSchemaGenerator->generateMultipartSchema($normalFieldsFormatted, $fileFieldsFormatted);
     }
 
     /**
