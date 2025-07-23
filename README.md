@@ -17,72 +17,138 @@
 
 > 🎯 **Zero-annotation API documentation generator for Laravel & Lumen**
 > 
-> Transform your existing Laravel/Lumen APIs into comprehensive OpenAPI documentation without writing a single annotation or modifying your code.
+> Transform your existing Laravel/Lumen APIs into comprehensive OpenAPI 3.0 documentation without writing a single annotation or modifying your code.
+
+## 🌟 Why Laravel Spectrum?
+
+**Stop writing documentation. Start generating it.**
+
+Laravel Spectrum analyzes your existing code and automatically generates beautiful, accurate API documentation. No annotations, no manual updates, no hassle.
+
+✅ **Save Hours** - No more manual documentation writing  
+✅ **Always Up-to-Date** - Documentation that evolves with your code  
+✅ **Zero Learning Curve** - Works with your existing Laravel/Lumen code  
+✅ **Production Ready** - Battle-tested with real-world applications
 
 ## ✨ Key Features
 
-<table>
+### 🎯 Everything You Need, Nothing You Don't
+
+<table width="100%">
 <tr>
-<td width="50%">
+<td width="33%" valign="top">
 
-### 🚀 **Zero Configuration**
-Automatically detects and documents your API routes without any annotations or comments
+<div align="center">
+<h3>🚀 Zero Setup</h3>
+</div>
 
-### 📝 **Smart Request Analysis**
-- Laravel FormRequest automatic parsing
-- Lumen inline validation support
-- Type inference from validation rules
-- Custom messages & attributes
-
-</td>
-<td width="50%">
-
-### 📦 **Flexible Response Handling**
-- Laravel API Resources analysis
-- Fractal Transformer support
-- Automatic includes detection
-- Multiple format compatibility
-
-### 🛡️ **Complete Error Documentation**
-- 422 validation errors auto-generation
-- Authentication errors (401/403) detection
-- Custom error response mapping
+**Just works out of the box**
+- No annotations needed
+- No configuration files
+- No manual updates
+- Instant documentation
 
 </td>
-</tr>
-<tr>
-<td width="50%">
+<td width="33%" valign="top">
 
-### 🔐 **Security & Authentication**
-- Bearer Token auto-detection
-- API Key authentication support
-- Sanctum/Passport compatibility
-- Security scheme generation
+<div align="center">
+<h3>🧠 Smart Detection</h3>
+</div>
+
+**Understands your code**
+- FormRequest validation
+- Inline validation rules
+- API Resources mapping
+- Fractal Transformers
 
 </td>
-<td width="50%">
+<td width="33%" valign="top">
 
-### 🔥 **Developer Experience**
-- **Real-time preview** with hot-reload
-- File change auto-detection
-- WebSocket live updates
-- Intelligent caching system
+<div align="center">
+<h3>⚡ Real-time Updates</h3>
+</div>
+
+**Live documentation preview**
+- Hot reload on changes
+- WebSocket updates
+- Smart caching
+- Instant regeneration
 
 </td>
 </tr>
 </table>
 
-## 📸 Demo
+### 📋 Comprehensive Feature Set
 
-```bash
-# Generate your API documentation instantly
-php artisan spectrum:generate
+<table width="100%">
+<tr>
+<td width="50%" valign="top">
 
-# Watch mode for real-time updates
-php artisan spectrum:watch
-```
+**📝 Request Analysis**
+- ✅ FormRequest validation parsing
+- ✅ Inline validation detection
+- ✅ File upload handling
+- ✅ Query parameter extraction
+- ✅ Enum constraint support
+- ✅ Nested array validation
 
-![Laravel Spectrum Demo](https://user-images.githubusercontent.com/your-demo.gif)
+**📦 Response Handling**
+- ✅ API Resources structure
+- ✅ Fractal Transformer support
+- ✅ Pagination detection
+- ✅ Conditional attributes
+- ✅ Nested resources
+- ✅ Collection wrapping
+
+</td>
+<td width="50%" valign="top">
+
+**🔐 Security & Auth**
+- ✅ Bearer Token (JWT/Sanctum)
+- ✅ API Key authentication
+- ✅ OAuth2 flow support
+- ✅ Per-route security
+- ✅ Custom middleware
+- ✅ Global auth settings
+
+**🛡️ Error Documentation**
+- ✅ Validation errors (422)
+- ✅ Auth errors (401/403)
+- ✅ Not found (404)
+- ✅ Custom error formats
+- ✅ Field-level messages
+- ✅ Multiple response types
+
+</td>
+</tr>
+</table>
+
+
+## 📊 Why Choose Laravel Spectrum?
+
+### Compare with Other Solutions
+
+| Feature | Laravel Spectrum | Swagger-PHP | L5-Swagger | Scribe |
+|---------|-----------------|-------------|------------|---------|
+| **Zero Annotations** | ✅ | ❌ | ❌ | ⚠️ Partial |
+| **Auto-detect Validation** | ✅ | ❌ | ❌ | ✅ |
+| **API Resources Support** | ✅ | ❌ | ❌ | ✅ |
+| **Fractal Support** | ✅ | ❌ | ❌ | ❌ |
+| **File Upload Detection** | ✅ | Manual | Manual | ✅ |
+| **Query Param Detection** | ✅ | ❌ | ❌ | ⚠️ Limited |
+| **Enum Support** | ✅ | Manual | Manual | ❌ |
+| **Live Reload** | ✅ | ❌ | ❌ | ❌ |
+| **Smart Caching** | ✅ | ❌ | ❌ | ❌ |
+| **Pagination Detection** | ✅ | ❌ | ❌ | ✅ |
+| **Setup Time** | < 1 min | Hours | Hours | Minutes |
+
+### 🎯 Perfect For
+
+- ✅ **Existing Projects** - Document your current API without any changes
+- ✅ **Rapid Development** - Documentation that keeps up with your pace
+- ✅ **Team Collaboration** - Everyone sees the same, accurate documentation
+- ✅ **CI/CD Integration** - Generate docs as part of your build process
+- ✅ **API-First Development** - Design by coding, not by writing YAML
 
 ## 🔧 Requirements
 
@@ -90,17 +156,15 @@ php artisan spectrum:watch
 - **Laravel** 10.x, 11.x, or 12.x / **Lumen** 10.x, 11.x, 12.x
 - **Composer** 2.0 or higher
 
-## 📦 Installation
+## 🚀 Getting Started
+
+### 1. Install
 
 ```bash
 composer require wadakatu/laravel-spectrum --dev
 ```
 
-That's it! No configuration needed to get started.
-
-## 🚀 Quick Start
-
-### 1. Generate Documentation
+### 2. Generate Documentation
 
 ```bash
 # Generate OpenAPI documentation
@@ -110,19 +174,19 @@ php artisan spectrum:generate
 php artisan spectrum:generate --format=yaml
 
 # Custom output path
-php artisan spectrum:generate --output=public/api-docs.json
+php artisan spectrum:generate --output=public/api-impl_docs.json
 ```
 
-### 2. Real-time Preview (Development)
+### 3. Live Preview (Development)
 
 ```bash
-# Start the watcher with live reload
+# Start the watcher with hot reload
 php artisan spectrum:watch
 
 # Visit http://localhost:8080 to see your documentation
 ```
 
-### 3. View with Swagger UI
+### 4. View Documentation
 
 ```html
 <!-- Add to your blade template -->
@@ -130,365 +194,73 @@ php artisan spectrum:watch
 <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
 <script>
 SwaggerUIBundle({
-    url: "/api-documentation.json",
+    url: "/storage/app/spectrum/openapi.json",
     dom_id: '#swagger-ui',
 })
 </script>
 ```
 
-## 📖 Usage Examples
+**That's it!** Your comprehensive API documentation is ready in seconds.
 
-### Laravel FormRequest Example
 
-```php
-// app/Http/Requests/StoreUserRequest.php
-class StoreUserRequest extends FormRequest
-{
-    public function rules()
-    {
-        return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'age' => 'nullable|integer|min:18|max:120',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,id',
-        ];
-    }
+## 📚 Documentation
 
-    public function messages()
-    {
-        return [
-            'email.unique' => 'This email is already registered.',
-        ];
-    }
-}
+- **[Configuration Guide](./docs/configuration.md)** - Detailed configuration options
+- **[Real-World Examples](./docs/examples.md)** - Practical examples and use cases
+- **[Advanced Features](./docs/advanced-features.md)** - Advanced functionality
+- **[Troubleshooting](./docs/troubleshooting.md)** - Common issues and solutions
 
-// Controller - automatically documented!
-public function store(StoreUserRequest $request)
-{
-    $user = User::create($request->validated());
-    return new UserResource($user);
-}
-```
 
-### Laravel API Resource Example
+## 🔧 Quick Troubleshooting
 
-```php
-// app/Http/Resources/UserResource.php
-class UserResource extends JsonResource
-{
-    public function toArray($request)
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'email_verified' => $this->email_verified_at !== null,
-            'roles' => RoleResource::collection($this->whenLoaded('roles')),
-            'created_at' => $this->created_at->toDateTimeString(),
-            'profile' => new ProfileResource($this->whenLoaded('profile')),
-        ];
-    }
-}
-```
-
-### Fractal Transformer Example
-
-```php
-// app/Transformers/UserTransformer.php
-class UserTransformer extends TransformerAbstract
-{
-    protected $availableIncludes = ['posts', 'profile', 'followers'];
-    protected $defaultIncludes = ['profile'];
-    
-    public function transform(User $user)
-    {
-        return [
-            'id' => (int) $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'member_since' => $user->created_at->toDateString(),
-            'is_active' => (bool) $user->is_active,
-        ];
-    }
-    
-    public function includePosts(User $user)
-    {
-        return $this->collection($user->posts, new PostTransformer());
-    }
-}
-```
-
-### Lumen Inline Validation Example
-
-```php
-// Lumen Controller with inline validation
-public function store(Request $request)
-{
-    // Automatically detected and documented!
-    $this->validate($request, [
-        'title' => 'required|string|max:255',
-        'content' => 'required|string',
-        'status' => 'required|in:draft,published',
-        'tags' => 'array',
-        'tags.*' => 'string|max:50',
-    ]);
-
-    $post = Post::create($request->all());
-    
-    return $this->fractal->item($post, new PostTransformer());
-}
-```
-
-### Authentication Configuration
-
-```php
-// Automatically detects authentication methods
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('users', UserController::class);
-});
-
-// API Key authentication
-Route::middleware('auth.apikey')->group(function () {
-    Route::get('/stats', StatsController::class);
-});
-```
-
-## ⚙️ Configuration
-
-Publish the configuration file for advanced customization:
-
-```bash
-php artisan vendor:publish --tag=spectrum-config
-```
-
-### Configuration Options
-
-```php
-// config/spectrum.php
-return [
-    // API Information
-    'title' => env('APP_NAME', 'Laravel API'),
-    'version' => '1.0.0',
-    'description' => 'API Documentation',
-    
-    // Server Configuration
-    'servers' => [
-        [
-            'url' => env('APP_URL'),
-            'description' => 'Production server',
-        ],
-    ],
-    
-    // Route Detection
-    'route_patterns' => [
-        'api/*',        // Include all /api routes
-        'api/v1/*',     // Version-specific routes
-        'api/v2/*',
-    ],
-    
-    'excluded_routes' => [
-        'api/health',   // Exclude health checks
-        'api/debug/*',  // Exclude debug endpoints
-    ],
-    
-    // Response Formats
-    'response_formats' => [
-        'resource' => true,     // Laravel Resources
-        'fractal' => true,      // Fractal Transformers
-        'json' => true,         // Plain JSON responses
-    ],
-    
-    // Security Schemes
-    'security_schemes' => [
-        'bearer' => [
-            'type' => 'http',
-            'scheme' => 'bearer',
-            'bearerFormat' => 'JWT',
-        ],
-        'apiKey' => [
-            'type' => 'apiKey',
-            'in' => 'header',
-            'name' => 'X-API-Key',
-        ],
-    ],
-    
-    // Tag Mappings for Organizing Endpoints
-    'tags' => [
-        // Exact match
-        'api/v1/auth/login' => 'Authentication',
-        'api/v1/auth/logout' => 'Authentication',
-        
-        // Wildcard patterns
-        'api/v1/auth/*' => 'Authentication',
-        'api/v1/admin/*' => 'Administration',
-        'api/v1/billing/*' => 'Billing',
-        'api/v1/users/*' => 'User Management',
-    ],
-    
-    // Cache Configuration
-    'cache' => [
-        'enabled' => env('SPECTRUM_CACHE_ENABLED', true),
-        'ttl' => 3600, // 1 hour
-    ],
-    
-    // Watch Mode Settings
-    'watch' => [
-        'port' => 8080,
-        'host' => '127.0.0.1',
-        'open_browser' => true,
-    ],
-];
-```
-
-## 🎯 Advanced Features
-
-### Custom Type Mappings
-
-```php
-// config/spectrum.php
-'type_mappings' => [
-    'json' => ['type' => 'object'],
-    'uuid' => ['type' => 'string', 'format' => 'uuid'],
-    'decimal' => ['type' => 'number', 'format' => 'float'],
-],
-```
-
-### Automatic Tag Generation
-
-Laravel Spectrum automatically generates tags for your API endpoints to keep them organized:
-
-- **Automatic extraction**: Tags are extracted from URL paths (e.g., `/api/posts/{post}` → `Post`)
-- **Multi-level support**: Nested resources generate multiple tags (e.g., `/api/posts/{post}/comments` → `['Post', 'Comment']`)
-- **Parameter removal**: Route parameters like `{post}` are automatically cleaned up
-- **Controller fallback**: When URLs are generic, the controller name is used as a fallback
-- **Custom mappings**: Override automatic tags using configuration
-
-```php
-// config/spectrum.php
-'tags' => [
-    // Group all authentication endpoints
-    'api/v1/auth/*' => 'Authentication',
-    
-    // Specific endpoint mapping
-    'api/v1/users/profile' => 'User Profile',
-    
-    // Multiple endpoints to same tag
-    'api/v1/orders/*' => 'Orders',
-    'api/v1/invoices/*' => 'Billing',
-    'api/v1/payments/*' => 'Billing',
-],
-```
-
-### Response Examples
-
-```php
-// Automatically generates examples from your Resources
-class ProductResource extends JsonResource
-{
-    public function toArray($request)
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'price' => $this->price,
-            'currency' => 'USD',
-            'in_stock' => $this->quantity > 0,
-            'meta' => [
-                'sku' => $this->sku,
-                'weight' => $this->weight,
-            ],
-        ];
-    }
-}
-```
-
-### Error Response Customization
-
-```php
-// Automatic 422 validation error format
-{
-    "message": "The given data was invalid.",
-    "errors": {
-        "email": [
-            "The email field is required.",
-            "The email must be a valid email address."
-        ]
-    }
-}
-
-// Custom error responses
-class Handler extends ExceptionHandler
-{
-    public function render($request, Throwable $exception)
-    {
-        if ($exception instanceof ModelNotFoundException) {
-            return response()->json([
-                'error' => 'Resource not found',
-                'code' => 'RESOURCE_NOT_FOUND'
-            ], 404);
-        }
-        
-        return parent::render($request, $exception);
-    }
-}
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**Q: Documentation is not generating for some routes**
-```bash
-# Check registered routes
-php artisan route:list --path=api
-
-# Clear cache
-php artisan spectrum:clear-cache
-```
-
-**Q: FormRequest validation rules not detected**
-```bash
-# Ensure FormRequest is properly type-hinted
-public function store(StoreUserRequest $request) // ✅ Correct
-public function store(Request $request) // ❌ Won't detect custom rules
-```
-
-**Q: Fractal includes not appearing**
-```bash
-# Define available includes in transformer
-protected $availableIncludes = ['posts', 'profile']; // ✅ Will be documented
-```
+- **Routes not appearing?** Check route patterns in config match your routes
+- **Validation not detected?** Ensure FormRequest is properly type-hinted
+- **Need help?** See our [detailed troubleshooting guide](./docs/troubleshooting.md)
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Here's how you can help:
 
 ```bash
-# Setup development environment
+# 1. Fork and clone the repository
 git clone https://github.com/wadakatu/laravel-spectrum.git
 cd laravel-spectrum
+
+# 2. Install dependencies
 composer install
 
-# Run tests
+# 3. Run tests
 composer test
 
-# Run static analysis
-composer analyze
+# 4. Check code quality
+composer analyze      # PHPStan analysis
+composer format:fix   # Fix code style
 
-# Fix code style
-composer format:fix
+# 5. Make your changes and submit a PR!
 ```
+
+### Development Commands
+
+- `composer test` - Run all tests
+- `composer test-coverage` - Generate coverage report
+- `composer analyze` - Run static analysis
+- `composer format` - Check code style
+- `composer format:fix` - Fix code style
 
 ## 📄 License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ---
 
 <p align="center">
-  Made with ❤️ by Wadakatu
-  <br>
-  <a href="https://github.com/wadakatu/laravel-spectrum">Star ⭐ this repo</a> if you find it helpful!
+  Made with ❤️ by <a href="https://github.com/wadakatu">Wadakatu</a>
+  <br><br>
+  <a href="https://github.com/wadakatu/laravel-spectrum">
+    <img src="https://img.shields.io/github/stars/wadakatu/laravel-spectrum?style=social" alt="Star on GitHub">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://twitter.com/intent/tweet?text=Check%20out%20Laravel%20Spectrum%20-%20Zero-annotation%20API%20documentation%20generator%20for%20Laravel!&url=https://github.com/wadakatu/laravel-spectrum">
+    <img src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fwadakatu%2Flaravel-spectrum" alt="Tweet">
+  </a>
 </p>

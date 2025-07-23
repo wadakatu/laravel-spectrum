@@ -111,7 +111,7 @@ class GenerateDocsCommandTest extends TestCase
     {
         // Arrange
         Route::get('api/users', [UserController::class, 'index']);
-        $customPath = storage_path('custom/api-docs.json');
+        $customPath = storage_path('custom/api-impl_docs.json');
 
         // Act
         $this->artisan('spectrum:generate', ['--output' => $customPath])
