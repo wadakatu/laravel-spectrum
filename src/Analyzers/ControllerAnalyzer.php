@@ -15,14 +15,18 @@ class ControllerAnalyzer
 
     protected InlineValidationAnalyzer $inlineValidationAnalyzer;
 
+    protected PaginationAnalyzer $paginationAnalyzer;
+
     protected Parser $parser;
 
     public function __construct(
         FormRequestAnalyzer $formRequestAnalyzer,
-        InlineValidationAnalyzer $inlineValidationAnalyzer
+        InlineValidationAnalyzer $inlineValidationAnalyzer,
+        PaginationAnalyzer $paginationAnalyzer
     ) {
         $this->formRequestAnalyzer = $formRequestAnalyzer;
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
+        $this->paginationAnalyzer = $paginationAnalyzer;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -49,6 +53,7 @@ class ControllerAnalyzer
             'resource' => null,
             'returnsCollection' => false,
             'fractal' => null,
+            'pagination' => null,
         ];
 
         // パラメータからFormRequestを検出
@@ -91,6 +96,12 @@ class ControllerAnalyzer
 
         // Fractal使用を検出
         $this->detectFractalUsage($source, $result, $reflection);
+
+        // Pagination使用を検出
+        $paginationInfo = $this->paginationAnalyzer->analyzeMethod($methodReflection);
+        if ($paginationInfo) {
+            $result['pagination'] = $paginationInfo;
+        }
 
         return $result;
     }
