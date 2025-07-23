@@ -79,7 +79,6 @@ class QueryParameterDetector
         }
     }
 
-
     /**
      * Detect Request method calls from AST
      */
@@ -459,7 +458,6 @@ class QueryParameterDetector
 
         return $values;
     }
-
 
     /**
      * Track variable assignments
