@@ -46,7 +46,7 @@ class TaskController extends Controller
     /**
      * Update task with nullable enum parameter
      */
-    public function update(int $id, ?TaskStatus $status = null, Request $request): JsonResponse
+    public function update(int $id, ?TaskStatus $status, Request $request): JsonResponse
     {
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',

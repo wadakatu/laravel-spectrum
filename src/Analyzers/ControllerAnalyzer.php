@@ -69,7 +69,7 @@ class ControllerAnalyzer
 
         // パラメータからFormRequestとEnum型を検出
         $result['enumParameters'] = $this->analyzeEnumParameters($methodReflection);
-        
+
         foreach ($methodReflection->getParameters() as $parameter) {
             $type = $parameter->getType();
             if ($type && ! $type->isBuiltin()) {
@@ -311,13 +311,13 @@ class ControllerAnalyzer
 
         foreach ($method->getParameters() as $parameter) {
             $type = $parameter->getType();
-            
-            if (!$type || !$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+
+            if (! $type || ! $type instanceof ReflectionNamedType || $type->isBuiltin()) {
                 continue;
             }
 
             $className = $type->getName();
-            
+
             // FormRequestはスキップ（既に別で処理されている）
             if (is_subclass_of($className, FormRequest::class)) {
                 continue;
@@ -331,7 +331,7 @@ class ControllerAnalyzer
                         'name' => $parameter->getName(),
                         'type' => $enumInfo['type'],
                         'enum' => $enumInfo['values'],
-                        'required' => !$type->allowsNull() && !$parameter->isOptional(),
+                        'required' => ! $type->allowsNull() && ! $parameter->isOptional(),
                         'description' => "Enum parameter of type {$className}",
                         'in' => 'path', // またはルート定義に基づいて判定
                         'enumClass' => $className,

@@ -2,7 +2,6 @@
 
 namespace LaravelSpectrum\Tests\Feature;
 
-use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController;
 use LaravelSpectrum\Tests\TestCase;
 
@@ -15,7 +14,7 @@ class ControllerEnumParameterTest extends TestCase
         $router->patch('api/tasks/{id}', [EnumTestController::class, 'update']);
         $router->get('api/status', [EnumTestController::class, 'getStatus']);
     }
-    
+
     /** @test */
     public function it_detects_enum_parameters_in_controller_methods()
     {
@@ -25,14 +24,14 @@ class ControllerEnumParameterTest extends TestCase
         // Assert
         $this->assertArrayHasKey('paths', $openapi);
         $paths = array_keys($openapi['paths']);
-        
+
         // デバッグ: 実際に生成されたパスを確認
         if (empty($paths)) {
             $this->fail('No paths were generated.');
         }
-        
+
         // 生成されたパスをエラーメッセージに含める
-        $this->assertContains('/api/tasks/{status}', $paths, 'Available paths: ' . json_encode($paths));
+        $this->assertContains('/api/tasks/{status}', $paths, 'Available paths: '.json_encode($paths));
         $postOperation = $openapi['paths']['/api/tasks/{status}']['post'];
         $parameters = $postOperation['parameters'];
 
@@ -68,9 +67,9 @@ class ControllerEnumParameterTest extends TestCase
         // Assert
         $this->assertArrayHasKey('paths', $openapi);
         $this->assertArrayHasKey('/api/status', $openapi['paths']);
-        
+
         $getOperation = $openapi['paths']['/api/status']['get'];
-        
+
         // レスポンススキーマの検証は、現在の実装では直接Enum戻り値はサポートされていないため、
         // この部分は将来の拡張として残す
         $this->assertArrayHasKey('responses', $getOperation);
