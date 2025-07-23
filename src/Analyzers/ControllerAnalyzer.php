@@ -17,16 +17,20 @@ class ControllerAnalyzer
 
     protected PaginationAnalyzer $paginationAnalyzer;
 
+    protected QueryParameterAnalyzer $queryParameterAnalyzer;
+
     protected Parser $parser;
 
     public function __construct(
         FormRequestAnalyzer $formRequestAnalyzer,
         InlineValidationAnalyzer $inlineValidationAnalyzer,
-        PaginationAnalyzer $paginationAnalyzer
+        PaginationAnalyzer $paginationAnalyzer,
+        QueryParameterAnalyzer $queryParameterAnalyzer
     ) {
         $this->formRequestAnalyzer = $formRequestAnalyzer;
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
         $this->paginationAnalyzer = $paginationAnalyzer;
+        $this->queryParameterAnalyzer = $queryParameterAnalyzer;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -54,6 +58,7 @@ class ControllerAnalyzer
             'returnsCollection' => false,
             'fractal' => null,
             'pagination' => null,
+            'queryParameters' => null,
         ];
 
         // パラメータからFormRequestを検出
@@ -101,6 +106,37 @@ class ControllerAnalyzer
         $paginationInfo = $this->paginationAnalyzer->analyzeMethod($methodReflection);
         if ($paginationInfo) {
             $result['pagination'] = $paginationInfo;
+        }
+
+        // Query Parameter使用を検出
+        $queryParams = $this->queryParameterAnalyzer->analyze($methodReflection);
+        if (!empty($queryParams['parameters'])) {
+            // バリデーションルールとマージ
+            $validationRules = [];
+            
+            // FormRequestからのバリデーションルール
+            if ($result['formRequest']) {
+                try {
+                    $formRequestAnalysis = $this->formRequestAnalyzer->analyze($result['formRequest']);
+                    if (isset($formRequestAnalysis['rules'])) {
+                        $validationRules = $formRequestAnalysis['rules'];
+                    }
+                } catch (\Exception $e) {
+                    // Ignore errors
+                }
+            }
+            
+            // インラインバリデーションルール
+            if ($result['inlineValidation'] && isset($result['inlineValidation']['rules'])) {
+                $validationRules = array_merge($validationRules, $result['inlineValidation']['rules']);
+            }
+            
+            // バリデーションルールがある場合はマージ
+            if (!empty($validationRules)) {
+                $queryParams = $this->queryParameterAnalyzer->mergeWithValidation($queryParams, $validationRules);
+            }
+            
+            $result['queryParameters'] = $queryParams['parameters'];
         }
 
         return $result;
