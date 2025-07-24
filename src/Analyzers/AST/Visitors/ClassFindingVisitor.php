@@ -19,12 +19,23 @@ class ClassFindingVisitor extends NodeVisitorAbstract
 
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Node\Stmt\Class_ &&
-            $node->name &&
-            $node->name->toString() === $this->className) {
-            $this->classNode = $node;
+        if ($node instanceof Node\Stmt\Class_) {
+            // For named classes
+            if ($node->name && $node->name->toString() === $this->className) {
+                $this->classNode = $node;
 
-            return NodeTraverser::STOP_TRAVERSAL;
+                return NodeTraverser::STOP_TRAVERSAL;
+            }
+
+            // For anonymous classes (when className contains 'class@anonymous')
+            if (! $node->name && strpos($this->className, 'class@anonymous') !== false) {
+                // Check if this anonymous class extends FormRequest
+                if ($node->extends && $node->extends->toString() === 'FormRequest') {
+                    $this->classNode = $node;
+
+                    return NodeTraverser::STOP_TRAVERSAL;
+                }
+            }
         }
 
         return null;

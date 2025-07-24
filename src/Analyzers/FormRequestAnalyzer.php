@@ -118,6 +118,102 @@ class FormRequestAnalyzer
     }
 
     /**
+     * Analyze with conditional rules detection
+     */
+    public function analyzeWithConditionalRules(string $requestClass): array
+    {
+        return $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
+            try {
+                $reflection = new \ReflectionClass($requestClass);
+
+                if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+                    return [
+                        'parameters' => [],
+                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                    ];
+                }
+
+                $filePath = $reflection->getFileName();
+                if (! $filePath || ! file_exists($filePath)) {
+                    // For classes without file path, return empty conditional rules
+                    return [
+                        'parameters' => $this->analyzeWithReflection($reflection),
+                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                        'attributes' => [],
+                        'messages' => [],
+                    ];
+                }
+
+                $code = file_get_contents($filePath);
+                $ast = $this->parser->parse($code);
+
+                if (! $ast) {
+                    return [
+                        'parameters' => [],
+                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                    ];
+                }
+
+                // Extract use statements
+                $useStatements = $this->extractUseStatements($ast);
+
+                // Find class node
+                $classNode = $this->findClassNode($ast, $reflection->getShortName());
+                if (! $classNode) {
+                    return [
+                        'parameters' => [],
+                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                    ];
+                }
+
+                // Extract conditional rules
+                $conditionalRules = $this->extractConditionalRules($classNode);
+
+                // Generate parameters from conditional rules
+                $attributes = $this->extractAttributes($classNode);
+                $messages = $this->extractMessages($classNode);
+
+                if (! empty($conditionalRules['rules_sets'])) {
+                    $parameters = $this->generateParametersFromConditionalRules(
+                        $conditionalRules,
+                        $attributes,
+                        $reflection->getNamespaceName(),
+                        $useStatements
+                    );
+
+                    return [
+                        'parameters' => $parameters,
+                        'conditional_rules' => $conditionalRules,
+                        'attributes' => $attributes,
+                        'messages' => $messages,
+                    ];
+                }
+
+                // Fallback to regular analysis
+                $rules = $this->extractRules($classNode);
+                $parameters = $this->generateParameters($rules, $attributes, $reflection->getNamespaceName(), $useStatements);
+
+                return [
+                    'parameters' => $parameters,
+                    'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                    'attributes' => $attributes,
+                    'messages' => $messages,
+                ];
+
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Failed to analyze FormRequest with conditions: {$requestClass}", [
+                    'error' => $e->getMessage(),
+                ]);
+
+                return [
+                    'parameters' => [],
+                    'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                ];
+            }
+        });
+    }
+
+    /**
      * FormRequestクラスを解析して詳細情報を取得
      */
     public function analyzeWithDetails(string $requestClass): array
@@ -673,95 +769,6 @@ class FormRequestAnalyzer
     }
 
     /**
-     * Analyze FormRequest with conditional rules support
-     */
-    public function analyzeWithConditionalRules(string $requestClass): array
-    {
-        return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
-            return $this->performAnalysisWithConditionalRules($requestClass);
-        });
-    }
-
-    /**
-     * 実際の条件付きルール解析処理
-     */
-    protected function performAnalysisWithConditionalRules(string $requestClass): array
-    {
-        if (! class_exists($requestClass)) {
-            return [];
-        }
-
-        try {
-            $reflection = new \ReflectionClass($requestClass);
-
-            // FormRequestを継承していない場合はスキップ
-            if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
-                return [];
-            }
-
-            $filePath = $reflection->getFileName();
-            if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
-                // For anonymous classes, use special handling
-                return $this->analyzeAnonymousClassWithConditionalRules($reflection);
-            }
-
-            // ファイルをパース
-            $code = file_get_contents($filePath);
-            $ast = $this->parser->parse($code);
-
-            if (! $ast) {
-                return [];
-            }
-
-            // クラスノードを探す
-            $classNode = $this->findClassNode($ast, $reflection->getShortName());
-            if (! $classNode) {
-                return [];
-            }
-
-            // Try conditional rules extraction first
-            $conditionalRules = $this->extractConditionalRules($classNode);
-
-            if (! empty($conditionalRules['rules_sets'])) {
-                // Use conditional rules
-                $attributes = $this->extractAttributes($classNode);
-                $parameters = $this->generateParametersFromConditionalRules($conditionalRules, $attributes);
-
-                return [
-                    'parameters' => $parameters,
-                    'conditional_rules' => $conditionalRules,
-                ];
-            } else {
-                // Fall back to regular extraction
-                $rules = $this->extractRules($classNode);
-                $attributes = $this->extractAttributes($classNode);
-                $parameters = $this->generateParameters($rules, $attributes);
-
-                return [
-                    'parameters' => $parameters,
-                    'conditional_rules' => [
-                        'rules_sets' => [],
-                        'merged_rules' => [],
-                    ],
-                ];
-            }
-
-        } catch (Error $parseError) {
-            Log::warning("Failed to parse FormRequest: {$requestClass}", [
-                'error' => $parseError->getMessage(),
-            ]);
-
-            return [];
-        } catch (\Exception $e) {
-            Log::warning("Failed to analyze FormRequest: {$requestClass}", [
-                'error' => $e->getMessage(),
-            ]);
-
-            return [];
-        }
-    }
-
-    /**
      * Extract conditional rules from rules() method
      */
     protected function extractConditionalRules(Node\Stmt\Class_ $class): array
@@ -782,7 +789,7 @@ class FormRequestAnalyzer
     /**
      * Generate parameters from conditional rules
      */
-    protected function generateParametersFromConditionalRules(array $conditionalRules, array $attributes = []): array
+    protected function generateParametersFromConditionalRules(array $conditionalRules, array $attributes = [], string $namespace = '', array $useStatements = []): array
     {
         $parameters = [];
         $processedFields = [];
