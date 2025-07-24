@@ -521,4 +521,70 @@ return [
             'channels' => ['log'],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Performance Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure performance optimizations for large-scale projects.
+    |
+    */
+    'performance' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Enable Performance Optimizations
+        |--------------------------------------------------------------------------
+        */
+        'enabled' => env('SPECTRUM_PERFORMANCE_ENABLED', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Parallel Processing
+        |--------------------------------------------------------------------------
+        */
+        'parallel_processing' => env('SPECTRUM_PARALLEL_PROCESSING', true),
+        'max_workers' => env('SPECTRUM_MAX_WORKERS', null), // null = auto-detect
+
+        /*
+        |--------------------------------------------------------------------------
+        | Chunk Processing
+        |--------------------------------------------------------------------------
+        */
+        'chunk_size' => env('SPECTRUM_CHUNK_SIZE', 100),
+        'auto_chunk_size' => true, // Automatically calculate optimal chunk size
+
+        /*
+        |--------------------------------------------------------------------------
+        | Memory Management
+        |--------------------------------------------------------------------------
+        */
+        'memory_limit' => env('SPECTRUM_MEMORY_LIMIT', '512M'),
+        'memory_warning_threshold' => 0.8, // 80%
+        'memory_critical_threshold' => 0.9, // 90%
+
+        /*
+        |--------------------------------------------------------------------------
+        | Incremental Generation
+        |--------------------------------------------------------------------------
+        */
+        'incremental' => [
+            'enabled' => env('SPECTRUM_INCREMENTAL_ENABLED', true),
+            'track_dependencies' => true,
+            'cache_dependencies' => true,
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Profiling
+        |--------------------------------------------------------------------------
+        */
+        'profiling' => [
+            'enabled' => env('SPECTRUM_PROFILING_ENABLED', false),
+            'save_reports' => true,
+            'report_path' => function_exists('storage_path')
+                ? storage_path('spectrum/profiling')
+                : getcwd().'/storage/spectrum/profiling',
+        ],
+    ],
 ];
