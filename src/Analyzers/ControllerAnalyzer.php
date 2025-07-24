@@ -22,6 +22,8 @@ class ControllerAnalyzer
 
     protected EnumAnalyzer $enumAnalyzer;
 
+    protected ResponseAnalyzer $responseAnalyzer;
+
     protected Parser $parser;
 
     public function __construct(
@@ -29,13 +31,15 @@ class ControllerAnalyzer
         InlineValidationAnalyzer $inlineValidationAnalyzer,
         PaginationAnalyzer $paginationAnalyzer,
         QueryParameterAnalyzer $queryParameterAnalyzer,
-        EnumAnalyzer $enumAnalyzer
+        EnumAnalyzer $enumAnalyzer,
+        ResponseAnalyzer $responseAnalyzer
     ) {
         $this->formRequestAnalyzer = $formRequestAnalyzer;
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
         $this->paginationAnalyzer = $paginationAnalyzer;
         $this->queryParameterAnalyzer = $queryParameterAnalyzer;
         $this->enumAnalyzer = $enumAnalyzer;
+        $this->responseAnalyzer = $responseAnalyzer;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -65,6 +69,7 @@ class ControllerAnalyzer
             'pagination' => null,
             'queryParameters' => null,
             'enumParameters' => [],
+            'response' => null,
         ];
 
         // パラメータからFormRequestとEnum型を検出
@@ -145,6 +150,12 @@ class ControllerAnalyzer
             }
 
             $result['queryParameters'] = $queryParams['parameters'];
+        }
+
+        // レスポンス解析を追加
+        $responseInfo = $this->responseAnalyzer->analyze($controller, $method);
+        if ($responseInfo && $responseInfo['type'] !== 'unknown') {
+            $result['response'] = $responseInfo;
         }
 
         return $result;

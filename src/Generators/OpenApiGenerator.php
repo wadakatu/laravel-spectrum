@@ -35,6 +35,8 @@ class OpenApiGenerator
 
     protected ExampleGenerator $exampleGenerator;
 
+    protected ResponseSchemaGenerator $responseSchemaGenerator;
+
     public function __construct(
         FormRequestAnalyzer $requestAnalyzer,
         ResourceAnalyzer $resourceAnalyzer,
@@ -46,7 +48,8 @@ class OpenApiGenerator
         SecuritySchemeGenerator $securitySchemeGenerator,
         PaginationSchemaGenerator $paginationSchemaGenerator,
         PaginationDetector $paginationDetector,
-        ExampleGenerator $exampleGenerator
+        ExampleGenerator $exampleGenerator,
+        ResponseSchemaGenerator $responseSchemaGenerator
     ) {
         $this->requestAnalyzer = $requestAnalyzer;
         $this->resourceAnalyzer = $resourceAnalyzer;
@@ -59,6 +62,7 @@ class OpenApiGenerator
         $this->paginationSchemaGenerator = $paginationSchemaGenerator;
         $this->paginationDetector = $paginationDetector;
         $this->exampleGenerator = $exampleGenerator;
+        $this->responseSchemaGenerator = $responseSchemaGenerator;
     }
 
     /**
@@ -345,6 +349,17 @@ class OpenApiGenerator
         $response = [
             'description' => 'Successful response',
         ];
+
+        // ResponseAnalyzerによる解析結果がある場合
+        if (! empty($controllerInfo['response']) && config('spectrum.response_detection.enabled', true)) {
+            $responseSchema = $this->responseSchemaGenerator->generate($controllerInfo['response'], (int) $statusCode);
+            if (! empty($responseSchema[$statusCode])) {
+                return [
+                    'code' => $statusCode,
+                    'response' => $responseSchema[$statusCode],
+                ];
+            }
+        }
 
         // Resourceクラスがある場合
         if (! empty($controllerInfo['resource'])) {
