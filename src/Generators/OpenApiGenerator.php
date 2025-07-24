@@ -350,8 +350,10 @@ class OpenApiGenerator
             'description' => 'Successful response',
         ];
 
-        // ResponseAnalyzerによる解析結果がある場合
-        if (! empty($controllerInfo['response']) && config('spectrum.response_detection.enabled', true)) {
+        // ResponseAnalyzerによる解析結果がある場合（Resourceタイプは除外）
+        if (! empty($controllerInfo['response']) 
+            && $controllerInfo['response']['type'] !== 'resource' 
+            && config('spectrum.response_detection.enabled', true)) {
             $responseSchema = $this->responseSchemaGenerator->generate($controllerInfo['response'], (int) $statusCode);
             if (! empty($responseSchema[$statusCode])) {
                 return [
