@@ -397,4 +397,63 @@ return [
             // 'role' => fn($faker) => $faker->randomElement(['admin', 'user', 'guest']),
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Error Handling Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure how errors are handled during documentation generation.
+    |
+    */
+    'error_handling' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Fail on Error
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, the generation process will stop on the first error.
+        | When disabled, errors will be collected and reported at the end.
+        |
+        */
+        'fail_on_error' => env('SPECTRUM_FAIL_ON_ERROR', false),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Error Report Path
+        |--------------------------------------------------------------------------
+        |
+        | Default path where error reports will be saved.
+        |
+        */
+        'error_report_path' => function_exists('storage_path')
+            ? storage_path('app/spectrum/error-report.json')
+            : getcwd().'/storage/spectrum/error-report.json',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ignore Patterns
+        |--------------------------------------------------------------------------
+        |
+        | Error patterns that should be ignored. Useful for known issues
+        | that don't affect documentation quality.
+        |
+        */
+        'ignore_patterns' => [
+            // '/vendor/' // Ignore errors from vendor directory
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Error Notifications
+        |--------------------------------------------------------------------------
+        |
+        | Configure if and how to send notifications when errors occur.
+        |
+        */
+        'notifications' => [
+            'enabled' => false,
+            'channels' => ['log'],
+        ],
+    ],
 ];
