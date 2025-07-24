@@ -65,3 +65,12 @@ Route::prefix('request-validate')->group(function () {
 Route::get('/tasks/{status}', [\App\Http\Controllers\TaskController::class, 'index']);
 Route::post('/tasks/{status}/{priority}', [\App\Http\Controllers\TaskController::class, 'store']);
 Route::patch('/tasks/{id}', [\App\Http\Controllers\TaskController::class, 'update']);
+
+// Conditional validation test routes
+use App\Http\Controllers\ConditionalUserController;
+
+Route::prefix('conditional')->group(function () {
+    Route::post('/users', [ConditionalUserController::class, 'store']);
+    Route::put('/users/{user}', [ConditionalUserController::class, 'update']);
+    Route::patch('/users/{user}', [ConditionalUserController::class, 'update']);
+});

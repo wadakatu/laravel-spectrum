@@ -263,6 +263,22 @@ class LumenCompatibilityTest extends TestCase
                         'messages' => [],
                         'attributes' => [],
                     ]);
+                $mock->shouldReceive('analyzeWithConditionalRules')
+                    ->andReturn([
+                        'parameters' => [
+                            [
+                                'name' => 'email',
+                                'type' => 'string',
+                                'format' => 'email',
+                                'required' => true,
+                                'description' => 'Email address',
+                            ],
+                        ],
+                        'conditional_rules' => [
+                            'rules_sets' => [],
+                            'merged_rules' => [],
+                        ],
+                    ]);
             })
         );
 

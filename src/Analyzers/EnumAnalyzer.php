@@ -46,7 +46,9 @@ class EnumAnalyzer
             }
 
             // Check if it's the result of Rule::enum()
-            if ($reflection->getName() === 'Illuminate\Validation\Rules\Enum' ||
+            /** @var class-string $className */
+            $className = $reflection->getName();
+            if ($className === \Illuminate\Validation\Rules\Enum::class ||
                 (method_exists($rule, '__toString') && str_contains($rule->__toString(), 'Illuminate\Contracts\Validation\Rule'))) {
                 // Extract enum class from the rule object
                 $property = $reflection->getProperty('type');

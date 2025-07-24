@@ -91,6 +91,7 @@ Laravel Spectrum analyzes your existing code and automatically generates beautif
 - ✅ Query parameter extraction
 - ✅ Enum constraint support
 - ✅ Nested array validation
+- ✅ Conditional validation rules
 
 **📦 Response Handling**
 - ✅ API Resources structure
@@ -139,6 +140,7 @@ Laravel Spectrum analyzes your existing code and automatically generates beautif
 | **File Upload Detection** | ✅ | Manual | Manual | ✅ |
 | **Query Param Detection** | ✅ | ❌ | ❌ | ⚠️ Limited |
 | **Enum Support** | ✅ | Manual | Manual | ❌ |
+| **Conditional Validation** | ✅ | ❌ | ❌ | ❌ |
 | **Live Reload** | ✅ | ❌ | ❌ | ❌ |
 | **Smart Caching** | ✅ | ❌ | ❌ | ❌ |
 | **Pagination Detection** | ✅ | ❌ | ❌ | ✅ |
@@ -204,12 +206,95 @@ SwaggerUIBundle({
 
 **That's it!** Your comprehensive API documentation is ready in seconds.
 
+## 🎯 Advanced Features
+
+### Conditional Validation Rules Support
+
+Laravel Spectrum now automatically detects and documents conditional validation rules in your FormRequest classes. This feature generates OpenAPI 3.0 `oneOf` schemas to accurately represent different validation scenarios based on HTTP methods or other conditions.
+
+#### Example FormRequest with Conditional Rules:
+
+```php
+class UserRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        if ($this->isMethod('POST')) {
+            return [
+                'email' => 'required|email|unique:users',
+                'password' => 'required|min:8',
+                'role' => 'required|in:admin,user,moderator',
+            ];
+        }
+
+        if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
+            return [
+                'email' => 'sometimes|email',
+                'current_password' => 'required|string',
+            ];
+        }
+
+        return [
+            'name' => 'required|string',
+        ];
+    }
+}
+```
+
+#### Generated OpenAPI Schema:
+
+```json
+{
+  "requestBody": {
+    "content": {
+      "application/json": {
+        "schema": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "email": { "type": "string", "format": "email" },
+                "password": { "type": "string", "minLength": 8 },
+                "role": { "type": "string", "enum": ["admin", "user", "moderator"] }
+              },
+              "required": ["email", "password", "role"],
+              "description": "When HTTP method is POST"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "email": { "type": "string", "format": "email" },
+                "current_password": { "type": "string" }
+              },
+              "required": ["current_password"],
+              "description": "When $this->isMethod('PUT') || $this->isMethod('PATCH')"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+#### Supported Patterns:
+
+- **HTTP Method Conditions**: `$this->isMethod('POST')`, `request()->isMethod('GET')`
+- **Nested Conditions**: Multiple levels of if/elseif/else statements
+- **Complex Conditions**: `$this->user() && $this->user()->isAdmin()`
+- **Variable Assignments**: Rules stored in variables and merged with `array_merge()`
+- **Rule Class Methods**: `Rule::in()`, `Rule::unique()`, `Rule::requiredIf()`
+- **Early Returns**: Different rule sets returned based on conditions
+
+This feature ensures your API documentation accurately reflects the actual validation behavior of your application, making it easier for API consumers to understand exactly what data is required for each endpoint under different circumstances.
+
 
 ## 📚 Documentation
 
 - **[Configuration Guide](./docs/configuration.md)** - Detailed configuration options
 - **[Real-World Examples](./docs/examples.md)** - Practical examples and use cases
 - **[Advanced Features](./docs/advanced-features.md)** - Advanced functionality
+- **[Conditional Validation](./docs/conditional-validation.md)** - Conditional validation rules documentation
 - **[Troubleshooting](./docs/troubleshooting.md)** - Common issues and solutions
 
 
