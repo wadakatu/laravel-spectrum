@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\File;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Support\ErrorCollector;
 
 class GenerateDocsCommand extends Command
 {
@@ -14,7 +15,10 @@ class GenerateDocsCommand extends Command
                             {--format=json : Output format (json|yaml)}
                             {--output= : Output file path}
                             {--no-cache : Disable cache}
-                            {--clear-cache : Clear cache before generation}';
+                            {--clear-cache : Clear cache before generation}
+                            {--fail-on-error : Stop execution on first error}
+                            {--ignore-errors : Continue generation ignoring errors}
+                            {--error-report= : Save error report to file}';
 
     protected $description = 'Generate API documentation';
 
@@ -38,6 +42,14 @@ class GenerateDocsCommand extends Command
 
     public function handle(): int
     {
+        $this->info('🚀 Generating API documentation...');
+
+        // エラーコレクターの初期化
+        $errorCollector = new ErrorCollector(
+            failOnError: (bool) $this->option('fail-on-error')
+        );
+        $this->laravel->instance(ErrorCollector::class, $errorCollector);
+
         if ($this->option('clear-cache')) {
             $this->info('🧹 Clearing cache...');
             $this->cache->clear();
@@ -63,6 +75,11 @@ class GenerateDocsCommand extends Command
 
         if (empty($routes)) {
             $this->warn('No API routes found. Make sure your routes match the patterns in config/spectrum.php');
+
+            // エラーレポートの出力（ルートがない場合でも）
+            if ($errorCollector->hasErrors() || count($errorCollector->getWarnings()) > 0) {
+                $this->outputErrorReport($errorCollector);
+            }
 
             return 1;
         }
@@ -92,7 +109,7 @@ class GenerateDocsCommand extends Command
         $this->info("✅ Documentation generated: {$outputPath}");
 
         // デバッグ情報
-        if (! $this->option('quiet')) {
+        if ($this->output->isVerbose()) {
             $fileSize = File::size($outputPath);
             $this->info('   📁 File size: '.number_format($fileSize).' bytes');
             $this->info('   📍 Absolute path: '.realpath($outputPath));
@@ -101,6 +118,11 @@ class GenerateDocsCommand extends Command
         $endTime = microtime(true);
         $duration = round($endTime - $startTime, 2);
 
+        // エラーレポートの出力
+        if ($errorCollector->hasErrors() || count($errorCollector->getWarnings()) > 0) {
+            $this->outputErrorReport($errorCollector);
+        }
+
         $this->info("⏱️  Generation completed in {$duration} seconds");
 
         // キャッシュ統計を表示
@@ -108,6 +130,14 @@ class GenerateDocsCommand extends Command
             $stats = $this->cache->getStats();
             $this->info("💾 Cache: {$stats['total_files']} files, {$stats['total_size_human']}");
         }
+
+        if ($errorCollector->hasErrors() && ! $this->option('ignore-errors')) {
+            $this->warn('⚠️  Documentation generated with errors. Use --ignore-errors to suppress this warning.');
+
+            return $this->option('fail-on-error') ? 1 : 0;
+        }
+
+        $this->info('✅ Documentation generated successfully!');
 
         return 0;
     }
@@ -153,5 +183,51 @@ class GenerateDocsCommand extends Command
         }
 
         return $yaml;
+    }
+
+    private function outputErrorReport(ErrorCollector $errorCollector): void
+    {
+        $report = $errorCollector->generateReport();
+
+        if ($this->option('verbose')) {
+            // 詳細なエラー情報を表示
+            if ($report['summary']['total_errors'] > 0) {
+                $this->error("Found {$report['summary']['total_errors']} errors:");
+                foreach ($report['errors'] as $error) {
+                    $this->error("  - [{$error['context']}] {$error['message']}");
+                    if ($this->option('vvv')) {
+                        if (isset($error['metadata']['file'])) {
+                            $this->line("    File: {$error['metadata']['file']}");
+                        }
+                        if (isset($error['metadata']['line'])) {
+                            $this->line("    Line: {$error['metadata']['line']}");
+                        }
+                    }
+                }
+            }
+
+            if ($report['summary']['total_warnings'] > 0) {
+                $this->warn("Found {$report['summary']['total_warnings']} warnings:");
+                foreach ($report['warnings'] as $warning) {
+                    $this->warn("  - [{$warning['context']}] {$warning['message']}");
+                }
+            }
+        } else {
+            // サマリーのみ表示
+            if ($report['summary']['total_errors'] > 0) {
+                $this->error("Found {$report['summary']['total_errors']} errors during generation.");
+            }
+            if ($report['summary']['total_warnings'] > 0) {
+                $this->warn("Found {$report['summary']['total_warnings']} warnings during generation.");
+            }
+        }
+
+        // エラーレポートをファイルに保存
+        if ($this->option('error-report')) {
+            $reportPath = $this->option('error-report');
+            File::ensureDirectoryExists(dirname($reportPath));
+            file_put_contents($reportPath, json_encode($report, JSON_PRETTY_PRINT));
+            $this->info("Error report saved to: {$reportPath}");
+        }
     }
 }

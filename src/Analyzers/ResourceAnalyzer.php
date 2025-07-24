@@ -6,6 +6,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\HasExamples;
+use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -23,9 +24,12 @@ class ResourceAnalyzer
 
     protected DocumentationCache $cache;
 
-    public function __construct(DocumentationCache $cache)
+    protected ?ErrorCollector $errorCollector = null;
+
+    public function __construct(DocumentationCache $cache, ?ErrorCollector $errorCollector = null)
     {
         $this->cache = $cache;
+        $this->errorCollector = $errorCollector;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
@@ -38,9 +42,24 @@ class ResourceAnalyzer
      */
     public function analyze(string $resourceClass, bool $useNewFormat = false): array
     {
-        return $this->cache->rememberResource($resourceClass, function () use ($resourceClass, $useNewFormat) {
-            return $this->performAnalysis($resourceClass, $useNewFormat);
-        });
+        try {
+            return $this->cache->rememberResource($resourceClass, function () use ($resourceClass, $useNewFormat) {
+                return $this->performAnalysis($resourceClass, $useNewFormat);
+            });
+        } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'ResourceAnalyzer',
+                "Failed to analyze {$resourceClass}: {$e->getMessage()}",
+                [
+                    'class' => $resourceClass,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            // エラーが発生しても空の配列を返して処理を継続
+            return [];
+        }
     }
 
     /**
@@ -96,6 +115,15 @@ class ResourceAnalyzer
                     $structure['customExample'] = $resource->getExample();
                     $structure['customExamples'] = $resource->getExamples();
                 } catch (\Exception $e) {
+                    $this->errorCollector?->addWarning(
+                        'ResourceAnalyzer',
+                        "Failed to get custom examples from Resource {$resourceClass}: {$e->getMessage()}",
+                        [
+                            'class' => $resourceClass,
+                            'error_type' => 'custom_examples_error',
+                        ]
+                    );
+
                     // Failed to instantiate resource, skip custom examples
                     Log::debug("Failed to get custom examples from Resource: {$resourceClass}", [
                         'error' => $e->getMessage(),
@@ -127,12 +155,30 @@ class ResourceAnalyzer
             return $structure;
 
         } catch (Error $parseError) {
+            $this->errorCollector?->addError(
+                'ResourceAnalyzer',
+                "Failed to parse Resource {$resourceClass}: {$parseError->getMessage()}",
+                [
+                    'class' => $resourceClass,
+                    'error_type' => 'parse_error',
+                ]
+            );
+
             Log::warning("Failed to parse Resource: {$resourceClass}", [
                 'error' => $parseError->getMessage(),
             ]);
 
             return [];
         } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'ResourceAnalyzer',
+                "Failed to analyze Resource {$resourceClass}: {$e->getMessage()}",
+                [
+                    'class' => $resourceClass,
+                    'error_type' => 'analysis_error',
+                ]
+            );
+
             Log::warning("Failed to analyze Resource: {$resourceClass}", [
                 'error' => $e->getMessage(),
             ]);
