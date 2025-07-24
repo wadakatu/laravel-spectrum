@@ -400,6 +400,71 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Response Detection Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure automatic response body detection from controller methods.
+    |
+    */
+    'response_detection' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Enable Response Detection
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, Laravel Spectrum will analyze controller return statements
+        | to automatically detect response structures.
+        |
+        */
+        'enabled' => env('SPECTRUM_RESPONSE_DETECTION', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Include Model Attributes
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, Eloquent model attributes will be included in the response
+        | schema, respecting $hidden, $casts, and $appends properties.
+        |
+        */
+        'include_model_attributes' => true,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Analysis Depth
+        |--------------------------------------------------------------------------
+        |
+        | Maximum depth for analyzing nested structures and method chains.
+        |
+        */
+        'max_depth' => 3,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Type Inference Settings
+        |--------------------------------------------------------------------------
+        |
+        | Configure how types are inferred when they cannot be determined.
+        |
+        */
+        'type_inference' => [
+            'strict' => false,
+            'fallback_type' => 'string',
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cache Model Schemas
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, Eloquent model schemas will be cached to improve performance.
+        |
+        */
+        'cache_model_schemas' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Error Handling Configuration
     |--------------------------------------------------------------------------
     |
