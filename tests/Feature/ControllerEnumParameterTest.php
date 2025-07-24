@@ -9,24 +9,18 @@ use LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-/**
- * NOTE: This test is currently experiencing issues with route isolation.
- * The enum parameter detection functionality has been verified to work correctly
- * in the demo-app environment. The test needs to be refactored to properly
- * isolate routes in the test environment.
- *
- * @group skip
- */
 class ControllerEnumParameterTest extends TestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
 
-        // このテストで必要なルートのみを定義
-        Route::post('api/enum-test/tasks/{status}', [EnumTestController::class, 'store']);
-        Route::patch('api/enum-test/tasks/{id}', [EnumTestController::class, 'update']);
-        Route::get('api/enum-test/status', [EnumTestController::class, 'getStatus']);
+        // ルートを完全に分離して定義
+        $this->isolateRoutes(function () {
+            Route::post('api/enum-test/tasks/{status}', [EnumTestController::class, 'store']);
+            Route::patch('api/enum-test/tasks/{id}', [EnumTestController::class, 'update']);
+            Route::get('api/enum-test/status', [EnumTestController::class, 'getStatus']);
+        });
     }
 
     protected function generateOpenApiForEnumTest(): array
@@ -34,7 +28,8 @@ class ControllerEnumParameterTest extends TestCase
         // Configure to only analyze our test routes
         config(['spectrum.route_patterns' => ['api/enum-test/*']]);
 
-        $routes = app(RouteAnalyzer::class)->analyze();
+        // キャッシュを無効にして確実に新しいルートを取得
+        $routes = app(RouteAnalyzer::class)->analyze(false);
 
         return app(OpenApiGenerator::class)->generate($routes);
     }
@@ -42,7 +37,12 @@ class ControllerEnumParameterTest extends TestCase
     #[Test]
     public function it_detects_enum_parameters_in_controller_methods()
     {
-        $this->markTestSkipped('Route isolation issue in test environment. Functionality verified in demo-app.');
+        // デバッグ: 実際に登録されているルートを確認
+        $allRoutes = Route::getRoutes()->getRoutes();
+        $routeUris = array_map(fn ($r) => $r->uri(), $allRoutes);
+        $this->assertContains('api/enum-test/tasks/{status}', $routeUris,
+            'Routes were not properly registered. Available routes: '.json_encode($routeUris));
+
         // Act
         $openapi = $this->generateOpenApiForEnumTest();
 
@@ -72,8 +72,8 @@ class ControllerEnumParameterTest extends TestCase
         $this->assertEquals('query', $priorityParam['in']);
         $this->assertEquals([1, 2, 3], $priorityParam['schema']['enum']);
 
-        // PATCH /api/tasks/{id}
-        $patchOperation = $openapi['paths']['/api/tasks/{id}']['patch'];
+        // PATCH /api/enum-test/tasks/{id}
+        $patchOperation = $openapi['paths']['/api/enum-test/tasks/{id}']['patch'];
         $parameters = $patchOperation['parameters'];
 
         // statusパラメータ（nullable）
@@ -86,7 +86,6 @@ class ControllerEnumParameterTest extends TestCase
     #[Test]
     public function it_generates_enum_response_schemas()
     {
-        $this->markTestSkipped('Route isolation issue in test environment. Functionality verified in demo-app.');
         // Act
         $openapi = $this->generateOpenApiForEnumTest();
 
