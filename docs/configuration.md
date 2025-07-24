@@ -181,6 +181,29 @@ Configure support for different response transformation libraries:
 ],
 ```
 
+### Example Generation
+
+Configure how example values are generated:
+
+```php
+'example_generation' => [
+    // Enable/disable Faker for realistic examples
+    'use_faker' => env('SPECTRUM_USE_FAKER', true),
+    
+    // Set locale for region-specific data (e.g., 'ja_JP', 'de_DE', 'fr_FR')
+    'faker_locale' => env('SPECTRUM_FAKER_LOCALE', 'en_US'),
+    
+    // Set seed for consistent example generation (useful for testing)
+    'faker_seed' => env('SPECTRUM_FAKER_SEED', null),
+    
+    // Define global custom generators
+    'custom_generators' => [
+        // 'status' => fn($faker) => $faker->randomElement(['active', 'inactive']),
+        // 'priority' => fn($faker) => $faker->randomElement(['low', 'medium', 'high']),
+    ],
+],
+```
+
 ### Lumen Compatibility
 
 Enable Lumen-specific features:

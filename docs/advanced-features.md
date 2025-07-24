@@ -52,6 +52,122 @@ class UserResource extends JsonResource
 }
 ```
 
+### Realistic Examples with Faker Integration
+
+Laravel Spectrum now integrates with Faker to generate more realistic example data:
+
+```php
+// With Faker enabled (default), you get realistic data:
+{
+    "id": 5432,
+    "name": "Sarah Johnson",
+    "email": "sarah.johnson@gmail.com",
+    "phone": "+1-555-234-5678",
+    "bio": "Passionate software developer with expertise in Laravel and Vue.js. Love building scalable applications.",
+    "avatar": "https://via.placeholder.com/200x200.png/00aa55?text=avatar",
+    "created_at": "2024-03-15T14:22:10Z"
+}
+```
+
+### Custom Example Mapping
+
+Define custom example generators for your API Resources:
+
+```php
+use LaravelSpectrum\Contracts\HasCustomExamples;
+
+class ProductResource extends JsonResource implements HasCustomExamples
+{
+    public function toArray($request)
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'price' => $this->price,
+            'currency' => $this->currency,
+            'status' => $this->status,
+            'tags' => $this->tags,
+        ];
+    }
+
+    public static function getExampleMapping(): array
+    {
+        return [
+            'name' => fn($faker) => $faker->words(3, true) . ' ' . $faker->randomElement(['Pro', 'Plus', 'Max']),
+            'price' => fn($faker) => $faker->randomFloat(2, 99.99, 999.99),
+            'currency' => fn($faker) => $faker->randomElement(['USD', 'EUR', 'JPY']),
+            'status' => fn($faker) => $faker->randomElement(['in_stock', 'out_of_stock', 'discontinued']),
+            'tags' => fn($faker) => $faker->words(3),
+        ];
+    }
+}
+
+// Generates examples like:
+{
+    "id": 123,
+    "name": "wireless bluetooth headphones Pro",
+    "price": 249.99,
+    "currency": "USD",
+    "status": "in_stock",
+    "tags": ["electronics", "audio", "premium"]
+}
+```
+
+### Configuration Options
+
+Configure Faker behavior in `config/spectrum.php`:
+
+```php
+'example_generation' => [
+    // Enable/disable Faker (useful for consistent testing)
+    'use_faker' => env('SPECTRUM_USE_FAKER', true),
+    
+    // Set locale for region-specific data
+    'faker_locale' => env('SPECTRUM_FAKER_LOCALE', 'en_US'),
+    // Examples: 'ja_JP' for Japanese, 'de_DE' for German
+    
+    // Set seed for consistent examples
+    'faker_seed' => env('SPECTRUM_FAKER_SEED', null),
+    
+    // Global custom generators
+    'custom_generators' => [
+        'status' => fn($faker) => $faker->randomElement(['active', 'inactive', 'pending']),
+        'role' => fn($faker) => $faker->randomElement(['admin', 'user', 'guest']),
+    ],
+],
+```
+
+### Smart Field Detection
+
+Spectrum automatically detects field types and generates appropriate data:
+
+- **Email fields**: `email`, `email_address` → realistic email addresses
+- **Names**: `first_name`, `last_name`, `full_name` → appropriate name formats
+- **Timestamps**: `created_at`, `updated_at` → proper date-time values
+- **Prices**: `price`, `amount`, `total` → monetary values
+- **Images**: `avatar`, `thumbnail`, `banner` → placeholder URLs with correct dimensions
+- **Geographic**: `latitude`, `longitude`, `address`, `city` → real coordinates and locations
+- **Identifiers**: `uuid`, `token`, `api_key` → properly formatted identifiers
+- **Boolean fields**: `is_active`, `has_permission` → boolean values
+- **Counts**: `views_count`, `likes_count` → realistic numbers
+
+### Locale-Specific Examples
+
+Generate region-appropriate data:
+
+```php
+// Japanese locale configuration
+'faker_locale' => 'ja_JP',
+
+// Generates:
+{
+    "name": "田中 太郎",
+    "phone": "090-1234-5678",
+    "address": "東京都渋谷区神南1-2-3",
+    "company": "株式会社サンプル"
+}
+```
+
 ## Custom Type Mappings
 
 Define custom type mappings for special data types:

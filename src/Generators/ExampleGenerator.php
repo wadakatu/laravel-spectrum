@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Contracts\HasCustomExamples;
 use LaravelSpectrum\Contracts\HasExamples;
 
 class ExampleGenerator
@@ -12,11 +13,17 @@ class ExampleGenerator
 
     public function generateFromResource(array $resourceSchema, string $resourceClass): array
     {
-        // Check if the resource implements HasExamples interface
+        // Check if the resource implements HasExamples interface (existing)
         if (is_subclass_of($resourceClass, HasExamples::class)) {
             $resource = new $resourceClass(null);
 
             return $resource->getExample();
+        }
+
+        // Check if the resource implements HasCustomExamples interface (new)
+        $customMapping = [];
+        if (is_subclass_of($resourceClass, HasCustomExamples::class)) {
+            $customMapping = $resourceClass::getExampleMapping();
         }
 
         // If resourceSchema doesn't have 'properties' key, it's likely a flat structure
@@ -36,8 +43,8 @@ class ExampleGenerator
             }
         }
 
-        // Generate example from schema
-        return $this->generateFromSchema($resourceSchema);
+        // Generate example from schema with custom mappings
+        return $this->generateFromSchema($resourceSchema, $customMapping);
     }
 
     public function generateFromTransformer(array $transformerSchema): array
@@ -81,7 +88,10 @@ class ExampleGenerator
         };
     }
 
-    private function generateFromSchema(array $schema): array
+    /**
+     * Generate from schema with custom field mappings
+     */
+    private function generateFromSchema(array $schema, array $customMapping = []): array
     {
         $example = [];
 
@@ -90,13 +100,17 @@ class ExampleGenerator
         }
 
         foreach ($schema['properties'] as $fieldName => $fieldSchema) {
-            $example[$fieldName] = $this->generateFieldValue($fieldName, $fieldSchema);
+            $customGenerator = $customMapping[$fieldName] ?? null;
+            $example[$fieldName] = $this->generateFieldValue($fieldName, $fieldSchema, $customGenerator);
         }
 
         return $example;
     }
 
-    private function generateFieldValue(string $fieldName, array $fieldSchema): mixed
+    /**
+     * Generate field value with custom generator support
+     */
+    private function generateFieldValue(string $fieldName, array $fieldSchema, ?callable $customGenerator = null): mixed
     {
         // Check if nullable and field looks like it should be null
         if (isset($fieldSchema['nullable']) && $fieldSchema['nullable'] && str_ends_with($fieldName, '_at') && str_contains($fieldName, 'deleted')) {
@@ -124,8 +138,8 @@ class ExampleGenerator
             return [];
         }
 
-        // Use value factory for simple types
-        return $this->valueFactory->create($fieldName, $fieldSchema);
+        // Use value factory with custom generator
+        return $this->valueFactory->create($fieldName, $fieldSchema, $customGenerator);
     }
 
     private function generatePaginatedCollection(array $itemExample): array

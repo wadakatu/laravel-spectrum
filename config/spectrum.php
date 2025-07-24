@@ -339,4 +339,62 @@ return [
             ],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Example Generation
+    |--------------------------------------------------------------------------
+    |
+    | Configure how example values are generated for your API documentation.
+    |
+    */
+    'example_generation' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Use Faker
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, Faker will be used to generate realistic example data.
+        | When disabled, static example values will be used.
+        |
+        */
+        'use_faker' => env('SPECTRUM_USE_FAKER', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Faker Locale
+        |--------------------------------------------------------------------------
+        |
+        | The locale to use for Faker data generation. This affects names,
+        | addresses, phone numbers, and other locale-specific data.
+        |
+        */
+        'faker_locale' => env('SPECTRUM_FAKER_LOCALE', config('app.faker_locale', 'en_US')),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Faker Seed
+        |--------------------------------------------------------------------------
+        |
+        | Set a seed value to generate consistent example data across runs.
+        | Leave null for random data each time.
+        |
+        */
+        'faker_seed' => env('SPECTRUM_FAKER_SEED', null),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Custom Field Generators
+        |--------------------------------------------------------------------------
+        |
+        | Define custom generators for specific field names across all resources.
+        | The key is the field name, and the value is a callable that receives
+        | a Faker instance and returns the example value.
+        |
+        */
+        'custom_generators' => [
+            // 'status' => fn($faker) => $faker->randomElement(['active', 'inactive', 'pending']),
+            // 'role' => fn($faker) => $faker->randomElement(['admin', 'user', 'guest']),
+        ],
+    ],
 ];
