@@ -14,6 +14,9 @@ class ExampleValueFactoryTest extends TestCase
     {
         parent::setUp();
 
+        // Disable Faker for existing tests to use static values
+        config(['spectrum.example_generation.use_faker' => false]);
+
         $fieldInference = new FieldNameInference;
         $this->factory = new ExampleValueFactory($fieldInference);
     }
