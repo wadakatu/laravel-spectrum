@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -15,11 +16,14 @@ class InlineValidationAnalyzer
 
     protected FileUploadAnalyzer $fileUploadAnalyzer;
 
-    public function __construct(TypeInference $typeInference, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null)
+    protected ?ErrorCollector $errorCollector = null;
+
+    public function __construct(TypeInference $typeInference, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null)
     {
         $this->typeInference = $typeInference;
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
+        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -27,283 +31,297 @@ class InlineValidationAnalyzer
      */
     public function analyze(Node\Stmt\ClassMethod $method): array
     {
-        $validations = [];
+        try {
+            $validations = [];
 
-        $visitor = new class extends NodeVisitorAbstract
-        {
-            public $validations = [];
-
-            public function enterNode(Node $node)
+            $visitor = new class extends NodeVisitorAbstract
             {
-                // $this->validate() の呼び出しを検出
-                if ($node instanceof Node\Expr\MethodCall &&
-                    $node->var instanceof Node\Expr\Variable &&
-                    $node->var->name === 'this' &&
-                    $node->name instanceof Node\Identifier &&
-                    $node->name->name === 'validate') {
+                public $validations = [];
 
-                    $this->extractValidation($node);
+                public function enterNode(Node $node)
+                {
+                    // $this->validate() の呼び出しを検出
+                    if ($node instanceof Node\Expr\MethodCall &&
+                        $node->var instanceof Node\Expr\Variable &&
+                        $node->var->name === 'this' &&
+                        $node->name instanceof Node\Identifier &&
+                        $node->name->name === 'validate') {
 
-                    return null;
-                }
+                        $this->extractValidation($node);
 
-                // request()->validate() の呼び出しを検出
-                if ($node instanceof Node\Expr\MethodCall &&
-                    $node->var instanceof Node\Expr\FuncCall &&
-                    $node->var->name instanceof Node\Name &&
-                    $node->var->name->toString() === 'request' &&
-                    $node->name instanceof Node\Identifier &&
-                    $node->name->name === 'validate') {
-
-                    $this->extractRequestValidation($node);
-
-                    return null;
-                }
-
-                // $request->validate() の呼び出しを検出 (変数経由)
-                if ($node instanceof Node\Expr\MethodCall &&
-                    $node->var instanceof Node\Expr\Variable &&
-                    $node->name instanceof Node\Identifier &&
-                    $node->name->name === 'validate' &&
-                    $this->isRequestVariable($node->var)) {
-
-                    $this->extractRequestVariableValidation($node);
-
-                    return null;
-                }
-
-                // Validator::make() の呼び出しも検出
-                if ($node instanceof Node\Expr\StaticCall &&
-                    $node->class instanceof Node\Name &&
-                    in_array($node->class->toString(), ['Validator', '\\Validator', 'Illuminate\\Support\\Facades\\Validator']) &&
-                    $node->name instanceof Node\Identifier &&
-                    $node->name->name === 'make') {
-
-                    $this->extractValidatorMake($node);
-
-                    return null;
-                }
-
-                return null;
-            }
-
-            protected function extractValidation(Node\Expr\MethodCall $node)
-            {
-                if (count($node->args) < 2) {
-                    return;
-                }
-
-                // 第2引数がルール配列
-                $rulesArg = $node->args[1]->value;
-
-                // 第3引数がカスタムメッセージ（オプション）
-                $messagesArg = isset($node->args[2]) ? $node->args[2]->value : null;
-
-                // 第4引数がカスタム属性名（オプション）
-                $attributesArg = isset($node->args[3]) ? $node->args[3]->value : null;
-
-                $validation = [
-                    'type' => 'inline',
-                    'rules' => $this->extractRulesArray($rulesArg),
-                    'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
-                    'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
-                ];
-
-                if (! empty($validation['rules'])) {
-                    $this->validations[] = $validation;
-                }
-            }
-
-            protected function extractRequestValidation(Node\Expr\MethodCall $node)
-            {
-                if (count($node->args) < 1) {
-                    return;
-                }
-
-                // 第1引数がルール配列
-                $rulesArg = $node->args[0]->value;
-
-                // 第2引数がカスタムメッセージ（オプション）
-                $messagesArg = isset($node->args[1]) ? $node->args[1]->value : null;
-
-                // 第3引数がカスタム属性名（オプション）
-                $attributesArg = isset($node->args[2]) ? $node->args[2]->value : null;
-
-                $validation = [
-                    'type' => 'request_validate',
-                    'rules' => $this->extractRulesArray($rulesArg),
-                    'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
-                    'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
-                ];
-
-                if (! empty($validation['rules'])) {
-                    $this->validations[] = $validation;
-                }
-            }
-
-            protected function extractRequestVariableValidation(Node\Expr\MethodCall $node)
-            {
-                if (count($node->args) < 1) {
-                    return;
-                }
-
-                // 第1引数がルール配列
-                $rulesArg = $node->args[0]->value;
-
-                // 第2引数がカスタムメッセージ（オプション）
-                $messagesArg = isset($node->args[1]) ? $node->args[1]->value : null;
-
-                // 第3引数がカスタム属性名（オプション）
-                $attributesArg = isset($node->args[2]) ? $node->args[2]->value : null;
-
-                $validation = [
-                    'type' => 'request_variable_validate',
-                    'rules' => $this->extractRulesArray($rulesArg),
-                    'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
-                    'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
-                ];
-
-                if (! empty($validation['rules'])) {
-                    $this->validations[] = $validation;
-                }
-            }
-
-            /**
-             * 変数がRequestインスタンスかどうかを判定
-             */
-            protected function isRequestVariable(Node\Expr\Variable $var): bool
-            {
-                // 一般的なRequest変数名をチェック
-                $commonRequestVarNames = [
-                    'request', 'req', 'httpRequest', 'r',
-                    'input', 'data', 'requestData',
-                ];
-
-                if (in_array($var->name, $commonRequestVarNames)) {
-                    return true;
-                }
-
-                // TODO: より高度な型推論を実装する場合は、
-                // メソッドの引数の型ヒントをチェックするロジックを追加
-
-                return false;
-            }
-
-            protected function extractValidatorMake(Node\Expr\StaticCall $node)
-            {
-                if (count($node->args) < 2) {
-                    return;
-                }
-
-                // 第2引数がルール配列
-                $rulesArg = $node->args[1]->value;
-
-                // 第3引数がカスタムメッセージ（オプション）
-                $messagesArg = isset($node->args[2]) ? $node->args[2]->value : null;
-
-                $validation = [
-                    'type' => 'validator_make',
-                    'rules' => $this->extractRulesArray($rulesArg),
-                    'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
-                    'attributes' => [],
-                ];
-
-                if (! empty($validation['rules'])) {
-                    $this->validations[] = $validation;
-                }
-            }
-
-            protected function extractRulesArray(Node $node): array
-            {
-                if (! $node instanceof Node\Expr\Array_) {
-                    return [];
-                }
-
-                $rules = [];
-
-                foreach ($node->items as $item) {
-                    if (! $item->key) {
-                        continue;
+                        return null;
                     }
 
-                    $key = $this->getNodeValue($item->key);
-                    $value = $item->value;
+                    // request()->validate() の呼び出しを検出
+                    if ($node instanceof Node\Expr\MethodCall &&
+                        $node->var instanceof Node\Expr\FuncCall &&
+                        $node->var->name instanceof Node\Name &&
+                        $node->var->name->toString() === 'request' &&
+                        $node->name instanceof Node\Identifier &&
+                        $node->name->name === 'validate') {
 
-                    // ルールが文字列の場合
-                    if ($value instanceof Node\Scalar\String_) {
-                        $rules[$key] = $value->value;
+                        $this->extractRequestValidation($node);
+
+                        return null;
                     }
-                    // 連結演算子の場合
-                    elseif ($value instanceof Node\Expr\BinaryOp\Concat) {
-                        $printer = new \PhpParser\PrettyPrinter\Standard;
-                        $rules[$key] = $printer->prettyPrintExpr($value);
+
+                    // $request->validate() の呼び出しを検出 (変数経由)
+                    if ($node instanceof Node\Expr\MethodCall &&
+                        $node->var instanceof Node\Expr\Variable &&
+                        $node->name instanceof Node\Identifier &&
+                        $node->name->name === 'validate' &&
+                        $this->isRequestVariable($node->var)) {
+
+                        $this->extractRequestVariableValidation($node);
+
+                        return null;
                     }
-                    // ルールが配列の場合
-                    elseif ($value instanceof Node\Expr\Array_) {
-                        $ruleArray = [];
-                        foreach ($value->items as $ruleItem) {
-                            if ($ruleItem->value instanceof Node\Scalar\String_) {
-                                $ruleArray[] = $ruleItem->value->value;
-                            }
-                            // Handle Rule::enum() or new Enum() instances
-                            elseif ($ruleItem->value instanceof Node\Expr\StaticCall ||
-                                    $ruleItem->value instanceof Node\Expr\New_) {
-                                // Convert AST node to string representation
-                                $printer = new \PhpParser\PrettyPrinter\Standard;
-                                $ruleArray[] = $printer->prettyPrintExpr($ruleItem->value);
-                            }
+
+                    // Validator::make() の呼び出しも検出
+                    if ($node instanceof Node\Expr\StaticCall &&
+                        $node->class instanceof Node\Name &&
+                        in_array($node->class->toString(), ['Validator', '\\Validator', 'Illuminate\\Support\\Facades\\Validator']) &&
+                        $node->name instanceof Node\Identifier &&
+                        $node->name->name === 'make') {
+
+                        $this->extractValidatorMake($node);
+
+                        return null;
+                    }
+
+                    return null;
+                }
+
+                protected function extractValidation(Node\Expr\MethodCall $node)
+                {
+                    if (count($node->args) < 2) {
+                        return;
+                    }
+
+                    // 第2引数がルール配列
+                    $rulesArg = $node->args[1]->value;
+
+                    // 第3引数がカスタムメッセージ（オプション）
+                    $messagesArg = isset($node->args[2]) ? $node->args[2]->value : null;
+
+                    // 第4引数がカスタム属性名（オプション）
+                    $attributesArg = isset($node->args[3]) ? $node->args[3]->value : null;
+
+                    $validation = [
+                        'type' => 'inline',
+                        'rules' => $this->extractRulesArray($rulesArg),
+                        'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
+                        'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
+                    ];
+
+                    if (! empty($validation['rules'])) {
+                        $this->validations[] = $validation;
+                    }
+                }
+
+                protected function extractRequestValidation(Node\Expr\MethodCall $node)
+                {
+                    if (count($node->args) < 1) {
+                        return;
+                    }
+
+                    // 第1引数がルール配列
+                    $rulesArg = $node->args[0]->value;
+
+                    // 第2引数がカスタムメッセージ（オプション）
+                    $messagesArg = isset($node->args[1]) ? $node->args[1]->value : null;
+
+                    // 第3引数がカスタム属性名（オプション）
+                    $attributesArg = isset($node->args[2]) ? $node->args[2]->value : null;
+
+                    $validation = [
+                        'type' => 'request_validate',
+                        'rules' => $this->extractRulesArray($rulesArg),
+                        'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
+                        'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
+                    ];
+
+                    if (! empty($validation['rules'])) {
+                        $this->validations[] = $validation;
+                    }
+                }
+
+                protected function extractRequestVariableValidation(Node\Expr\MethodCall $node)
+                {
+                    if (count($node->args) < 1) {
+                        return;
+                    }
+
+                    // 第1引数がルール配列
+                    $rulesArg = $node->args[0]->value;
+
+                    // 第2引数がカスタムメッセージ（オプション）
+                    $messagesArg = isset($node->args[1]) ? $node->args[1]->value : null;
+
+                    // 第3引数がカスタム属性名（オプション）
+                    $attributesArg = isset($node->args[2]) ? $node->args[2]->value : null;
+
+                    $validation = [
+                        'type' => 'request_variable_validate',
+                        'rules' => $this->extractRulesArray($rulesArg),
+                        'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
+                        'attributes' => $attributesArg ? $this->extractArray($attributesArg) : [],
+                    ];
+
+                    if (! empty($validation['rules'])) {
+                        $this->validations[] = $validation;
+                    }
+                }
+
+                /**
+                 * 変数がRequestインスタンスかどうかを判定
+                 */
+                protected function isRequestVariable(Node\Expr\Variable $var): bool
+                {
+                    // 一般的なRequest変数名をチェック
+                    $commonRequestVarNames = [
+                        'request', 'req', 'httpRequest', 'r',
+                        'input', 'data', 'requestData',
+                    ];
+
+                    if (in_array($var->name, $commonRequestVarNames)) {
+                        return true;
+                    }
+
+                    // TODO: より高度な型推論を実装する場合は、
+                    // メソッドの引数の型ヒントをチェックするロジックを追加
+
+                    return false;
+                }
+
+                protected function extractValidatorMake(Node\Expr\StaticCall $node)
+                {
+                    if (count($node->args) < 2) {
+                        return;
+                    }
+
+                    // 第2引数がルール配列
+                    $rulesArg = $node->args[1]->value;
+
+                    // 第3引数がカスタムメッセージ（オプション）
+                    $messagesArg = isset($node->args[2]) ? $node->args[2]->value : null;
+
+                    $validation = [
+                        'type' => 'validator_make',
+                        'rules' => $this->extractRulesArray($rulesArg),
+                        'messages' => $messagesArg ? $this->extractArray($messagesArg) : [],
+                        'attributes' => [],
+                    ];
+
+                    if (! empty($validation['rules'])) {
+                        $this->validations[] = $validation;
+                    }
+                }
+
+                protected function extractRulesArray(Node $node): array
+                {
+                    if (! $node instanceof Node\Expr\Array_) {
+                        return [];
+                    }
+
+                    $rules = [];
+
+                    foreach ($node->items as $item) {
+                        if (! $item->key) {
+                            continue;
                         }
-                        $rules[$key] = $ruleArray;
+
+                        $key = $this->getNodeValue($item->key);
+                        $value = $item->value;
+
+                        // ルールが文字列の場合
+                        if ($value instanceof Node\Scalar\String_) {
+                            $rules[$key] = $value->value;
+                        }
+                        // 連結演算子の場合
+                        elseif ($value instanceof Node\Expr\BinaryOp\Concat) {
+                            $printer = new \PhpParser\PrettyPrinter\Standard;
+                            $rules[$key] = $printer->prettyPrintExpr($value);
+                        }
+                        // ルールが配列の場合
+                        elseif ($value instanceof Node\Expr\Array_) {
+                            $ruleArray = [];
+                            foreach ($value->items as $ruleItem) {
+                                if ($ruleItem->value instanceof Node\Scalar\String_) {
+                                    $ruleArray[] = $ruleItem->value->value;
+                                }
+                                // Handle Rule::enum() or new Enum() instances
+                                elseif ($ruleItem->value instanceof Node\Expr\StaticCall ||
+                                        $ruleItem->value instanceof Node\Expr\New_) {
+                                    // Convert AST node to string representation
+                                    $printer = new \PhpParser\PrettyPrinter\Standard;
+                                    $ruleArray[] = $printer->prettyPrintExpr($ruleItem->value);
+                                }
+                            }
+                            $rules[$key] = $ruleArray;
+                        }
                     }
+
+                    return $rules;
                 }
 
-                return $rules;
-            }
-
-            protected function extractArray(Node $node): array
-            {
-                if (! $node instanceof Node\Expr\Array_) {
-                    return [];
-                }
-
-                $array = [];
-
-                foreach ($node->items as $item) {
-                    if (! $item->key) {
-                        continue;
+                protected function extractArray(Node $node): array
+                {
+                    if (! $node instanceof Node\Expr\Array_) {
+                        return [];
                     }
 
-                    $key = $this->getNodeValue($item->key);
-                    $value = $this->getNodeValue($item->value);
+                    $array = [];
 
-                    if ($key && $value) {
-                        $array[$key] = $value;
+                    foreach ($node->items as $item) {
+                        if (! $item->key) {
+                            continue;
+                        }
+
+                        $key = $this->getNodeValue($item->key);
+                        $value = $this->getNodeValue($item->value);
+
+                        if ($key && $value) {
+                            $array[$key] = $value;
+                        }
                     }
+
+                    return $array;
                 }
 
-                return $array;
-            }
+                protected function getNodeValue(Node $node)
+                {
+                    if ($node instanceof Node\Scalar\String_) {
+                        return $node->value;
+                    } elseif ($node instanceof Node\Scalar\LNumber) {
+                        return $node->value;
+                    } elseif ($node instanceof Node\Scalar\DNumber) {
+                        return $node->value;
+                    }
 
-            protected function getNodeValue(Node $node)
-            {
-                if ($node instanceof Node\Scalar\String_) {
-                    return $node->value;
-                } elseif ($node instanceof Node\Scalar\LNumber) {
-                    return $node->value;
-                } elseif ($node instanceof Node\Scalar\DNumber) {
-                    return $node->value;
+                    return null;
                 }
+            };
 
-                return null;
-            }
-        };
+            $traverser = new NodeTraverser;
+            $traverser->addVisitor($visitor);
+            $traverser->traverse([$method]);
 
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$method]);
+            // 複数のバリデーションがある場合はマージ
+            return $this->mergeValidations($visitor->validations);
+        } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'InlineValidationAnalyzer',
+                "Failed to analyze inline validation in method: {$e->getMessage()}",
+                [
+                    'method' => $method->name->toString(),
+                    'error_type' => 'inline_validation_error',
+                ]
+            );
 
-        // 複数のバリデーションがある場合はマージ
-        return $this->mergeValidations($visitor->validations);
+            // エラーが発生しても空の配列を返して処理を継続
+            return [];
+        }
     }
 
     /**

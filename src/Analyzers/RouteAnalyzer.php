@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Support\ErrorCollector;
 
 class RouteAnalyzer
 {
@@ -12,9 +13,12 @@ class RouteAnalyzer
 
     protected DocumentationCache $cache;
 
-    public function __construct(DocumentationCache $cache)
+    protected ?ErrorCollector $errorCollector = null;
+
+    public function __construct(DocumentationCache $cache, ?ErrorCollector $errorCollector = null)
     {
         $this->cache = $cache;
+        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -113,6 +117,15 @@ class RouteAnalyzer
                     require $routeFile;
                 }
             } catch (\Throwable $e) {
+                $this->errorCollector?->addError(
+                    'RouteAnalyzer',
+                    "Failed to load route file {$routeFile}: {$e->getMessage()}",
+                    [
+                        'file' => $routeFile,
+                        'error_type' => 'route_loading_error',
+                    ]
+                );
+
                 // エラーが発生した場合はログに記録
                 if (function_exists('logger')) {
                     logger()->error('Failed to load route file: '.$routeFile, [
@@ -133,34 +146,49 @@ class RouteAnalyzer
         $routes = [];
 
         foreach (Route::getRoutes() as $route) {
-            // APIルートのみを対象とする
-            if (! $this->isApiRoute($route)) {
+            try {
+                // APIルートのみを対象とする
+                if (! $this->isApiRoute($route)) {
+                    continue;
+                }
+
+                // クロージャールートをスキップ
+                $action = $route->getAction();
+                if (isset($action['uses']) && $action['uses'] instanceof \Closure) {
+                    continue;
+                }
+
+                $controller = $route->getController();
+                $method = $route->getActionMethod();
+
+                // コントローラーメソッドが存在しない場合はスキップ
+                if (! $controller || $method === 'Closure' || ! is_object($controller)) {
+                    continue;
+                }
+
+                $routes[] = [
+                    'uri' => $route->uri(),
+                    'httpMethods' => $route->methods(),
+                    'controller' => get_class($controller),
+                    'method' => $method,
+                    'name' => $route->getName(),
+                    'middleware' => $this->extractMiddleware($route),
+                    'parameters' => $this->extractRouteParameters($route),
+                ];
+            } catch (\Exception $e) {
+                $this->errorCollector?->addError(
+                    'RouteAnalyzer',
+                    "Failed to analyze route {$route->uri()}: {$e->getMessage()}",
+                    [
+                        'uri' => $route->uri(),
+                        'methods' => $route->methods(),
+                        'action' => $route->getActionName(),
+                    ]
+                );
+
+                // エラーが発生してもスキップして次のルートを処理
                 continue;
             }
-
-            // クロージャールートをスキップ
-            $action = $route->getAction();
-            if (isset($action['uses']) && $action['uses'] instanceof \Closure) {
-                continue;
-            }
-
-            $controller = $route->getController();
-            $method = $route->getActionMethod();
-
-            // コントローラーメソッドが存在しない場合はスキップ
-            if (! $controller || $method === 'Closure' || ! is_object($controller)) {
-                continue;
-            }
-
-            $routes[] = [
-                'uri' => $route->uri(),
-                'httpMethods' => $route->methods(),
-                'controller' => get_class($controller),
-                'method' => $method,
-                'name' => $route->getName(),
-                'middleware' => $this->extractMiddleware($route),
-                'parameters' => $this->extractRouteParameters($route),
-            ];
         }
 
         return $routes;

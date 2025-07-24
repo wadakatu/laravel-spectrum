@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Error;
 use PhpParser\Node;
@@ -29,7 +30,9 @@ class FormRequestAnalyzer
 
     protected FileUploadAnalyzer $fileUploadAnalyzer;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null)
+    protected ?ErrorCollector $errorCollector = null;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -38,6 +41,7 @@ class FormRequestAnalyzer
         $this->printer = new PrettyPrinter\Standard;
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
+        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -45,9 +49,24 @@ class FormRequestAnalyzer
      */
     public function analyze(string $requestClass): array
     {
-        return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
-            return $this->performAnalysis($requestClass);
-        });
+        try {
+            return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
+                return $this->performAnalysis($requestClass);
+            });
+        } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'FormRequestAnalyzer',
+                "Failed to analyze {$requestClass}: {$e->getMessage()}",
+                [
+                    'class' => $requestClass,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            // エラーが発生しても空の配列を返して処理を継続
+            return [];
+        }
     }
 
     /**
@@ -103,12 +122,30 @@ class FormRequestAnalyzer
             return $this->generateParameters($rules, $attributes, $namespace, $useStatements);
 
         } catch (Error $parseError) {
+            $this->errorCollector?->addError(
+                'FormRequestAnalyzer',
+                "Failed to parse FormRequest {$requestClass}: {$parseError->getMessage()}",
+                [
+                    'class' => $requestClass,
+                    'error_type' => 'parse_error',
+                ]
+            );
+
             Log::warning("Failed to parse FormRequest: {$requestClass}", [
                 'error' => $parseError->getMessage(),
             ]);
 
             return [];
         } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'FormRequestAnalyzer',
+                "Failed to analyze FormRequest {$requestClass}: {$e->getMessage()}",
+                [
+                    'class' => $requestClass,
+                    'error_type' => 'analysis_error',
+                ]
+            );
+
             Log::warning("Failed to analyze FormRequest: {$requestClass}", [
                 'error' => $e->getMessage(),
             ]);
@@ -201,6 +238,15 @@ class FormRequestAnalyzer
                 ];
 
             } catch (\Exception $e) {
+                $this->errorCollector?->addError(
+                    'FormRequestAnalyzer',
+                    "Failed to analyze FormRequest with conditions {$requestClass}: {$e->getMessage()}",
+                    [
+                        'class' => $requestClass,
+                        'error_type' => 'conditional_analysis_error',
+                    ]
+                );
+
                 \Illuminate\Support\Facades\Log::warning("Failed to analyze FormRequest with conditions: {$requestClass}", [
                     'error' => $e->getMessage(),
                 ]);
@@ -276,6 +322,15 @@ class FormRequestAnalyzer
             ];
 
         } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'FormRequestAnalyzer',
+                "Failed to analyze FormRequest with details {$requestClass}: {$e->getMessage()}",
+                [
+                    'class' => $requestClass,
+                    'error_type' => 'details_analysis_error',
+                ]
+            );
+
             Log::warning("Failed to analyze FormRequest with details: {$requestClass}", [
                 'error' => $e->getMessage(),
             ]);
