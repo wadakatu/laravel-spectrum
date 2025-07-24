@@ -16,6 +16,7 @@ use LaravelSpectrum\Analyzers\ResponseAnalyzer;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\CacheCommand;
+use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
@@ -84,6 +85,7 @@ class SpectrumServiceProvider extends ServiceProvider
                 GenerateDocsCommand::class,
                 CacheCommand::class,
                 WatchCommand::class,
+                OptimizedGenerateCommand::class,
             ]);
         }
     }
