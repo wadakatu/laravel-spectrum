@@ -34,6 +34,10 @@ Route::prefix('products')->group(function () {
     Route::get('/search', [ProductController::class, 'search']);
     Route::get('/filter', [ProductController::class, 'filter']);
 });
+
+// Product resource routes for testing Faker integration
+Route::get('/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 Route::get('/match-test', [\App\Http\Controllers\TestMatchController::class, 'matchTest']);
 
 // File upload routes - File upload detection test
