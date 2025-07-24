@@ -192,19 +192,173 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * 静的メソッド呼び出しを評価
      */
-    private function evaluateStaticCall(Node\Expr\StaticCall $call): string
+    private function evaluateStaticCall(Node\Expr\StaticCall $call)
     {
-        // Rule::unique('users')->ignore($id) のような呼び出しを文字列化
-        // TODO: より詳細な解析が可能
+        // Ruleクラスのメソッドを解析
+        if ($call->class instanceof Node\Name) {
+            $className = $call->class->toString();
+            if ($className === 'Rule' || $className === 'Illuminate\\Validation\\Rule') {
+                $methodName = $call->name->toString();
+
+                switch ($methodName) {
+                    case 'in':
+                        return $this->evaluateInRule($call);
+                    case 'unique':
+                        return $this->evaluateUniqueRule($call);
+                    case 'exists':
+                        return $this->evaluateExistsRule($call);
+                    case 'requiredIf':
+                        return $this->evaluateRequiredIfRule($call);
+                    case 'enum':
+                        return $this->evaluateEnumRule($call);
+                    default:
+                        // その他のRuleメソッドは簡略化された形式で返す
+                        return $methodName;
+                }
+            }
+        }
+
+        // その他の静的呼び出しは文字列化
         return $this->printer->prettyPrintExpr($call);
+    }
+
+    /**
+     * Rule::in() を評価
+     */
+    private function evaluateInRule(Node\Expr\StaticCall $call): string
+    {
+        if (! isset($call->args[0])) {
+            return 'in:';
+        }
+
+        $values = [];
+        $arg = $call->args[0]->value;
+
+        if ($arg instanceof Node\Expr\Array_) {
+            foreach ($arg->items as $item) {
+                if ($item && $item->value instanceof Node\Scalar\String_) {
+                    $values[] = $item->value->value;
+                } elseif ($item && $item->value instanceof Node\Scalar\LNumber) {
+                    $values[] = (string) $item->value->value;
+                }
+            }
+        }
+
+        return 'in:'.implode(',', $values);
+    }
+
+    /**
+     * Rule::unique() を評価
+     */
+    private function evaluateUniqueRule(Node\Expr\StaticCall $call): string
+    {
+        $parts = ['unique'];
+
+        // テーブル名
+        if (isset($call->args[0]) && $call->args[0]->value instanceof Node\Scalar\String_) {
+            $parts[] = $call->args[0]->value->value;
+        }
+
+        // カラム名（オプション）
+        if (isset($call->args[1]) && $call->args[1]->value instanceof Node\Scalar\String_) {
+            $parts[] = $call->args[1]->value->value;
+        }
+
+        return implode(':', $parts);
+    }
+
+    /**
+     * Rule::exists() を評価
+     */
+    private function evaluateExistsRule(Node\Expr\StaticCall $call): string
+    {
+        $parts = ['exists'];
+
+        // テーブル名
+        if (isset($call->args[0]) && $call->args[0]->value instanceof Node\Scalar\String_) {
+            $parts[] = $call->args[0]->value->value;
+        }
+
+        // カラム名（オプション）
+        if (isset($call->args[1]) && $call->args[1]->value instanceof Node\Scalar\String_) {
+            $parts[] = $call->args[1]->value->value;
+        }
+
+        return implode(':', $parts);
+    }
+
+    /**
+     * Rule::requiredIf() を評価
+     */
+    private function evaluateRequiredIfRule(Node\Expr\StaticCall $call): string
+    {
+        $parts = ['required_if'];
+
+        // フィールド名
+        if (isset($call->args[0]) && $call->args[0]->value instanceof Node\Scalar\String_) {
+            $parts[] = $call->args[0]->value->value;
+        }
+
+        // 値
+        if (isset($call->args[1])) {
+            $value = $call->args[1]->value;
+            if ($value instanceof Node\Scalar\String_) {
+                $parts[] = $value->value;
+            } elseif ($value instanceof Node\Scalar\LNumber) {
+                $parts[] = (string) $value->value;
+            }
+        }
+
+        return implode(':', $parts);
+    }
+
+    /**
+     * Rule::enum() を評価
+     */
+    private function evaluateEnumRule(Node\Expr\StaticCall $call)
+    {
+        // Rule::enum(StatusEnum::class) のような呼び出し
+        if (isset($call->args[0]) && $call->args[0]->value instanceof Node\Expr\ClassConstFetch) {
+            $classConstFetch = $call->args[0]->value;
+            if ($classConstFetch->class instanceof Node\Name && $classConstFetch->name instanceof Node\Identifier && $classConstFetch->name->name === 'class') {
+                $enumClassName = $classConstFetch->class->toString();
+
+                return [
+                    'type' => 'enum',
+                    'class' => $enumClassName,
+                ];
+            }
+        }
+
+        return '__enum__';
     }
 
     /**
      * new式を評価
      */
-    private function evaluateNewExpression(Node\Expr\New_ $new): string
+    private function evaluateNewExpression(Node\Expr\New_ $new)
     {
-        // new Enum(StatusEnum::class) のような呼び出しを文字列化
+        // new Enum(StatusEnum::class) のような呼び出し
+        if ($new->class instanceof Node\Name) {
+            $className = $new->class->toString();
+            if ($className === 'Enum' || $className === 'Illuminate\\Validation\\Rules\\Enum') {
+                if (isset($new->args[0]) && $new->args[0]->value instanceof Node\Expr\ClassConstFetch) {
+                    $classConstFetch = $new->args[0]->value;
+                    if ($classConstFetch->class instanceof Node\Name && $classConstFetch->name instanceof Node\Identifier && $classConstFetch->name->name === 'class') {
+                        $enumClassName = $classConstFetch->class->toString();
+
+                        return [
+                            'type' => 'enum',
+                            'class' => $enumClassName,
+                        ];
+                    }
+                }
+
+                return '__enum__';
+            }
+        }
+
+        // その他のnew式は文字列化
         return $this->printer->prettyPrintExpr($new);
     }
 

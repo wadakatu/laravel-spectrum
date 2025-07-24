@@ -32,6 +32,23 @@ class EnumAnalyzer
             return null;
         }
 
+        // Handle array format from AST extraction
+        if (is_array($rule) && isset($rule['type']) && $rule['type'] === 'enum' && isset($rule['class'])) {
+            $enumClass = $rule['class'];
+
+            // Try to resolve using use statements first
+            if (! str_contains($enumClass, '\\') && isset($useStatements[$enumClass])) {
+                $enumClass = $useStatements[$enumClass];
+            }
+
+            // Handle relative class names with namespace
+            if ($namespace && ! str_contains($enumClass, '\\') && ! class_exists($enumClass)) {
+                $enumClass = $namespace.'\\'.$enumClass;
+            }
+
+            return $this->extractEnumInfo($enumClass);
+        }
+
         // Handle Rule::enum() static method
         if (is_object($rule)) {
             $reflection = new ReflectionClass($rule);
