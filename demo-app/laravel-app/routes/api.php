@@ -74,3 +74,7 @@ Route::prefix('conditional')->group(function () {
     Route::put('/users/{user}', [ConditionalUserController::class, 'update']);
     Route::patch('/users/{user}', [ConditionalUserController::class, 'update']);
 });
+
+// Test error handling
+Route::post('/broken-endpoint', [\App\Http\Controllers\BrokenController::class, 'brokenEndpoint']);
+Route::get('/broken-resource', [\App\Http\Controllers\BrokenController::class, 'brokenResource']);
