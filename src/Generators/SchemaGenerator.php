@@ -2,13 +2,18 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Support\TypeInference;
+
 class SchemaGenerator
 {
     protected FileUploadSchemaGenerator $fileUploadSchemaGenerator;
 
-    public function __construct(?FileUploadSchemaGenerator $fileUploadSchemaGenerator = null)
+    protected TypeInference $typeInference;
+
+    public function __construct(?FileUploadSchemaGenerator $fileUploadSchemaGenerator = null, ?TypeInference $typeInference = null)
     {
         $this->fileUploadSchemaGenerator = $fileUploadSchemaGenerator ?? new FileUploadSchemaGenerator;
+        $this->typeInference = $typeInference ?? new TypeInference;
     }
 
     /**
@@ -339,9 +344,207 @@ class SchemaGenerator
     }
 
     /**
-     * Check if rules include required validation
+     * Generate conditional schema using oneOf
      */
-    private function isRequired(array $rules): bool
+    public function generateConditionalSchema(array $conditionalRules, array $parameters): array
+    {
+        if (empty($conditionalRules['rules_sets']) || count($conditionalRules['rules_sets']) <= 1) {
+            // No conditions or single rule set - generate normal schema
+            return $this->generateFromParameters($parameters);
+        }
+
+        $schemas = [];
+
+        foreach ($conditionalRules['rules_sets'] as $ruleSet) {
+            $schema = $this->generateSchemaForRuleSet($ruleSet);
+
+            // Add condition description
+            $conditionDesc = $this->generateConditionDescription($ruleSet['conditions']);
+            if ($conditionDesc) {
+                $schema['description'] = $conditionDesc;
+            }
+
+            $schemas[] = $schema;
+        }
+
+        // Return oneOf schema
+        return [
+            'oneOf' => $schemas,
+            'discriminator' => [
+                'propertyName' => '_condition',
+                'mapping' => $this->generateDiscriminatorMapping($conditionalRules['rules_sets']),
+            ],
+        ];
+    }
+
+    /**
+     * Generate schema for a specific rule set
+     */
+    private function generateSchemaForRuleSet(array $ruleSet): array
+    {
+        $properties = [];
+        $required = [];
+
+        foreach ($ruleSet['rules'] as $field => $rules) {
+            $rulesList = is_string($rules) ? explode('|', $rules) : $rules;
+
+            $property = [
+                'type' => $this->typeInference->inferFromRules($rulesList),
+            ];
+
+            // Add constraints
+            foreach ($rulesList as $rule) {
+                $this->applyRuleConstraints($property, $rule);
+            }
+
+            $properties[$field] = $property;
+
+            if ($this->isFieldRequired($rulesList)) {
+                $required[] = $field;
+            }
+        }
+
+        $schema = [
+            'type' => 'object',
+            'properties' => $properties,
+        ];
+
+        if (! empty($required)) {
+            $schema['required'] = $required;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Generate human-readable condition description
+     */
+    private function generateConditionDescription(array $conditions): string
+    {
+        if (empty($conditions)) {
+            return 'Default validation rules';
+        }
+
+        $parts = [];
+
+        foreach ($conditions as $condition) {
+            switch ($condition['type']) {
+                case 'http_method':
+                    $parts[] = "When HTTP method is {$condition['method']}";
+                    break;
+                case 'user_check':
+                    $parts[] = "When user {$condition['method']}()";
+                    break;
+                case 'request_field':
+                    $field = $condition['field'] ?? 'field';
+                    $parts[] = "When request {$condition['check']} '{$field}'";
+                    break;
+                case 'else':
+                    $parts[] = 'Otherwise';
+                    break;
+                default:
+                    $parts[] = "When {$condition['expression']}";
+            }
+        }
+
+        return implode(' AND ', $parts);
+    }
+
+    /**
+     * Generate discriminator mapping for oneOf schemas
+     */
+    private function generateDiscriminatorMapping(array $ruleSets): array
+    {
+        $mapping = [];
+
+        foreach ($ruleSets as $index => $ruleSet) {
+            $key = $this->generateConditionKey($ruleSet['conditions']);
+            $mapping[$key] = "#/oneOf/{$index}";
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Generate unique key for condition set
+     */
+    private function generateConditionKey(array $conditions): string
+    {
+        if (empty($conditions)) {
+            return 'default';
+        }
+
+        $parts = [];
+        foreach ($conditions as $condition) {
+            if ($condition['type'] === 'http_method' && isset($condition['method'])) {
+                $parts[] = strtolower($condition['method']);
+            } elseif ($condition['type'] === 'else') {
+                $parts[] = 'else';
+            } else {
+                $parts[] = substr(md5($condition['expression']), 0, 8);
+            }
+        }
+
+        return implode('_', $parts);
+    }
+
+    /**
+     * Apply rule constraints to property schema
+     */
+    private function applyRuleConstraints(array &$property, $rule): void
+    {
+        if (! is_string($rule)) {
+            return;
+        }
+
+        $parts = explode(':', $rule, 2);
+        $ruleName = $parts[0];
+        $ruleValue = $parts[1] ?? null;
+
+        switch ($ruleName) {
+            case 'min':
+                if ($property['type'] === 'string') {
+                    $property['minLength'] = (int) $ruleValue;
+                } else {
+                    $property['minimum'] = (int) $ruleValue;
+                }
+                break;
+            case 'max':
+                if ($property['type'] === 'string') {
+                    $property['maxLength'] = (int) $ruleValue;
+                } else {
+                    $property['maximum'] = (int) $ruleValue;
+                }
+                break;
+            case 'email':
+                $property['format'] = 'email';
+                break;
+            case 'url':
+                $property['format'] = 'uri';
+                break;
+            case 'date':
+                $property['format'] = 'date';
+                break;
+            case 'datetime':
+                $property['format'] = 'date-time';
+                break;
+            case 'in':
+                if ($ruleValue) {
+                    $property['enum'] = explode(',', $ruleValue);
+                }
+                break;
+            case 'regex':
+                if ($ruleValue) {
+                    $property['pattern'] = $ruleValue;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Check if field is required based on rules
+     */
+    private function isFieldRequired(array $rules): bool
     {
         foreach ($rules as $rule) {
             $ruleName = is_string($rule) ? explode(':', $rule)[0] : '';
@@ -351,6 +554,14 @@ class SchemaGenerator
         }
 
         return false;
+    }
+
+    /**
+     * Check if rules include required validation
+     */
+    private function isRequired(array $rules): bool
+    {
+        return $this->isFieldRequired($rules);
     }
 
     /**

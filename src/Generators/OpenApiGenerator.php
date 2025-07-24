@@ -167,10 +167,20 @@ class OpenApiGenerator
     protected function generateRequestBody(array $controllerInfo, array $route): ?array
     {
         $parameters = [];
+        $conditionalRules = null;
 
         // FormRequestがある場合
         if (! empty($controllerInfo['formRequest'])) {
-            $parameters = $this->requestAnalyzer->analyze($controllerInfo['formRequest']);
+            // Try to get conditional rules
+            $analysisResult = $this->requestAnalyzer->analyzeWithConditionalRules($controllerInfo['formRequest']);
+
+            if (! empty($analysisResult['conditional_rules']['rules_sets'])) {
+                $conditionalRules = $analysisResult['conditional_rules'];
+                $parameters = $analysisResult['parameters'] ?? [];
+            } else {
+                // Fallback to regular analysis
+                $parameters = $this->requestAnalyzer->analyze($controllerInfo['formRequest']);
+            }
         }
         // インラインバリデーションがある場合
         elseif (! empty($controllerInfo['inlineValidation'])) {
@@ -179,7 +189,7 @@ class OpenApiGenerator
             );
         }
 
-        if (empty($parameters)) {
+        if (empty($parameters) && empty($conditionalRules)) {
             return null;
         }
 
@@ -208,8 +218,20 @@ class OpenApiGenerator
             }
         }
 
-        // Normal JSON schema generation
-        $schema = $this->schemaGenerator->generateFromParameters($parameters);
+        // Generate schema
+        if ($conditionalRules && ! empty($conditionalRules['rules_sets'])) {
+            $schema = $this->schemaGenerator->generateConditionalSchema($conditionalRules, $parameters);
+        } else {
+            $schema = $this->schemaGenerator->generateFromParameters($parameters);
+        }
+
+        // Check for file uploads
+        if (isset($schema['content'])) {
+            return [
+                'required' => true,
+                'content' => $schema['content'],
+            ];
+        }
 
         return [
             'required' => true,
