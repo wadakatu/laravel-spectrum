@@ -23,6 +23,8 @@ package-lock.json
 .php_cs.cache
 phpunit.xml.dist.bak
 phpstan.neon
+deploy_key
+deploy_key.pub
 
 # Local Claude instructions
 CLAUDE.local.md
