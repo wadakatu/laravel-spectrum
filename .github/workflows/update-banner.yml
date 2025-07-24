@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   update-banner:
@@ -16,7 +15,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        ssh-key: ${{ secrets.DEPLOY_KEY }}
     
     - name: Get latest release version
       id: get_version
@@ -36,21 +36,10 @@ jobs:
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Create branch
-        BRANCH_NAME="update-banner-$(date +%s)"
-        git checkout -b $BRANCH_NAME
-        
         # Update banner version
         sed -i '/id="version"/s/v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9]\+\)\?/${{ steps.get_version.outputs.VERSION }}/g' assets/banner.svg
         
         # Commit and push
         git add assets/banner.svg
         git commit -m "chore: update banner version to ${{ steps.get_version.outputs.VERSION }}"
-        git push origin $BRANCH_NAME
-        
-        # Create PR
-        gh pr create \
-          --title "chore: update banner version to ${{ steps.get_version.outputs.VERSION }}" \
-          --body "Automated update of banner version" \
-          --base main \
-          --head $BRANCH_NAME
+        git push origin HEAD:main
