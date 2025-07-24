@@ -99,6 +99,8 @@ Laravel Spectrum analyzes your existing code and automatically generates beautif
 - ✅ Conditional attributes
 - ✅ Nested resources
 - ✅ Collection wrapping
+- ✅ Realistic examples with Faker
+- ✅ Custom example mapping
 
 </td>
 <td width="50%" valign="top">
