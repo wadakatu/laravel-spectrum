@@ -78,3 +78,11 @@ Route::prefix('conditional')->group(function () {
 // Test error handling
 Route::post('/broken-endpoint', [\App\Http\Controllers\BrokenController::class, 'brokenEndpoint']);
 Route::get('/broken-resource', [\App\Http\Controllers\BrokenController::class, 'brokenResource']);
+
+// Response detection test routes
+Route::prefix('test-response')->group(function () {
+    Route::get('/json', [App\Http\Controllers\TestResponseController::class, 'responseJson']);
+    Route::get('/array', [App\Http\Controllers\TestResponseController::class, 'arrayReturn']);
+    Route::get('/model/{id}', [App\Http\Controllers\TestResponseController::class, 'modelReturn']);
+    Route::get('/collection-map', [App\Http\Controllers\TestResponseController::class, 'collectionMap']);
+});
