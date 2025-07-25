@@ -163,6 +163,35 @@ Laravel Spectrum analyzes your existing code and automatically generates beautif
 </tr>
 </table>
 
+### 📤 Export to Popular API Tools (New!)
+
+<table width="100%">
+<tr>
+<td width="50%" valign="top">
+
+**🔗 Postman Integration**
+- ✅ Export to Postman Collection v2.1
+- ✅ Automatic environment generation
+- ✅ Pre-request scripts included
+- ✅ Test scripts for validation
+- ✅ Authentication presets
+- ✅ Request examples with realistic data
+
+</td>
+<td width="50%" valign="top">
+
+**🦊 Insomnia Integration**
+- ✅ Export to Insomnia v4 format
+- ✅ Workspace organization
+- ✅ Environment configuration
+- ✅ Request chaining support
+- ✅ Git sync ready
+- ✅ Folder structure by tags
+
+</td>
+</tr>
+</table>
+
 
 ## 📊 Why Choose Laravel Spectrum?
 
@@ -181,6 +210,9 @@ Laravel Spectrum analyzes your existing code and automatically generates beautif
 | **Live Reload** | ✅ | ❌ | ❌ | ❌ |
 | **Smart Caching** | ✅ | ❌ | ❌ | ❌ |
 | **Pagination Detection** | ✅ | ❌ | ❌ | ✅ |
+| **Postman Export** | ✅ | ❌ | ❌ | ✅ |
+| **Insomnia Export** | ✅ | ❌ | ❌ | ❌ |
+| **Smart Examples** | ✅ | ❌ | ❌ | ⚠️ Basic |
 | **Setup Time** | < 1 min | Hours | Hours | Minutes |
 
 ### 🎯 Perfect For
@@ -208,34 +240,13 @@ composer require wadakatu/laravel-spectrum --dev
 ### 2. Generate Documentation
 
 ```bash
-# Generate OpenAPI documentation
 php artisan spectrum:generate
-
-# Generate in YAML format
-php artisan spectrum:generate --format=yaml
-
-# Custom output path
-php artisan spectrum:generate --output=public/api-impl_docs.json
-
-# 🚀 NEW: Optimized generation for large projects
-php artisan spectrum:generate:optimized
-
-# With parallel processing (uses multiple CPU cores)
-php artisan spectrum:generate:optimized --parallel
-
-# With custom chunk size
-php artisan spectrum:generate:optimized --chunk-size=200
-
-# Incremental generation (only changed routes)
-php artisan spectrum:generate:optimized --incremental
 ```
 
 ### 3. Live Preview (Development)
 
 ```bash
-# Start the watcher with hot reload
 php artisan spectrum:watch
-
 # Visit http://localhost:8080 to see your documentation
 ```
 
@@ -255,137 +266,30 @@ SwaggerUIBundle({
 
 **That's it!** Your comprehensive API documentation is ready in seconds.
 
+For advanced options and commands, see:
+- [CLI Reference](./docs/cli-reference.md) - All available commands and options
+- [Performance Guide](./docs/performance.md) - Optimized generation for large projects
+- [Export Features](./docs/export.md) - Export to Postman/Insomnia
+
 ## 🎯 Advanced Features
 
 ### Conditional Validation Rules Support
 
-Laravel Spectrum now automatically detects and documents conditional validation rules in your FormRequest classes. This feature generates OpenAPI 3.0 `oneOf` schemas to accurately represent different validation scenarios based on HTTP methods or other conditions.
+Laravel Spectrum automatically detects and documents conditional validation rules in your FormRequest classes. This feature generates OpenAPI 3.0 `oneOf` schemas to accurately represent different validation scenarios based on HTTP methods or other conditions.
 
-#### Example FormRequest with Conditional Rules:
-
-```php
-class UserRequest extends FormRequest
-{
-    public function rules(): array
-    {
-        if ($this->isMethod('POST')) {
-            return [
-                'email' => 'required|email|unique:users',
-                'password' => 'required|min:8',
-                'role' => 'required|in:admin,user,moderator',
-            ];
-        }
-
-        if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
-            return [
-                'email' => 'sometimes|email',
-                'current_password' => 'required|string',
-            ];
-        }
-
-        return [
-            'name' => 'required|string',
-        ];
-    }
-}
-```
-
-#### Generated OpenAPI Schema:
-
-```json
-{
-  "requestBody": {
-    "content": {
-      "application/json": {
-        "schema": {
-          "oneOf": [
-            {
-              "type": "object",
-              "properties": {
-                "email": { "type": "string", "format": "email" },
-                "password": { "type": "string", "minLength": 8 },
-                "role": { "type": "string", "enum": ["admin", "user", "moderator"] }
-              },
-              "required": ["email", "password", "role"],
-              "description": "When HTTP method is POST"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "email": { "type": "string", "format": "email" },
-                "current_password": { "type": "string" }
-              },
-              "required": ["current_password"],
-              "description": "When $this->isMethod('PUT') || $this->isMethod('PATCH')"
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-```
-
-#### Supported Patterns:
-
-- **HTTP Method Conditions**: `$this->isMethod('POST')`, `request()->isMethod('GET')`
-- **Nested Conditions**: Multiple levels of if/elseif/else statements
-- **Complex Conditions**: `$this->user() && $this->user()->isAdmin()`
-- **Variable Assignments**: Rules stored in variables and merged with `array_merge()`
-- **Rule Class Methods**: `Rule::in()`, `Rule::unique()`, `Rule::requiredIf()`
-- **Early Returns**: Different rule sets returned based on conditions
-
-This feature ensures your API documentation accurately reflects the actual validation behavior of your application, making it easier for API consumers to understand exactly what data is required for each endpoint under different circumstances.
+See the [Conditional Validation Documentation](./docs/conditional-validation.md) for detailed examples and supported patterns.
 
 ### Performance Optimization for Large Projects
 
-Laravel Spectrum now includes advanced performance optimizations designed for large-scale projects with hundreds or thousands of routes. The new `spectrum:generate:optimized` command provides significant performance improvements.
+Laravel Spectrum includes advanced performance optimizations designed for large-scale projects with hundreds or thousands of routes. The `spectrum:generate:optimized` command provides up to 90% faster generation with 75% less memory usage.
 
-#### Key Features:
+See the [Performance Optimization Guide](./docs/performance.md) for detailed usage and configuration options.
 
-- **Chunk Processing**: Processes routes in configurable chunks to minimize memory usage
-- **Parallel Processing**: Utilizes multiple CPU cores for faster generation (requires PCNTL extension)
-- **Incremental Generation**: Only regenerates documentation for changed routes
-- **Memory Management**: Monitors and optimizes memory usage with automatic garbage collection
-- **Progress Tracking**: Real-time progress bars and performance statistics
+### Export to API Testing Tools
 
-#### Example Usage:
+Laravel Spectrum can export your API documentation to popular API testing tools like Postman and Insomnia. This feature automatically converts your OpenAPI 3.0 documentation into tool-specific formats with authentication, examples, and test scripts.
 
-```bash
-# Basic optimized generation
-php artisan spectrum:generate:optimized
-
-# Enable all optimizations
-php artisan spectrum:generate:optimized --parallel --incremental
-
-# Configure memory and workers
-php artisan spectrum:generate:optimized --memory-limit=1G --workers=8
-```
-
-#### Performance Improvements:
-
-| Project Size | Standard Command | Optimized Command | Improvement |
-|-------------|------------------|-------------------|-------------|
-| 100 routes  | 5 seconds        | 2 seconds         | 60% faster  |
-| 500 routes  | 30 seconds       | 8 seconds         | 73% faster  |
-| 1000 routes | 2 minutes        | 15 seconds        | 87% faster  |
-| 2000 routes | 10 minutes       | 45 seconds        | 93% faster  |
-
-#### Configuration:
-
-Add these settings to your `.env` file to customize performance options:
-
-```env
-# Performance settings
-SPECTRUM_PERFORMANCE_ENABLED=true
-SPECTRUM_PARALLEL_PROCESSING=true
-SPECTRUM_MAX_WORKERS=8
-SPECTRUM_CHUNK_SIZE=100
-SPECTRUM_MEMORY_LIMIT=512M
-
-# Incremental generation
-SPECTRUM_INCREMENTAL_ENABLED=true
-```
+See the [Export Features Documentation](./docs/export.md) for detailed usage and configuration options.
 
 
 ## 📚 Documentation
@@ -395,6 +299,7 @@ SPECTRUM_INCREMENTAL_ENABLED=true
 - **[Advanced Features](./docs/advanced-features.md)** - Advanced functionality
 - **[Conditional Validation](./docs/conditional-validation.md)** - Conditional validation rules documentation
 - **[Performance Optimization](./docs/performance.md)** - Performance optimization guide
+- **[Export Features](./docs/export.md)** - Postman & Insomnia export guide
 - **[Troubleshooting](./docs/troubleshooting.md)** - Common issues and solutions
 
 

@@ -587,4 +587,62 @@ return [
                 : getcwd().'/storage/spectrum/profiling',
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Export Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure export functionality for Postman and Insomnia collections.
+    |
+    */
+    'export' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Export Settings
+        |--------------------------------------------------------------------------
+        */
+        'postman' => [
+            'include_examples' => true,
+            'include_tests' => true,
+            'include_pre_request_scripts' => true,
+            'group_by_tags' => true,
+        ],
+
+        'insomnia' => [
+            'include_examples' => true,
+            'include_environments' => true,
+            'default_timeout' => 30000, // 30 seconds
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Environment Variables
+        |--------------------------------------------------------------------------
+        |
+        | Custom environment variables to include in exported collections
+        |
+        */
+        'environment_variables' => [
+            // 'custom_header' => 'X-Custom-Header',
+            // 'api_version' => 'v1',
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authentication Presets
+        |--------------------------------------------------------------------------
+        */
+        'auth_presets' => [
+            'bearer' => [
+                'type' => 'bearer',
+                'token_placeholder' => '{{bearer_token}}',
+            ],
+            'api_key' => [
+                'type' => 'apikey',
+                'key_placeholder' => '{{api_key}}',
+                'header' => 'X-API-Key',
+            ],
+        ],
+    ],
 ];

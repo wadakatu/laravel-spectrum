@@ -16,9 +16,16 @@ use LaravelSpectrum\Analyzers\ResponseAnalyzer;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\CacheCommand;
+use LaravelSpectrum\Console\Commands\ExportInsomniaCommand;
+use LaravelSpectrum\Console\Commands\ExportPostmanCommand;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
+use LaravelSpectrum\Exporters\InsomniaExporter;
+use LaravelSpectrum\Exporters\PostmanExporter;
+use LaravelSpectrum\Formatters\InsomniaFormatter;
+use LaravelSpectrum\Formatters\PostmanFormatter;
+use LaravelSpectrum\Formatters\RequestExampleFormatter;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
@@ -79,6 +86,13 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(FileWatcher::class);
         $this->app->singleton(LiveReloadServer::class);
 
+        // Export services
+        $this->app->singleton(PostmanExporter::class);
+        $this->app->singleton(InsomniaExporter::class);
+        $this->app->singleton(PostmanFormatter::class);
+        $this->app->singleton(InsomniaFormatter::class);
+        $this->app->singleton(RequestExampleFormatter::class);
+
         // コマンドの登録
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -86,6 +100,8 @@ class SpectrumServiceProvider extends ServiceProvider
                 CacheCommand::class,
                 WatchCommand::class,
                 OptimizedGenerateCommand::class,
+                ExportPostmanCommand::class,
+                ExportInsomniaCommand::class,
             ]);
         }
     }
