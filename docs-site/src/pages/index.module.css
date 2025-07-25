@@ -1,0 +1,186 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 8rem 0 6rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
+}
+
+.heroBanner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 20% 80%, rgba(255, 0, 110, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.heroGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255, 45, 32, 0.1) 0%, transparent 70%);
+  filter: blur(80px);
+  z-index: 0;
+}
+
+.glowText {
+  position: relative;
+  z-index: 1;
+  font-size: 5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #FF2D20 0%, #FF006E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(255, 45, 32, 0.5);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1);
+    text-shadow: 0 0 40px rgba(255, 45, 32, 0.5);
+  }
+  50% { 
+    transform: scale(1.02);
+    text-shadow: 0 0 60px rgba(255, 45, 32, 0.8);
+  }
+}
+
+.heroSubtitle {
+  position: relative;
+  z-index: 1;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 1.5rem auto 3rem;
+  max-width: 800px;
+  line-height: 1.6;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 4rem 1rem 3rem;
+  }
+  
+  .glowText {
+    font-size: 3rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 3rem 0;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+
+.heroCode {
+  margin: 4rem auto;
+  max-width: 600px;
+  position: relative;
+  z-index: 1;
+}
+
+.codeBlock {
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid rgba(255, 45, 32, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
+              0 0 60px rgba(255, 45, 32, 0.1);
+  transition: all 0.3s ease;
+  overflow-x: auto;
+}
+
+.codeBlock:hover {
+  border-color: rgba(255, 45, 32, 0.4);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7),
+              0 0 80px rgba(255, 45, 32, 0.2);
+  transform: translateY(-2px);
+}
+
+.codeBlock code {
+  color: #00FF88;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.feature {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.5rem 1rem;
+  background: rgba(255, 45, 32, 0.1);
+  border: 1px solid rgba(255, 45, 32, 0.3);
+  border-radius: 2rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.feature:hover {
+  background: rgba(255, 45, 32, 0.2);
+  border-color: rgba(255, 45, 32, 0.5);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 20px rgba(255, 45, 32, 0.3);
+}
+
+@media (max-width: 640px) {
+  .buttons {
+    flex-direction: column;
+    width: 100%;
+    padding: 0 1rem;
+  }
+  
+  .buttons > * {
+    width: 100%;
+    margin: 0.5rem 0 !important;
+  }
+  
+  .features {
+    gap: 1rem;
+  }
+  
+  .feature {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
