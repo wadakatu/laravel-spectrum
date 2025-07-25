@@ -1,123 +1,102 @@
-# Laravel Spectrum ドキュメント
+# Laravel Spectrum
 
-Laravel Spectrumの完全なドキュメントへようこそ。このディレクトリには、Laravel Spectrumを最大限に活用するための詳細なガイドが含まれています。
+<p align="center">
+  <img src="../../assets/banner.svg" alt="Laravel Spectrum Banner" width="100%">
+</p>
 
-## 📚 ドキュメント構成
+<p align="center">
+  <a href="https://github.com/wadakatu/laravel-spectrum/actions"><img src="https://github.com/wadakatu/laravel-spectrum/workflows/Tests/badge.svg" alt="Tests"></a>
+  <a href="https://codecov.io/gh/wadakatu/laravel-spectrum"><img src="https://codecov.io/gh/wadakatu/laravel-spectrum/branch/main/graph/badge.svg" alt="Code Coverage"></a>
+  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/v" alt="Latest Stable Version"></a>
+  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/downloads" alt="Total Downloads"></a>
+  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/license" alt="License"></a>
+</p>
 
-### 🚀 はじめに
+> 🎯 **Zero-annotation API documentation generator for Laravel & Lumen**
+>
+> Laravel Spectrumは、既存のコードを解析して自動的にOpenAPI 3.0ドキュメントを生成します。アノテーション不要、設定最小限、すぐに使えます。
 
-- **[インストールと設定](./installation.md)**  
-  Laravel Spectrumのインストール方法と初期設定について説明します。
+## ✨ なぜLaravel Spectrum？
 
-- **[基本的な使い方](./basic-usage.md)**  
-  基本的なコマンドと一般的な使用例を紹介します。
+**ドキュメントを書くのではなく、生成する。**
 
-- **[クイックスタート](./quickstart.md)**  
-  5分でLaravel Spectrumを使い始めるためのガイドです。
+- 🚀 **ゼロ設定** - インストールしてコマンドを実行するだけ
+- 🧠 **スマート検出** - FormRequest、バリデーション、APIリソースを自動解析
+- ⚡ **リアルタイム更新** - コード変更を即座にドキュメントに反映
+- 📤 **エクスポート機能** - PostmanやInsomniaへの直接エクスポート
+- 🎭 **モックサーバー** - OpenAPIドキュメントから自動的にモックAPIを起動
+- 🎯 **本番環境対応** - 大規模プロジェクトでも高速動作
 
-### 🎯 機能ガイド
+## 🚀 クイックスタート
 
-- **[機能一覧](./features.md)**  
-  Laravel Spectrumのすべての機能を詳しく説明します。
+### 1. インストール
 
-- **[バリデーション検出](./validation-detection.md)**  
-  FormRequestと条件付きバリデーションの検出方法について。
+```bash
+composer require wadakatu/laravel-spectrum --dev
+```
 
-- **[レスポンス解析](./response-analysis.md)**  
-  APIリソース、Fractalトランスフォーマー、ページネーションの対応。
+### 2. ドキュメント生成
 
-- **[認証設定](./authentication.md)**  
-  JWT、Sanctum、OAuth2などの認証方式の設定方法。
+```bash
+php artisan spectrum:generate
+```
 
-- **[モックサーバー](./mock-server.md)**  
-  OpenAPIドキュメントから自動的にモックAPIサーバーを起動する方法。
+### 3. リアルタイムプレビュー（開発環境）
 
-### ⚡ 高度な使い方
+```bash
+php artisan spectrum:watch
+# http://localhost:8080 でドキュメントを確認
+```
 
-- **[パフォーマンス最適化](./performance.md)**  
-  大規模プロジェクトでの最適化テクニックと並列処理。
+### 4. ブラウザで表示
 
-- **[エクスポート機能](./export.md)**  
-  Postman、Insomniaへのエクスポート方法と設定。
+```html
+<!-- Bladeテンプレートに追加 -->
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+<script>
+SwaggerUIBundle({
+    url: "/storage/app/spectrum/openapi.json",
+    dom_id: '#swagger-ui',
+})
+</script>
+```
 
-- **[カスタマイズ](./customization.md)**  
-  Laravel Spectrumの拡張とカスタマイズ方法。
+### 5. モックサーバーを起動
 
-- **[CI/CD統合](./ci-cd-integration.md)**  
-  継続的インテグレーションへの組み込み方法。
+```bash
+php artisan spectrum:mock
+# モックAPIサーバーが http://localhost:8081 で起動
+```
 
-### 📖 リファレンス
+**これだけです！** 数秒で包括的なAPIドキュメントが完成します。
 
-- **[CLIコマンド](./cli-reference.md)**  
-  利用可能なすべてのArtisanコマンドとオプション。
+## 📚 ドキュメント
 
-- **[設定リファレンス](./config-reference.md)**  
-  `config/spectrum.php`の全設定項目の詳細。
+詳細な使い方や高度な機能については、[日本語ドキュメント](./index.md)をご覧ください。
 
-- **[APIリファレンス](./api-reference.md)**  
-  プログラマティックな使用方法とフック。
+ドキュメントでは、以下のような内容をカバーしています：
 
-### 🔧 問題解決
+- 🔧 **基本ガイド** - インストール、設定、基本的な使い方
+- 🎯 **機能ガイド** - バリデーション検出、レスポンス解析、認証、モックサーバー
+- ⚡ **高度な使い方** - パフォーマンス最適化、エクスポート機能、CI/CD統合
+- 📖 **リファレンス** - CLIコマンド、設定項目、トラブルシューティング
+- 🤝 **その他** - 他ツールとの比較、貢献ガイド
 
-- **[トラブルシューティング](troubleshooting.md)**  
-  よくある問題とその解決方法。
+## 🤝 貢献
 
-- **[FAQ](./faq.md)**  
-  よくある質問と回答集。
+バグ報告、機能リクエスト、プルリクエストを歓迎します！詳しくは[貢献ガイド](./contributing.md)をご覧ください。
 
-- **[既知の問題](./known-issues.md)**  
-  現在確認されている問題と回避策。
+## 📄 ライセンス
 
-### 📚 その他
-
-- **[他ツールとの比較](./comparison.md)**  
-  Swagger-PHP、Scribe、L5-Swaggerなどとの機能比較。
-
-- **[移行ガイド](./migration-guide.md)**  
-  他のドキュメント生成ツールからの移行方法。
-
-- **[貢献ガイド](./contributing.md)**  
-  プロジェクトへの貢献方法とガイドライン。
-
-## 🎯 用途別ガイド
-
-### 新規プロジェクトの場合
-
-1. [インストールと設定](./installation.md)
-2. [基本的な使い方](./basic-usage.md)
-3. [機能一覧](./features.md)
-
-### 既存プロジェクトへの導入
-
-1. [インストールと設定](./installation.md)
-2. [移行ガイド](./migration-guide.md)
-3. [トラブルシューティング](./troubleshooting.md)
-
-### 大規模プロジェクト
-
-1. [パフォーマンス最適化](./performance.md)
-2. [CI/CD統合](./ci-cd-integration.md)
-3. [カスタマイズ](./customization.md)
-
-### APIテストツールとの連携
-
-1. [エクスポート機能](./export.md)
-2. [認証設定](./authentication.md)
-3. [CI/CD統合](./ci-cd-integration.md)
-
-## 💡 ヒント
-
-- 🔍 特定のトピックを探している場合は、各ドキュメントの目次を確認してください
-- 📝 実際のコード例は各ドキュメント内に豊富に含まれています
-- 🚀 クイックスタートから始めて、必要に応じて詳細なドキュメントを参照することをお勧めします
-- 💬 質問や提案がある場合は、[GitHub Issues](https://github.com/wadakatu/laravel-spectrum/issues)でお知らせください
-
-## 🔄 更新情報
-
-このドキュメントは定期的に更新されています。最新の情報は[GitHubリポジトリ](https://github.com/wadakatu/laravel-spectrum)で確認してください。
+Laravel SpectrumはMITライセンスのオープンソースソフトウェアです。詳細は[LICENSE](../../LICENSE)ファイルをご覧ください。
 
 ---
 
 <p align="center">
-  <strong>Happy Documenting! 🎉</strong>
+  Made with ❤️ by <a href="https://github.com/wadakatu">Wadakatu</a>
+  <br><br>
+  <a href="https://github.com/wadakatu/laravel-spectrum">
+    <img src="https://img.shields.io/github/stars/wadakatu/laravel-spectrum?style=social" alt="Star on GitHub">
+  </a>
 </p>
