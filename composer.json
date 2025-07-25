@@ -28,13 +28,13 @@
     },
     "require": {
         "php": "^8.1",
-        "illuminate/support": "^10.0|^11.0|^12.0",
-        "illuminate/routing": "^10.0|^11.0|^12.0",
         "illuminate/console": "^10.0|^11.0|^12.0",
+        "illuminate/routing": "^10.0|^11.0|^12.0",
+        "illuminate/support": "^10.0|^11.0|^12.0",
         "nikic/php-parser": "^5.5",
+        "spatie/fork": "^1.2",
         "symfony/finder": "^6.0|^7.0",
-        "workerman/workerman": "^4.1|^5.0",
-        "spatie/fork": "^1.2"
+        "workerman/workerman": "^5.1"
     },
     "require-dev": {
         "orchestra/testbench": "^8.0|^9.0|^10.0",
