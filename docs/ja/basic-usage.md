@@ -257,5 +257,5 @@ Route::prefix('api/v1')->group(function () {
 ## 🚀 次のステップ
 
 - [機能一覧](./features.md) - すべての機能の詳細
-- [高度な使い方](./advanced-usage.md) - カスタマイズとテクニック
+- [高度な使い方](./advanced-features.md) - カスタマイズとテクニック
 - [パフォーマンス最適化](./performance.md) - 大規模プロジェクト向け

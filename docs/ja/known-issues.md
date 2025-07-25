@@ -376,4 +376,3 @@ public function attributes()
 
 - [トラブルシューティング](./troubleshooting.md) - 一般的な問題の解決
 - [FAQ](./faq.md) - よくある質問
-- [変更履歴](./changelog.md) - バージョン履歴

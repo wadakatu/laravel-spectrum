@@ -388,7 +388,7 @@ php artisan spectrum:export:postman --include-tests
 
 **A:** 以下の方法でサポートを受けられます：
 
-1. [ドキュメント](./README.md)を確認
+1. [ドキュメント](index.md)を確認
 2. [GitHub Issues](https://github.com/wadakatu/laravel-spectrum/issues)で質問
 3. [GitHub Discussions](https://github.com/wadakatu/laravel-spectrum/discussions)でディスカッション
 
