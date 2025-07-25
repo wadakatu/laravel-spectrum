@@ -645,4 +645,69 @@ return [
             ],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mock Server Settings
+    |--------------------------------------------------------------------------
+    */
+    'mock_server' => [
+        'default_host' => '127.0.0.1',
+        'default_port' => 8081,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response Configuration
+        |--------------------------------------------------------------------------
+        */
+        'response' => [
+            // デフォルトの遅延（ミリ秒）
+            'delay' => env('SPECTRUM_MOCK_DELAY', 0),
+
+            // レスポンスシナリオ
+            'scenarios' => [
+                'success' => 'Successful response',
+                'error' => 'Server error (500)',
+                'not_found' => 'Resource not found (404)',
+                'forbidden' => 'Access forbidden (403)',
+                'validation_error' => 'Validation failed (422)',
+            ],
+
+            // ランダムエラーの確率（0-100）
+            'random_error_rate' => env('SPECTRUM_MOCK_ERROR_RATE', 0),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authentication Simulation
+        |--------------------------------------------------------------------------
+        */
+        'auth' => [
+            // モック認証トークン
+            'valid_tokens' => [
+                'test-token-123',
+                'Bearer test-jwt-token',
+            ],
+
+            // 認証不要のパス
+            'public_paths' => [
+                'POST /api/auth/login',
+                'POST /api/auth/register',
+                'GET /api/health',
+            ],
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Data Generation
+        |--------------------------------------------------------------------------
+        */
+        'faker' => [
+            // Fakerのロケール
+            'locale' => config('app.faker_locale', 'en_US'),
+
+            // シード値（再現可能なデータ生成）
+            'seed' => env('SPECTRUM_MOCK_SEED', null),
+        ],
+    ],
 ];

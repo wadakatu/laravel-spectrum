@@ -18,6 +18,7 @@ use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\CacheCommand;
 use LaravelSpectrum\Console\Commands\ExportInsomniaCommand;
 use LaravelSpectrum\Console\Commands\ExportPostmanCommand;
+use LaravelSpectrum\Console\Commands\MockServerCommand;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
@@ -102,6 +103,7 @@ class SpectrumServiceProvider extends ServiceProvider
                 OptimizedGenerateCommand::class,
                 ExportPostmanCommand::class,
                 ExportInsomniaCommand::class,
+                MockServerCommand::class,
             ]);
         }
     }
