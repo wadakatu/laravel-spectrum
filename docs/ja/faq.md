@@ -1,3 +1,9 @@
+---
+id: faq
+title: よくある質問（FAQ）
+sidebar_label: よくある質問（FAQ）
+---
+
 # よくある質問（FAQ）
 
 Laravel Spectrumに関するよくある質問と回答をまとめました。

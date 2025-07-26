@@ -1,3 +1,9 @@
+---
+id: api-resources
+title: APIリソースガイド
+sidebar_label: APIリソースガイド
+---
+
 # APIリソースガイド
 
 Laravel Spectrumは、Laravel API Resourcesを完全に解析し、レスポンススキーマを自動生成します。

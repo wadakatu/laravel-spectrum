@@ -1,3 +1,9 @@
+---
+id: response-analysis
+title: レスポンス解析ガイド
+sidebar_label: レスポンス解析ガイド
+---
+
 # レスポンス解析ガイド
 
 Laravel Spectrumは、APIリソース、Fractalトランスフォーマー、ページネーション、そして様々なレスポンスパターンを自動的に解析してドキュメント化します。

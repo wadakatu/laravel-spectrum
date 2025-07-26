@@ -1,3 +1,9 @@
+---
+id: export
+title: エクスポート機能ガイド
+sidebar_label: エクスポート機能ガイド
+---
+
 # エクスポート機能ガイド
 
 Laravel SpectrumはAPIドキュメントを様々なフォーマットでエクスポートできます。PostmanやInsomniaなどの人気のAPIテストツールに直接インポート可能な形式で出力します。

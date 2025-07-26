@@ -1,3 +1,9 @@
+---
+id: pagination
+title: ページネーションガイド
+sidebar_label: ページネーションガイド
+---
+
 # ページネーションガイド
 
 Laravel Spectrumは、LaravelのページネーションをOpenAPIドキュメントに自動的に反映し、適切なスキーマを生成します。

@@ -1,3 +1,9 @@
+---
+id: plugin-development
+title: プラグイン開発ガイド
+sidebar_label: プラグイン開発ガイド
+---
+
 # プラグイン開発ガイド
 
 Laravel Spectrumのプラグインシステムを使用して、独自の解析機能やカスタマイズを追加できます。

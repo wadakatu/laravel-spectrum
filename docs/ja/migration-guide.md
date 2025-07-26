@@ -1,3 +1,9 @@
+---
+id: migration-guide
+title: 移行ガイド
+sidebar_label: 移行ガイド
+---
+
 # 移行ガイド
 
 他のAPIドキュメント生成ツールからLaravel Spectrumへの移行方法を説明します。
