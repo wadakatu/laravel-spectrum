@@ -7,18 +7,49 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Laravel Spectrum',
   tagline: 'Zero-annotation API documentation generator for Laravel & Lumen',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
+  markdown: {
+    parseFrontMatter: async (params) => {
+      // Reuse the default parser
+      const result = await params.defaultParseFrontMatter(params);
+      
+      // Only process files without any frontmatter
+      const hasFrontmatter = Object.keys(result.frontMatter).length > 0;
+      
+      if (!hasFrontmatter) {
+        // Generate ID from file path
+        const pathSegments = params.filePath.split('/');
+        const fileName = pathSegments[pathSegments.length - 1];
+        const id = fileName.replace(/\.mdx?$/, '');
+        result.frontMatter.id = id;
+        
+        // Try to extract title from first heading
+        if (result.content) {
+          const match = result.content.match(/^#\s+(.+)$/m);
+          if (match) {
+            result.frontMatter.title = match[1];
+          }
+        }
+        
+        // Generate sidebar_label from title or id
+        result.frontMatter.sidebar_label = result.frontMatter.title || result.frontMatter.id;
+      }
+      
+      return result;
+    },
+  },
+
   // Set the production url of your site here
   url: 'https://wadakatu.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/laravel-spectrum/',
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -36,20 +67,17 @@ const config: Config = {
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'ja'],
+    path: 'i18n',
     localeConfigs: {
       en: {
         label: 'English',
         direction: 'ltr',
         htmlLang: 'en-US',
-        calendar: 'gregory',
-        path: 'en',
       },
       ja: {
         label: '日本語',
         direction: 'ltr',
         htmlLang: 'ja-JP',
-        calendar: 'gregory',
-        path: 'ja',
       },
     },
   },
@@ -60,11 +88,15 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          routeBasePath: '/',
+          routeBasePath: 'docs',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/wadakatu/laravel-spectrum/tree/main/docs-site/',
+          editUrl: ({locale, docPath}) => {
+            if (locale === 'ja') {
+              return `https://github.com/wadakatu/laravel-spectrum/tree/main/docs-site/i18n/ja/docusaurus-plugin-content-docs/current/${docPath}`;
+            }
+            return `https://github.com/wadakatu/laravel-spectrum/tree/main/docs-site/docs/${docPath}`;
+          },
           remarkPlugins: [],
           rehypePlugins: [],
           showLastUpdateTime: true,
@@ -80,7 +112,7 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card
-    image: 'img/laravel-spectrum-social-card.jpg',
+    image: 'img/laravel-spectrum-social-card.png',
     colorMode: {
       defaultMode: 'dark',
       disableSwitch: false,
@@ -132,19 +164,19 @@ const config: Config = {
           items: [
             {
               label: 'Quick Start',
-              to: '/quickstart',
+              to: '/docs/quickstart',
             },
             {
               label: 'Installation',
-              to: '/installation',
+              to: '/docs/installation',
             },
             {
               label: 'Features',
-              to: '/features',
+              to: '/docs/features',
             },
             {
               label: 'API Reference',
-              to: '/api-reference',
+              to: '/docs/api-reference',
             },
           ],
         },
@@ -174,7 +206,7 @@ const config: Config = {
             },
             {
               label: 'Contributing',
-              to: '/contributing',
+              to: '/docs/contributing',
             },
             {
               label: 'License',
