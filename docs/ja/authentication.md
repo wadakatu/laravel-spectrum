@@ -1,3 +1,9 @@
+---
+id: authentication
+title: 認証設定ガイド
+sidebar_label: 認証設定ガイド
+---
+
 # 認証設定ガイド
 
 Laravel Spectrumは、様々な認証方式を自動的に検出し、適切にドキュメント化します。JWT、Laravel Sanctum、OAuth2、API Key認証など、一般的な認証パターンをサポートしています。

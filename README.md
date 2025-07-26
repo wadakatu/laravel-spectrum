@@ -73,7 +73,9 @@ php artisan spectrum:mock
 
 ## 📚 Documentation
 
-For detailed usage and advanced features, see the [Documentation](./index.md).
+📖 **[View Full Documentation](https://wadakatu.github.io/laravel-spectrum/)**
+
+For detailed usage and advanced features, visit our comprehensive documentation site.
 
 The documentation covers:
 

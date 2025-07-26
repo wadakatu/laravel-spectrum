@@ -1,3 +1,9 @@
+---
+id: known-issues
+title: 既知の問題
+sidebar_label: 既知の問題
+---
+
 # 既知の問題
 
 Laravel Spectrumの既知の問題と回避策をまとめています。これらの問題は将来のバージョンで修正される予定です。

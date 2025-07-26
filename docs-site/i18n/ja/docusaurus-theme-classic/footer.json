@@ -1,0 +1,58 @@
+{
+  "link.title.Documentation": {
+    "message": "ドキュメント",
+    "description": "The title of the footer links column with title=Documentation in the footer"
+  },
+  "link.title.Community": {
+    "message": "コミュニティ",
+    "description": "The title of the footer links column with title=Community in the footer"
+  },
+  "link.title.More": {
+    "message": "その他",
+    "description": "The title of the footer links column with title=More in the footer"
+  },
+  "link.item.label.Quick Start": {
+    "message": "クイックスタート",
+    "description": "The label of footer link with label=Quick Start linking to /docs/quickstart"
+  },
+  "link.item.label.Installation": {
+    "message": "インストール",
+    "description": "The label of footer link with label=Installation linking to /docs/installation"
+  },
+  "link.item.label.Features": {
+    "message": "機能",
+    "description": "The label of footer link with label=Features linking to /docs/features"
+  },
+  "link.item.label.API Reference": {
+    "message": "APIリファレンス",
+    "description": "The label of footer link with label=API Reference linking to /docs/api-reference"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/wadakatu/laravel-spectrum"
+  },
+  "link.item.label.Issues": {
+    "message": "イシュー",
+    "description": "The label of footer link with label=Issues linking to https://github.com/wadakatu/laravel-spectrum/issues"
+  },
+  "link.item.label.Discussions": {
+    "message": "ディスカッション",
+    "description": "The label of footer link with label=Discussions linking to https://github.com/wadakatu/laravel-spectrum/discussions"
+  },
+  "link.item.label.Changelog": {
+    "message": "変更履歴",
+    "description": "The label of footer link with label=Changelog linking to https://github.com/wadakatu/laravel-spectrum/releases"
+  },
+  "link.item.label.Contributing": {
+    "message": "貢献",
+    "description": "The label of footer link with label=Contributing linking to /docs/contributing"
+  },
+  "link.item.label.License": {
+    "message": "ライセンス",
+    "description": "The label of footer link with label=License linking to https://github.com/wadakatu/laravel-spectrum/blob/main/LICENSE"
+  },
+  "copyright": {
+    "message": "Copyright © 2025 Laravel Spectrum. Made with ❤️ by <a href=\"https://github.com/wadakatu\">Wadakatu</a>",
+    "description": "The footer copyright"
+  }
+}

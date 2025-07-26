@@ -1,3 +1,9 @@
+---
+id: comparison
+title: 他ツールとの比較
+sidebar_label: 他ツールとの比較
+---
+
 # 他ツールとの比較
 
 Laravel SpectrumとLaravel向けの他のAPIドキュメント生成ツールとの詳細な比較です。

@@ -1,3 +1,9 @@
+---
+id: api-reference
+title: APIリファレンス
+sidebar_label: APIリファレンス
+---
+
 # APIリファレンス
 
 Laravel Spectrumのプログラマティックな使用方法とAPIリファレンスです。

@@ -1,3 +1,9 @@
+---
+id: basic-usage
+title: 基本的な使い方
+sidebar_label: 基本的な使い方
+---
+
 # 基本的な使い方
 
 このガイドでは、Laravel Spectrumの基本的な使い方を説明します。

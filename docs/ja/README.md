@@ -1,3 +1,9 @@
+---
+id: README
+title: Laravel Spectrum
+sidebar_label: Laravel Spectrum
+---
+
 # Laravel Spectrum
 
 <p align="center">

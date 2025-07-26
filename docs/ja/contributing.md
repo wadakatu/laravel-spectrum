@@ -1,3 +1,9 @@
+---
+id: contributing
+title: 貢献ガイド
+sidebar_label: 貢献ガイド
+---
+
 # 貢献ガイド
 
 Laravel Spectrumへの貢献を歓迎します！このガイドでは、プロジェクトへの貢献方法について説明します。
@@ -368,7 +374,7 @@ laravel-spectrum/
 
 ## 🏆 コントリビューター
 
-貢献者は[README.md](../README.md)に記載されます。
+貢献者はプロジェクトのREADME.mdに記載されます。
 
 ## 📄 ライセンス
 

@@ -1,3 +1,9 @@
+---
+id: quickstart
+title: クイックスタートガイド
+sidebar_label: クイックスタートガイド
+---
+
 # クイックスタートガイド
 
 5分でLaravel Spectrumを使い始めるためのガイドです。

@@ -1,3 +1,9 @@
+---
+id: config-reference
+title: 設定リファレンス
+sidebar_label: 設定リファレンス
+---
+
 # 設定リファレンス
 
 `config/spectrum.php`ファイルの全設定項目の詳細なリファレンスです。

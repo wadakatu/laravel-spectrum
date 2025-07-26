@@ -5,7 +5,7 @@
 /.phpunit.result.cache
 /demo-app/laravel-app/workerman.artisan.pid
 composer.lock
-package-lock.json
+/package-lock.json
 .DS_Store
 .idea/
 .vscode/
