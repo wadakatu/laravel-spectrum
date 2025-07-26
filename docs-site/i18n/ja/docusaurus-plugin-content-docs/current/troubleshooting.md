@@ -1,3 +1,9 @@
+---
+id: troubleshooting
+title: トラブルシューティングガイド
+sidebar_label: トラブルシューティングガイド
+---
+
 # トラブルシューティングガイド
 
 Laravel Spectrumを使用する際によくある問題とその解決方法を説明します。

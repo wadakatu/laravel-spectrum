@@ -1,3 +1,9 @@
+---
+id: ci-cd-integration
+title: CI/CD統合ガイド
+sidebar_label: CI/CD統合ガイド
+---
+
 # CI/CD統合ガイド
 
 Laravel Spectrumを継続的インテグレーション/デプロイメント（CI/CD）パイプラインに統合する方法を説明します。

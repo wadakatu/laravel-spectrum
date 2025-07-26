@@ -1,3 +1,9 @@
+---
+id: index
+title: Laravel Spectrum ドキュメント
+sidebar_label: ホーム
+---
+
 # Laravel Spectrum ドキュメント
 
 Laravel Spectrumの完全なドキュメントへようこそ。このディレクトリには、Laravel Spectrumを最大限に活用するための詳細なガイドが含まれています。

@@ -1,3 +1,9 @@
+---
+id: installation
+title: インストールと設定
+sidebar_label: インストールと設定
+---
+
 # インストールと設定
 
 このガイドでは、Laravel Spectrumのインストールから初期設定までを詳しく説明します。

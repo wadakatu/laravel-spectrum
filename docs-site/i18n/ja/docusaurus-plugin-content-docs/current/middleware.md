@@ -1,3 +1,9 @@
+---
+id: middleware
+title: ミドルウェアガイド
+sidebar_label: ミドルウェアガイド
+---
+
 # ミドルウェアガイド
 
 Laravel Spectrumは、APIルートに適用されているミドルウェアを自動的に検出し、認証要件やその他の制約をOpenAPIドキュメントに反映します。

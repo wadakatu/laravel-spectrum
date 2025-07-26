@@ -1,0 +1,22 @@
+{
+  "title": {
+    "message": "Laravel Spectrum",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "Laravel Spectrum Logo",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "Docs",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Quick Start": {
+    "message": "Quick Start",
+    "description": "Navbar item with label Quick Start"
+  },
+  "item.label.API": {
+    "message": "API",
+    "description": "Navbar item with label API"
+  }
+}

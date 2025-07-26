@@ -1,3 +1,9 @@
+---
+id: error-handling
+title: エラーハンドリングガイド
+sidebar_label: エラーハンドリングガイド
+---
+
 # エラーハンドリングガイド
 
 Laravel Spectrumは、APIのエラーレスポンスを自動的に検出し、OpenAPIドキュメントに含めます。

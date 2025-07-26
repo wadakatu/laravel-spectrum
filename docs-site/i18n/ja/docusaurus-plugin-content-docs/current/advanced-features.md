@@ -1,3 +1,9 @@
+---
+id: advanced-features
+title: 高度な機能ガイド
+sidebar_label: 高度な機能ガイド
+---
+
 # 高度な機能ガイド
 
 Laravel Spectrumの高度な機能と使い方について説明します。

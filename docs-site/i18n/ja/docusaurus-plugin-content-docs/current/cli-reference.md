@@ -1,3 +1,9 @@
+---
+id: cli-reference
+title: CLIコマンドリファレンス
+sidebar_label: CLIコマンドリファレンス
+---
+
 # CLIコマンドリファレンス
 
 Laravel Spectrumで利用可能なすべてのArtisanコマンドとオプションの詳細なリファレンスです。

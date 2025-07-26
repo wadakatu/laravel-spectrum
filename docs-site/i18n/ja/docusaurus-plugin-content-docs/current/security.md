@@ -1,3 +1,9 @@
+---
+id: security
+title: セキュリティガイド
+sidebar_label: セキュリティガイド
+---
+
 # セキュリティガイド
 
 Laravel SpectrumとAPIのセキュリティベストプラクティスについて説明します。

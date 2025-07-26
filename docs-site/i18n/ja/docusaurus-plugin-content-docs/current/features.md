@@ -1,3 +1,9 @@
+---
+id: features
+title: 機能一覧
+sidebar_label: 機能一覧
+---
+
 # 機能一覧
 
 Laravel Spectrumの全機能を詳しく説明します。
