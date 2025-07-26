@@ -23,12 +23,12 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/quickstart">
+            to="/docs/quickstart">
             🚀 Quick Start - 5min ⏱️
           </Link>
           <Link
             className="button button--outline button--secondary button--lg"
-            to="/installation"
+            to="/docs/installation"
             style={{marginLeft: '1rem'}}>
             📚 Full Documentation
           </Link>
