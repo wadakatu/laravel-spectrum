@@ -7,6 +7,7 @@ use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Support\FileUploadDetector;
 use LaravelSpectrum\Support\TypeInference;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class FileUploadEnhancementTest extends TestCase
 {
@@ -25,7 +26,7 @@ class FileUploadEnhancementTest extends TestCase
         $this->schemaGenerator = new SchemaGenerator;
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_correct_schema_for_array_file_uploads()
     {
         // Arrange - simulate validation rules from GalleryController
@@ -56,7 +57,7 @@ class FileUploadEnhancementTest extends TestCase
         $this->assertStringContainsString('image/jpeg, image/png', $multipartSchema['properties']['photos']['items']['contentMediaType']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_nested_file_arrays()
     {
         // Arrange - nested file structure from ProductController
@@ -82,7 +83,7 @@ class FileUploadEnhancementTest extends TestCase
         $this->assertEquals('binary', $multipartSchema['properties']['main_image']['format']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_file_patterns_correctly()
     {
         // Arrange
@@ -109,7 +110,7 @@ class FileUploadEnhancementTest extends TestCase
         $this->assertCount(0, $patterns['nested_files']);
     }
 
-    /** @test */
+    #[Test]
     public function it_preserves_file_validation_constraints_in_schema()
     {
         // Test that dimensions, size limits, and MIME types are preserved

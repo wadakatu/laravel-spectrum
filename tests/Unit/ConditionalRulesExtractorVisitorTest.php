@@ -7,6 +7,7 @@ use LaravelSpectrum\Tests\TestCase;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
+use PHPUnit\Framework\Attributes\Test;
 
 class ConditionalRulesExtractorVisitorTest extends TestCase
 {
@@ -21,7 +22,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $this->printer = new Standard;
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_simple_if_condition_rules()
     {
         $code = <<<'PHP'
@@ -57,7 +58,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $this->assertEquals('POST', $ruleSets['rules_sets'][0]['conditions'][0]['method']);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_array_merge_rules()
     {
         $code = <<<'PHP'
@@ -100,7 +101,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $this->assertArrayHasKey('password', $mergedRules);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_method_call_results()
     {
         $code = <<<'PHP'
@@ -154,7 +155,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $this->assertTrue($hasCustomCondition, 'Should detect custom condition with isAdmin');
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_rule_class_methods()
     {
         $code = <<<'PHP'
@@ -188,7 +189,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $this->assertContains('in:active,inactive', $rules['status']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_elseif_and_else_conditions()
     {
         $code = <<<'PHP'
