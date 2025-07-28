@@ -6,6 +6,7 @@ use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
 use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class FakerIntegrationTest extends TestCase
 {
@@ -24,7 +25,7 @@ class FakerIntegrationTest extends TestCase
         $this->generator = new ExampleGenerator($this->valueFactory);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_realistic_email_addresses()
     {
         $value = $this->valueFactory->create('email', ['type' => 'string', 'format' => 'email']);
@@ -33,7 +34,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertNotEquals('user@example.com', $value);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_locale_specific_phone_numbers()
     {
         // Test Japanese locale
@@ -45,7 +46,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertMatchesRegularExpression('/^0[789]0-\d{4}-\d{4}$/', $phone);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_appropriate_timestamps()
     {
         $created = $this->valueFactory->create('created_at', ['type' => 'string', 'format' => 'date-time']);
@@ -58,7 +59,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertTrue($deleted === null || preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $deleted) === 1);
     }
 
-    /** @test */
+    #[Test]
     public function it_respects_field_constraints()
     {
         $age = $this->valueFactory->create('age', [
@@ -80,7 +81,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertLessThanOrEqual(999.99, $price);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_custom_generators()
     {
         $schema = [
@@ -110,7 +111,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertContains($example['status'], ['pending', 'processing', 'completed']);
     }
 
-    /** @test */
+    #[Test]
     public function it_falls_back_to_static_values_when_faker_disabled()
     {
         config(['spectrum.example_generation.use_faker' => false]);
@@ -121,7 +122,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertEquals('user@example.com', $email);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_realistic_names_based_on_context()
     {
         $userName = $this->valueFactory->create('user_name', ['type' => 'string']);
@@ -138,7 +139,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertGreaterThan(3, strlen($companyName));
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_appropriate_image_urls()
     {
         $avatar = $this->valueFactory->create('avatar', ['type' => 'string']);
@@ -150,7 +151,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertStringContainsString('1200x400', $banner); // Banner should be wide
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_boolean_fields_based_on_prefix()
     {
         $isActive = $this->valueFactory->create('is_active', ['type' => 'boolean']);
@@ -162,7 +163,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertIsBool($canEdit);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_enum_fields()
     {
         $status = $this->valueFactory->create('status', [
@@ -173,7 +174,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertContains($status, ['active', 'inactive', 'pending']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_with_consistent_seed()
     {
         config(['spectrum.example_generation.faker_seed' => 100]);
@@ -187,7 +188,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertEquals($value1, $value2);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_string_with_length_constraints()
     {
         $shortString = $this->valueFactory->create('code', [

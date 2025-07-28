@@ -165,10 +165,7 @@ class FormRequestAnalyzerTest extends TestCase
     #[Test]
     public function it_handles_rule_objects()
     {
-        // Skip test if using file-based analyzer since it can't instantiate Rule objects
-        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
-            $this->markTestSkipped('Current implementation cannot handle Rule objects');
-        }
+        // Rule objects are now supported by the AST visitor
 
         // Arrange
         $testRequestClass = new class extends FormRequest
@@ -203,10 +200,7 @@ class FormRequestAnalyzerTest extends TestCase
     #[Test]
     public function it_handles_dynamic_rules()
     {
-        // Skip test if using file-based analyzer
-        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
-            $this->markTestSkipped('Current implementation cannot handle dynamic rules');
-        }
+        // Dynamic rules are now supported by tracking variables
 
         // Arrange
         $testRequestClass = new class extends FormRequest
@@ -244,10 +238,7 @@ class FormRequestAnalyzerTest extends TestCase
             $this->markTestSkipped('PHP 8.0+ required');
         }
 
-        // Skip test if using file-based analyzer
-        if (method_exists($this->analyzer, 'extractRules') && ! class_exists('LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor')) {
-            $this->markTestSkipped('Current implementation cannot handle match expressions');
-        }
+        // Match expressions are now supported by the AST visitor
 
         // Arrange
         $testRequestClass = new class extends FormRequest
