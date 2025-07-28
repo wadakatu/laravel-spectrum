@@ -23,9 +23,13 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     {
         // 変数代入を追跡
         if ($node instanceof Node\Expr\Assign &&
-            $node->var instanceof Node\Expr\Variable &&
-            $node->expr instanceof Node\Expr\Array_) {
-            $this->variables[$node->var->name] = $this->extractArrayRules($node->expr);
+            $node->var instanceof Node\Expr\Variable) {
+            if ($node->expr instanceof Node\Expr\Array_) {
+                $this->variables[$node->var->name] = $this->extractArrayRules($node->expr);
+            } elseif ($node->expr instanceof Node\Expr\MethodCall) {
+                // $additionalRules = $this->additionalRules() のような場合
+                $this->variables[$node->var->name] = ['_dynamic' => 'method_call'];
+            }
         }
 
         // return文を検出
@@ -37,8 +41,12 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
             }
             // 変数を返す場合
             elseif ($node->expr instanceof Node\Expr\Variable) {
-                // TODO: 変数の定義を追跡する必要がある
-                $this->rules = ['_notice' => 'Dynamic rules detected - manual review required'];
+                $varName = $node->expr->name;
+                if (isset($this->variables[$varName])) {
+                    $this->rules = $this->variables[$varName];
+                } else {
+                    $this->rules = ['_notice' => 'Dynamic rules detected - manual review required'];
+                }
             }
             // array_merge呼び出しを処理
             elseif ($node->expr instanceof Node\Expr\FuncCall &&
@@ -179,6 +187,11 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         // new演算子による Enumルールのインスタンス生成
         if ($expr instanceof Node\Expr\New_) {
             return $this->evaluateNewExpression($expr);
+        }
+        
+        // メソッドチェーン (例: Rule::unique()->ignore())
+        if ($expr instanceof Node\Expr\MethodCall) {
+            return $this->evaluateMethodCall($expr);
         }
 
         // その他の複雑な式は文字列として保存
@@ -360,6 +373,38 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
         // その他のnew式は文字列化
         return $this->printer->prettyPrintExpr($new);
+    }
+    
+    /**
+     * メソッドチェーンを評価 (例: Rule::unique('users')->ignore(1))
+     */
+    private function evaluateMethodCall(Node\Expr\MethodCall $call)
+    {
+        // Rule::unique()->ignore() のようなチェーンを処理
+        if ($call->var instanceof Node\Expr\StaticCall) {
+            $staticCall = $call->var;
+            
+            // Rule::unique() or Rule::exists() などの基本ルールを取得
+            $baseRule = $this->evaluateStaticCall($staticCall);
+            
+            // ignore() メソッドの場合は基本ルールをそのまま返す（簡略化）
+            if ($call->name instanceof Node\Identifier && $call->name->name === 'ignore') {
+                return $baseRule;
+            }
+            
+            // where() メソッドの場合も基本ルールをそのまま返す
+            if ($call->name instanceof Node\Identifier && $call->name->name === 'where') {
+                return $baseRule;
+            }
+        }
+        
+        // 他のメソッドチェーンも基本ルールを返す
+        if ($call->var instanceof Node\Expr\MethodCall) {
+            return $this->evaluateMethodCall($call->var);
+        }
+        
+        // その他のメソッド呼び出しは文字列化
+        return $this->printer->prettyPrintExpr($call);
     }
 
     public function getRules(): array
