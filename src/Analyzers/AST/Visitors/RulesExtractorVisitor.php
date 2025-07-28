@@ -188,7 +188,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         if ($expr instanceof Node\Expr\New_) {
             return $this->evaluateNewExpression($expr);
         }
-        
+
         // メソッドチェーン (例: Rule::unique()->ignore())
         if ($expr instanceof Node\Expr\MethodCall) {
             return $this->evaluateMethodCall($expr);
@@ -374,7 +374,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         // その他のnew式は文字列化
         return $this->printer->prettyPrintExpr($new);
     }
-    
+
     /**
      * メソッドチェーンを評価 (例: Rule::unique('users')->ignore(1))
      */
@@ -383,26 +383,26 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         // Rule::unique()->ignore() のようなチェーンを処理
         if ($call->var instanceof Node\Expr\StaticCall) {
             $staticCall = $call->var;
-            
+
             // Rule::unique() or Rule::exists() などの基本ルールを取得
             $baseRule = $this->evaluateStaticCall($staticCall);
-            
+
             // ignore() メソッドの場合は基本ルールをそのまま返す（簡略化）
             if ($call->name instanceof Node\Identifier && $call->name->name === 'ignore') {
                 return $baseRule;
             }
-            
+
             // where() メソッドの場合も基本ルールをそのまま返す
             if ($call->name instanceof Node\Identifier && $call->name->name === 'where') {
                 return $baseRule;
             }
         }
-        
+
         // 他のメソッドチェーンも基本ルールを返す
         if ($call->var instanceof Node\Expr\MethodCall) {
             return $this->evaluateMethodCall($call->var);
         }
-        
+
         // その他のメソッド呼び出しは文字列化
         return $this->printer->prettyPrintExpr($call);
     }

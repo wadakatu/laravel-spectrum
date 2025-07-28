@@ -6,8 +6,8 @@ use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Support\FileUploadDetector;
 use LaravelSpectrum\Support\TypeInference;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
 
 class FileUploadEnhancementTest extends TestCase
 {

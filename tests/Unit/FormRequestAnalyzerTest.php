@@ -237,7 +237,7 @@ class FormRequestAnalyzerTest extends TestCase
         if (PHP_VERSION_ID < 80000) {
             $this->markTestSkipped('PHP 8.0+ required');
         }
-        
+
         // Match expressions are now supported by the AST visitor
 
         // Arrange

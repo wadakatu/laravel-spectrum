@@ -3,13 +3,9 @@
 namespace LaravelSpectrum\Tests\Feature\Console;
 
 use Illuminate\Support\Facades\File;
-use LaravelSpectrum\Console\Commands\MockServerCommand;
 use LaravelSpectrum\MockServer\MockServer;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
-use Workerman\Worker;
 
 class MockServerCommandTest extends TestCase
 {
@@ -66,7 +62,7 @@ class MockServerCommandTest extends TestCase
     public function test_command_accepts_custom_port(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
@@ -79,7 +75,7 @@ class MockServerCommandTest extends TestCase
     public function test_command_accepts_custom_host(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
@@ -92,7 +88,7 @@ class MockServerCommandTest extends TestCase
     public function test_command_displays_startup_info(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
@@ -106,7 +102,7 @@ class MockServerCommandTest extends TestCase
     public function test_command_displays_available_endpoints(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
@@ -125,7 +121,7 @@ class MockServerCommandTest extends TestCase
     public function test_command_displays_usage_examples(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
@@ -139,7 +135,7 @@ class MockServerCommandTest extends TestCase
     public function test_command_displays_tips(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
@@ -149,13 +145,13 @@ class MockServerCommandTest extends TestCase
             ->expectsOutputToContain('Available scenarios: success, not_found, error, forbidden')
             ->assertExitCode(0);
     }
-    
+
     public function test_command_handles_server_startup_failure(): void
     {
         $this->createDefaultOpenApiSpec();
-        
+
         // Mock the MockServer to simulate startup failure
-        $mockServer = Mockery::mock('overload:' . MockServer::class);
+        $mockServer = Mockery::mock('overload:'.MockServer::class);
         $mockServer->shouldReceive('start')
             ->once()
             ->andThrow(new \Exception('Port already in use'));
@@ -164,7 +160,7 @@ class MockServerCommandTest extends TestCase
             ->expectsOutput('Failed to start server: Port already in use')
             ->assertExitCode(1);
     }
-    
+
     public function test_command_accepts_custom_spec_path(): void
     {
         // Create custom spec file
@@ -178,17 +174,17 @@ class MockServerCommandTest extends TestCase
             'paths' => [],
         ];
         File::put($customSpecPath, json_encode($spec, JSON_PRETTY_PRINT));
-        
+
         // Mock the MockServer to prevent actual server startup
         $this->mockMockServer();
 
         $this->artisan('spectrum:mock', ['--spec' => $customSpecPath])
-            ->expectsOutputToContain('Loading spec from: ' . $customSpecPath)
+            ->expectsOutputToContain('Loading spec from: '.$customSpecPath)
             ->expectsOutput('🎭 Mock Server Configuration:')
             ->expectsOutputToContain('Custom API')
             ->expectsOutputToContain('2.0.0')
             ->assertExitCode(0);
-            
+
         // Cleanup
         File::delete($customSpecPath);
     }
@@ -229,7 +225,7 @@ class MockServerCommandTest extends TestCase
             json_encode($spec, JSON_PRETTY_PRINT)
         );
     }
-    
+
     private function createDefaultOpenApiSpec(): void
     {
         $spec = [
@@ -266,11 +262,11 @@ class MockServerCommandTest extends TestCase
             json_encode($spec, JSON_PRETTY_PRINT)
         );
     }
-    
+
     private function mockMockServer(): void
     {
         // Mock the MockServer class to prevent actual server startup
-        $mockServer = Mockery::mock('overload:' . MockServer::class);
+        $mockServer = Mockery::mock('overload:'.MockServer::class);
         $mockServer->shouldReceive('start')->once();
     }
 }
