@@ -23,23 +23,19 @@ jobs:
       run: |
         VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
         if [ "$VERSION" = "null" ] || [ -z "$VERSION" ]; then
-          VERSION="v1.0.0"
+          VERSION="v0.1.0-beta"
         fi
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Latest version: $VERSION"
     
-    - name: Update banner and create PR
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Update banner version
       run: |
-        # Setup git
+        sed -i '/id="version"/s/v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9]\+\)\?/${{ steps.get_version.outputs.VERSION }}/g' assets/banner.svg
+    
+    - name: Commit and push
+      run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        
-        # Update banner version
-        sed -i '/id="version"/s/v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9]\+\)\?/${{ steps.get_version.outputs.VERSION }}/g' assets/banner.svg
-        
-        # Commit and push
         git add assets/banner.svg
         git commit -m "chore: update banner version to ${{ steps.get_version.outputs.VERSION }}"
         git push origin HEAD:main
