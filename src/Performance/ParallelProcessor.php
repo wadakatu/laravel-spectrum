@@ -10,10 +10,10 @@ class ParallelProcessor
 
     private bool $enabled;
 
-    public function __construct()
+    public function __construct(?bool $enabled = null, ?int $workers = null)
     {
-        $this->workers = $this->determineOptimalWorkers();
-        $this->enabled = $this->checkParallelProcessingSupport();
+        $this->workers = $workers ?? $this->determineOptimalWorkers();
+        $this->enabled = $enabled ?? $this->checkParallelProcessingSupport();
     }
 
     /**
@@ -172,7 +172,7 @@ class ParallelProcessor
         }
 
         // 設定で無効化されている場合
-        if (config('spectrum.performance.parallel_processing', true) === false) {
+        if (function_exists('config') && config('spectrum.performance.parallel_processing', true) === false) {
             return false;
         }
 
