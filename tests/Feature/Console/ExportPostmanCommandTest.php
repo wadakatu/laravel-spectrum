@@ -4,7 +4,6 @@ namespace LaravelSpectrum\Tests\Feature\Console;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
-use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
@@ -356,9 +355,9 @@ class ExportPostmanCommandTest extends TestCase
         // Assert
         $collectionPath = storage_path('app/spectrum/postman/postman_collection.json');
         $this->assertFileExists($collectionPath);
-        
+
         $collection = json_decode(File::get($collectionPath), true);
-        
+
         // Find the request in the collection
         $request = null;
         foreach ($collection['item'] as $folder) {
@@ -373,10 +372,10 @@ class ExportPostmanCommandTest extends TestCase
         }
 
         $this->assertNotNull($request, 'Status endpoint should be in the collection');
-        
+
         // Check if test scripts are generated
         $this->assertArrayHasKey('event', $request);
-        
+
         // Find test event
         $testEvent = null;
         foreach ($request['event'] as $event) {
@@ -385,7 +384,7 @@ class ExportPostmanCommandTest extends TestCase
                 break;
             }
         }
-        
+
         $this->assertNotNull($testEvent, 'Test event should exist');
         $this->assertArrayHasKey('script', $testEvent);
         $this->assertArrayHasKey('exec', $testEvent['script']);
@@ -393,8 +392,8 @@ class ExportPostmanCommandTest extends TestCase
         $this->assertNotEmpty($testEvent['script']['exec']);
 
         // Verify test content
-        $testScript = implode("
-", $testEvent['script']['exec']);
+        $testScript = implode('
+', $testEvent['script']['exec']);
         $this->assertStringContainsString('pm.test', $testScript);
         $this->assertStringContainsString('Status code is successful', $testScript);
         $this->assertStringContainsString('pm.response.to.have.status(200)', $testScript);
