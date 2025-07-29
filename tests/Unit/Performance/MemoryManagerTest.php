@@ -54,9 +54,11 @@ class MemoryManagerTest extends TestCase
         // 利用可能なメモリは正の値であるべき
         $this->assertGreaterThan(0, $available);
 
-        // 利用可能なメモリは現在のメモリ制限より少ないべき
+        // 利用可能なメモリは現在のメモリ制限より少ないべき（無制限の場合を除く）
         $memoryLimit = $this->parseMemoryLimit(ini_get('memory_limit'));
-        $this->assertLessThan($memoryLimit, $available);
+        if ($memoryLimit !== PHP_INT_MAX) {
+            $this->assertLessThan($memoryLimit, $available);
+        }
     }
 
     public function test_run_garbage_collection(): void
@@ -78,7 +80,12 @@ class MemoryManagerTest extends TestCase
         // 値の形式を確認
         $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['current']);
         $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['peak']);
-        $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['limit']);
+        // limit can be either a size format or "unlimited"
+        $this->assertTrue(
+            preg_match('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['limit']) === 1 ||
+            $stats['limit'] === 'unlimited',
+            "Limit should be either a formatted size or 'unlimited', got: " . $stats['limit']
+        );
         $this->assertIsFloat($stats['percentage']);
         $this->assertGreaterThanOrEqual(0, $stats['percentage']);
         $this->assertLessThanOrEqual(100, $stats['percentage']);
@@ -132,6 +139,12 @@ class MemoryManagerTest extends TestCase
     private function parseMemoryLimit(string $limit): int
     {
         $limit = trim($limit);
+        
+        // -1 means unlimited memory
+        if ($limit === '-1') {
+            return PHP_INT_MAX;
+        }
+        
         $last = strtolower($limit[strlen($limit) - 1]);
         $value = (int) $limit;
 
@@ -152,7 +165,16 @@ class MemoryManagerTest extends TestCase
 
     private function parseFormattedBytes(string $formatted): int
     {
+        // Handle unlimited case
+        if ($formatted === 'unlimited') {
+            return PHP_INT_MAX;
+        }
+        
         preg_match('/^([\d.]+)\s*(B|KB|MB|GB)$/', $formatted, $matches);
+        if (!isset($matches[1]) || !isset($matches[2])) {
+            return 0;
+        }
+        
         $value = (float) $matches[1];
         $unit = $matches[2];
 

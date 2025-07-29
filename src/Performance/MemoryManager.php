@@ -62,18 +62,30 @@ class MemoryManager
     {
         $usage = memory_get_usage(true);
         $peakUsage = memory_get_peak_usage(true);
+        
+        // Calculate percentage, handling unlimited memory case
+        $percentage = 0.0;
+        if ($this->memoryLimit !== PHP_INT_MAX && $this->memoryLimit > 0) {
+            $percentage = round(($usage / $this->memoryLimit) * 100, 2);
+        }
 
         return [
             'current' => $this->formatBytes($usage),
             'peak' => $this->formatBytes($peakUsage),
             'limit' => $this->formatBytes($this->memoryLimit),
-            'percentage' => round(($usage / $this->memoryLimit) * 100, 2),
+            'percentage' => $percentage,
         ];
     }
 
     private function parseMemoryLimit(string $limit): int
     {
         $limit = trim($limit);
+        
+        // -1 means unlimited memory
+        if ($limit === '-1') {
+            return PHP_INT_MAX;
+        }
+        
         $last = strtolower($limit[strlen($limit) - 1]);
 
         // 単位が含まれる場合は数値部分のみを抽出
@@ -100,6 +112,16 @@ class MemoryManager
 
     private function formatBytes(int $bytes): string
     {
+        // Handle unlimited memory case
+        if ($bytes === PHP_INT_MAX) {
+            return 'unlimited';
+        }
+        
+        // Handle negative values
+        if ($bytes < 0) {
+            return '0 B';
+        }
+        
         $units = ['B', 'KB', 'MB', 'GB'];
         $i = 0;
 
