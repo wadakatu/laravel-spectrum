@@ -84,7 +84,7 @@ class MemoryManagerTest extends TestCase
         $this->assertTrue(
             preg_match('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['limit']) === 1 ||
             $stats['limit'] === 'unlimited',
-            "Limit should be either a formatted size or 'unlimited', got: " . $stats['limit']
+            "Limit should be either a formatted size or 'unlimited', got: ".$stats['limit']
         );
         $this->assertIsFloat($stats['percentage']);
         $this->assertGreaterThanOrEqual(0, $stats['percentage']);
@@ -139,12 +139,12 @@ class MemoryManagerTest extends TestCase
     private function parseMemoryLimit(string $limit): int
     {
         $limit = trim($limit);
-        
+
         // -1 means unlimited memory
         if ($limit === '-1') {
             return PHP_INT_MAX;
         }
-        
+
         $last = strtolower($limit[strlen($limit) - 1]);
         $value = (int) $limit;
 
@@ -169,12 +169,12 @@ class MemoryManagerTest extends TestCase
         if ($formatted === 'unlimited') {
             return PHP_INT_MAX;
         }
-        
+
         preg_match('/^([\d.]+)\s*(B|KB|MB|GB)$/', $formatted, $matches);
-        if (!isset($matches[1]) || !isset($matches[2])) {
+        if (! isset($matches[1]) || ! isset($matches[2])) {
             return 0;
         }
-        
+
         $value = (float) $matches[1];
         $unit = $matches[2];
 
