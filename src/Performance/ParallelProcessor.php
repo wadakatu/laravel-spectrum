@@ -26,6 +26,12 @@ class ParallelProcessor
             return array_map($processor, $routes);
         }
 
+        // Fork is only used when parallel processing is enabled
+        if (! class_exists('\Spatie\Fork\Fork')) {
+            // Fork not available, fallback to sequential processing
+            return array_map($processor, $routes);
+        }
+
         // ルートをワーカー数で分割
         $chunks = array_chunk($routes, (int) ceil(count($routes) / $this->workers));
 
@@ -61,7 +67,7 @@ class ParallelProcessor
      */
     public function processWithProgress(array $items, callable $processor, callable $onProgress): array
     {
-        if (! $this->enabled) {
+        if (! $this->enabled || ! class_exists('\Spatie\Fork\Fork')) {
             return $this->processSequentialWithProgress($items, $processor, $onProgress);
         }
 
