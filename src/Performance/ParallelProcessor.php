@@ -10,10 +10,10 @@ class ParallelProcessor
 
     private bool $enabled;
 
-    public function __construct()
+    public function __construct(?bool $enabled = null, ?int $workers = null)
     {
-        $this->workers = $this->determineOptimalWorkers();
-        $this->enabled = $this->checkParallelProcessingSupport();
+        $this->workers = $workers ?? $this->determineOptimalWorkers();
+        $this->enabled = $enabled ?? $this->checkParallelProcessingSupport();
     }
 
     /**
@@ -23,6 +23,12 @@ class ParallelProcessor
     {
         if (! $this->enabled || count($routes) < 50) {
             // 小規模な場合は通常処理
+            return array_map($processor, $routes);
+        }
+
+        // Fork is only used when parallel processing is enabled
+        if (! class_exists('\Spatie\Fork\Fork')) {
+            // Fork not available, fallback to sequential processing
             return array_map($processor, $routes);
         }
 
@@ -61,7 +67,7 @@ class ParallelProcessor
      */
     public function processWithProgress(array $items, callable $processor, callable $onProgress): array
     {
-        if (! $this->enabled) {
+        if (! $this->enabled || ! class_exists('\Spatie\Fork\Fork')) {
             return $this->processSequentialWithProgress($items, $processor, $onProgress);
         }
 
@@ -172,7 +178,7 @@ class ParallelProcessor
         }
 
         // 設定で無効化されている場合
-        if (config('spectrum.performance.parallel_processing', true) === false) {
+        if (function_exists('config') && config('spectrum.performance.parallel_processing', true) === false) {
             return false;
         }
 

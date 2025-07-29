@@ -28,3 +28,5 @@ deploy_key.pub
 
 # Local Claude instructions
 CLAUDE.local.md
+
+.serena/cache/**
