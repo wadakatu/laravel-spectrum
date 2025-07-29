@@ -45,10 +45,15 @@ class ExportInsomniaCommand extends Command
         $outputOption = $this->option('output');
 
         if ($outputOption) {
-            // If output is a directory, append the filename
-            if (is_dir($outputOption)) {
+            // Check if it's meant to be a directory (ends with / or has no extension)
+            $pathInfo = pathinfo($outputOption);
+            $hasExtension = isset($pathInfo['extension']) && $pathInfo['extension'] !== '';
+
+            if (is_dir($outputOption) || str_ends_with($outputOption, '/') || ! $hasExtension) {
+                // Treat as directory
                 $outputPath = rtrim($outputOption, '/').'/insomnia_collection.json';
             } else {
+                // Treat as file
                 $outputPath = $outputOption;
             }
         } else {
