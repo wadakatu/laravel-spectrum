@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 class ChunkProcessorTest extends TestCase
 {
     private ChunkProcessor $processor;
+
     private MemoryManager $memoryManager;
 
     protected function setUp(): void
@@ -18,7 +19,7 @@ class ChunkProcessorTest extends TestCase
         $this->processor = new ChunkProcessor(3, $this->memoryManager);
     }
 
-    public function testProcessInChunksWithSmallDataset(): void
+    public function test_process_in_chunks_with_small_dataset(): void
     {
         $routes = ['route1', 'route2', 'route3', 'route4', 'route5'];
         $processedItems = [];
@@ -31,6 +32,7 @@ class ChunkProcessorTest extends TestCase
 
         $processor = function ($chunk) use (&$processedItems) {
             $processedItems = array_merge($processedItems, $chunk);
+
             return array_map('strtoupper', $chunk);
         };
 
@@ -62,7 +64,7 @@ class ChunkProcessorTest extends TestCase
         $this->assertEquals($routes, $processedItems);
     }
 
-    public function testProcessInChunksTriggersGarbageCollection(): void
+    public function test_process_in_chunks_triggers_garbage_collection(): void
     {
         // チャンクサイズ1で30個のアイテムを処理（10チャンクごとにGC実行）
         $processor = new ChunkProcessor(1, $this->memoryManager);
@@ -87,7 +89,7 @@ class ChunkProcessorTest extends TestCase
         $this->assertEquals(30, $count);
     }
 
-    public function testProcessInChunksWithEmptyArray(): void
+    public function test_process_in_chunks_with_empty_array(): void
     {
         $routes = [];
         $processor = function ($chunk) {
@@ -99,7 +101,7 @@ class ChunkProcessorTest extends TestCase
         $this->assertEmpty($results);
     }
 
-    public function testStreamToFile(): void
+    public function test_stream_to_file(): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'chunk_test');
 
@@ -112,20 +114,20 @@ class ChunkProcessorTest extends TestCase
         $this->processor->streamToFile($tempFile, $generator);
 
         $content = file_get_contents($tempFile);
-        
+
         // ストリーミングされたJSONの内容を確認
         $this->assertStringContainsString('"data": "first"', $content);
         $this->assertStringContainsString('"data": "second"', $content);
-        $this->assertStringStartsWith("{
-", $content);
-        $this->assertStringEndsWith("
-}", $content);
+        $this->assertStringStartsWith('{
+', $content);
+        $this->assertStringEndsWith('
+}', $content);
 
         // クリーンアップ
         unlink($tempFile);
     }
 
-    public function testStreamToFileWithSingleItem(): void
+    public function test_stream_to_file_with_single_item(): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'chunk_test_single');
 
@@ -142,7 +144,7 @@ class ChunkProcessorTest extends TestCase
         unlink($tempFile);
     }
 
-    public function testCalculateOptimalChunkSize(): void
+    public function test_calculate_optimal_chunk_size(): void
     {
         // 100MB利用可能な場合
         $this->memoryManager->expects($this->once())
@@ -155,7 +157,7 @@ class ChunkProcessorTest extends TestCase
         $this->assertEquals(1000, $optimalSize);
     }
 
-    public function testCalculateOptimalChunkSizeWithLowMemory(): void
+    public function test_calculate_optimal_chunk_size_with_low_memory(): void
     {
         // 1MB利用可能な場合
         $this->memoryManager->expects($this->once())
@@ -168,7 +170,7 @@ class ChunkProcessorTest extends TestCase
         $this->assertEquals(10, $optimalSize);
     }
 
-    public function testProcessInChunksPreservesOriginalData(): void
+    public function test_process_in_chunks_preserves_original_data(): void
     {
         $routes = [
             ['id' => 1, 'path' => '/api/users'],
@@ -191,7 +193,7 @@ class ChunkProcessorTest extends TestCase
         $this->assertEquals(['/api/users', '/api/posts', '/api/comments'], $results[0]['result']);
     }
 
-    public function testProcessInChunksHandlesExceptions(): void
+    public function test_process_in_chunks_handles_exceptions(): void
     {
         $routes = ['route1', 'route2'];
 

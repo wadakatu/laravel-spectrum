@@ -9,13 +9,14 @@ use RuntimeException;
 class MemoryManagerTest extends TestCase
 {
     private MemoryManager $memoryManager;
+
     private string $originalMemoryLimit;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->originalMemoryLimit = ini_get('memory_limit');
-        $this->memoryManager = new MemoryManager();
+        $this->memoryManager = new MemoryManager;
     }
 
     protected function tearDown(): void
@@ -25,55 +26,55 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $this->originalMemoryLimit);
     }
 
-    public function testCheckMemoryUsageNormalConditions(): void
+    public function test_check_memory_usage_normal_conditions(): void
     {
         // 通常の条件下では例外がスローされない
         $this->assertNull($this->memoryManager->checkMemoryUsage());
     }
 
-    public function testCheckMemoryUsageThrowsExceptionWhenCritical(): void
+    public function test_check_memory_usage_throws_exception_when_critical(): void
     {
         // メモリ制限を現在の使用量より少し多い値に設定
         $currentUsage = memory_get_usage(true);
-        $newLimit = (int)($currentUsage * 1.05); // 現在の使用量の105%
+        $newLimit = (int) ($currentUsage * 1.05); // 現在の使用量の105%
         ini_set('memory_limit', $newLimit);
-        
-        $memoryManager = new MemoryManager();
-        
+
+        $memoryManager = new MemoryManager;
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/Memory usage critical: .* of .* \(9[0-9]\.[0-9]+%\)/');
-        
+
         $memoryManager->checkMemoryUsage();
     }
 
-    public function testGetAvailableMemory(): void
+    public function test_get_available_memory(): void
     {
         $available = $this->memoryManager->getAvailableMemory();
-        
+
         // 利用可能なメモリは正の値であるべき
         $this->assertGreaterThan(0, $available);
-        
+
         // 利用可能なメモリは現在のメモリ制限より少ないべき
         $memoryLimit = $this->parseMemoryLimit(ini_get('memory_limit'));
         $this->assertLessThan($memoryLimit, $available);
     }
 
-    public function testRunGarbageCollection(): void
+    public function test_run_garbage_collection(): void
     {
         // ガベージコレクションが例外なく実行される
         $this->assertNull($this->memoryManager->runGarbageCollection());
     }
 
-    public function testGetMemoryStats(): void
+    public function test_get_memory_stats(): void
     {
         $stats = $this->memoryManager->getMemoryStats();
-        
+
         $this->assertIsArray($stats);
         $this->assertArrayHasKey('current', $stats);
         $this->assertArrayHasKey('peak', $stats);
         $this->assertArrayHasKey('limit', $stats);
         $this->assertArrayHasKey('percentage', $stats);
-        
+
         // 値の形式を確認
         $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['current']);
         $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['peak']);
@@ -83,49 +84,47 @@ class MemoryManagerTest extends TestCase
         $this->assertLessThanOrEqual(100, $stats['percentage']);
     }
 
-
-
-    public function testMemoryStatsReflectCurrentState(): void
+    public function test_memory_stats_reflect_current_state(): void
     {
         $statsBefore = $this->memoryManager->getMemoryStats();
-        
+
         // メモリを意図的に使用
         $largeArray = range(1, 100000);
-        
+
         $statsAfter = $this->memoryManager->getMemoryStats();
-        
+
         // current使用量が増加しているはず
         $beforeBytes = $this->parseFormattedBytes($statsBefore['current']);
         $afterBytes = $this->parseFormattedBytes($statsAfter['current']);
-        
+
         $this->assertGreaterThanOrEqual($beforeBytes, $afterBytes);
     }
 
-    public function testCheckMemoryUsageWithWarningThreshold(): void
+    public function test_check_memory_usage_with_warning_threshold(): void
     {
         // メモリ制限を現在の使用量の約115%に設定（80%警告閾値を超える）
         $currentUsage = memory_get_usage(true);
-        $newLimit = (int)($currentUsage * 1.15);
+        $newLimit = (int) ($currentUsage * 1.15);
         ini_set('memory_limit', $newLimit);
-        
-        $memoryManager = new MemoryManager();
-        
+
+        $memoryManager = new MemoryManager;
+
         // 警告閾値では例外はスローされない
         $this->assertNull($memoryManager->checkMemoryUsage());
     }
 
-    public function testMemoryLimitParsing(): void
+    public function test_memory_limit_parsing(): void
     {
         // 現在のメモリ制限を保存
         $originalLimit = ini_get('memory_limit');
-        
+
         // 512Mに設定してテスト
         ini_set('memory_limit', '512M');
-        $memoryManager = new MemoryManager();
+        $memoryManager = new MemoryManager;
         $stats = $memoryManager->getMemoryStats();
-        
+
         $this->assertEquals('512 MB', $stats['limit']);
-        
+
         // 元に戻す
         ini_set('memory_limit', $originalLimit);
     }
@@ -159,13 +158,13 @@ class MemoryManagerTest extends TestCase
 
         switch ($unit) {
             case 'KB':
-                return (int)($value * 1024);
+                return (int) ($value * 1024);
             case 'MB':
-                return (int)($value * 1024 * 1024);
+                return (int) ($value * 1024 * 1024);
             case 'GB':
-                return (int)($value * 1024 * 1024 * 1024);
+                return (int) ($value * 1024 * 1024 * 1024);
             default:
-                return (int)$value;
+                return (int) $value;
         }
     }
 }

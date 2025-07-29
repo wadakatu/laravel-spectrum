@@ -16,10 +16,10 @@ class ParallelProcessorTest extends TestCase
         $this->processor = new ParallelProcessor(false, 4);
     }
 
-    public function testProcessWithSmallDataset(): void
+    public function test_process_with_small_dataset(): void
     {
         $routes = ['route1', 'route2', 'route3'];
-        
+
         $processor = function ($route) {
             return strtoupper($route);
         };
@@ -33,11 +33,11 @@ class ParallelProcessorTest extends TestCase
         $this->assertContains('ROUTE3', $results);
     }
 
-    public function testProcessWithLargeDataset(): void
+    public function test_process_with_large_dataset(): void
     {
         // 50個以上のデータで並列処理がトリガーされる
-        $routes = array_map(fn($i) => "route$i", range(1, 60));
-        
+        $routes = array_map(fn ($i) => "route$i", range(1, 60));
+
         $processor = function ($route) {
             return str_replace('route', 'processed_', $route);
         };
@@ -51,17 +51,17 @@ class ParallelProcessorTest extends TestCase
         $this->assertContains('processed_60', $results);
     }
 
-    public function testProcessPreservesDataTypes(): void
+    public function test_process_preserves_data_types(): void
     {
         $routes = [
             ['id' => 1, 'path' => '/api/users'],
             ['id' => 2, 'path' => '/api/posts'],
         ];
-        
+
         $processor = function ($route) {
             return [
                 'id' => $route['id'],
-                'processed_path' => $route['path'] . '_processed',
+                'processed_path' => $route['path'].'_processed',
             ];
         };
 
@@ -72,15 +72,15 @@ class ParallelProcessorTest extends TestCase
         $this->assertEquals(['id' => 2, 'processed_path' => '/api/posts_processed'], $results[1]);
     }
 
-    public function testProcessWithProgressCallbackSmallDataset(): void
+    public function test_process_with_progress_callback_small_dataset(): void
     {
         $items = range(1, 5);
         $progressCalls = [];
-        
+
         $processor = function ($item) {
             return $item * 2;
         };
-        
+
         $onProgress = function ($current, $total) use (&$progressCalls) {
             $progressCalls[] = ['current' => $current, 'total' => $total];
         };
@@ -89,7 +89,7 @@ class ParallelProcessorTest extends TestCase
 
         // 結果が正しい
         $this->assertEquals([2, 4, 6, 8, 10], $results);
-        
+
         // 進捗コールバックが呼ばれた
         $this->assertNotEmpty($progressCalls);
         $lastCall = end($progressCalls);
@@ -97,15 +97,15 @@ class ParallelProcessorTest extends TestCase
         $this->assertEquals(5, $lastCall['total']);
     }
 
-    public function testProcessWithProgressCallbackLargeDataset(): void
+    public function test_process_with_progress_callback_large_dataset(): void
     {
         $items = range(1, 25);
         $progressCalls = [];
-        
+
         $processor = function ($item) {
             return $item + 100;
         };
-        
+
         $onProgress = function ($current, $total) use (&$progressCalls) {
             $progressCalls[] = $current;
         };
@@ -116,37 +116,38 @@ class ParallelProcessorTest extends TestCase
         $this->assertCount(25, $results);
         $this->assertEquals(101, $results[0]);
         $this->assertEquals(125, $results[24]);
-        
+
         // 進捗が10アイテムごとに報告される
         $this->assertContains(10, $progressCalls);
         $this->assertContains(20, $progressCalls);
         $this->assertContains(25, $progressCalls);
     }
 
-    public function testSetWorkers(): void
+    public function test_set_workers(): void
     {
         // setWorkersが例外をスローしないことを確認
         $this->processor->setWorkers(4);
         $this->processor->setWorkers(1);
         $this->processor->setWorkers(32);
-        
+
         // 範囲外の値でもクランプされる
         $this->processor->setWorkers(0);
         $this->processor->setWorkers(100);
-        
+
         // 簡単な処理が正常に動作することを確認
-        $result = $this->processor->process(['test'], fn($x) => $x);
+        $result = $this->processor->process(['test'], fn ($x) => $x);
         $this->assertEquals(['test'], $result);
     }
 
-    public function testProcessHandlesExceptions(): void
+    public function test_process_handles_exceptions(): void
     {
         $routes = ['route1', 'route2', 'route3'];
-        
+
         $processor = function ($route) {
             if ($route === 'route2') {
                 throw new \RuntimeException('Test exception');
             }
+
             return $route;
         };
 
@@ -155,17 +156,17 @@ class ParallelProcessorTest extends TestCase
         $this->processor->process($routes, $processor);
     }
 
-    public function testProcessWithEmptyArray(): void
+    public function test_process_with_empty_array(): void
     {
-        $results = $this->processor->process([], fn($x) => $x);
+        $results = $this->processor->process([], fn ($x) => $x);
         $this->assertEmpty($results);
     }
 
-    public function testProcessMaintainsOrder(): void
+    public function test_process_maintains_order(): void
     {
         // 順序が保持されることを確認
         $items = range(1, 100);
-        
+
         $processor = function ($item) {
             return $item * 10;
         };
@@ -174,14 +175,14 @@ class ParallelProcessorTest extends TestCase
 
         // 結果の数が正しい
         $this->assertCount(100, $results);
-        
+
         // いくつかの値をチェック
         $this->assertEquals(10, $results[0]);
         $this->assertEquals(500, $results[49]);
         $this->assertEquals(1000, $results[99]);
     }
 
-    public function testProcessWithComplexDataStructures(): void
+    public function test_process_with_complex_data_structures(): void
     {
         $routes = [
             [
@@ -197,10 +198,10 @@ class ParallelProcessorTest extends TestCase
                 'meta' => ['version' => 'v2'],
             ],
         ];
-        
+
         $processor = function ($route) {
             return [
-                'signature' => $route['method'] . ' ' . $route['uri'],
+                'signature' => $route['method'].' '.$route['uri'],
                 'middlewareCount' => count($route['middleware']),
                 'version' => $route['meta']['version'],
             ];

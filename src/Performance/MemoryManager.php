@@ -75,7 +75,7 @@ class MemoryManager
     {
         $limit = trim($limit);
         $last = strtolower($limit[strlen($limit) - 1]);
-        
+
         // 単位が含まれる場合は数値部分のみを抽出
         if (in_array($last, ['g', 'm', 'k'])) {
             $value = (int) substr($limit, 0, -1);
