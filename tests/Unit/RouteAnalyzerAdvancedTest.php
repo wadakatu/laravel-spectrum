@@ -3,8 +3,6 @@
 namespace LaravelSpectrum\Tests\Unit;
 
 use Exception;
-use Illuminate\Routing\Route as IlluminateRoute;
-use Illuminate\Routing\RouteCollection;
 use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
@@ -13,12 +11,13 @@ use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
-use ReflectionClass;
 
 class RouteAnalyzerAdvancedTest extends TestCase
 {
     protected RouteAnalyzer $analyzer;
+
     protected DocumentationCache $cache;
+
     protected ErrorCollector $errorCollector;
 
     protected function setUp(): void
@@ -26,7 +25,7 @@ class RouteAnalyzerAdvancedTest extends TestCase
         parent::setUp();
 
         $this->cache = Mockery::mock(DocumentationCache::class);
-        $this->errorCollector = new ErrorCollector();
+        $this->errorCollector = new ErrorCollector;
         $this->analyzer = new RouteAnalyzer($this->cache, $this->errorCollector);
     }
 
@@ -35,7 +34,7 @@ class RouteAnalyzerAdvancedTest extends TestCase
     {
         // Arrange
         Route::get('api/users', [UserController::class, 'index']);
-        
+
         // Act
         $routes = $this->analyzer->analyze(false);
 
@@ -50,7 +49,7 @@ class RouteAnalyzerAdvancedTest extends TestCase
         // Arrange
         $this->cache->shouldReceive('isEnabled')->andReturn(false);
         Route::get('api/users', [UserController::class, 'index']);
-        
+
         // Act
         $routes = $this->analyzer->analyze(true);
 
@@ -63,27 +62,27 @@ class RouteAnalyzerAdvancedTest extends TestCase
     public function it_can_reload_routes()
     {
         // Arrange - Create a temporary route file
-        $tempFile = sys_get_temp_dir() . '/reload_test_' . uniqid() . '.php';
+        $tempFile = sys_get_temp_dir().'/reload_test_'.uniqid().'.php';
         file_put_contents($tempFile, '<?php
 use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 
 Route::get("api/from-file", [UserController::class, "index"]);
 ');
-        
+
         // Set up the route files config
         config(['spectrum.route_files' => [$tempFile]]);
-        
+
         // Add a route that won't be in the file
         Route::get('api/test-before', [UserController::class, 'index']);
-        
+
         // Act
         $this->analyzer->reloadRoutes();
-        
+
         // Assert - routes from file should be loaded
         $fromFileExists = false;
         $testBeforeExists = false;
-        
+
         foreach (Route::getRoutes() as $route) {
             if ($route->uri() === 'api/from-file') {
                 $fromFileExists = true;
@@ -92,10 +91,10 @@ Route::get("api/from-file", [UserController::class, "index"]);
                 $testBeforeExists = true;
             }
         }
-        
+
         $this->assertTrue($fromFileExists, 'Route from file should exist after reload');
         $this->assertFalse($testBeforeExists, 'Test route added before reload should not exist');
-        
+
         // Cleanup
         unlink($tempFile);
     }
@@ -113,7 +112,7 @@ Route::get("api/from-file", [UserController::class, "index"]);
         // Act & Assert
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Forced failure in loadRouteFiles');
-        
+
         try {
             $analyzer->reloadRoutes();
         } catch (Exception $e) {
@@ -127,10 +126,10 @@ Route::get("api/from-file", [UserController::class, "index"]);
     public function it_loads_route_files_from_config()
     {
         // Arrange
-        $tempDir = sys_get_temp_dir() . '/spectrum_test_' . uniqid();
+        $tempDir = sys_get_temp_dir().'/spectrum_test_'.uniqid();
         mkdir($tempDir);
-        $tempFile = $tempDir . '/test_routes.php';
-        
+        $tempFile = $tempDir.'/test_routes.php';
+
         $routeContent = <<<'PHP'
 <?php
 use Illuminate\Support\Facades\Route;
@@ -138,10 +137,10 @@ use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 
 Route::get('api/custom-route', [UserController::class, 'index']);
 PHP;
-        
+
         file_put_contents($tempFile, $routeContent);
         config(['spectrum.route_files' => [$tempFile]]);
-        
+
         // Act
         $this->analyzer->reloadRoutes();
         $routes = $this->analyzer->analyze(false);
@@ -166,7 +165,7 @@ PHP;
     {
         // Arrange
         config(['spectrum.route_files' => ['/non/existent/file.php']]);
-        
+
         // Act
         $this->analyzer->reloadRoutes();
         $routes = $this->analyzer->analyze(false);
@@ -180,11 +179,11 @@ PHP;
     public function it_handles_route_file_loading_errors()
     {
         // Arrange
-        $tempFile = sys_get_temp_dir() . '/error_routes_' . uniqid() . '.php';
+        $tempFile = sys_get_temp_dir().'/error_routes_'.uniqid().'.php';
         file_put_contents($tempFile, '<?php throw new Exception("Route loading error");');
-        
+
         config(['spectrum.route_files' => [$tempFile]]);
-        
+
         // Act
         $this->analyzer->reloadRoutes();
 
@@ -203,10 +202,10 @@ PHP;
     {
         // Arrange
         Route::get('api/users', [UserController::class, 'index']);
-        
+
         // Create a problematic route using a mock controller
         $mockController = Mockery::mock();
-        Route::get('api/problem', function() use ($mockController) {
+        Route::get('api/problem', function () {
             throw new Exception('Controller instantiation failed');
         });
 
@@ -216,7 +215,7 @@ PHP;
             if ($route->uri() === 'api/problem') {
                 $route->setAction([
                     'uses' => 'ProblematicController@method',
-                    'controller' => 'ProblematicController@method'
+                    'controller' => 'ProblematicController@method',
                 ]);
             }
         }
@@ -264,7 +263,7 @@ PHP;
         // Assert
         $this->assertCount(1, $routes[0]['parameters']);
         $this->assertEquals('id', $routes[0]['parameters'][0]['name']);
-        
+
         $this->assertCount(1, $routes[1]['parameters']);
         $this->assertEquals('slug', $routes[1]['parameters'][0]['name']);
     }
@@ -309,13 +308,13 @@ PHP;
     {
         // This test verifies that opcache_invalidate is called when available
         // We can't directly test this, but we can ensure the code path executes without error
-        
+
         // Arrange
-        $tempFile = sys_get_temp_dir() . '/opcache_test_' . uniqid() . '.php';
+        $tempFile = sys_get_temp_dir().'/opcache_test_'.uniqid().'.php';
         file_put_contents($tempFile, '<?php // Empty route file');
-        
+
         config(['spectrum.route_files' => [$tempFile]]);
-        
+
         // Act
         $this->analyzer->reloadRoutes();
 
@@ -331,7 +330,9 @@ PHP;
     {
         // Arrange
         // Add various types of routes that should be skipped
-        Route::get('api/closure', function() { return 'closure'; });
+        Route::get('api/closure', function () {
+            return 'closure';
+        });
         Route::view('api/view', 'welcome');
         Route::redirect('api/redirect', '/somewhere');
         Route::get('api/valid', [UserController::class, 'index']);
@@ -340,10 +341,10 @@ PHP;
         $routes = $this->analyzer->analyze(false);
 
         // Assert - only the valid controller route should be included
-        $validRoutes = array_filter($routes, function($route) {
+        $validRoutes = array_filter($routes, function ($route) {
             return $route['uri'] === 'api/valid';
         });
-        
+
         $this->assertCount(1, $validRoutes);
         $firstValidRoute = reset($validRoutes);
         $this->assertEquals('api/valid', $firstValidRoute['uri']);
@@ -355,7 +356,7 @@ PHP;
     {
         // Arrange
         Route::get('api/users', [UserController::class, 'index']);
-        
+
         $this->cache->shouldReceive('isEnabled')->andReturn(true);
         $this->cache->shouldReceive('rememberRoutes')
             ->once()
