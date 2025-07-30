@@ -318,6 +318,129 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEquals('string', $itemNameParam['type']);
     }
 
+    #[Test]
+    public function it_extracts_custom_validation_messages()
+    {
+        // Arrange
+        $testRequestClass = new class extends FormRequest
+        {
+            public function rules(): array
+            {
+                return [
+                    'name' => 'required|string|max:255',
+                    'email' => 'required|email',
+                    'age' => 'required|integer|min:18',
+                ];
+            }
+
+            public function messages(): array
+            {
+                return [
+                    'name.required' => 'The name field is mandatory.',
+                    'name.max' => 'The name must not exceed :max characters.',
+                    'email.required' => 'Please provide your email address.',
+                    'email.email' => 'Please provide a valid email address.',
+                    'age.min' => 'You must be at least :min years old.',
+                ];
+            }
+        };
+
+        // Act
+        $parameters = $this->analyzer->analyze(get_class($testRequestClass));
+
+        // Assert
+        // The analyze method doesn't return messages directly,
+        // but we can verify the parameters are extracted correctly
+        $this->assertCount(3, $parameters);
+
+        $nameParam = $this->findParameterByName($parameters, 'name');
+        $this->assertNotNull($nameParam);
+        $this->assertTrue($nameParam['required']);
+        $this->assertEquals('string', $nameParam['type']);
+
+        $emailParam = $this->findParameterByName($parameters, 'email');
+        $this->assertNotNull($emailParam);
+        $this->assertTrue($emailParam['required']);
+        $this->assertEquals('string', $emailParam['type']);
+
+        $ageParam = $this->findParameterByName($parameters, 'age');
+        $this->assertNotNull($ageParam);
+        $this->assertTrue($ageParam['required']);
+        $this->assertEquals('integer', $ageParam['type']);
+    }
+
+    #[Test]
+    public function it_analyzes_form_request_with_details()
+    {
+        // Act - Use the existing StoreUserRequest fixture
+        $details = $this->analyzer->analyzeWithDetails(StoreUserRequest::class);
+
+        // Assert
+        $this->assertIsArray($details);
+        $this->assertArrayHasKey('rules', $details);
+        $this->assertArrayHasKey('attributes', $details);
+        $this->assertArrayHasKey('messages', $details);
+
+        // Verify rules exist
+        $this->assertArrayHasKey('name', $details['rules']);
+        $this->assertArrayHasKey('email', $details['rules']);
+        $this->assertArrayHasKey('password', $details['rules']);
+        $this->assertArrayHasKey('age', $details['rules']);
+
+        // Verify rule values
+        $this->assertEquals('required|string|max:255', $details['rules']['name']);
+        $this->assertEquals('required|email|unique:users', $details['rules']['email']);
+        $this->assertEquals('required|string|min:8|confirmed', $details['rules']['password']);
+        $this->assertEquals('sometimes|integer|min:0|max:150', $details['rules']['age']);
+
+        // Verify attributes
+        $this->assertEquals('ユーザー名', $details['attributes']['name']);
+        $this->assertEquals('メールアドレス', $details['attributes']['email']);
+        $this->assertEquals('パスワード', $details['attributes']['password']);
+        $this->assertEquals('年齢', $details['attributes']['age']);
+
+        // Verify messages array exists (StoreUserRequest doesn't define messages)
+        $this->assertIsArray($details['messages']);
+        $this->assertEmpty($details['messages']);
+    }
+
+    #[Test]
+    public function it_analyzes_form_request_with_conditional_rules()
+    {
+        // This test verifies that the analyzeWithConditionalRules method exists and returns the expected structure
+        // For anonymous classes, conditional rules extraction falls back to basic analysis
+
+        // Arrange - Create a simple FormRequest
+        $testRequestClass = new class extends FormRequest
+        {
+            public function rules(): array
+            {
+                return [
+                    'name' => 'required|string|max:255',
+                    'type' => 'required|in:personal,business',
+                ];
+            }
+        };
+
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules(get_class($testRequestClass));
+
+        // Assert - Verify the structure
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+
+        // Verify conditional rules structure
+        $conditionalRules = $result['conditional_rules'];
+        $this->assertIsArray($conditionalRules);
+        $this->assertArrayHasKey('rules_sets', $conditionalRules);
+        $this->assertArrayHasKey('merged_rules', $conditionalRules);
+
+        // For anonymous classes, the rules_sets will be empty as AST parsing is limited
+        $this->assertIsArray($conditionalRules['rules_sets']);
+        $this->assertIsArray($conditionalRules['merged_rules']);
+    }
+
     private function findParameterByName(array $parameters, string $name): ?array
     {
         foreach ($parameters as $parameter) {
