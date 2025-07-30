@@ -548,6 +548,12 @@ class FormRequestAnalyzer
                 'validation' => $ruleArray,
             ];
 
+            // Add conditional rule information
+            if ($this->hasConditionalRequired($ruleArray)) {
+                $parameter['conditional_required'] = true;
+                $parameter['conditional_rules'] = $this->extractConditionalRuleDetails($ruleArray);
+            }
+
             // Add enum information if found
             if ($enumInfo) {
                 $parameter['enum'] = $enumInfo;
@@ -580,12 +586,78 @@ class FormRequestAnalyzer
 
         foreach ($rules as $rule) {
             $ruleName = is_string($rule) ? explode(':', $rule)[0] : '';
-            if (in_array($ruleName, ['required', 'required_if', 'required_unless', 'required_with', 'required_without'])) {
+            // Only 'required' without conditions makes a field truly required
+            // Conditional required rules (required_if, etc.) don't make a field unconditionally required
+            if ($ruleName === 'required') {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * 条件付き必須ルールがあるかどうかを判定
+     */
+    protected function hasConditionalRequired($rules): bool
+    {
+        if (is_string($rules)) {
+            $rules = explode('|', $rules);
+        }
+
+        foreach ($rules as $rule) {
+            $ruleName = is_string($rule) ? explode(':', $rule)[0] : '';
+            if (in_array($ruleName, ['required_if', 'required_unless', 'required_with', 'required_without', 'required_with_all', 'required_without_all'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 条件付きルールの詳細を抽出
+     */
+    protected function extractConditionalRuleDetails($rules): array
+    {
+        if (is_string($rules)) {
+            $rules = explode('|', $rules);
+        }
+
+        $conditionalRules = [];
+
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            $parts = explode(':', $rule, 2);
+            $ruleName = $parts[0];
+            $ruleParams = isset($parts[1]) ? $parts[1] : '';
+
+            // Handle conditional rules
+            if (in_array($ruleName, ['required_if', 'required_unless', 'required_with', 'required_without', 'required_with_all', 'required_without_all'])) {
+                $conditionalRules[] = [
+                    'type' => $ruleName,
+                    'parameters' => $ruleParams,
+                    'full_rule' => $rule,
+                ];
+            } elseif (in_array($ruleName, ['prohibited_if', 'prohibited_unless', 'prohibited_with', 'prohibited_without'])) {
+                $conditionalRules[] = [
+                    'type' => $ruleName,
+                    'parameters' => $ruleParams,
+                    'full_rule' => $rule,
+                ];
+            } elseif (in_array($ruleName, ['exclude_if', 'exclude_unless', 'exclude_with', 'exclude_without'])) {
+                $conditionalRules[] = [
+                    'type' => $ruleName,
+                    'parameters' => $ruleParams,
+                    'full_rule' => $rule,
+                ];
+            }
+        }
+
+        return $conditionalRules;
     }
 
     /**
@@ -596,6 +668,7 @@ class FormRequestAnalyzer
         $description = Str::title(str_replace(['_', '-'], ' ', $field));
 
         // 特定のルールから追加情報を生成
+        $conditionalInfo = [];
         foreach ($rules as $rule) {
             if (is_string($rule)) {
                 if (str_starts_with($rule, 'max:')) {
@@ -604,6 +677,36 @@ class FormRequestAnalyzer
                 } elseif (str_starts_with($rule, 'min:')) {
                     $min = Str::after($rule, 'min:');
                     $description .= " (最小{$min}文字)";
+                } elseif (str_starts_with($rule, 'required_if:')) {
+                    $params = Str::after($rule, 'required_if:');
+                    $parts = explode(',', $params);
+                    if (count($parts) >= 2) {
+                        $field = $parts[0];
+                        $value = implode(',', array_slice($parts, 1));
+                        $conditionalInfo[] = "Required when {$field} is {$value}";
+                    }
+                } elseif (str_starts_with($rule, 'required_unless:')) {
+                    $params = Str::after($rule, 'required_unless:');
+                    $parts = explode(',', $params);
+                    if (count($parts) >= 2) {
+                        $field = $parts[0];
+                        $value = implode(',', array_slice($parts, 1));
+                        $conditionalInfo[] = "Required unless {$field} is {$value}";
+                    }
+                } elseif (str_starts_with($rule, 'required_with:')) {
+                    $fields = Str::after($rule, 'required_with:');
+                    $conditionalInfo[] = "Required when any of these fields are present: {$fields}";
+                } elseif (str_starts_with($rule, 'required_without:')) {
+                    $fields = Str::after($rule, 'required_without:');
+                    $conditionalInfo[] = "Required when any of these fields are not present: {$fields}";
+                } elseif (str_starts_with($rule, 'prohibited_if:')) {
+                    $params = Str::after($rule, 'prohibited_if:');
+                    $parts = explode(',', $params);
+                    if (count($parts) >= 2) {
+                        $field = $parts[0];
+                        $value = implode(',', array_slice($parts, 1));
+                        $conditionalInfo[] = "Prohibited when {$field} is {$value}";
+                    }
                 }
             }
 
@@ -613,6 +716,11 @@ class FormRequestAnalyzer
                 $enumClassName = class_basename($enumResult['class']);
                 $description .= " ({$enumClassName})";
             }
+        }
+
+        // Add conditional information to description
+        if (! empty($conditionalInfo)) {
+            $description .= '. '.implode('. ', $conditionalInfo);
         }
 
         return $description;
