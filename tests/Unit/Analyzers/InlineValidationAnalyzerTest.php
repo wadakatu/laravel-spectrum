@@ -247,6 +247,151 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertEmpty($result);
     }
 
+    #[Test]
+    public function it_handles_closure_validation_rules()
+    {
+        $code = '<?php
+        use Illuminate\Support\Facades\Validator;
+        
+        class UserController {
+            public function store($request) {
+                $validator = Validator::make($request->all(), [
+                    "username" => [
+                        "required",
+                        "string",
+                        "min:3",
+                        function ($attribute, $value, $fail) {
+                            if (strtolower($value) === "admin") {
+                                $fail("The username cannot be admin.");
+                            }
+                        }
+                    ],
+                    "age" => [
+                        "required",
+                        "integer",
+                        function ($attribute, $value, $fail) {
+                            if ($value < 18) {
+                                $fail("You must be at least 18 years old.");
+                            }
+                        }
+                    ],
+                    "email" => ["required", "email"]
+                ]);
+            }
+        }';
+
+        $ast = $this->parser->parse($code);
+        $method = $this->findMethod($ast, 'store');
+
+        $result = $this->analyzer->analyze($method);
+
+        $this->assertArrayHasKey('rules', $result);
+
+        // Check username rules
+        $this->assertIsArray($result['rules']['username']);
+        $this->assertContains('required', $result['rules']['username']);
+        $this->assertContains('string', $result['rules']['username']);
+        $this->assertContains('min:3', $result['rules']['username']);
+        // Closure should be detected but represented as a custom rule
+        $hasCustomRule = false;
+        foreach ($result['rules']['username'] as $rule) {
+            if (is_string($rule) && strpos($rule, 'custom:') === 0) {
+                $hasCustomRule = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasCustomRule, 'Closure rule should be detected as custom rule');
+
+        // Check age rules
+        $this->assertIsArray($result['rules']['age']);
+        $this->assertContains('required', $result['rules']['age']);
+        $this->assertContains('integer', $result['rules']['age']);
+
+        // Check email rules
+        $this->assertIsArray($result['rules']['email']);
+        $this->assertContains('required', $result['rules']['email']);
+        $this->assertContains('email', $result['rules']['email']);
+    }
+
+    #[Test]
+    public function it_handles_mixed_string_and_closure_rules()
+    {
+        $code = '<?php
+        class UserController {
+            public function update($request) {
+                $this->validate($request, [
+                    "password" => [
+                        "sometimes",
+                        "string",
+                        "min:8",
+                        function ($attribute, $value, $fail) use ($request) {
+                            if ($value === $request->old_password) {
+                                $fail("New password must be different from old password.");
+                            }
+                        },
+                        "confirmed"
+                    ]
+                ]);
+            }
+        }';
+
+        $ast = $this->parser->parse($code);
+        $method = $this->findMethod($ast, 'update');
+
+        $result = $this->analyzer->analyze($method);
+
+        $this->assertArrayHasKey('rules', $result);
+        $this->assertIsArray($result['rules']['password']);
+        $this->assertContains('sometimes', $result['rules']['password']);
+        $this->assertContains('string', $result['rules']['password']);
+        $this->assertContains('min:8', $result['rules']['password']);
+        $this->assertContains('confirmed', $result['rules']['password']);
+
+        // Verify closure is detected
+        $hasCustomRule = false;
+        foreach ($result['rules']['password'] as $rule) {
+            if (is_string($rule) && strpos($rule, 'custom:') === 0) {
+                $hasCustomRule = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasCustomRule, 'Closure rule should be detected');
+    }
+
+    #[Test]
+    public function it_generates_parameters_with_closure_rules()
+    {
+        $validation = [
+            'rules' => [
+                'code' => [
+                    'required',
+                    'string',
+                    'size:6',
+                    'custom:closure_validation',
+                ],
+            ],
+            'attributes' => [
+                'code' => 'Verification Code',
+            ],
+        ];
+
+        $parameters = $this->analyzer->generateParameters($validation);
+
+        $this->assertCount(1, $parameters);
+
+        $codeParam = $parameters[0];
+        $this->assertEquals('code', $codeParam['name']);
+        $this->assertEquals('string', $codeParam['type']);
+        $this->assertTrue($codeParam['required']);
+        // size:6 should set both minLength and maxLength
+        $this->assertArrayHasKey('minLength', $codeParam);
+        $this->assertArrayHasKey('maxLength', $codeParam);
+        $this->assertEquals(6, $codeParam['minLength']);
+        $this->assertEquals(6, $codeParam['maxLength']);
+        $this->assertStringContainsString('Verification Code', $codeParam['description']);
+        $this->assertStringContainsString('Custom validation applied', $codeParam['description']);
+    }
+
     private function findMethod(array $ast, string $methodName): ?ClassMethod
     {
         foreach ($ast as $node) {
