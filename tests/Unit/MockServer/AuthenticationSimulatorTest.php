@@ -16,13 +16,34 @@ class AuthenticationSimulatorTest extends TestCase
         $this->simulator = new AuthenticationSimulator;
     }
 
+    /**
+     * Create a stub Request object with the given header values
+     */
+    private function createRequestStub(array $headers = []): Request
+    {
+        return new class($headers) extends Request
+        {
+            private array $headers;
+
+            public function __construct(array $headers)
+            {
+                $this->headers = $headers;
+            }
+
+            public function header(?string $name = null, mixed $default = null): mixed
+            {
+                $name = strtolower($name);
+
+                return $this->headers[$name] ?? $default;
+            }
+        };
+    }
+
     public function test_authenticates_with_bearer_token(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())
-            ->method('header')
-            ->with('authorization')
-            ->willReturn('Bearer test-token-123');
+        $request = $this->createRequestStub([
+            'authorization' => 'Bearer test-token-123',
+        ]);
 
         $security = [
             ['bearerAuth' => []],
@@ -37,11 +58,9 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_fails_authentication_with_invalid_bearer_token(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())
-            ->method('header')
-            ->with('authorization')
-            ->willReturn('Bearer invalid-token');
+        $request = $this->createRequestStub([
+            'authorization' => 'Bearer invalid-token',
+        ]);
 
         $security = [
             ['bearerAuth' => []],
@@ -55,11 +74,9 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_authenticates_with_api_key(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())
-            ->method('header')
-            ->with('x-api-key')
-            ->willReturn('test-api-key-123');
+        $request = $this->createRequestStub([
+            'x-api-key' => 'test-api-key-123',
+        ]);
 
         $security = [
             ['apiKey' => []],
@@ -74,10 +91,7 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_fails_authentication_with_missing_api_key(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->atLeastOnce())
-            ->method('header')
-            ->willReturn(null);
+        $request = $this->createRequestStub([]);
 
         $security = [
             ['apiKey' => []],
@@ -92,11 +106,9 @@ class AuthenticationSimulatorTest extends TestCase
     public function test_authenticates_with_basic_auth(): void
     {
         $credentials = base64_encode('user:password');
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())
-            ->method('header')
-            ->with('authorization')
-            ->willReturn('Basic '.$credentials);
+        $request = $this->createRequestStub([
+            'authorization' => 'Basic '.$credentials,
+        ]);
 
         $security = [
             ['basicAuth' => []],
@@ -111,11 +123,9 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_fails_authentication_with_invalid_basic_auth(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())
-            ->method('header')
-            ->with('authorization')
-            ->willReturn('Basic invalid-base64');
+        $request = $this->createRequestStub([
+            'authorization' => 'Basic invalid-base64',
+        ]);
 
         $security = [
             ['basicAuth' => []],
@@ -129,14 +139,9 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_authenticates_with_multiple_security_schemes(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('header')
-            ->willReturnMap([
-                ['authorization', null, null],
-                ['x-api-key', null, 'test-api-key-123'],
-                ['api-key', null, null],
-            ]);
+        $request = $this->createRequestStub([
+            'x-api-key' => 'test-api-key-123',
+        ]);
 
         $security = [
             ['bearerAuth' => []],
@@ -151,10 +156,7 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_fails_when_no_security_scheme_matches(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('header')
-            ->willReturn(null);
+        $request = $this->createRequestStub([]);
 
         $security = [
             ['bearerAuth' => []],
@@ -170,7 +172,7 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_returns_authenticated_when_no_security_defined(): void
     {
-        $request = $this->createMock(Request::class);
+        $request = $this->createRequestStub([]);
 
         $result = $this->simulator->authenticate($request, []);
 
@@ -180,11 +182,9 @@ class AuthenticationSimulatorTest extends TestCase
 
     public function test_authenticates_with_o_auth2(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())
-            ->method('header')
-            ->with('authorization')
-            ->willReturn('Bearer oauth2-token-123');
+        $request = $this->createRequestStub([
+            'authorization' => 'Bearer oauth2-token-123',
+        ]);
 
         $security = [
             ['oauth2' => ['read', 'write']],

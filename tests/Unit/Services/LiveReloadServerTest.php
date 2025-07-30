@@ -19,6 +19,41 @@ class LiveReloadServerTest extends TestCase
         $this->server = new LiveReloadServer;
     }
 
+    /**
+     * Create a stub Request object with the given configuration
+     */
+    private function createRequestStub(array $config = []): Request
+    {
+        return new class($config) extends Request
+        {
+            private array $config;
+
+            public function __construct(array $config)
+            {
+                $this->config = $config;
+            }
+
+            public function path(): string
+            {
+                return $this->config['path'] ?? '/';
+            }
+
+            public function method(): string
+            {
+                return $this->config['method'] ?? 'GET';
+            }
+
+            public function header(?string $name = null, mixed $default = null): mixed
+            {
+                if ($name === null) {
+                    return $this->config['headers'] ?? [];
+                }
+
+                return ($this->config['headers'] ?? [])[strtolower($name)] ?? $default;
+            }
+        };
+    }
+
     public function test_can_instantiate_server(): void
     {
         $this->assertInstanceOf(LiveReloadServer::class, $this->server);
@@ -163,10 +198,9 @@ class LiveReloadServerTest extends TestCase
         $httpWorker = $httpWorkerProperty->getValue($this->server);
 
         // モックのリクエストとコネクションを作成
-        $mockRequest = $this->createMock(Request::class);
-        $mockRequest->expects($this->once())
-            ->method('path')
-            ->willReturn('/');
+        $mockRequest = $this->createRequestStub([
+            'path' => '/',
+        ]);
 
         $mockConnection = $this->createMock(TcpConnection::class);
 
@@ -200,10 +234,9 @@ class LiveReloadServerTest extends TestCase
         $httpWorker = $httpWorkerProperty->getValue($this->server);
 
         // モックのリクエストとコネクションを作成
-        $mockRequest = $this->createMock(Request::class);
-        $mockRequest->expects($this->once())
-            ->method('path')
-            ->willReturn('/openapi.json');
+        $mockRequest = $this->createRequestStub([
+            'path' => '/openapi.json',
+        ]);
 
         $mockConnection = $this->createMock(TcpConnection::class);
 
@@ -235,10 +268,9 @@ class LiveReloadServerTest extends TestCase
         $httpWorker = $httpWorkerProperty->getValue($this->server);
 
         // モックのリクエストとコネクションを作成
-        $mockRequest = $this->createMock(Request::class);
-        $mockRequest->expects($this->once())
-            ->method('path')
-            ->willReturn('/unknown');
+        $mockRequest = $this->createRequestStub([
+            'path' => '/unknown',
+        ]);
 
         $mockConnection = $this->createMock(TcpConnection::class);
 

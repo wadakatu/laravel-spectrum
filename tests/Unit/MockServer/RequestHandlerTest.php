@@ -34,15 +34,65 @@ class RequestHandlerTest extends TestCase
         );
     }
 
+    /**
+     * Create a stub Request object with the given data
+     */
+    private function createRequestStub(array $config = []): Request
+    {
+        return new class($config) extends Request
+        {
+            private array $config;
+
+            public function __construct(array $config)
+            {
+                $this->config = $config;
+            }
+
+            public function method(): string
+            {
+                return $this->config['method'] ?? 'GET';
+            }
+
+            public function get(?string $name = null, mixed $default = null): mixed
+            {
+                if ($name === null) {
+                    return $this->config['get'] ?? [];
+                }
+
+                return ($this->config['get'] ?? [])[$name] ?? $default;
+            }
+
+            public function post(?string $name = null, mixed $default = null): mixed
+            {
+                if ($name === null) {
+                    return $this->config['post'] ?? [];
+                }
+
+                return ($this->config['post'] ?? [])[$name] ?? $default;
+            }
+
+            public function header(?string $name = null, mixed $default = null): mixed
+            {
+                if ($name === null) {
+                    return $this->config['headers'] ?? [];
+                }
+
+                return ($this->config['headers'] ?? [])[strtolower($name)] ?? $default;
+            }
+
+            public function rawBody(): string
+            {
+                return $this->config['rawBody'] ?? '';
+            }
+        };
+    }
+
     public function test_handles_successful_request(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('GET');
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn([]);
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => [],
+        ]);
 
         $route = [
             'operation' => [
@@ -77,7 +127,7 @@ class RequestHandlerTest extends TestCase
 
     public function test_handles_authentication_failure(): void
     {
-        $request = $this->createMock(Request::class);
+        $request = $this->createRequestStub([]);
 
         $route = [
             'operation' => [
@@ -107,20 +157,12 @@ class RequestHandlerTest extends TestCase
 
     public function test_handles_validation_failure(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('POST');
-        $request->expects($this->any())
-            ->method('rawBody')
-            ->willReturn('{"name": ""}');
-        $request->expects($this->any())
-            ->method('header')
-            ->with('content-type', 'application/json')
-            ->willReturn('application/json');
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn([]);
+        $request = $this->createRequestStub([
+            'method' => 'POST',
+            'rawBody' => '{"name": ""}',
+            'headers' => ['content-type' => 'application/json'],
+            'get' => [],
+        ]);
 
         $route = [
             'operation' => [
@@ -156,13 +198,10 @@ class RequestHandlerTest extends TestCase
 
     public function test_handles_request_with_query_parameters(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('GET');
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn(['page' => '2', 'limit' => '10']);
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => ['page' => '2', 'limit' => '10'],
+        ]);
 
         $route = [
             'operation' => [
@@ -203,13 +242,10 @@ class RequestHandlerTest extends TestCase
 
     public function test_handles_request_with_path_parameters(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('GET');
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn([]);
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => [],
+        ]);
 
         $route = [
             'operation' => [
@@ -250,13 +286,10 @@ class RequestHandlerTest extends TestCase
 
     public function test_handles_scenario_based_response(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('GET');
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn(['_scenario' => 'error']);
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => ['_scenario' => 'error'],
+        ]);
 
         $route = [
             'operation' => [],
@@ -295,20 +328,12 @@ class RequestHandlerTest extends TestCase
     {
         $requestBody = ['name' => 'John Doe', 'email' => 'john@example.com'];
 
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('POST');
-        $request->expects($this->any())
-            ->method('rawBody')
-            ->willReturn(json_encode($requestBody));
-        $request->expects($this->any())
-            ->method('header')
-            ->with('content-type', 'application/json')
-            ->willReturn('application/json');
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn([]);
+        $request = $this->createRequestStub([
+            'method' => 'POST',
+            'rawBody' => json_encode($requestBody),
+            'headers' => ['content-type' => 'application/json'],
+            'get' => [],
+        ]);
 
         $route = [
             'operation' => [
@@ -348,20 +373,12 @@ class RequestHandlerTest extends TestCase
 
     public function test_handles_multipart_form_data(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->any())
-            ->method('method')
-            ->willReturn('POST');
-        $request->expects($this->any())
-            ->method('header')
-            ->with('content-type', 'application/json')
-            ->willReturn('multipart/form-data');
-        $request->expects($this->any())
-            ->method('post')
-            ->willReturn(['name' => 'John', 'file' => 'uploaded.jpg']);
-        $request->expects($this->any())
-            ->method('get')
-            ->willReturn([]);
+        $request = $this->createRequestStub([
+            'method' => 'POST',
+            'headers' => ['content-type' => 'multipart/form-data'],
+            'post' => ['name' => 'John', 'file' => 'uploaded.jpg'],
+            'get' => [],
+        ]);
 
         $route = [
             'operation' => [],
