@@ -111,6 +111,7 @@ class ParallelProcessor
                         fclose($fp);
                     }
                 }
+
                 return $results;
             };
         }

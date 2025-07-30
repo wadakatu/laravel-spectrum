@@ -10,7 +10,7 @@ class ParallelProcessorAdvancedTest extends TestCase
     public function test_constructor_with_custom_parameters(): void
     {
         $processor = new ParallelProcessor(true, 8);
-        
+
         $reflection = new \ReflectionClass($processor);
         $workersProperty = $reflection->getProperty('workers');
         $workersProperty->setAccessible(true);
@@ -54,7 +54,7 @@ class ParallelProcessorAdvancedTest extends TestCase
             $this->assertFalse($supported);
         }
 
-        if (!extension_loaded('pcntl')) {
+        if (! extension_loaded('pcntl')) {
             $this->assertFalse($supported);
         }
     }
@@ -63,8 +63,8 @@ class ParallelProcessorAdvancedTest extends TestCase
     {
         $this->app['config']->set('spectrum.performance.parallel_processing', false);
 
-        $processor = new ParallelProcessor();
-        
+        $processor = new ParallelProcessor;
+
         $reflection = new \ReflectionClass($processor);
         $enabledProperty = $reflection->getProperty('enabled');
         $enabledProperty->setAccessible(true);
@@ -88,7 +88,7 @@ class ParallelProcessorAdvancedTest extends TestCase
         $results = $processor->process($routes, $processFunc);
 
         $this->assertCount(10, $results);
-        
+
         // 結果の検証
         $this->assertContains('ROUTE1', $results);
         $this->assertContains('ROUTE10', $results);
@@ -96,26 +96,26 @@ class ParallelProcessorAdvancedTest extends TestCase
 
     public function test_process_with_database_in_before_callback(): void
     {
-        if (!class_exists('\Illuminate\Support\Facades\DB')) {
+        if (! class_exists('\Illuminate\Support\Facades\DB')) {
             $this->markTestSkipped('Laravel DB facade not available');
         }
 
         // DB reconnection のテスト
         $this->app['config']->set('database.default', 'testing');
-        
+
         $processor = new ParallelProcessor(true, 2);
         $items = range(1, 10);
 
         // 実際のForkが利用できない環境でも動作することを確認
         $results = $processor->process($items, fn ($item) => $item * 2);
-        
+
         $this->assertCount(10, $results);
-        $expected = array_map(fn($i) => $i * 2, $items);
-        
+        $expected = array_map(fn ($i) => $i * 2, $items);
+
         // 順序が保たれない可能性があるのでsort
         sort($results);
         sort($expected);
-        
+
         $this->assertEquals($expected, $results);
     }
 
@@ -123,7 +123,7 @@ class ParallelProcessorAdvancedTest extends TestCase
     {
         // Create a processor with parallel mode enabled
         $processor = new ParallelProcessor(true, 4);
-        
+
         $items = range(1, 20);
         $progressCalls = [];
 
@@ -136,15 +136,15 @@ class ParallelProcessorAdvancedTest extends TestCase
         );
 
         $this->assertCount(20, $results);
-        
+
         // 結果の検証（順序は保証されない）
-        $expected = array_map(fn($i) => $i * 3, $items);
+        $expected = array_map(fn ($i) => $i * 3, $items);
         sort($results);
         sort($expected);
         $this->assertEquals($expected, $results);
-        
+
         // 進捗が報告されていることを確認
-        if (!empty($progressCalls)) {
+        if (! empty($progressCalls)) {
             $lastCall = end($progressCalls);
             $this->assertEquals(20, $lastCall['total']);
         }
@@ -153,10 +153,10 @@ class ParallelProcessorAdvancedTest extends TestCase
     public function test_process_with_progress_file_handling(): void
     {
         $processor = new ParallelProcessor(false, 4);
-        
+
         // テスト用の一時ファイルが作成・削除されることを確認
         $tempDir = sys_get_temp_dir();
-        $filesBefore = glob($tempDir . '/spectrum_progress_*');
+        $filesBefore = glob($tempDir.'/spectrum_progress_*');
 
         $items = range(1, 15);
         $processor->processWithProgress(
@@ -165,8 +165,8 @@ class ParallelProcessorAdvancedTest extends TestCase
             fn ($current, $total) => null
         );
 
-        $filesAfter = glob($tempDir . '/spectrum_progress_*');
-        
+        $filesAfter = glob($tempDir.'/spectrum_progress_*');
+
         // 処理後に一時ファイルが削除されていることを確認
         $this->assertEquals(count($filesBefore), count($filesAfter));
     }

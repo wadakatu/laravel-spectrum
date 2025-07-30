@@ -292,6 +292,7 @@ class ParallelProcessorTest extends TestCase
             if ($item === 2) {
                 throw new \RuntimeException('Test exception');
             }
+
             return $item;
         };
 
@@ -306,7 +307,7 @@ class ParallelProcessorTest extends TestCase
     public function test_process_with_database_reconnection(): void
     {
         // このテストはLaravelのDB ファサードが利用可能な場合のみ意味がある
-        if (!class_exists('\Illuminate\Support\Facades\DB')) {
+        if (! class_exists('\Illuminate\Support\Facades\DB')) {
             $this->markTestSkipped('Laravel DB facade not available');
         }
 

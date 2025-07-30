@@ -15,8 +15,8 @@ class ParallelProcessorIntegrationTest extends TestCase
 
     public function test_constructor_with_default_parameters(): void
     {
-        $processor = new ParallelProcessor();
-        
+        $processor = new ParallelProcessor;
+
         $reflection = new \ReflectionClass($processor);
         $workersProperty = $reflection->getProperty('workers');
         $workersProperty->setAccessible(true);
@@ -38,8 +38,8 @@ class ParallelProcessorIntegrationTest extends TestCase
         // 設定で並列処理を無効化
         $this->app['config']->set('spectrum.performance.parallel_processing', false);
 
-        $processor = new ParallelProcessor();
-        
+        $processor = new ParallelProcessor;
+
         $reflection = new \ReflectionClass($processor);
         $enabledProperty = $reflection->getProperty('enabled');
         $enabledProperty->setAccessible(true);
@@ -52,8 +52,8 @@ class ParallelProcessorIntegrationTest extends TestCase
         // 設定で並列処理を有効化
         $this->app['config']->set('spectrum.performance.parallel_processing', true);
 
-        $processor = new ParallelProcessor();
-        
+        $processor = new ParallelProcessor;
+
         $reflection = new \ReflectionClass($processor);
         $method = $reflection->getMethod('checkParallelProcessingSupport');
         $method->setAccessible(true);
@@ -63,7 +63,7 @@ class ParallelProcessorIntegrationTest extends TestCase
         // Windows環境やPCNTL拡張の有無により結果が異なる
         if (PHP_OS_FAMILY === 'Windows') {
             $this->assertFalse($supported);
-        } elseif (!extension_loaded('pcntl')) {
+        } elseif (! extension_loaded('pcntl')) {
             $this->assertFalse($supported);
         } else {
             $this->assertTrue($supported);
@@ -84,7 +84,7 @@ class ParallelProcessorIntegrationTest extends TestCase
 
         // DB::reconnect() がエラーなく実行されることを確認
         $results = $processor->process($items, fn ($item) => strtoupper($item));
-        
+
         $this->assertCount(3, $results);
         $this->assertContains('ITEM1', $results);
         $this->assertContains('ITEM2', $results);
@@ -97,7 +97,7 @@ class ParallelProcessorIntegrationTest extends TestCase
         $this->app['config']->set('spectrum.performance.parallel_processing', true);
 
         // Fork が利用可能でない場合はスキップ
-        if (!class_exists('\Spatie\Fork\Fork')) {
+        if (! class_exists('\Spatie\Fork\Fork')) {
             $this->markTestSkipped('Spatie\Fork is not available for parallel processing');
         }
 
@@ -117,7 +117,7 @@ class ParallelProcessorIntegrationTest extends TestCase
 
         // すべてのルートが処理されている
         $this->assertCount(60, $results);
-        
+
         // 結果の検証（順序は保証されない可能性がある）
         $processedIds = array_column($results, 'id');
         sort($processedIds);
@@ -139,7 +139,7 @@ class ParallelProcessorIntegrationTest extends TestCase
         $this->app['config']->set('spectrum.performance.parallel_processing', true);
 
         $processor = new ParallelProcessor(true, 4);
-        
+
         $items = range(1, 100);
         $progressCalls = [];
 
@@ -152,18 +152,18 @@ class ParallelProcessorIntegrationTest extends TestCase
         );
 
         $this->assertCount(100, $results);
-        
+
         // 結果の検証
-        $expected = array_map(fn($i) => $i * 2, $items);
+        $expected = array_map(fn ($i) => $i * 2, $items);
         sort($results);
         sort($expected);
         $this->assertEquals($expected, $results);
-        
+
         // 進捗が報告されていることを確認
-        if (!empty($progressCalls)) {
+        if (! empty($progressCalls)) {
             $lastCall = end($progressCalls);
             $this->assertEquals(100, $lastCall['total']);
-            
+
             // 進捗が増加していることを確認
             $currentValues = array_column($progressCalls, 'current');
             $this->assertEquals($currentValues, array_unique($currentValues), 'Progress should only increase');
