@@ -29,7 +29,10 @@ class TypeInference
             if ($rule === 'array') {
                 return 'array';
             }
-            if ($rule === 'date' || $rule === 'datetime') {
+            if ($rule === 'date' || $rule === 'datetime' || Str::startsWith($rule, 'date_format:') ||
+                Str::startsWith($rule, 'after:') || Str::startsWith($rule, 'before:') ||
+                Str::startsWith($rule, 'after_or_equal:') || Str::startsWith($rule, 'before_or_equal:') ||
+                Str::startsWith($rule, 'date_equals:')) {
                 return 'string'; // date-time format
             }
             if ($rule === 'email' || $rule === 'url' || $rule === 'uuid') {
@@ -37,6 +40,15 @@ class TypeInference
             }
             if ($rule === 'file' || $rule === 'image') {
                 return 'string'; // binary format
+            }
+            if ($rule === 'timezone' || Str::startsWith($rule, 'timezone:')) {
+                return 'string';
+            }
+            if ($rule === 'json') {
+                return 'object';
+            }
+            if ($rule === 'ip' || $rule === 'ipv4' || $rule === 'ipv6' || $rule === 'mac_address') {
+                return 'string';
             }
         }
 
@@ -73,6 +85,9 @@ class TypeInference
             if ($rule === 'datetime') {
                 return '2024-01-01T00:00:00Z';
             }
+            if (Str::startsWith($rule, 'date_format:')) {
+                return $this->generateDateFormatExample(Str::after($rule, 'date_format:'));
+            }
             if ($rule === 'email') {
                 return 'user@example.com';
             }
@@ -81,6 +96,21 @@ class TypeInference
             }
             if ($rule === 'uuid') {
                 return '550e8400-e29b-41d4-a716-446655440000';
+            }
+            if ($rule === 'timezone' || Str::startsWith($rule, 'timezone:')) {
+                return 'Asia/Tokyo';
+            }
+            if ($rule === 'ip' || $rule === 'ipv4') {
+                return '192.168.1.1';
+            }
+            if ($rule === 'ipv6') {
+                return '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+            }
+            if ($rule === 'mac_address') {
+                return '00:11:22:33:44:55';
+            }
+            if ($rule === 'json') {
+                return ['key' => 'value'];
             }
         }
 
@@ -105,6 +135,12 @@ class TypeInference
         }
         if (Str::contains($field, ['price', 'amount', 'cost'])) {
             return 99.99;
+        }
+        if (Str::contains($field, ['date', 'time'])) {
+            return '2024-01-01';
+        }
+        if (Str::contains($field, ['timezone'])) {
+            return 'UTC';
         }
 
         return 'string';
@@ -141,5 +177,45 @@ class TypeInference
         }
 
         return min($min + 1, $max);
+    }
+
+    /**
+     * 日付フォーマットに基づいたサンプルを生成
+     */
+    private function generateDateFormatExample(string $format): string
+    {
+        $now = new \DateTime('2024-01-01 14:30:00');
+
+        // Handle escaped characters in format
+        $format = stripslashes($format);
+
+        // Common date formats
+        $commonFormats = [
+            'Y-m-d' => '2024-01-01',
+            'Y-m-d H:i:s' => '2024-01-01 14:30:00',
+            'd/m/Y' => '01/01/2024',
+            'm/d/Y' => '01/01/2024',
+            'Y-m-d\TH:i:sP' => '2024-01-01T14:30:00+00:00',
+            'Y-m-d\TH:i:s\Z' => '2024-01-01T14:30:00Z',
+            'c' => '2024-01-01T14:30:00+00:00',
+            'U' => '1704116400',
+            'H:i:s' => '14:30:00',
+            'H:i' => '14:30',
+            'F Y' => 'January 2024',
+            'd/m/Y g:i A' => '01/01/2024 2:30 PM',
+        ];
+
+        // Check if it's a common format
+        if (isset($commonFormats[$format])) {
+            return $commonFormats[$format];
+        }
+
+        // Try to format using DateTime
+        try {
+            return $now->format($format);
+        } catch (\Exception $e) {
+            // Fallback for invalid formats
+            return '2024-01-01';
+        }
     }
 }
