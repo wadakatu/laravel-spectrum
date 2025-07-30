@@ -548,6 +548,12 @@ class FormRequestAnalyzer
                 'validation' => $ruleArray,
             ];
 
+            // Add format for date/datetime fields
+            $format = $this->inferDateFormat($ruleArray);
+            if ($format) {
+                $parameter['format'] = $format;
+            }
+
             // Add conditional rule information
             if ($this->hasConditionalRequired($ruleArray)) {
                 $parameter['conditional_required'] = true;
@@ -661,6 +667,36 @@ class FormRequestAnalyzer
     }
 
     /**
+     * 日付関連のバリデーションルールからフォーマットを推論
+     */
+    protected function inferDateFormat($rules): ?string
+    {
+        if (is_string($rules)) {
+            $rules = explode('|', $rules);
+        }
+
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            if ($rule === 'date') {
+                return 'date';
+            }
+            if ($rule === 'datetime') {
+                return 'date-time';
+            }
+            if (Str::startsWith($rule, 'date_format:')) {
+                // For specific date formats, we still return 'date' as the OpenAPI format
+                // The actual format pattern is captured in the validation rules
+                return 'date';
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * フィールドの説明を生成
      */
     protected function generateDescription(string $field, array $rules, ?string $namespace = null, array $useStatements = []): string
@@ -707,6 +743,26 @@ class FormRequestAnalyzer
                         $value = implode(',', array_slice($parts, 1));
                         $conditionalInfo[] = "Prohibited when {$field} is {$value}";
                     }
+                } elseif (str_starts_with($rule, 'after:')) {
+                    $after = Str::after($rule, 'after:');
+                    $conditionalInfo[] = "Date must be after {$after}";
+                } elseif (str_starts_with($rule, 'after_or_equal:')) {
+                    $after = Str::after($rule, 'after_or_equal:');
+                    $conditionalInfo[] = "Date must be after or equal to {$after}";
+                } elseif (str_starts_with($rule, 'before:')) {
+                    $before = Str::after($rule, 'before:');
+                    $conditionalInfo[] = "Date must be before {$before}";
+                } elseif (str_starts_with($rule, 'before_or_equal:')) {
+                    $before = Str::after($rule, 'before_or_equal:');
+                    $conditionalInfo[] = "Date must be before or equal to {$before}";
+                } elseif (str_starts_with($rule, 'date_equals:')) {
+                    $equals = Str::after($rule, 'date_equals:');
+                    $conditionalInfo[] = "Date must be equal to {$equals}";
+                } elseif (str_starts_with($rule, 'date_format:')) {
+                    $format = Str::after($rule, 'date_format:');
+                    $conditionalInfo[] = "Format: {$format}";
+                } elseif ($rule === 'timezone' || str_starts_with($rule, 'timezone:')) {
+                    $conditionalInfo[] = 'Must be a valid timezone';
                 }
             }
 
