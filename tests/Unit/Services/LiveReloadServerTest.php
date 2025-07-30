@@ -4,6 +4,9 @@ namespace LaravelSpectrum\Tests\Unit\Services;
 
 use LaravelSpectrum\Services\LiveReloadServer;
 use Orchestra\Testbench\TestCase;
+use Workerman\Connection\TcpConnection;
+use Workerman\Protocols\Http\Request;
+use Workerman\Protocols\Http\Response;
 
 class LiveReloadServerTest extends TestCase
 {
@@ -109,6 +112,260 @@ class LiveReloadServerTest extends TestCase
         $this->assertStringContainsString('<!DOCTYPE html>', $html);
         $this->assertStringContainsString('<title>Laravel Spectrum - Live Preview</title>', $html);
         $this->assertStringContainsString('swagger-ui', $html);
+    }
+
+    public function test_start_method_creates_workers(): void
+    {
+        // リフレクションを使ってプライベートメソッドにアクセス
+        $reflection = new \ReflectionClass($this->server);
+
+        // startHttpServerメソッドを取得
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        // startWebSocketServerメソッドを取得
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        // HTTPワーカーの作成をテスト
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        $this->assertNotNull($httpWorker);
+        // Workerのnameプロパティはデフォルトで'none'
+        $this->assertEquals('none', $httpWorker->name);
+
+        // WebSocketワーカーの作成をテスト
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        $this->assertNotNull($wsWorker);
+        $this->assertEquals('WebSocket-Server', $wsWorker->name);
+    }
+
+    public function test_http_server_handles_root_request(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        // HTTPサーバーを起動
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        // モックのリクエストとコネクションを作成
+        $mockRequest = $this->createMock(Request::class);
+        $mockRequest->expects($this->once())
+            ->method('path')
+            ->willReturn('/');
+
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        // レスポンスが送信されることを期待
+        $mockConnection->expects($this->once())
+            ->method('send')
+            ->with($this->isInstanceOf(Response::class));
+
+        // onMessageコールバックを実行
+        $callback = $httpWorker->onMessage;
+        $callback($mockConnection, $mockRequest);
+    }
+
+    public function test_http_server_handles_openapi_json_request(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        // テスト用のOpenAPIファイルを作成
+        $testDir = sys_get_temp_dir().'/spectrum_test';
+        $testFile = $testDir.'/openapi.json';
+        @mkdir($testDir, 0777, true);
+        file_put_contents($testFile, '{"openapi": "3.0.0"}');
+
+        // HTTPサーバーを起動
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        // モックのリクエストとコネクションを作成
+        $mockRequest = $this->createMock(Request::class);
+        $mockRequest->expects($this->once())
+            ->method('path')
+            ->willReturn('/openapi.json');
+
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        // レスポンスが送信されることを期待
+        $mockConnection->expects($this->once())
+            ->method('send')
+            ->with($this->isInstanceOf(Response::class));
+
+        // onMessageコールバックを実行
+        $callback = $httpWorker->onMessage;
+        $callback($mockConnection, $mockRequest);
+
+        // クリーンアップ
+        @unlink($testFile);
+        @rmdir($testDir);
+    }
+
+    public function test_http_server_handles_unknown_path(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        // HTTPサーバーを起動
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        // モックのリクエストとコネクションを作成
+        $mockRequest = $this->createMock(Request::class);
+        $mockRequest->expects($this->once())
+            ->method('path')
+            ->willReturn('/unknown');
+
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        // 404レスポンスが送信されることを期待
+        $mockConnection->expects($this->once())
+            ->method('send')
+            ->with($this->isInstanceOf(Response::class));
+
+        // onMessageコールバックを実行
+        $callback = $httpWorker->onMessage;
+        $callback($mockConnection, $mockRequest);
+    }
+
+    public function test_websocket_server_initialization(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        // WebSocketサーバーを起動
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // WebSocketワーカーが正しく作成されていることを確認
+        $this->assertNotNull($wsWorker);
+        $this->assertEquals('WebSocket-Server', $wsWorker->name);
+        $this->assertEquals(1, $wsWorker->count);
+
+        // コールバックが設定されていることを確認
+        $this->assertNotNull($wsWorker->onWorkerStart);
+        $this->assertNotNull($wsWorker->onConnect);
+        $this->assertNotNull($wsWorker->onMessage);
+        $this->assertNotNull($wsWorker->onClose);
+    }
+
+    public function test_websocket_client_connection(): void
+    {
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        // WebSocketサーバーを起動
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // モックのコネクションを作成
+        $mockConnection = $this->createMock(TcpConnection::class);
+        $mockConnection->id = 123;
+
+        // onConnectコールバックを実行
+        $onConnect = $wsWorker->onConnect;
+        $onConnect($mockConnection);
+
+        // クライアントが追加されたことを確認
+        $this->assertTrue($wsClients->contains($mockConnection));
+    }
+
+    public function test_websocket_client_disconnection(): void
+    {
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        // WebSocketサーバーを起動
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // モックのコネクションを作成
+        $mockConnection = $this->createMock(TcpConnection::class);
+        $mockConnection->id = 456;
+
+        // まずクライアントを接続
+        $wsClients->attach($mockConnection);
+        $this->assertTrue($wsClients->contains($mockConnection));
+
+        // onCloseコールバックを実行
+        $onClose = $wsWorker->onClose;
+        $onClose($mockConnection);
+
+        // クライアントが削除されたことを確認
+        $this->assertFalse($wsClients->contains($mockConnection));
+    }
+
+    public function test_websocket_message_handling(): void
+    {
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        // WebSocketサーバーを起動
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // モックのコネクションを作成
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        // メッセージは無視されるので、sendは呼ばれない
+        $mockConnection->expects($this->never())
+            ->method('send');
+
+        // onMessageコールバックを実行
+        $onMessage = $wsWorker->onMessage;
+        $onMessage($mockConnection, '{"type":"ping"}');
+
+        // メッセージが処理されないことを確認（コールバックが存在することだけ確認）
+        $this->assertNotNull($onMessage);
     }
 
     public function test_clients_storage_initialization(): void
