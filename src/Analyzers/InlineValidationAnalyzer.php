@@ -257,6 +257,12 @@ class InlineValidationAnalyzer
                                     $printer = new \PhpParser\PrettyPrinter\Standard;
                                     $ruleArray[] = $printer->prettyPrintExpr($ruleItem->value);
                                 }
+                                // Handle Closure validation rules
+                                elseif ($ruleItem->value instanceof Node\Expr\Closure ||
+                                        $ruleItem->value instanceof Node\Expr\ArrowFunction) {
+                                    // Mark closure as custom rule
+                                    $ruleArray[] = 'custom:closure_validation';
+                                }
                             }
                             $rules[$key] = $ruleArray;
                         }
@@ -470,6 +476,12 @@ class InlineValidationAnalyzer
                         case 'in':
                             $parameter['enum'] = explode(',', $ruleValue);
                             break;
+                        case 'size':
+                            if ($parameter['type'] === 'string') {
+                                $parameter['minLength'] = (int) $ruleValue;
+                                $parameter['maxLength'] = (int) $ruleValue;
+                            }
+                            break;
                     }
                 }
             }
@@ -521,6 +533,8 @@ class InlineValidationAnalyzer
                     $descriptions[] = "Maximum: {$max}";
                 } elseif ($rule === 'email') {
                     $descriptions[] = 'Must be a valid email address';
+                } elseif (strpos($rule, 'custom:') === 0) {
+                    $descriptions[] = 'Custom validation applied';
                 }
             }
 
