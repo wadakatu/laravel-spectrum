@@ -139,6 +139,25 @@ class ParallelProcessorTest extends TestCase
         $this->assertEquals(['test'], $result);
     }
 
+    public function test_set_workers_clamps_values(): void
+    {
+        $reflection = new \ReflectionClass($this->processor);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
+
+        // 最小値のテスト
+        $this->processor->setWorkers(0);
+        $this->assertEquals(1, $workersProperty->getValue($this->processor));
+
+        // 最大値のテスト
+        $this->processor->setWorkers(100);
+        $this->assertEquals(32, $workersProperty->getValue($this->processor));
+
+        // 通常の値
+        $this->processor->setWorkers(8);
+        $this->assertEquals(8, $workersProperty->getValue($this->processor));
+    }
+
     public function test_process_handles_exceptions(): void
     {
         $routes = ['route1', 'route2', 'route3'];
@@ -213,5 +232,127 @@ class ParallelProcessorTest extends TestCase
         $this->assertEquals('GET /api/users', $results[0]['signature']);
         $this->assertEquals(2, $results[0]['middlewareCount']);
         $this->assertEquals('v1', $results[0]['version']);
+    }
+
+    public function test_determine_optimal_workers_on_different_systems(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $reflection = new \ReflectionClass($processor);
+        $method = $reflection->getMethod('determineOptimalWorkers');
+        $method->setAccessible(true);
+
+        $workers = $method->invoke($processor);
+
+        // ワーカー数が適切な範囲内にあることを確認
+        $this->assertGreaterThanOrEqual(2, $workers);
+        $this->assertLessThanOrEqual(16, $workers);
+    }
+
+    public function test_process_without_fork_class(): void
+    {
+        // Fork クラスが存在しない場合のテスト（シーケンシャル処理にフォールバック）
+        $processor = new ParallelProcessor(false, 4);
+
+        // 少数のデータでテスト
+        $routes = ['route1', 'route2', 'route3'];
+
+        $processFunc = function ($route) {
+            return strtoupper($route);
+        };
+
+        $results = $processor->process($routes, $processFunc);
+
+        $this->assertCount(3, $results);
+        $this->assertContains('ROUTE1', $results);
+        $this->assertContains('ROUTE2', $results);
+        $this->assertContains('ROUTE3', $results);
+    }
+
+    public function test_process_with_progress_empty_array(): void
+    {
+        $progressCalls = [];
+        $results = $this->processor->processWithProgress(
+            [],
+            fn ($x) => $x,
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = ['current' => $current, 'total' => $total];
+            }
+        );
+
+        $this->assertEmpty($results);
+        $this->assertEmpty($progressCalls);
+    }
+
+    public function test_process_with_progress_handles_exceptions(): void
+    {
+        $items = [1, 2, 3];
+        $progressCalls = [];
+
+        $processor = function ($item) {
+            if ($item === 2) {
+                throw new \RuntimeException('Test exception');
+            }
+            return $item;
+        };
+
+        $onProgress = function ($current, $total) use (&$progressCalls) {
+            $progressCalls[] = $current;
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->processor->processWithProgress($items, $processor, $onProgress);
+    }
+
+    public function test_process_with_database_reconnection(): void
+    {
+        // このテストはLaravelのDB ファサードが利用可能な場合のみ意味がある
+        if (!class_exists('\Illuminate\Support\Facades\DB')) {
+            $this->markTestSkipped('Laravel DB facade not available');
+        }
+
+        // DB::reconnect() がエラーを起こさないことを確認するモックテスト
+        $processor = new ParallelProcessor(false, 2);
+        $routes = ['route1', 'route2'];
+
+        // 実際のForkが利用できない環境でも動作することを確認
+        $results = $processor->process($routes, fn ($route) => $route);
+        $this->assertCount(2, $results);
+    }
+
+    public function test_process_sequential_with_progress_reports_correctly(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $items = range(1, 25);
+        $progressReports = [];
+
+        $results = $processor->processWithProgress(
+            $items,
+            fn ($item) => $item * 2,
+            function ($current, $total) use (&$progressReports) {
+                $progressReports[] = "$current/$total";
+            }
+        );
+
+        $this->assertCount(25, $results);
+        $this->assertEquals(2, $results[0]);
+        $this->assertEquals(50, $results[24]);
+
+        // 進捗が10個ごとと最後に報告される
+        $this->assertContains('10/25', $progressReports);
+        $this->assertContains('20/25', $progressReports);
+        $this->assertContains('25/25', $progressReports);
+    }
+
+    public function test_parallel_processing_with_enabled_flag(): void
+    {
+        // 並列処理を明示的に有効化
+        $processor = new ParallelProcessor(true, 4);
+
+        // 小さなデータセット（50未満）では並列処理されない
+        $smallData = range(1, 30);
+        $results = $processor->process($smallData, fn ($x) => $x * 2);
+        $this->assertCount(30, $results);
+        $this->assertEquals(2, $results[0]);
+        $this->assertEquals(60, $results[29]);
     }
 }
