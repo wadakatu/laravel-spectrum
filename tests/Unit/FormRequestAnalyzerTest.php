@@ -349,20 +349,20 @@ class FormRequestAnalyzerTest extends TestCase
         $parameters = $this->analyzer->analyze(get_class($testRequestClass));
 
         // Assert
-        // The analyze method doesn't return messages directly, 
+        // The analyze method doesn't return messages directly,
         // but we can verify the parameters are extracted correctly
         $this->assertCount(3, $parameters);
-        
+
         $nameParam = $this->findParameterByName($parameters, 'name');
         $this->assertNotNull($nameParam);
         $this->assertTrue($nameParam['required']);
         $this->assertEquals('string', $nameParam['type']);
-        
+
         $emailParam = $this->findParameterByName($parameters, 'email');
         $this->assertNotNull($emailParam);
         $this->assertTrue($emailParam['required']);
         $this->assertEquals('string', $emailParam['type']);
-        
+
         $ageParam = $this->findParameterByName($parameters, 'age');
         $this->assertNotNull($ageParam);
         $this->assertTrue($ageParam['required']);
@@ -386,7 +386,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertArrayHasKey('email', $details['rules']);
         $this->assertArrayHasKey('password', $details['rules']);
         $this->assertArrayHasKey('age', $details['rules']);
-        
+
         // Verify rule values
         $this->assertEquals('required|string|max:255', $details['rules']['name']);
         $this->assertEquals('required|email|unique:users', $details['rules']['email']);
@@ -398,7 +398,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEquals('メールアドレス', $details['attributes']['email']);
         $this->assertEquals('パスワード', $details['attributes']['password']);
         $this->assertEquals('年齢', $details['attributes']['age']);
-        
+
         // Verify messages array exists (StoreUserRequest doesn't define messages)
         $this->assertIsArray($details['messages']);
         $this->assertEmpty($details['messages']);
@@ -409,7 +409,7 @@ class FormRequestAnalyzerTest extends TestCase
     {
         // This test verifies that the analyzeWithConditionalRules method exists and returns the expected structure
         // For anonymous classes, conditional rules extraction falls back to basic analysis
-        
+
         // Arrange - Create a simple FormRequest
         $testRequestClass = new class extends FormRequest
         {
@@ -429,13 +429,13 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertIsArray($result);
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('conditional_rules', $result);
-        
+
         // Verify conditional rules structure
         $conditionalRules = $result['conditional_rules'];
         $this->assertIsArray($conditionalRules);
         $this->assertArrayHasKey('rules_sets', $conditionalRules);
         $this->assertArrayHasKey('merged_rules', $conditionalRules);
-        
+
         // For anonymous classes, the rules_sets will be empty as AST parsing is limited
         $this->assertIsArray($conditionalRules['rules_sets']);
         $this->assertIsArray($conditionalRules['merged_rules']);
