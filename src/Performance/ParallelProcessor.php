@@ -49,14 +49,14 @@ class ParallelProcessor
                 }
             });
 
-        $results = $fork->run(function () use ($chunks, $processor) {
-            $results = [];
-            foreach ($chunks as $index => $chunk) {
-                $results[$index] = array_map($processor, $chunk);
-            }
+        $tasks = [];
+        foreach ($chunks as $index => $chunk) {
+            $tasks[] = function () use ($chunk, $processor) {
+                return array_map($processor, $chunk);
+            };
+        }
 
-            return $results;
-        });
+        $results = $fork->run(...$tasks);
 
         // 結果をマージ
         return collect($results)->flatten(1)->toArray();
@@ -80,10 +80,10 @@ class ParallelProcessor
 
         $fork = Fork::new()->concurrent($this->workers);
 
-        $chunkResults = $fork->run(function () use ($chunks, $processor, $progressFile, $onProgress, $totalItems) {
-            $results = [];
-
-            foreach ($chunks as $index => $chunk) {
+        $tasks = [];
+        foreach ($chunks as $index => $chunk) {
+            $tasks[] = function () use ($chunk, $processor, $progressFile, $onProgress, $totalItems) {
+                $results = [];
                 foreach ($chunk as $item) {
                     $result = $processor($item);
                     $results[] = $result;
@@ -111,10 +111,12 @@ class ParallelProcessor
                         fclose($fp);
                     }
                 }
-            }
 
-            return $results;
-        });
+                return $results;
+            };
+        }
+
+        $chunkResults = $fork->run(...$tasks);
 
         // Clean up
         unlink($progressFile);
