@@ -24,7 +24,8 @@ class LiveReloadServerTest extends TestCase
      */
     private function createRequestStub(array $config = []): Request
     {
-        return new class($config) extends Request {
+        return new class($config) extends Request
+        {
             private array $config;
 
             public function __construct(array $config)
@@ -47,6 +48,7 @@ class LiveReloadServerTest extends TestCase
                 if ($name === null) {
                     return $this->config['headers'] ?? [];
                 }
+
                 return ($this->config['headers'] ?? [])[strtolower($name)] ?? $default;
             }
         };

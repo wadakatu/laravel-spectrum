@@ -21,7 +21,8 @@ class AuthenticationSimulatorTest extends TestCase
      */
     private function createRequestStub(array $headers = []): Request
     {
-        return new class($headers) extends Request {
+        return new class($headers) extends Request
+        {
             private array $headers;
 
             public function __construct(array $headers)
@@ -32,6 +33,7 @@ class AuthenticationSimulatorTest extends TestCase
             public function header(?string $name = null, mixed $default = null): mixed
             {
                 $name = strtolower($name);
+
                 return $this->headers[$name] ?? $default;
             }
         };

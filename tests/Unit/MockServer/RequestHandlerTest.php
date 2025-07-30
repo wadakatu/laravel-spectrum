@@ -39,7 +39,8 @@ class RequestHandlerTest extends TestCase
      */
     private function createRequestStub(array $config = []): Request
     {
-        return new class($config) extends Request {
+        return new class($config) extends Request
+        {
             private array $config;
 
             public function __construct(array $config)
@@ -57,6 +58,7 @@ class RequestHandlerTest extends TestCase
                 if ($name === null) {
                     return $this->config['get'] ?? [];
                 }
+
                 return ($this->config['get'] ?? [])[$name] ?? $default;
             }
 
@@ -65,6 +67,7 @@ class RequestHandlerTest extends TestCase
                 if ($name === null) {
                     return $this->config['post'] ?? [];
                 }
+
                 return ($this->config['post'] ?? [])[$name] ?? $default;
             }
 
@@ -73,6 +76,7 @@ class RequestHandlerTest extends TestCase
                 if ($name === null) {
                     return $this->config['headers'] ?? [];
                 }
+
                 return ($this->config['headers'] ?? [])[strtolower($name)] ?? $default;
             }
 
