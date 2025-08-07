@@ -1,9 +1,9 @@
 {
     "name": "wadakatu/laravel-spectrum",
-    "description": "Zero-annotation API documentation generator for Laravel and Lumen",
+    "description": "Zero-annotation API documentation generator for Laravel",
     "keywords": [
         "laravel",
-        "lumen",
+
         "api",
         "documentation",
         "openapi",
