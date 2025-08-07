@@ -162,7 +162,6 @@ class RouteAnalyzer
 
         $routes = [];
 
-        /** @var \Illuminate\Routing\Route $route */
         foreach (Route::getRoutes() as $route) {
             try {
                 // APIルートのみを対象とする
