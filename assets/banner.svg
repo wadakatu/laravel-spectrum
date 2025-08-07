@@ -172,7 +172,7 @@
   <g class="pixel">
     <!-- Version badge -->
     <rect x="40" y="225" width="120" height="40" fill="#000000" stroke="#00FF00" stroke-width="3" opacity="0.8"/>
-    <text x="100" y="250" text-anchor="middle" font-family="monospace" font-size="16" fill="#00FF00" id="version">v0.0.18-alpha</text>
+    <text x="100" y="250" text-anchor="middle" font-family="monospace" font-size="16" fill="#00FF00" id="version">v0.2.0-beta</text>
     
     <!-- Status indicator -->
     <rect x="1040" y="225" width="120" height="40" fill="#000000" stroke="#FFFF00" stroke-width="3" opacity="0.8"/>
