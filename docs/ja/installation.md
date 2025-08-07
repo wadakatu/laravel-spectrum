@@ -16,6 +16,19 @@ sidebar_label: インストールと設定
 
 ## 🚀 インストール
 
+### Laravel 11のセットアップ
+
+Laravel 11では、APIルートがまだ存在しない場合は、最初にインストールする必要があります：
+
+```bash
+php artisan install:api
+```
+
+このコマンドは以下を実行します：
+- Laravel Sanctumをインストール
+- `routes/api.php`ファイルを作成
+- API認証を設定
+
 ### Composerでインストール
 
 ```bash
@@ -155,6 +168,47 @@ return [
     'enabled' => true,
     'ttl' => 3600, // 1時間
     'directory' => storage_path('app/spectrum/cache'),
+],
+```
+
+## ⚠️ 重要な注意事項
+
+### コントローラーベースのルートのみサポート
+
+Laravel Spectrumは**コントローラーベースのルートのみをサポート**しています。クロージャルートはサポートされていません：
+
+```php
+// ❌ サポートされない - クロージャルート
+Route::get('/api/test', function () {
+    return ['message' => 'test'];
+});
+
+// ✅ サポートされる - コントローラールート
+Route::get('/api/test', [TestController::class, 'index']);
+```
+
+クロージャルートをコントローラールートに変換する方法：
+1. コントローラーを作成: `php artisan make:controller Api/TestController`
+2. クロージャのロジックをコントローラーメソッドに移動
+3. ルートをコントローラーを使用するように更新
+
+### 設定ファイル
+
+設定ファイルが自動的に公開されない場合は、手動でコピーしてください：
+
+```bash
+cp vendor/wadakatu/laravel-spectrum/config/spectrum.php config/spectrum.php
+```
+
+### ルートパターンマッチング
+
+ルートパターンでワイルドカードを正しく使用してください：
+
+```php
+'route_patterns' => [
+    'api/*',     // api/users、api/postsにマッチ
+    'api/**',    // ネストされたパス用（すべてのバージョンで動作しない場合があります）
+    'api/v1/*',  // api/v1/users、api/v1/postsにマッチ
 ],
 ```
 

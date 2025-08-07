@@ -10,6 +10,19 @@ This guide provides detailed instructions from installing Laravel Spectrum to in
 
 ## 🚀 Installation
 
+### Laravel 11 Setup
+
+For Laravel 11, you need to install API routes first if they're not already present:
+
+```bash
+php artisan install:api
+```
+
+This command:
+- Installs Laravel Sanctum
+- Creates the `routes/api.php` file
+- Configures API authentication
+
 ### Install via Composer
 
 ```bash
@@ -149,6 +162,47 @@ For performance improvement in large projects:
     'enabled' => true,
     'ttl' => 3600, // 1 hour
     'directory' => storage_path('app/spectrum/cache'),
+],
+```
+
+## ⚠️ Important Notes
+
+### Controller-Based Routes Only
+
+Laravel Spectrum **only supports controller-based routes**. Closure routes are not supported:
+
+```php
+// ❌ NOT SUPPORTED - Closure route
+Route::get('/api/test', function () {
+    return ['message' => 'test'];
+});
+
+// ✅ SUPPORTED - Controller route
+Route::get('/api/test', [TestController::class, 'index']);
+```
+
+To convert closure routes to controller routes:
+1. Create a controller: `php artisan make:controller Api/TestController`
+2. Move the closure logic to the controller method
+3. Update the route to use the controller
+
+### Configuration File
+
+If the configuration file is not published automatically, copy it manually:
+
+```bash
+cp vendor/wadakatu/laravel-spectrum/config/spectrum.php config/spectrum.php
+```
+
+### Route Pattern Matching
+
+Use wildcards correctly in route patterns:
+
+```php
+'route_patterns' => [
+    'api/*',     // Matches api/users, api/posts
+    'api/**',    // For nested paths (may not work with all versions)
+    'api/v1/*',  // Matches api/v1/users, api/v1/posts
 ],
 ```
 
