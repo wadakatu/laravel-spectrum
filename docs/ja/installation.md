@@ -11,7 +11,7 @@ sidebar_label: インストールと設定
 ## 📋 要件
 
 - **PHP** 8.1以上
-- **Laravel** 10.x、11.x、12.x または **Lumen** 10.x、11.x、12.x
+- **Laravel** 10.x、11.x、12.x
 - **Composer** 2.0以上
 
 ## 🚀 インストール
@@ -25,14 +25,6 @@ composer require wadakatu/laravel-spectrum --dev
 ### Laravelの自動検出
 
 Laravel 5.5以降では、サービスプロバイダーは自動的に登録されます。
-
-### Lumenでの設定
-
-Lumenを使用している場合は、`bootstrap/app.php`にサービスプロバイダーを手動で登録する必要があります：
-
-```php
-$app->register(LaravelSpectrum\SpectrumServiceProvider::class);
-```
 
 ## ⚙️ 設定ファイルの公開
 
@@ -191,17 +183,6 @@ chmod -R 775 bootstrap/cache
        'api/*', // すべてのAPIルート
    ],
    ```
-
-### Lumenでartisanコマンドが使えない
-
-Lumenの場合、コマンドを手動で登録する必要があります：
-
-```php
-// bootstrap/app.php
-if ($app->runningInConsole()) {
-    $app->register(LaravelSpectrum\SpectrumServiceProvider::class);
-}
-```
 
 ## 📚 次のステップ
 

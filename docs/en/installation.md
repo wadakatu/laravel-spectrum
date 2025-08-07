@@ -5,7 +5,7 @@ This guide provides detailed instructions from installing Laravel Spectrum to in
 ## 📋 Requirements
 
 - **PHP** 8.1 or higher
-- **Laravel** 10.x, 11.x, 12.x or **Lumen** 10.x, 11.x, 12.x
+- **Laravel** 10.x, 11.x, 12.x
 - **Composer** 2.0 or higher
 
 ## 🚀 Installation
@@ -19,14 +19,6 @@ composer require wadakatu/laravel-spectrum --dev
 ### Laravel Auto-Discovery
 
 For Laravel 5.5 and above, the service provider is automatically registered.
-
-### Configuration for Lumen
-
-If using Lumen, you need to manually register the service provider in `bootstrap/app.php`:
-
-```php
-$app->register(LaravelSpectrum\SpectrumServiceProvider::class);
-```
 
 ## ⚙️ Publishing Configuration
 
@@ -185,17 +177,6 @@ chmod -R 775 bootstrap/cache
        'api/*', // All API routes
    ],
    ```
-
-### Artisan Commands Not Available in Lumen
-
-For Lumen, you need to manually register commands:
-
-```php
-// bootstrap/app.php
-if ($app->runningInConsole()) {
-    $app->register(LaravelSpectrum\SpectrumServiceProvider::class);
-}
-```
 
 ## 📚 Next Steps
 

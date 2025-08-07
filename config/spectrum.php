@@ -267,15 +267,6 @@ return [
         'analyze_inline' => true, // インラインバリデーションを解析
         'analyze_form_requests' => true, // FormRequestを解析
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lumen Compatibility
-        |--------------------------------------------------------------------------
-        */
-        'lumen' => [
-            'enabled' => env('SPECTRUM_LUMEN_MODE', false),
-            'default_middleware' => ['api'], // Lumenのデフォルトミドルウェア
-        ],
     ],
 
     /*

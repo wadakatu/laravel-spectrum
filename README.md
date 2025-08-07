@@ -12,7 +12,7 @@
   <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/license" alt="License"></a>
 </p>
 
-> 🎯 **Zero-annotation API documentation generator for Laravel & Lumen**
+> 🎯 **Zero-annotation API documentation generator for Laravel**
 >
 > Laravel Spectrum analyzes your existing code and automatically generates OpenAPI 3.0 documentation. No annotations required, minimal configuration, ready to use immediately.
 
