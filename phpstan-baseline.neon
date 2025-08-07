@@ -15,5 +15,5 @@ parameters:
 		-
 			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 1
+			count: 2
 			path: src/Analyzers/RouteAnalyzer.php

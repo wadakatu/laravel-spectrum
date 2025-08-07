@@ -30,3 +30,4 @@ deploy_key.pub
 CLAUDE.local.md
 
 /.serena/cache/
+test-app/

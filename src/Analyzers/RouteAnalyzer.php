@@ -143,6 +143,23 @@ class RouteAnalyzer
      */
     protected function performAnalysis(): array
     {
+        // Artisanコマンド実行時にAPIルートファイルが読み込まれていない場合があるため、
+        // 必要に応じてルートファイルを明示的に読み込む
+        // ただし、テスト環境やすでにルートが存在する場合はスキップ
+        $currentRoutes = Route::getRoutes();
+        $hasRoutes = false;
+        foreach ($currentRoutes as $route) {
+            if ($this->isApiRoute($route)) {
+                $hasRoutes = true;
+                break;
+            }
+        }
+
+        // APIルートが見つからない場合のみルートファイルを再読み込み
+        if (! $hasRoutes && ! app()->runningUnitTests()) {
+            $this->loadRouteFiles();
+        }
+
         $routes = [];
 
         foreach (Route::getRoutes() as $route) {
