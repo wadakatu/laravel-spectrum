@@ -6,13 +6,12 @@ A collection of frequently asked questions and answers about Laravel Spectrum.
 
 ### Q: What is Laravel Spectrum?
 
-**A:** Laravel Spectrum is a zero-annotation API documentation generation tool for Laravel and Lumen. It analyzes existing code and automatically generates OpenAPI 3.0 specification documentation. You can generate documentation directly from code without writing annotations or comments.
+**A:** Laravel Spectrum is a zero-annotation API documentation generation tool for Laravel. It analyzes existing code and automatically generates OpenAPI 3.0 specification documentation. You can generate documentation directly from code without writing annotations or comments.
 
-### Q: Which versions of Laravel/Lumen are supported?
+### Q: Which versions of Laravel are supported?
 
 **A:** The following versions are supported:
 - Laravel 10.x, 11.x, 12.x
-- Lumen 10.x, 11.x, 12.x
 - PHP 8.1 or higher
 
 ### Q: Can I integrate it into an existing project?
@@ -299,10 +298,6 @@ php artisan spectrum:cache:clear
 php artisan spectrum:generate --no-cache
 ```
 
-### Q: It doesn't work with Lumen
-
-**A:** In Lumen, you need to manually register the service provider:
-
 ```php
 // bootstrap/app.php
 $app->register(LaravelSpectrum\SpectrumServiceProvider::class);
@@ -368,7 +363,7 @@ php artisan spectrum:export:postman --include-tests
 
 **A:** Please report it on [GitHub Issues](https://github.com/wadakatu/laravel-spectrum/issues). Include the following information:
 
-- Laravel/Lumen version
+- Laravel version
 - PHP version
 - Laravel Spectrum version
 - Error message (if any)
