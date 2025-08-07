@@ -143,7 +143,8 @@ class RouteAnalyzer
      */
     protected function performAnalysis(): array
     {
-        // Laravel 11対応: APIルートファイルが読み込まれていない場合は読み込む
+        // Artisanコマンド実行時にAPIルートファイルが読み込まれていない場合があるため、
+        // 必要に応じてルートファイルを明示的に読み込む
         // ただし、テスト環境やすでにルートが存在する場合はスキップ
         $currentRoutes = Route::getRoutes();
         $hasRoutes = false;
