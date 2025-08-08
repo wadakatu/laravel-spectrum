@@ -11,7 +11,7 @@ composer test           # All tests must pass
 
 ## 2. Test in Demo App (MANDATORY)
 ```bash
-cd demo-app/laravel-app
+cd demo-app/laravel-12-app
 php artisan spectrum:generate
 # Verify generated output in storage/app/spectrum/openapi.json
 ```
