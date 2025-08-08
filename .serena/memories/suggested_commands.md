@@ -41,7 +41,7 @@ say -v Daniel "Need Confirmation."        # Audio notification (confirmation)
 
 ## Demo App Testing
 ```bash
-cd demo-app/laravel-app
+cd demo-app/laravel-12-app
 php artisan spectrum:generate
 # Check generated output in storage/app/spectrum/openapi.json
 ```
