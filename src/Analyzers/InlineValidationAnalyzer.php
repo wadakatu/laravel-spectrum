@@ -65,6 +65,32 @@ class InlineValidationAnalyzer
                         return null;
                     }
 
+                    // $request->validate() with anonymous FormRequest
+                    // e.g., $request->validate((new class extends FormRequest { ... })->rules())
+                    if ($node instanceof Node\Expr\MethodCall &&
+                        $node->name instanceof Node\Identifier &&
+                        $node->name->name === 'validate' &&
+                        count($node->args) >= 1 &&
+                        $node->args[0]->value instanceof Node\Expr\MethodCall) {
+
+                        $innerCall = $node->args[0]->value;
+                        if ($innerCall->var instanceof Node\Expr\New_ &&
+                            $innerCall->var->class instanceof Node\Stmt\Class_ &&
+                            $innerCall->name instanceof Node\Identifier &&
+                            $innerCall->name->name === 'rules') {
+
+                            // Check if anonymous class extends FormRequest
+                            if ($innerCall->var->class->extends) {
+                                $extendedClass = $innerCall->var->class->extends->toString();
+                                if (str_ends_with($extendedClass, 'FormRequest')) {
+                                    $this->extractAnonymousFormRequestValidation($innerCall->var->class);
+
+                                    return null;
+                                }
+                            }
+                        }
+                    }
+
                     // $request->validate() の呼び出しを検出 (変数経由)
                     if ($node instanceof Node\Expr\MethodCall &&
                         $node->var instanceof Node\Expr\Variable &&
@@ -171,6 +197,136 @@ class InlineValidationAnalyzer
                     if (! empty($validation['rules'])) {
                         $this->validations[] = $validation;
                     }
+                }
+
+                /**
+                 * Extract validation from anonymous FormRequest class
+                 */
+                protected function extractAnonymousFormRequestValidation(Node\Stmt\Class_ $classNode)
+                {
+                    // Find the rules() method in the anonymous class
+                    $rulesMethod = null;
+                    $messagesMethod = null;
+                    $attributesMethod = null;
+
+                    foreach ($classNode->getMethods() as $method) {
+                        if ($method->name->toString() === 'rules') {
+                            $rulesMethod = $method;
+                        } elseif ($method->name->toString() === 'messages') {
+                            $messagesMethod = $method;
+                        } elseif ($method->name->toString() === 'attributes') {
+                            $attributesMethod = $method;
+                        }
+                    }
+
+                    if ($rulesMethod === null) {
+                        return;
+                    }
+
+                    // Extract rules from the rules() method
+                    $rules = $this->extractReturnedArray($rulesMethod);
+                    $messages = $messagesMethod ? $this->extractReturnedArray($messagesMethod) : [];
+                    $attributes = $attributesMethod ? $this->extractReturnedArray($attributesMethod) : [];
+
+                    $validation = [
+                        'type' => 'anonymous_form_request',
+                        'rules' => $rules,
+                        'messages' => $messages,
+                        'attributes' => $attributes,
+                    ];
+
+                    if (! empty($validation['rules'])) {
+                        $this->validations[] = $validation;
+                    }
+                }
+
+                /**
+                 * Extract array from return statement in a method
+                 */
+                protected function extractReturnedArray(Node\Stmt\ClassMethod $method): array
+                {
+                    $returnedArray = [];
+
+                    $visitor = new class extends NodeVisitorAbstract
+                    {
+                        public $returnedArray = [];
+
+                        public function enterNode(Node $node): ?int
+                        {
+                            if ($node instanceof Node\Stmt\Return_ &&
+                                $node->expr instanceof Node\Expr\Array_) {
+                                $this->returnedArray = $this->extractArray($node->expr);
+
+                                return NodeTraverser::STOP_TRAVERSAL;
+                            }
+
+                            return null;
+                        }
+
+                        protected function extractArray(Node\Expr\Array_ $node): array
+                        {
+                            $array = [];
+                            foreach ($node->items as $item) {
+                                if (! $item->key) {
+                                    continue;
+                                }
+
+                                $key = $this->getNodeValue($item->key);
+                                $value = $this->extractValue($item->value);
+
+                                if ($key && $value !== null) {
+                                    $array[$key] = $value;
+                                }
+                            }
+
+                            return $array;
+                        }
+
+                        protected function extractValue(Node $node)
+                        {
+                            if ($node instanceof Node\Scalar\String_) {
+                                return $node->value;
+                            } elseif ($node instanceof Node\Expr\Array_) {
+                                $ruleArray = [];
+                                foreach ($node->items as $ruleItem) {
+                                    if ($ruleItem->value instanceof Node\Scalar\String_) {
+                                        $ruleArray[] = $ruleItem->value->value;
+                                    } elseif ($ruleItem->value instanceof Node\Expr\StaticCall ||
+                                             $ruleItem->value instanceof Node\Expr\New_) {
+                                        $printer = new \PhpParser\PrettyPrinter\Standard;
+                                        $ruleArray[] = $printer->prettyPrintExpr($ruleItem->value);
+                                    }
+                                }
+
+                                return $ruleArray;
+                            } elseif ($node instanceof Node\Expr\BinaryOp\Concat) {
+                                $printer = new \PhpParser\PrettyPrinter\Standard;
+
+                                return $printer->prettyPrintExpr($node);
+                            }
+
+                            return null;
+                        }
+
+                        protected function getNodeValue(Node $node)
+                        {
+                            if ($node instanceof Node\Scalar\String_) {
+                                return $node->value;
+                            } elseif ($node instanceof Node\Scalar\LNumber) {
+                                return $node->value;
+                            } elseif ($node instanceof Node\Scalar\DNumber) {
+                                return $node->value;
+                            }
+
+                            return null;
+                        }
+                    };
+
+                    $traverser = new NodeTraverser;
+                    $traverser->addVisitor($visitor);
+                    $traverser->traverse([$method]);
+
+                    return $visitor->returnedArray;
                 }
 
                 /**
