@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TestMatchController extends Controller
 {
@@ -14,7 +14,7 @@ class TestMatchController extends Controller
             'test_string' => 'required|string|max:500',
         ]);
 
-        $matches = preg_match('/' . $validated['pattern'] . '/', $validated['test_string']);
+        $matches = preg_match('/'.$validated['pattern'].'/', $validated['test_string']);
 
         return response()->json([
             'pattern' => $validated['pattern'],

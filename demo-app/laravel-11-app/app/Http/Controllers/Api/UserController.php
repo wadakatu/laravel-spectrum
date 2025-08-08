@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -62,7 +62,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $id,
+            'email' => 'sometimes|email|unique:users,email,'.$id,
         ]);
 
         return response()->json([

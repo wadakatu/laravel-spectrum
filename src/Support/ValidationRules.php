@@ -68,19 +68,21 @@ class ValidationRules
             if (method_exists($rule, '__toString')) {
                 return 'enum';
             }
+
             return 'unknown';
         }
-        
+
         // Handle array rules (like ['required', 'string'])
         if (is_array($rule)) {
             // Handle empty arrays
             if (empty($rule)) {
                 return 'unknown';
             }
+
             // Get the first element if it's a string
             return is_string($rule[0] ?? null) ? $rule[0] : 'unknown';
         }
-        
+
         $parts = explode(':', $rule);
 
         return $parts[0];

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -20,7 +20,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Login successful',
-            'token' => 'fake-jwt-token-' . uniqid(),
+            'token' => 'fake-jwt-token-'.uniqid(),
             'user' => [
                 'id' => 1,
                 'email' => $validated['email'],
@@ -41,7 +41,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Registration successful',
-            'token' => 'fake-jwt-token-' . uniqid(),
+            'token' => 'fake-jwt-token-'.uniqid(),
             'user' => [
                 'id' => 2,
                 'name' => $validated['name'],

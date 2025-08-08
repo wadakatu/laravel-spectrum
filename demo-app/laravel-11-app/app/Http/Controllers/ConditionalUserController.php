@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ConditionalUserController extends Controller
 {
@@ -33,7 +33,7 @@ class ConditionalUserController extends Controller
     {
         $rules = [
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user,
+            'email' => 'sometimes|email|unique:users,email,'.$user,
         ];
 
         // Conditional validation

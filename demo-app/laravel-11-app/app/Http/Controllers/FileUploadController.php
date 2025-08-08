@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class FileUploadController extends Controller
 {
@@ -19,7 +19,7 @@ class FileUploadController extends Controller
 
         return response()->json([
             'message' => 'Profile image uploaded successfully',
-            'path' => '/uploads/profile/' . uniqid() . '.jpg',
+            'path' => '/uploads/profile/'.uniqid().'.jpg',
         ]);
     }
 
