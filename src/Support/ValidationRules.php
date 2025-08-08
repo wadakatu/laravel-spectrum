@@ -60,8 +60,29 @@ class ValidationRules
     /**
      * ルール名を抽出（パラメータを除去）
      */
-    public static function extractRuleName(string $rule): string
+    public static function extractRuleName(string|array|object $rule): string
     {
+        // Handle object rules (like Rule::enum() or new Enum())
+        if (is_object($rule)) {
+            // Handle Laravel's Rule::enum() and new Enum() instances
+            if (method_exists($rule, '__toString')) {
+                return 'enum';
+            }
+
+            return 'unknown';
+        }
+
+        // Handle array rules (like ['required', 'string'])
+        if (is_array($rule)) {
+            // Handle empty arrays
+            if (empty($rule)) {
+                return 'unknown';
+            }
+
+            // Get the first element if it's a string
+            return is_string($rule[0] ?? null) ? $rule[0] : 'unknown';
+        }
+
         $parts = explode(':', $rule);
 
         return $parts[0];
@@ -113,6 +134,9 @@ class ValidationRules
             }
             if ($ruleName === 'array') {
                 return 'array';
+            }
+            if ($ruleName === 'enum') {
+                return 'string';  // Enums are typically strings
             }
         }
 
