@@ -93,3 +93,13 @@ Route::prefix('test-response')->group(function () {
     Route::get('/model/{id}', [TestResponseController::class, 'modelReturn']);
     Route::get('/collection-map', [TestResponseController::class, 'collectionMap']);
 });
+
+// Anonymous FormRequest test routes
+use App\Http\Controllers\AnonymousFormRequestController;
+
+Route::prefix('anonymous-form-request')->group(function () {
+    Route::post('/blog', [AnonymousFormRequestController::class, 'store']);
+    Route::put('/profile/{id}', [AnonymousFormRequestController::class, 'updateProfile']);
+    Route::post('/product', [AnonymousFormRequestController::class, 'createProduct']);
+    Route::post('/register', [AnonymousFormRequestController::class, 'register']);
+});
