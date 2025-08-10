@@ -12,7 +12,7 @@ A detailed reference of all available Artisan commands and options in Laravel Sp
 | `spectrum:mock` | Launch mock API server |
 | `spectrum:export:postman` | Export to Postman collection |
 | `spectrum:export:insomnia` | Export to Insomnia workspace |
-| `spectrum:cache:clear` | Clear cache |
+| `spectrum:cache` | Manage cache (clear, stats, warm) |
 
 ## 🔧 spectrum:generate
 
@@ -257,36 +257,35 @@ php artisan spectrum:export:insomnia --no-folder-structure
 php artisan spectrum:export:insomnia --output=insomnia/api.json
 ```
 
-## 🗑️ spectrum:cache:clear
+## 🗑️ spectrum:cache
 
-Clear Laravel Spectrum cache.
+Manage Laravel Spectrum cache (clear, show statistics, or warm up).
 
 ### Usage
 
 ```bash
-php artisan spectrum:cache:clear [options]
+php artisan spectrum:cache {action}
 ```
 
-### Options
+### Actions
 
-| Option | Description |
+| Action | Description |
 |--------|-------------|
-| `--routes` | Clear only route cache |
-| `--schemas` | Clear only schema cache |
-| `--examples` | Clear only example data cache |
-| `--all` | Clear all cache (default) |
+| `clear` | Clear all cached documentation |
+| `stats` | Show cache statistics (size, files, etc.) |
+| `warm` | Clear and regenerate cache |
 
 ### Examples
 
 ```bash
 # Clear all cache
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 
-# Routes cache only
-php artisan spectrum:cache:clear --routes
+# Show cache statistics
+php artisan spectrum:cache stats
 
-# Multiple types
-php artisan spectrum:cache:clear --routes --schemas
+# Warm up cache (clear and regenerate)
+php artisan spectrum:cache warm
 ```
 
 ## 🔍 Global Options

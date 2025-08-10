@@ -202,7 +202,7 @@ php artisan spectrum:generate:optimized --workers=1
 
 ```bash
 # Clear cache
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 
 # Generate without cache
 php artisan spectrum:generate:optimized --no-cache
@@ -226,7 +226,7 @@ php artisan spectrum:generate:optimized --no-cache
 
 ```bash
 # crontab
-0 2 * * * cd /path/to/project && php artisan spectrum:cache:clear --quiet
+0 2 * * * cd /path/to/project && php artisan spectrum:cache clear --quiet
 ```
 
 ### 3. Monitoring and Alerts
@@ -250,21 +250,14 @@ Event::listen(DocumentationGenerated::class, function ($event) {
 
 ### Distributed Generation
 
-Parallel generation across multiple servers (future implementation):
+For large-scale projects requiring distributed processing, use the optimized command with multiple workers:
 
 ```bash
-php artisan spectrum:generate:distributed \
-    --coordinator=redis://localhost:6379 \
-    --nodes=4
+php artisan spectrum:generate:optimized \
+    --workers=8 \
+    --memory-limit=1G
 ```
 
-### Real-time Indexing
-
-Instant updates on file changes (in development):
-
-```bash
-php artisan spectrum:index --real-time
-```
 
 ## 📚 Related Documentation
 

@@ -425,7 +425,7 @@ trait CommonValidationRules
 
 1. **Clear cache**
    ```bash
-   php artisan spectrum:cache:clear
+   php artisan spectrum:cache clear
    ```
 
 2. **Enable conditional analysis**

@@ -195,7 +195,7 @@ php artisan spectrum:mock
 php artisan spectrum:export:postman
 
 # キャッシュクリア
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 ```
 
 ## 💡 プロのヒント

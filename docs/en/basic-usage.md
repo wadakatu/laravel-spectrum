@@ -35,7 +35,7 @@ php artisan spectrum:watch
 Clear the analysis cache:
 
 ```bash
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 ```
 
 ### Start Mock Server

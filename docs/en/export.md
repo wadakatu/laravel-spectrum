@@ -301,7 +301,9 @@ public function boot()
 Usage:
 
 ```bash
-php artisan spectrum:export --format=custom --output=api.custom.json
+# Use specific export commands instead
+php artisan spectrum:export:postman --output=api.postman.json
+php artisan spectrum:export:insomnia --output=api.insomnia.json
 ```
 
 ## 🔄 Import Procedures

@@ -307,7 +307,9 @@ public function boot()
 使用：
 
 ```bash
-php artisan spectrum:export --format=custom --output=api.custom.json
+# 代わりに特定のエクスポートコマンドを使用
+php artisan spectrum:export:postman --output=api.postman.json
+php artisan spectrum:export:insomnia --output=api.insomnia.json
 ```
 
 ## 🔄 インポート手順

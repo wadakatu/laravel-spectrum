@@ -508,7 +508,7 @@ public function rules()
 
 3. **Clear cache**
    ```bash
-   php artisan spectrum:cache:clear
+   php artisan spectrum:cache clear
    ```
 
 ## 📚 Related Documentation

@@ -18,7 +18,7 @@ Laravel Spectrumで利用可能なすべてのArtisanコマンドとオプショ
 | `spectrum:mock` | モックAPIサーバーを起動 |
 | `spectrum:export:postman` | Postmanコレクションにエクスポート |
 | `spectrum:export:insomnia` | Insomniaワークスペースにエクスポート |
-| `spectrum:cache:clear` | キャッシュをクリア |
+| `spectrum:cache` | キャッシュ管理（クリア、統計、ウォームアップ） |
 
 ## 🔧 spectrum:generate
 
@@ -263,36 +263,35 @@ php artisan spectrum:export:insomnia --no-folder-structure
 php artisan spectrum:export:insomnia --output=insomnia/api.json
 ```
 
-## 🗑️ spectrum:cache:clear
+## 🗑️ spectrum:cache
 
-Laravel Spectrumのキャッシュをクリアします。
+Laravel Spectrumのキャッシュを管理します（クリア、統計表示、ウォームアップ）。
 
 ### 使用方法
 
 ```bash
-php artisan spectrum:cache:clear [options]
+php artisan spectrum:cache {action}
 ```
 
-### オプション
+### アクション
 
-| オプション | 説明 |
+| アクション | 説明 |
 |-----------|------|
-| `--routes` | ルートキャッシュのみクリア |
-| `--schemas` | スキーマキャッシュのみクリア |
-| `--examples` | 例データキャッシュのみクリア |
-| `--all` | すべてのキャッシュをクリア（デフォルト） |
+| `clear` | キャッシュされたすべてのドキュメントをクリア |
+| `stats` | キャッシュ統計（サイズ、ファイル数など）を表示 |
+| `warm` | キャッシュをクリアして再生成 |
 
 ### 使用例
 
 ```bash
 # すべてのキャッシュをクリア
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 
-# ルートキャッシュのみ
-php artisan spectrum:cache:clear --routes
+# キャッシュ統計を表示
+php artisan spectrum:cache stats
 
-# 複数の種類を指定
-php artisan spectrum:cache:clear --routes --schemas
+# キャッシュをウォームアップ（クリア＆再生成）
+php artisan spectrum:cache warm
 ```
 
 ## 🔍 グローバルオプション

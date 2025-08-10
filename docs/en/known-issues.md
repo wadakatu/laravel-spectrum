@@ -357,7 +357,9 @@ When reporting a new issue, please include the following information:
 
 1. **Environment Information**
    ```bash
-   php artisan spectrum:info
+   php -v
+   php artisan --version
+   composer show wadakatu/laravel-spectrum
    ```
 
 2. **Reproduction Steps**

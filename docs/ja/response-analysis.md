@@ -545,7 +545,7 @@ trait ApiResponses
 
 3. **キャッシュのクリア**
    ```bash
-   php artisan spectrum:cache:clear --schemas
+   php artisan spectrum:cache clear
    ```
 
 ### ネストが深すぎる警告

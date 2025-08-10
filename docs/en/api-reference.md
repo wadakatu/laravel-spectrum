@@ -510,11 +510,14 @@ $result = Spectrum::analyze('custom', $target);
 
 ### Adding Custom Generators
 
+> **Note**: Custom generator functionality is planned for a future release.
+
 ```php
-Spectrum::addGenerator('graphql', GraphQLGenerator::class);
+// Example of planned custom generator API
+Spectrum::addGenerator('custom', CustomSchemaGenerator::class);
 
 // Usage
-$schema = Spectrum::generate('graphql', $data);
+$schema = Spectrum::generate('custom', $data);
 ```
 
 ### Adding Middleware
