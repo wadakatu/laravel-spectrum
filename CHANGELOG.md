@@ -2,6 +2,107 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2-beta](https://github.com/wadakatu/laravel-spectrum/releases/tag/v0.2.2-beta) - 2025-08-11
+
+### ✅ Tests
+
+- add Laravel 11 and 12 demo apps for testing
+- enhance Laravel 11 demo app with comprehensive test routes
+- 匿名FormRequestクラス解析のテストケースを追加
+
+### ✨ Features
+
+- add Laravel 11 support docs and restructure demo apps
+- require PHP 8.2 minimum
+- 匿名FormRequestクラスのバリデーションルール検出機能を実装
+- 匿名FormRequest機能の動作確認用コントローラーとルートを追加
+
+### 🐛 Bug Fixes
+
+- prevent git rebase error with unstaged changes in changelog workflow
+- support Laravel 12 enum validation rules
+
+### 📚 Documentation
+
+- add comprehensive test report for Laravel 11/12 compatibility
+- ドキュメントと実装の乖離を修正
+
+## [0.2.1-beta](https://github.com/wadakatu/laravel-spectrum/releases/tag/v0.2.1-beta) - 2025-08-07
+
+### ✨ Features
+
+- drop Laravel 10 support
+- remove Lumen compatibility layer
+- remove Lumen configuration options
+- update package description to remove Lumen reference
+
+### 🐛 Bug Fixes
+
+- prevent push conflicts in changelog update workflow
+
+### 📚 Documentation
+
+- remove Lumen references from documentation
+
+### 🚀 Continuous Integration
+
+- remove PHP 8.1 support from test matrix
+
+## [0.2.0-beta](https://github.com/wadakatu/laravel-spectrum/releases/tag/v0.2.0-beta) - 2025-08-07
+
+### ♻️ Code Refactoring
+
+- make ParallelProcessor testable with optional constructor params
+- ExportPostmanCommandTestのコード整形と不要なインポートを削除
+- improve directory detection logic in ExportInsomniaCommand
+- PHPDocアノテーションを削除（PHPStanのbaselineで対応済み）
+
+### ✅ Tests
+
+- add comprehensive tests for Performance namespace classes
+- add comprehensive test coverage for ModelSchemaExtractor
+- ExportPostmanCommandのテストスイートを追加
+- ExportInsomniaCommandの包括的なテストスイートを追加
+- add comprehensive test suites for AST Visitors
+- add CollectionAnalyzer test suite
+- LiveReloadServerの包括的なテストカバレッジを追加
+- add comprehensive test suite for OpenApiGenerator
+- add comprehensive test suite for ResponseSchemaGenerator
+- enhance ParallelProcessor unit test coverage
+- add advanced unit tests for ParallelProcessor
+- add Orchestra Testbench integration tests
+- enhance FormRequestAnalyzer test coverage
+- add comprehensive RouteAnalyzer test coverage
+- add comprehensive test coverage for AnonymousClassFindingVisitor
+- add comprehensive large-scale performance tests
+- 大規模FormRequestのパフォーマンステストを追加
+
+### ✨ Features
+
+- add Closure validation rule detection support
+- add support for conditional validation rules
+- add support for date-related validation rules
+
+### 🐛 Bug Fixes
+
+- improve memory limit parsing in MemoryManager
+- handle missing Fork class in ParallelProcessor for CI environments
+- handle unlimited memory (-1) in MemoryManager and tests
+- correct Fork usage in ParallelProcessor
+- replace PHPUnit 11 deprecated mock methods with stubs
+- FormRequest解析テストをスキップに変更
+- FormRequest解析テストを実装し、format推論を追加
+- resolve API route detection in Laravel 11/12 environments
+
+### 📚 Documentation
+
+- update CHANGELOG.md for v0.1.0-beta
+- Artisanコマンド全般の問題であることを明確化するためコメントを修正
+
+### 📦 Build System
+
+- add PHPUnit 12 support
+
 ## [0.1.0-beta](https://github.com/wadakatu/laravel-spectrum/releases/tag/v0.1.0-beta) - 2025-07-28
 
 ### ♻️ Code Refactoring
