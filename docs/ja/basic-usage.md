@@ -41,7 +41,7 @@ php artisan spectrum:watch
 解析結果のキャッシュをクリア：
 
 ```bash
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 ```
 
 ### モックサーバー起動

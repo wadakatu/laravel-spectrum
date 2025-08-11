@@ -398,8 +398,8 @@ git tag pre-spectrum-migration
 // デバッグモードで詳細を確認
 php artisan spectrum:generate -vvv
 
-// 特定のパスをテスト
-php artisan spectrum:analyze "api/users"
+// 特定のパターンで生成
+php artisan spectrum:generate --pattern="api/users/*"
 ```
 
 ### スキーマの不一致

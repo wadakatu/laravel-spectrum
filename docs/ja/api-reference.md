@@ -516,11 +516,14 @@ $result = Spectrum::analyze('custom', $target);
 
 ### カスタムジェネレーターの追加
 
+> **注意**: カスタムジェネレーター機能は将来のリリースで提供予定です。
+
 ```php
-Spectrum::addGenerator('graphql', GraphQLGenerator::class);
+// 計画中のカスタムジェネレーターAPIの例
+Spectrum::addGenerator('custom', CustomSchemaGenerator::class);
 
 // 使用
-$schema = Spectrum::generate('graphql', $data);
+$schema = Spectrum::generate('custom', $data);
 ```
 
 ### ミドルウェアの追加

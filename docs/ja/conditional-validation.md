@@ -514,7 +514,7 @@ public function rules()
 
 3. **キャッシュのクリア**
    ```bash
-   php artisan spectrum:cache:clear
+   php artisan spectrum:cache clear
    ```
 
 ## 📚 関連ドキュメント

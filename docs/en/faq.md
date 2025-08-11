@@ -294,7 +294,7 @@ curl http://localhost:8081/api/users?_scenario=empty
 **A:** Please clear the cache:
 
 ```bash
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 php artisan spectrum:generate --no-cache
 ```
 

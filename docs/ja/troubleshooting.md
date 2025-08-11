@@ -224,8 +224,8 @@ APIリソースを使用しているのに、レスポンススキーマが空�
 ### デバッグコマンド
 
 ```bash
-# 単一ルートのデバッグ
-php artisan spectrum:debug api/users
+# 特定のパターンで生成してデバッグ
+php artisan spectrum:generate --pattern="api/users/*" -vvv
 
 # 詳細な出力
 php artisan spectrum:generate -vvv
@@ -389,7 +389,9 @@ FormRequestが認識されない場合：
 
 2. **デバッグ情報の収集**
    ```bash
-   php artisan spectrum:info > debug-info.txt
+   php -v > debug-info.txt
+   php artisan --version >> debug-info.txt
+   composer show wadakatu/laravel-spectrum >> debug-info.txt
    ```
 
 3. **最小限の再現コード**

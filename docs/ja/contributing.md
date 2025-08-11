@@ -244,7 +244,7 @@ git checkout -b docs/improve-readme
 
 ```bash
 # 機能追加
-git commit -m "feat: add support for GraphQL schema generation"
+git commit -m "feat: add support for complex validation rule detection"
 
 # バグ修正
 git commit -m "fix: correctly detect nested array validation rules"
@@ -333,9 +333,9 @@ laravel-spectrum/
 - 並列処理の改善
 
 ### 2. 新機能
-- GraphQL対応
 - gRPC対応
 - WebSocket API対応
+- プラグインシステム開発
 
 ### 3. エコシステム
 - IDE拡張機能

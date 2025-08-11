@@ -189,7 +189,7 @@ php artisan spectrum:mock
 php artisan spectrum:export:postman
 
 # Clear cache
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 ```
 
 ## 💡 Pro Tips

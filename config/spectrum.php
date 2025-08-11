@@ -49,15 +49,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Excluded Routes
+    | Custom Route Files
     |--------------------------------------------------------------------------
     |
-    | Specific routes that should be excluded from the documentation.
+    | Additional route files to load and analyze beyond the standard Laravel
+    | route files. These files will be included in both analysis and caching.
     |
     */
-    'excluded_routes' => [
-        'api/health',
-        'api/ping',
+    'route_files' => [
+        // base_path('routes/custom.php'),
+        // base_path('routes/admin.php'),
     ],
 
     /*

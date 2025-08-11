@@ -208,7 +208,7 @@ php artisan spectrum:generate:optimized --workers=1
 
 ```bash
 # キャッシュをクリア
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 
 # キャッシュを無効化して生成
 php artisan spectrum:generate:optimized --no-cache
@@ -232,7 +232,7 @@ php artisan spectrum:generate:optimized --no-cache
 
 ```bash
 # crontab
-0 2 * * * cd /path/to/project && php artisan spectrum:cache:clear --quiet
+0 2 * * * cd /path/to/project && php artisan spectrum:cache clear --quiet
 ```
 
 ### 3. 監視とアラート
@@ -256,21 +256,14 @@ Event::listen(DocumentationGenerated::class, function ($event) {
 
 ### 分散生成
 
-複数サーバーでの並列生成（将来実装予定）：
+大規模プロジェクトで分散処理が必要な場合は、複数ワーカーを使用した最適化コマンドを利用：
 
 ```bash
-php artisan spectrum:generate:distributed \
-    --coordinator=redis://localhost:6379 \
-    --nodes=4
+php artisan spectrum:generate:optimized \
+    --workers=8 \
+    --memory-limit=1G
 ```
 
-### リアルタイムインデックス
-
-ファイル変更時の即座な更新（開発中）：
-
-```bash
-php artisan spectrum:index --real-time
-```
 
 ## 📚 関連ドキュメント
 

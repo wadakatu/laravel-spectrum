@@ -300,7 +300,7 @@ curl http://localhost:8081/api/users?_scenario=empty
 **A:** キャッシュをクリアしてください：
 
 ```bash
-php artisan spectrum:cache:clear
+php artisan spectrum:cache clear
 php artisan spectrum:generate --no-cache
 ```
 

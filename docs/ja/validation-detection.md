@@ -431,7 +431,7 @@ trait CommonValidationRules
 
 1. **キャッシュをクリア**
    ```bash
-   php artisan spectrum:cache:clear
+   php artisan spectrum:cache clear
    ```
 
 2. **条件付き解析を有効化**

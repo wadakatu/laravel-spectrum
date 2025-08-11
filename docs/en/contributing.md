@@ -238,7 +238,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
 # Feature addition
-git commit -m "feat: add support for GraphQL schema generation"
+git commit -m "feat: add support for complex validation rule detection"
 
 # Bug fix
 git commit -m "fix: correctly detect nested array validation rules"
@@ -327,9 +327,9 @@ We are currently seeking contributions in the following areas:
 - Parallel processing improvements
 
 ### 2. New Features
-- GraphQL support
 - gRPC support
 - WebSocket API support
+- Plugin system development
 
 ### 3. Ecosystem
 - IDE extensions

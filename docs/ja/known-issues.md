@@ -363,7 +363,9 @@ public function attributes()
 
 1. **環境情報**
    ```bash
-   php artisan spectrum:info
+   php -v
+   php artisan --version
+   composer show wadakatu/laravel-spectrum
    ```
 
 2. **再現手順**

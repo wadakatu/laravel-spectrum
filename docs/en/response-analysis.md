@@ -539,7 +539,7 @@ trait ApiResponses
 
 3. **Clear Cache**
    ```bash
-   php artisan spectrum:cache:clear --schemas
+   php artisan spectrum:cache clear
    ```
 
 ### Nesting Too Deep Warning

@@ -218,8 +218,8 @@ Authentication is required but not shown in documentation.
 ### Debug Commands
 
 ```bash
-# Debug single route
-php artisan spectrum:debug api/users
+# Generate with specific pattern
+php artisan spectrum:generate --pattern="api/users/*" -vvv
 
 # Verbose output
 php artisan spectrum:generate -vvv
@@ -383,7 +383,9 @@ Recommended extensions:
 
 2. **Collect Debug Information**
    ```bash
-   php artisan spectrum:info > debug-info.txt
+   php -v > debug-info.txt
+   php artisan --version >> debug-info.txt
+   composer show wadakatu/laravel-spectrum >> debug-info.txt
    ```
 
 3. **Minimal Reproduction Code**
