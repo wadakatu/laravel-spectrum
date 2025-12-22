@@ -351,7 +351,7 @@ class DocumentationCache
     private function humanFilesize(int $bytes): string
     {
         $units = ['B', 'KB', 'MB', 'GB'];
-        $factor = floor((strlen((string) $bytes) - 1) / 3);
+        $factor = (int) floor((strlen((string) $bytes) - 1) / 3);
 
         return sprintf('%.2f', $bytes / pow(1024, $factor)).' '.$units[$factor];
     }
