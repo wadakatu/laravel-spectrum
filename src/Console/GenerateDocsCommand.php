@@ -6,19 +6,21 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Generators\HtmlDocumentGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Support\ErrorCollector;
 
 class GenerateDocsCommand extends Command
 {
-    protected $signature = 'spectrum:generate 
-                            {--format=json : Output format (json|yaml)}
+    protected $signature = 'spectrum:generate
+                            {--format=json : Output format (json|yaml|html)}
                             {--output= : Output file path}
                             {--no-cache : Disable cache}
                             {--clear-cache : Clear cache before generation}
                             {--fail-on-error : Stop execution on first error}
                             {--ignore-errors : Continue generation ignoring errors}
-                            {--error-report= : Save error report to file}';
+                            {--error-report= : Save error report to file}
+                            {--no-try-it-out : Disable Try It Out feature in HTML output}';
 
     protected $description = 'Generate API documentation';
 
@@ -145,21 +147,39 @@ class GenerateDocsCommand extends Command
     protected function getDefaultOutputPath(): string
     {
         $format = $this->option('format');
+        $extension = $this->getFileExtension($format);
 
         // パッケージ開発環境かどうかを判定
         if (function_exists('storage_path')) {
-            return storage_path("app/spectrum/openapi.{$format}");
+            return storage_path("app/spectrum/openapi.{$extension}");
         }
 
         // パッケージ開発環境の場合は、現在のディレクトリに生成
         $outputDir = getcwd().'/storage/spectrum';
         File::ensureDirectoryExists($outputDir);
 
-        return $outputDir."/openapi.{$format}";
+        return $outputDir."/openapi.{$extension}";
+    }
+
+    protected function getFileExtension(string $format): string
+    {
+        return match ($format) {
+            'html' => 'html',
+            'yaml' => 'yaml',
+            default => 'json',
+        };
     }
 
     protected function formatOutput(array $openapi, string $format): string
     {
+        if ($format === 'html') {
+            $htmlGenerator = new HtmlDocumentGenerator;
+
+            return $htmlGenerator->generate($openapi, [
+                'try_it_out' => ! $this->option('no-try-it-out'),
+            ]);
+        }
+
         if ($format === 'yaml') {
             // 簡易的なYAML変換（本番ではsymfony/yamlを使用）
             return $this->arrayToYaml($openapi);
