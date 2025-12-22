@@ -7,6 +7,7 @@ use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
+use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -57,6 +58,8 @@ class OpenApiGeneratorTest extends TestCase
 
     private $requestAnalyzer;
 
+    private $openApi31Converter;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -76,6 +79,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->paginationSchemaGenerator = Mockery::mock(PaginationSchemaGenerator::class);
         $this->paginationDetector = Mockery::mock(PaginationDetector::class);
         $this->requestAnalyzer = Mockery::mock(FormRequestAnalyzer::class);
+        $this->openApi31Converter = Mockery::mock(OpenApi31Converter::class);
 
         $this->generator = new OpenApiGenerator(
             $this->controllerAnalyzer,
@@ -92,7 +96,8 @@ class OpenApiGeneratorTest extends TestCase
             $this->responseSchemaGenerator,
             $this->paginationSchemaGenerator,
             $this->paginationDetector,
-            $this->requestAnalyzer
+            $this->requestAnalyzer,
+            $this->openApi31Converter
         );
     }
 
