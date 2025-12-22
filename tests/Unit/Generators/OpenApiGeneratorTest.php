@@ -530,6 +530,126 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('path', $operation['parameters'][0]['in']);
     }
 
+    #[Test]
+    public function it_applies_openapi_31_conversion_when_configured()
+    {
+        // Set config to 3.1.0
+        config(['spectrum.openapi.version' => '3.1.0']);
+
+        $routes = [];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
+            ->once();
+
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->once()
+            ->andReturn(null);
+
+        $this->authenticationAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn(['schemes' => []]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->once()
+            ->with([])
+            ->andReturn([]);
+
+        // Mock converter to verify it's called
+        $this->openApi31Converter->shouldReceive('convert')
+            ->once()
+            ->andReturnUsing(function ($spec) {
+                $spec['openapi'] = '3.1.0';
+
+                return $spec;
+            });
+
+        $result = $this->generator->generate($routes);
+
+        $this->assertEquals('3.1.0', $result['openapi']);
+    }
+
+    #[Test]
+    public function it_does_not_apply_openapi_31_conversion_when_not_configured()
+    {
+        // Set config to 3.0.0 (default)
+        config(['spectrum.openapi.version' => '3.0.0']);
+
+        $routes = [];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
+            ->once();
+
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->once()
+            ->andReturn(null);
+
+        $this->authenticationAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn(['schemes' => []]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->once()
+            ->with([])
+            ->andReturn([]);
+
+        // Converter should NOT be called
+        $this->openApi31Converter->shouldNotReceive('convert');
+
+        $result = $this->generator->generate($routes);
+
+        $this->assertEquals('3.0.0', $result['openapi']);
+    }
+
+    #[Test]
+    public function it_converts_nullable_to_type_array_in_31()
+    {
+        // Use real converter instead of mock for this integration test
+        $realConverter = new OpenApi31Converter;
+        $generator = new OpenApiGenerator(
+            $this->requestAnalyzer,
+            $this->resourceAnalyzer,
+            $this->controllerAnalyzer,
+            $this->inlineValidationAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $realConverter
+        );
+
+        config(['spectrum.openapi.version' => '3.1.0']);
+
+        $routes = [];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
+            ->once();
+
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->once()
+            ->andReturn(null);
+
+        $this->authenticationAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn(['schemes' => []]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->once()
+            ->andReturn([]);
+
+        $result = $generator->generate($routes);
+
+        // Verify OpenAPI version is 3.1.0
+        $this->assertEquals('3.1.0', $result['openapi']);
+
+        // Verify webhooks section was added
+        $this->assertArrayHasKey('webhooks', $result);
+        $this->assertInstanceOf(\stdClass::class, $result['webhooks']);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

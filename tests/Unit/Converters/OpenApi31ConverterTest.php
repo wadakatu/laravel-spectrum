@@ -464,4 +464,835 @@ class OpenApi31ConverterTest extends TestCase
         $this->assertEquals(['string', 'null'], $schema['type']);
         $this->assertCount(2, $schema['type']);
     }
+
+    #[Test]
+    public function it_converts_anyof_schemas(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Mixed' => [
+                        'anyOf' => [
+                            [
+                                'type' => 'object',
+                                'properties' => [
+                                    'value' => [
+                                        'type' => 'string',
+                                        'nullable' => true,
+                                    ],
+                                ],
+                            ],
+                            [
+                                'type' => 'integer',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $anyOf = $result['components']['schemas']['Mixed']['anyOf'];
+        $this->assertEquals(['string', 'null'], $anyOf[0]['properties']['value']['type']);
+        $this->assertEquals(['integer', 'null'], $anyOf[1]['type']);
+    }
+
+    #[Test]
+    public function it_converts_oneof_schemas(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Either' => [
+                        'oneOf' => [
+                            [
+                                'type' => 'string',
+                                'nullable' => true,
+                            ],
+                            [
+                                'type' => 'number',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $oneOf = $result['components']['schemas']['Either']['oneOf'];
+        $this->assertEquals(['string', 'null'], $oneOf[0]['type']);
+        $this->assertEquals(['number', 'null'], $oneOf[1]['type']);
+    }
+
+    #[Test]
+    public function it_converts_additional_properties_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Dictionary' => [
+                        'type' => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                            'nullable' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $additionalProps = $result['components']['schemas']['Dictionary']['additionalProperties'];
+        $this->assertEquals(['string', 'null'], $additionalProps['type']);
+    }
+
+    #[Test]
+    public function it_converts_component_request_bodies(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'requestBodies' => [
+                    'UserInput' => [
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'email' => [
+                                            'type' => 'string',
+                                            'nullable' => true,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $emailSchema = $result['components']['requestBodies']['UserInput']['content']['application/json']['schema']['properties']['email'];
+        $this->assertEquals(['string', 'null'], $emailSchema['type']);
+    }
+
+    #[Test]
+    public function it_converts_component_responses(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'responses' => [
+                    'UserResponse' => [
+                        'description' => 'User data',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'avatar' => [
+                                            'type' => 'string',
+                                            'nullable' => true,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $avatarSchema = $result['components']['responses']['UserResponse']['content']['application/json']['schema']['properties']['avatar'];
+        $this->assertEquals(['string', 'null'], $avatarSchema['type']);
+    }
+
+    #[Test]
+    public function it_converts_component_parameters(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'parameters' => [
+                    'OptionalFilter' => [
+                        'name' => 'filter',
+                        'in' => 'query',
+                        'schema' => [
+                            'type' => 'string',
+                            'nullable' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $filterSchema = $result['components']['parameters']['OptionalFilter']['schema'];
+        $this->assertEquals(['string', 'null'], $filterSchema['type']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_path_methods(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/users' => 'not-an-array',
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertEquals('not-an-array', $result['paths']['/users']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_operations(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/users' => [
+                    'get' => 'not-an-array',
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertEquals('not-an-array', $result['paths']['/users']['get']);
+    }
+
+    #[Test]
+    public function it_handles_response_without_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/users' => [
+                    'delete' => [
+                        'responses' => [
+                            '204' => [
+                                'description' => 'No Content',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayNotHasKey('content', $result['paths']['/users']['delete']['responses']['204']);
+    }
+
+    #[Test]
+    public function it_handles_nullable_false(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Required' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => [
+                                'type' => 'integer',
+                                'nullable' => false,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $idSchema = $result['components']['schemas']['Required']['properties']['id'];
+        $this->assertEquals('integer', $idSchema['type']);
+        $this->assertArrayHasKey('nullable', $idSchema);
+    }
+
+    #[Test]
+    public function it_handles_non_array_allof_subschema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Combined' => [
+                        'allOf' => [
+                            'not-an-array',
+                            [
+                                'type' => 'string',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $allOf = $result['components']['schemas']['Combined']['allOf'];
+        $this->assertEquals('not-an-array', $allOf[0]);
+        $this->assertEquals(['string', 'null'], $allOf[1]['type']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_anyof_subschema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Mixed' => [
+                        'anyOf' => [
+                            'not-an-array',
+                            [
+                                'type' => 'integer',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $anyOf = $result['components']['schemas']['Mixed']['anyOf'];
+        $this->assertEquals('not-an-array', $anyOf[0]);
+        $this->assertEquals(['integer', 'null'], $anyOf[1]['type']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_oneof_subschema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Either' => [
+                        'oneOf' => [
+                            'not-an-array',
+                            [
+                                'type' => 'boolean',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $oneOf = $result['components']['schemas']['Either']['oneOf'];
+        $this->assertEquals('not-an-array', $oneOf[0]);
+        $this->assertEquals(['boolean', 'null'], $oneOf[1]['type']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_property_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'Object' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'simple' => 'not-an-array',
+                            'complex' => [
+                                'type' => 'string',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $properties = $result['components']['schemas']['Object']['properties'];
+        $this->assertEquals('not-an-array', $properties['simple']);
+        $this->assertEquals(['string', 'null'], $properties['complex']['type']);
+    }
+
+    #[Test]
+    public function it_handles_request_body_without_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/users' => [
+                    'post' => [
+                        'requestBody' => [
+                            'description' => 'No content defined',
+                        ],
+                        'responses' => [
+                            '200' => ['description' => 'OK'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayNotHasKey('content', $result['paths']['/users']['post']['requestBody']);
+    }
+
+    #[Test]
+    public function it_handles_content_without_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/upload' => [
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'multipart/form-data' => [
+                                    'encoding' => [
+                                        'file' => ['contentType' => 'application/octet-stream'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => ['description' => 'OK'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayNotHasKey('schema', $result['paths']['/upload']['post']['requestBody']['content']['multipart/form-data']);
+    }
+
+    #[Test]
+    public function it_handles_parameter_without_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/items' => [
+                    'get' => [
+                        'parameters' => [
+                            [
+                                'name' => 'legacy',
+                                'in' => 'query',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['type' => 'string'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => ['description' => 'OK'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $param = $result['paths']['/items']['get']['parameters'][0];
+        $this->assertArrayNotHasKey('schema', $param);
+        $this->assertArrayHasKey('content', $param);
+    }
+
+    #[Test]
+    public function it_handles_component_request_body_without_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'requestBodies' => [
+                    'Empty' => [
+                        'description' => 'Empty request body',
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayNotHasKey('content', $result['components']['requestBodies']['Empty']);
+    }
+
+    #[Test]
+    public function it_handles_component_response_without_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'responses' => [
+                    'NoContent' => [
+                        'description' => 'No content response',
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayNotHasKey('content', $result['components']['responses']['NoContent']);
+    }
+
+    #[Test]
+    public function it_handles_component_parameter_without_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'parameters' => [
+                    'ContentParam' => [
+                        'name' => 'data',
+                        'in' => 'query',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => ['type' => 'object'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $param = $result['components']['parameters']['ContentParam'];
+        $this->assertArrayNotHasKey('schema', $param);
+        $this->assertArrayHasKey('content', $param);
+    }
+
+    #[Test]
+    public function it_handles_response_content_without_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/files' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => [
+                                'description' => 'File download',
+                                'content' => [
+                                    'application/octet-stream' => [
+                                        'example' => 'binary data',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $content = $result['paths']['/files']['get']['responses']['200']['content']['application/octet-stream'];
+        $this->assertArrayNotHasKey('schema', $content);
+        $this->assertEquals('binary data', $content['example']);
+    }
+
+    #[Test]
+    public function it_handles_component_response_content_without_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'responses' => [
+                    'BinaryResponse' => [
+                        'description' => 'Binary file',
+                        'content' => [
+                            'application/pdf' => [
+                                'example' => 'PDF content',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $content = $result['components']['responses']['BinaryResponse']['content']['application/pdf'];
+        $this->assertArrayNotHasKey('schema', $content);
+        $this->assertEquals('PDF content', $content['example']);
+    }
+
+    #[Test]
+    public function it_handles_component_request_body_content_without_schema(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'requestBodies' => [
+                    'RawInput' => [
+                        'content' => [
+                            'text/plain' => [
+                                'example' => 'plain text',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $content = $result['components']['requestBodies']['RawInput']['content']['text/plain'];
+        $this->assertArrayNotHasKey('schema', $content);
+        $this->assertEquals('plain text', $content['example']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_response_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/legacy' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => [
+                                'description' => 'OK',
+                                'content' => 'not-an-array',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertEquals('not-an-array', $result['paths']['/legacy']['get']['responses']['200']['content']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_component_request_body_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'requestBodies' => [
+                    'Invalid' => [
+                        'content' => 'not-an-array',
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertEquals('not-an-array', $result['components']['requestBodies']['Invalid']['content']);
+    }
+
+    #[Test]
+    public function it_handles_non_array_component_response_content(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'responses' => [
+                    'Invalid' => [
+                        'description' => 'Invalid',
+                        'content' => 'not-an-array',
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertEquals('not-an-array', $result['components']['responses']['Invalid']['content']);
+    }
+
+    #[Test]
+    public function it_deeply_converts_nested_structures(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'DeepNested' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'level1' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'level2' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'level3' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object',
+                                                    'properties' => [
+                                                        'value' => [
+                                                            'type' => 'string',
+                                                            'nullable' => true,
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $valueSchema = $result['components']['schemas']['DeepNested']['properties']['level1']['properties']['level2']['properties']['level3']['items']['properties']['value'];
+        $this->assertEquals(['string', 'null'], $valueSchema['type']);
+    }
+
+    #[Test]
+    public function it_handles_multiple_media_types(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/data' => [
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'field' => ['type' => 'string', 'nullable' => true],
+                                        ],
+                                    ],
+                                ],
+                                'application/xml' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'field' => ['type' => 'string', 'nullable' => true],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'OK',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'result' => ['type' => 'string', 'nullable' => true],
+                                            ],
+                                        ],
+                                    ],
+                                    'text/plain' => [
+                                        'schema' => [
+                                            'type' => 'string',
+                                            'nullable' => true,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // Request body - JSON
+        $jsonReqSchema = $result['paths']['/data']['post']['requestBody']['content']['application/json']['schema']['properties']['field'];
+        $this->assertEquals(['string', 'null'], $jsonReqSchema['type']);
+
+        // Request body - XML
+        $xmlReqSchema = $result['paths']['/data']['post']['requestBody']['content']['application/xml']['schema']['properties']['field'];
+        $this->assertEquals(['string', 'null'], $xmlReqSchema['type']);
+
+        // Response - JSON
+        $jsonResSchema = $result['paths']['/data']['post']['responses']['200']['content']['application/json']['schema']['properties']['result'];
+        $this->assertEquals(['string', 'null'], $jsonResSchema['type']);
+
+        // Response - text/plain
+        $textResSchema = $result['paths']['/data']['post']['responses']['200']['content']['text/plain']['schema'];
+        $this->assertEquals(['string', 'null'], $textResSchema['type']);
+    }
 }
