@@ -1,24 +1,39 @@
-# language of the project (csharp, python, rust, java, typescript, go, cpp, or ruby)
-#  * For C, use cpp
-#  * For JavaScript, use typescript
+# list of languages for which language servers are started; choose from:
+#   al               bash             clojure          cpp              csharp           csharp_omnisharp
+#   dart             elixir           elm              erlang           fortran          go
+#   haskell          java             julia            kotlin           lua              markdown
+#   nix              perl             php              python           python_jedi      r
+#   rego             ruby             ruby_solargraph  rust             scala            swift
+#   terraform        typescript       typescript_vts   yaml             zig
+# Note:
+#   - For C, use cpp
+#   - For JavaScript, use typescript
 # Special requirements:
-#  * csharp: Requires the presence of a .sln file in the project folder.
-language: php
+#   - csharp: Requires the presence of a .sln file in the project folder.
+# When using multiple languages, the first language server that supports a given file will be used for that file.
+# The first language is the default language and the respective language server will be used as a fallback.
+# Note that when using the JetBrains backend, language servers are not used and this list is correspondingly ignored.
+languages:
+- php
+
+# the encoding used by text files in the project
+# For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings
+encoding: "utf-8"
 
 # whether to use the project's gitignore file to ignore files
 # Added on 2025-04-07
 ignore_all_files_in_gitignore: true
+
 # list of additional paths to ignore
 # same syntax as gitignore, so you can use * and **
 # Was previously called `ignored_dirs`, please update your config if you are using that.
-# Added (renamed)on 2025-04-07
+# Added (renamed) on 2025-04-07
 ignored_paths: []
 
 # whether the project is in read-only mode
 # If set to true, all editing tools will be disabled and attempts to use them will result in an error
 # Added on 2025-04-18
 read_only: false
-
 
 # list of tool names to exclude. We recommend not excluding any tools, see the readme for more details.
 # Below is the complete list of tools for convenience.
@@ -35,7 +50,7 @@ read_only: false
 #  * `find_referencing_symbols`: Finds symbols that reference the symbol at the given location (optionally filtered by type).
 #  * `find_symbol`: Performs a global (or local) search for symbols with/containing a given name/substring (optionally filtered by type).
 #  * `get_current_config`: Prints the current configuration of the agent, including the active and available projects, tools, contexts, and modes.
-#  * `get_symbols_overview`: Gets an overview of the top-level symbols defined in a given file or directory.
+#  * `get_symbols_overview`: Gets an overview of the top-level symbols defined in a given file.
 #  * `initial_instructions`: Gets the initial instructions for the current project.
 #     Should only be used in settings where the system prompt cannot be set,
 #     e.g. in clients you have no control over, like Claude Desktop.
@@ -66,3 +81,4 @@ excluded_tools: []
 initial_prompt: ""
 
 project_name: "laravel-spectrum"
+included_optional_tools: []
