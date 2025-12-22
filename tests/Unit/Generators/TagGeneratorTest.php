@@ -1,19 +1,12 @@
 <?php
 
-namespace Tests\Unit\Generators;
+namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\TagGenerator;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-/**
- * Tests for tag generation functionality.
- *
- * This test class verifies TagGenerator behavior for various URI patterns.
- * Originally these tests used OpenApiGenerator directly, but tag generation
- * has been extracted to the TagGenerator class.
- */
-class OpenApiGeneratorTagsTest extends TestCase
+class TagGeneratorTest extends TestCase
 {
     protected TagGenerator $generator;
 
@@ -24,12 +17,24 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_removes_parameters_from_tags()
+    public function it_generates_tag_from_simple_uri(): void
+    {
+        $route = [
+            'uri' => 'api/users',
+            'controller' => 'UserController',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['User'], $tags);
+    }
+
+    #[Test]
+    public function it_removes_parameters_from_tags(): void
     {
         $route = [
             'uri' => 'api/v1/posts/{post}',
             'controller' => 'PostController',
-            'method' => 'show',
         ];
 
         $tags = $this->generator->generate($route);
@@ -38,12 +43,11 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_nested_resources_with_multiple_tags()
+    public function it_handles_nested_resources_with_multiple_tags(): void
     {
         $route = [
             'uri' => 'api/v1/posts/{post}/comments',
             'controller' => 'CommentController',
-            'method' => 'index',
         ];
 
         $tags = $this->generator->generate($route);
@@ -52,12 +56,11 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_uses_controller_name_as_fallback_for_generic_paths()
+    public function it_uses_controller_name_as_fallback_for_generic_paths(): void
     {
         $route = [
             'uri' => 'api/v1/{resource}',
             'controller' => 'UserController',
-            'method' => 'index',
         ];
 
         $tags = $this->generator->generate($route);
@@ -66,9 +69,8 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_respects_custom_tag_mappings_from_config()
+    public function it_respects_custom_tag_mappings_from_config(): void
     {
-        // テスト用の設定値をセット
         $this->app['config']->set('spectrum.tags', [
             'api/v1/auth/*' => 'Authentication',
             'api/v1/admin/*' => 'Administration',
@@ -77,7 +79,6 @@ class OpenApiGeneratorTagsTest extends TestCase
         $route = [
             'uri' => 'api/v1/auth/login',
             'controller' => 'AuthController',
-            'method' => 'login',
         ];
 
         $tags = $this->generator->generate($route);
@@ -86,12 +87,11 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_deeply_nested_resources()
+    public function it_handles_deeply_nested_resources(): void
     {
         $route = [
             'uri' => 'api/v1/posts/{post}/comments/{comment}/likes',
             'controller' => 'LikeController',
-            'method' => 'index',
         ];
 
         $tags = $this->generator->generate($route);
@@ -100,12 +100,11 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_simple_resource_paths()
+    public function it_handles_simple_resource_paths(): void
     {
         $route = [
             'uri' => 'api/users',
             'controller' => 'UserController',
-            'method' => 'index',
         ];
 
         $tags = $this->generator->generate($route);
@@ -114,12 +113,11 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_ignores_common_prefixes()
+    public function it_ignores_common_prefixes(): void
     {
         $route = [
             'uri' => 'api/v1/users',
             'controller' => 'UserController',
-            'method' => 'index',
         ];
 
         $tags = $this->generator->generate($route);
@@ -128,12 +126,11 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_optional_parameters()
+    public function it_handles_optional_parameters(): void
     {
         $route = [
             'uri' => 'api/posts/{post?}',
             'controller' => 'PostController',
-            'method' => 'show',
         ];
 
         $tags = $this->generator->generate($route);
@@ -142,7 +139,7 @@ class OpenApiGeneratorTagsTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_custom_tag_mapping_with_exact_match()
+    public function it_handles_custom_tag_mapping_with_exact_match(): void
     {
         $this->app['config']->set('spectrum.tags', [
             'api/v1/auth/login' => 'Authentication',
@@ -152,11 +149,83 @@ class OpenApiGeneratorTagsTest extends TestCase
         $route = [
             'uri' => 'api/v1/auth/login',
             'controller' => 'AuthController',
-            'method' => 'login',
         ];
 
         $tags = $this->generator->generate($route);
 
         $this->assertEquals(['Authentication'], $tags);
+    }
+
+    #[Test]
+    public function it_handles_array_of_custom_tags(): void
+    {
+        $this->app['config']->set('spectrum.tags', [
+            'api/v1/auth/*' => ['Authentication', 'Security'],
+        ]);
+
+        $route = [
+            'uri' => 'api/v1/auth/login',
+            'controller' => 'AuthController',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['Authentication', 'Security'], $tags);
+    }
+
+    #[Test]
+    public function it_removes_duplicate_tags(): void
+    {
+        $route = [
+            'uri' => 'api/users/users', // Unusual but should handle duplicates
+            'controller' => 'UserController',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['User'], $tags);
+    }
+
+    #[Test]
+    public function it_handles_route_without_controller(): void
+    {
+        $route = [
+            'uri' => 'api/v1/{resource}',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals([], $tags);
+    }
+
+    #[Test]
+    public function it_singularizes_plural_resources(): void
+    {
+        $route = [
+            'uri' => 'api/categories',
+            'controller' => 'CategoryController',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['Category'], $tags);
+    }
+
+    #[Test]
+    public function it_handles_v2_and_v3_prefixes(): void
+    {
+        $route = [
+            'uri' => 'api/v2/products',
+            'controller' => 'ProductController',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['Product'], $tags);
+
+        $route['uri'] = 'api/v3/products';
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['Product'], $tags);
     }
 }
