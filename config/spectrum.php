@@ -582,6 +582,68 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HTML Output Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure HTML documentation output with Swagger UI.
+    |
+    */
+    'html' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Try It Out Feature
+        |--------------------------------------------------------------------------
+        |
+        | Enable or disable the "Try It Out" feature in Swagger UI.
+        | When enabled, users can test API endpoints directly from the documentation.
+        |
+        */
+        'try_it_out' => env('SPECTRUM_HTML_TRY_IT_OUT', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Persist Authorization
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, authorization data will be persisted in browser storage.
+        |
+        */
+        'persist_authorization' => true,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Deep Linking
+        |--------------------------------------------------------------------------
+        |
+        | Enable deep linking for operations and tags.
+        |
+        */
+        'deep_linking' => true,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Doc Expansion
+        |--------------------------------------------------------------------------
+        |
+        | Controls how the operations and tags are displayed.
+        | Options: "list" (default), "full", "none"
+        |
+        */
+        'doc_expansion' => 'list',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filter
+        |--------------------------------------------------------------------------
+        |
+        | Enable a filtering/search bar for operations.
+        |
+        */
+        'filter' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Export Settings
     |--------------------------------------------------------------------------
     |
