@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -35,7 +36,9 @@ class FormRequestAnalyzer
 
     protected RuleRequirementAnalyzer $ruleRequirementAnalyzer;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null)
+    protected FormatInferrer $formatInferrer;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -46,6 +49,7 @@ class FormRequestAnalyzer
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
         $this->errorCollector = $errorCollector;
         $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
+        $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
     }
 
     /**
@@ -553,7 +557,7 @@ class FormRequestAnalyzer
             ];
 
             // Add format for various field types
-            $format = $this->inferFormat($ruleArray);
+            $format = $this->formatInferrer->inferFormat($ruleArray);
             if ($format) {
                 $parameter['format'] = $format;
             }
@@ -583,79 +587,6 @@ class FormRequestAnalyzer
         // This method handles rules that contain actual objects (not AST strings)
         // It's used when we extract rules via reflection instead of AST parsing
         return $this->generateParameters($rules, $attributes, $namespace);
-    }
-
-    protected function inferDateFormat($rules): ?string
-    {
-        if (is_string($rules)) {
-            $rules = explode('|', $rules);
-        }
-
-        foreach ($rules as $rule) {
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            if ($rule === 'date') {
-                return 'date';
-            }
-            if ($rule === 'datetime') {
-                return 'date-time';
-            }
-            if (Str::startsWith($rule, 'date_format:')) {
-                // For specific date formats, we still return 'date' as the OpenAPI format
-                // The actual format pattern is captured in the validation rules
-                return 'date';
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Infer format from validation rules (email, url, uuid, etc.)
-     */
-    protected function inferFormat($rules): ?string
-    {
-        if (is_string($rules)) {
-            $rules = explode('|', $rules);
-        }
-
-        foreach ($rules as $rule) {
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            // Date formats
-            if ($rule === 'date') {
-                return 'date';
-            }
-            if ($rule === 'datetime') {
-                return 'date-time';
-            }
-            if (Str::startsWith($rule, 'date_format:')) {
-                return 'date';
-            }
-
-            // Other formats
-            if ($rule === 'email') {
-                return 'email';
-            }
-            if ($rule === 'url') {
-                return 'uri';
-            }
-            if ($rule === 'uuid') {
-                return 'uuid';
-            }
-            if ($rule === 'ip' || $rule === 'ipv4') {
-                return 'ipv4';
-            }
-            if ($rule === 'ipv6') {
-                return 'ipv6';
-            }
-        }
-
-        return null;
     }
 
     /**
