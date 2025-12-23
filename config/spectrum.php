@@ -34,6 +34,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | OpenAPI Specification Version
+    |--------------------------------------------------------------------------
+    |
+    | The OpenAPI specification version to use for generating documentation.
+    | Supported versions: '3.0.0', '3.1.0'
+    |
+    | OpenAPI 3.1.0 includes:
+    | - Full JSON Schema Draft 2020-12 compatibility
+    | - Type arrays instead of nullable keyword (e.g., ["string", "null"])
+    | - Webhooks support
+    |
+    */
+    'openapi' => [
+        'version' => env('SPECTRUM_OPENAPI_VERSION', '3.0.0'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route Patterns
     |--------------------------------------------------------------------------
     |

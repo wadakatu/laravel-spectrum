@@ -6,6 +6,7 @@ use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
+use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\Support\PaginationDetector;
 
 /**
@@ -31,7 +32,8 @@ class OpenApiGenerator
         protected ResponseSchemaGenerator $responseSchemaGenerator,
         protected PaginationSchemaGenerator $paginationSchemaGenerator,
         protected PaginationDetector $paginationDetector,
-        protected FormRequestAnalyzer $requestAnalyzer
+        protected FormRequestAnalyzer $requestAnalyzer,
+        protected OpenApi31Converter $openApi31Converter
     ) {}
 
     /**
@@ -71,6 +73,11 @@ class OpenApiGenerator
                     $openapi['paths'][$path][strtolower($method)] = $operation;
                 }
             }
+        }
+
+        // Convert to OpenAPI 3.1.0 format if enabled
+        if (config('spectrum.openapi.version') === '3.1.0') {
+            $openapi = $this->openApi31Converter->convert($openapi);
         }
 
         return $openapi;
@@ -127,11 +134,6 @@ class OpenApiGenerator
             $requestBody = $this->requestBodyGenerator->generate($controllerInfo, $route);
             if ($requestBody) {
                 $operation['requestBody'] = $requestBody;
-
-                // Add consumes for file uploads
-                if (isset($requestBody['content']['multipart/form-data'])) {
-                    $operation['consumes'] = ['multipart/form-data'];
-                }
             }
         }
 

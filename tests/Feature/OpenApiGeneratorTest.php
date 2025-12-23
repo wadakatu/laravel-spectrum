@@ -156,6 +156,46 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertContains('Post', $postOperation['tags']);
     }
 
+    #[Test]
+    public function it_generates_valid_openapi_31_spec_when_configured()
+    {
+        // Arrange
+        config(['spectrum.openapi.version' => '3.1.0']);
+        Route::get('api/users', [UserController::class, 'index']);
+        Route::post('api/users', [UserController::class, 'store']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Version should be 3.1.0
+        $this->assertEquals('3.1.0', $openapi['openapi']);
+
+        // Assert - webhooks section should exist (3.1.0 feature)
+        $this->assertArrayHasKey('webhooks', $openapi);
+        $this->assertInstanceOf(\stdClass::class, $openapi['webhooks']);
+
+        // Assert - Paths still work
+        $this->assertArrayHasKey('paths', $openapi);
+        $this->assertArrayHasKey('/api/users', $openapi['paths']);
+    }
+
+    #[Test]
+    public function it_generates_30_spec_when_31_not_configured()
+    {
+        // Arrange - Default or explicit 3.0.0
+        config(['spectrum.openapi.version' => '3.0.0']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Version should be 3.0.0
+        $this->assertEquals('3.0.0', $openapi['openapi']);
+
+        // Assert - webhooks section should NOT exist in 3.0.0
+        $this->assertArrayNotHasKey('webhooks', $openapi);
+    }
+
     protected function mockControllerAnalysis(string $method, array $result): void
     {
         $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');

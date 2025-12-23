@@ -22,6 +22,7 @@ use LaravelSpectrum\Console\Commands\MockServerCommand;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
+use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\Exporters\InsomniaExporter;
 use LaravelSpectrum\Exporters\PostmanExporter;
 use LaravelSpectrum\Formatters\InsomniaFormatter;
@@ -91,6 +92,7 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(OperationMetadataGenerator::class);
         $this->app->singleton(ParameterGenerator::class);
         $this->app->singleton(RequestBodyGenerator::class);
+        $this->app->singleton(OpenApi31Converter::class);
         $this->app->singleton(OpenApiGenerator::class);
         $this->app->singleton(FileWatcher::class);
         $this->app->singleton(LiveReloadServer::class);
