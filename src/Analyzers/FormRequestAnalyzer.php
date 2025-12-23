@@ -3,9 +3,9 @@
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
+use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
@@ -38,7 +38,9 @@ class FormRequestAnalyzer
 
     protected FormatInferrer $formatInferrer;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null)
+    protected ValidationDescriptionGenerator $descriptionGenerator;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -50,6 +52,7 @@ class FormRequestAnalyzer
         $this->errorCollector = $errorCollector;
         $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
         $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
+        $this->descriptionGenerator = $descriptionGenerator ?? new ValidationDescriptionGenerator($this->enumAnalyzer);
     }
 
     /**
@@ -527,7 +530,7 @@ class FormRequestAnalyzer
                     'type' => 'file',
                     'format' => 'binary',
                     'file_info' => $fileInfo,
-                    'description' => $this->generateFileDescriptionWithAttribute($field, $fileInfo, $attributes[$field] ?? null),
+                    'description' => $this->descriptionGenerator->generateFileDescriptionWithAttribute($field, $fileInfo, $attributes[$field] ?? null),
                     'validation' => $ruleArray,
                 ];
 
@@ -551,7 +554,7 @@ class FormRequestAnalyzer
                 'in' => 'body',
                 'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
                 'type' => $this->typeInference->inferFromRules($ruleArray),
-                'description' => $attributes[$field] ?? $this->generateDescription($field, $ruleArray, $namespace, $useStatements),
+                'description' => $attributes[$field] ?? $this->descriptionGenerator->generateDescription($field, $ruleArray, $namespace, $useStatements),
                 'example' => $this->typeInference->generateExample($field, $ruleArray),
                 'validation' => $ruleArray,
             ];
@@ -587,198 +590,6 @@ class FormRequestAnalyzer
         // This method handles rules that contain actual objects (not AST strings)
         // It's used when we extract rules via reflection instead of AST parsing
         return $this->generateParameters($rules, $attributes, $namespace);
-    }
-
-    /**
-     * フィールドの説明を生成
-     */
-    protected function generateDescription(string $field, array $rules, ?string $namespace = null, array $useStatements = []): string
-    {
-        $description = Str::title(str_replace(['_', '-'], ' ', $field));
-
-        // 特定のルールから追加情報を生成
-        $conditionalInfo = [];
-        foreach ($rules as $rule) {
-            if (is_string($rule)) {
-                if (str_starts_with($rule, 'max:')) {
-                    $max = Str::after($rule, 'max:');
-                    $description .= " (最大{$max}文字)";
-                } elseif (str_starts_with($rule, 'min:')) {
-                    $min = Str::after($rule, 'min:');
-                    $description .= " (最小{$min}文字)";
-                } elseif (str_starts_with($rule, 'required_if:')) {
-                    $params = Str::after($rule, 'required_if:');
-                    $parts = explode(',', $params);
-                    if (count($parts) >= 2) {
-                        $field = $parts[0];
-                        $value = implode(',', array_slice($parts, 1));
-                        $conditionalInfo[] = "Required when {$field} is {$value}";
-                    }
-                } elseif (str_starts_with($rule, 'required_unless:')) {
-                    $params = Str::after($rule, 'required_unless:');
-                    $parts = explode(',', $params);
-                    if (count($parts) >= 2) {
-                        $field = $parts[0];
-                        $value = implode(',', array_slice($parts, 1));
-                        $conditionalInfo[] = "Required unless {$field} is {$value}";
-                    }
-                } elseif (str_starts_with($rule, 'required_with:')) {
-                    $fields = Str::after($rule, 'required_with:');
-                    $conditionalInfo[] = "Required when any of these fields are present: {$fields}";
-                } elseif (str_starts_with($rule, 'required_without:')) {
-                    $fields = Str::after($rule, 'required_without:');
-                    $conditionalInfo[] = "Required when any of these fields are not present: {$fields}";
-                } elseif (str_starts_with($rule, 'prohibited_if:')) {
-                    $params = Str::after($rule, 'prohibited_if:');
-                    $parts = explode(',', $params);
-                    if (count($parts) >= 2) {
-                        $field = $parts[0];
-                        $value = implode(',', array_slice($parts, 1));
-                        $conditionalInfo[] = "Prohibited when {$field} is {$value}";
-                    }
-                } elseif (str_starts_with($rule, 'after:')) {
-                    $after = Str::after($rule, 'after:');
-                    $conditionalInfo[] = "Date must be after {$after}";
-                } elseif (str_starts_with($rule, 'after_or_equal:')) {
-                    $after = Str::after($rule, 'after_or_equal:');
-                    $conditionalInfo[] = "Date must be after or equal to {$after}";
-                } elseif (str_starts_with($rule, 'before:')) {
-                    $before = Str::after($rule, 'before:');
-                    $conditionalInfo[] = "Date must be before {$before}";
-                } elseif (str_starts_with($rule, 'before_or_equal:')) {
-                    $before = Str::after($rule, 'before_or_equal:');
-                    $conditionalInfo[] = "Date must be before or equal to {$before}";
-                } elseif (str_starts_with($rule, 'date_equals:')) {
-                    $equals = Str::after($rule, 'date_equals:');
-                    $conditionalInfo[] = "Date must be equal to {$equals}";
-                } elseif (str_starts_with($rule, 'date_format:')) {
-                    $format = Str::after($rule, 'date_format:');
-                    $conditionalInfo[] = "Format: {$format}";
-                } elseif ($rule === 'timezone' || str_starts_with($rule, 'timezone:')) {
-                    $conditionalInfo[] = 'Must be a valid timezone';
-                }
-            }
-
-            // Check for enum rule and add enum class name to description
-            $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);
-            if ($enumResult) {
-                $enumClassName = class_basename($enumResult['class']);
-                $description .= " ({$enumClassName})";
-            }
-        }
-
-        // Add conditional information to description
-        if (! empty($conditionalInfo)) {
-            $description .= '. '.implode('. ', $conditionalInfo);
-        }
-
-        return $description;
-    }
-
-    /**
-     * ファイルフィールドの説明を生成
-     */
-    protected function generateFileDescription(string $field, array $fileInfo): string
-    {
-        $description = Str::title(str_replace(['_', '-'], ' ', $field));
-
-        $parts = [];
-
-        if (! empty($fileInfo['mimes'])) {
-            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
-        }
-
-        if (isset($fileInfo['max_size'])) {
-            $maxSize = $this->formatFileSize($fileInfo['max_size']);
-            $parts[] = "Max size: {$maxSize}";
-        }
-
-        if (isset($fileInfo['min_size'])) {
-            $minSize = $this->formatFileSize($fileInfo['min_size']);
-            $parts[] = "Min size: {$minSize}";
-        }
-
-        if (! empty($fileInfo['dimensions'])) {
-            if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
-                $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
-            }
-            if (isset($fileInfo['dimensions']['max_width']) && isset($fileInfo['dimensions']['max_height'])) {
-                $parts[] = "Max dimensions: {$fileInfo['dimensions']['max_width']}x{$fileInfo['dimensions']['max_height']}";
-            }
-            if (isset($fileInfo['dimensions']['ratio'])) {
-                $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
-            }
-        }
-
-        if (! empty($parts)) {
-            $description .= ' ('.implode('. ', $parts).')';
-        }
-
-        return $description;
-    }
-
-    /**
-     * ファイルフィールドの説明を生成（属性名付き）
-     */
-    protected function generateFileDescriptionWithAttribute(string $field, array $fileInfo, ?string $attribute = null): string
-    {
-        $fieldName = $attribute ?? Str::title(str_replace(['_', '-'], ' ', $field));
-
-        $parts = [];
-
-        if (! empty($fileInfo['mimes'])) {
-            $parts[] = 'Allowed types: '.implode(', ', $fileInfo['mimes']);
-        }
-
-        if (isset($fileInfo['max_size'])) {
-            $maxSize = $this->formatFileSize($fileInfo['max_size']);
-            $parts[] = "Max size: {$maxSize}";
-        }
-
-        if (isset($fileInfo['min_size'])) {
-            $minSize = $this->formatFileSize($fileInfo['min_size']);
-            $parts[] = "Min size: {$minSize}";
-        }
-
-        if (! empty($fileInfo['dimensions'])) {
-            if (isset($fileInfo['dimensions']['min_width']) && isset($fileInfo['dimensions']['min_height'])) {
-                $parts[] = "Min dimensions: {$fileInfo['dimensions']['min_width']}x{$fileInfo['dimensions']['min_height']}";
-            }
-            if (isset($fileInfo['dimensions']['max_width']) && isset($fileInfo['dimensions']['max_height'])) {
-                $parts[] = "Max dimensions: {$fileInfo['dimensions']['max_width']}x{$fileInfo['dimensions']['max_height']}";
-            }
-            if (isset($fileInfo['dimensions']['ratio'])) {
-                $parts[] = "Aspect ratio: {$fileInfo['dimensions']['ratio']}";
-            }
-        }
-
-        return $fieldName.(! empty($parts) ? ' ('.implode('. ', $parts).')' : '');
-    }
-
-    /**
-     * Format file size to human readable format
-     */
-    protected function formatFileSize(int $bytes): string
-    {
-        if ($bytes >= 1073741824) {
-            $size = $bytes / 1073741824;
-
-            return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
-        }
-
-        if ($bytes >= 1048576) {
-            $size = $bytes / 1048576;
-
-            return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
-        }
-
-        if ($bytes >= 1024) {
-            $size = $bytes / 1024;
-
-            return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
-        }
-
-        return sprintf('%dB', $bytes);
     }
 
     /**
@@ -941,7 +752,7 @@ class FormRequestAnalyzer
                 'in' => 'body',
                 'required' => $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($processedFields[$field]['rules_by_condition']),
                 'type' => $this->typeInference->inferFromRules($mergedRules),
-                'description' => $attributes[$field] ?? $this->generateConditionalDescription($field, $processedFields[$field]),
+                'description' => $attributes[$field] ?? $this->descriptionGenerator->generateConditionalDescription($field, $processedFields[$field]),
                 'conditional_rules' => $processedFields[$field]['rules_by_condition'],
                 'validation' => $mergedRules,
                 'example' => $this->typeInference->generateExample($field, $mergedRules),
@@ -956,20 +767,6 @@ class FormRequestAnalyzer
         }
 
         return $parameters;
-    }
-
-    /**
-     * Generate description for conditional field
-     */
-    protected function generateConditionalDescription(string $field, array $fieldInfo): string
-    {
-        $description = Str::title(str_replace(['_', '-'], ' ', $field));
-
-        if (count($fieldInfo['rules_by_condition']) > 1) {
-            $description .= ' (条件により異なるルールが適用されます)';
-        }
-
-        return $description;
     }
 
     /**
