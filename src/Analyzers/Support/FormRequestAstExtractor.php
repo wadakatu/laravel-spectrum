@@ -20,6 +20,10 @@ class FormRequestAstExtractor
 
     /**
      * Find a class node by name in the AST.
+     *
+     * @param  array<Node\Stmt>  $ast  The parsed AST nodes from PhpParser
+     * @param  string  $className  The name of the class to find
+     * @return Node\Stmt\Class_|null The found class node or null if not found
      */
     public function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
     {
@@ -48,6 +52,9 @@ class FormRequestAstExtractor
 
     /**
      * Find an anonymous class node in the AST.
+     *
+     * @param  array<Node\Stmt>  $ast  The parsed AST nodes from PhpParser
+     * @return Node\Stmt\Class_|null The found anonymous class node or null if not found
      */
     public function findAnonymousClassNode(array $ast): ?Node\Stmt\Class_
     {
@@ -115,6 +122,9 @@ class FormRequestAstExtractor
 
     /**
      * Extract use statements from the AST.
+     *
+     * @param  array<Node\Stmt>  $ast  The parsed AST nodes from PhpParser
+     * @return array<string, string> Map of short class names to fully qualified class names
      */
     public function extractUseStatements(array $ast): array
     {
