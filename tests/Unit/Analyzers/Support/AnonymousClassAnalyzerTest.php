@@ -95,7 +95,8 @@ class AnonymousClassAnalyzerTest extends TestCase
     #[Test]
     public function it_extracts_rules_attributes_messages_via_reflection(): void
     {
-        $mockInstance = new class {
+        $mockInstance = new class
+        {
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -127,7 +128,8 @@ class AnonymousClassAnalyzerTest extends TestCase
     #[Test]
     public function it_returns_empty_when_rules_method_throws(): void
     {
-        $mockInstance = new class {
+        $mockInstance = new class
+        {
             public function rules(): array
             {
                 throw new \Exception('Rules method failed');
@@ -225,7 +227,7 @@ class AnonymousClassAnalyzerTest extends TestCase
     // ========== Error collector tests ==========
 
     #[Test]
-    public function it_logs_warning_when_analysis_fails(): void
+    public function it_logs_error_when_analysis_fails(): void
     {
         $reflection = Mockery::mock(\ReflectionClass::class);
         $reflection->shouldReceive('getFileName')->andReturn(false);
@@ -234,13 +236,14 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $this->analyzer->analyze($reflection);
 
-        $warnings = $this->errorCollector->getWarnings();
-        $this->assertNotEmpty($warnings);
-        $this->assertStringContainsString('Test error', $warnings[0]['message']);
+        $errors = $this->errorCollector->getErrors();
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('Test error', $errors[0]['message']);
+        $this->assertEquals('Exception', $errors[0]['metadata']['exception_class']);
     }
 
     #[Test]
-    public function it_logs_warning_when_details_extraction_fails(): void
+    public function it_logs_error_when_details_extraction_fails(): void
     {
         $reflection = Mockery::mock(\ReflectionClass::class);
         $reflection->shouldReceive('newInstanceWithoutConstructor')->andThrow(new \Exception('Details extraction error'));
@@ -249,9 +252,10 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $this->analyzer->analyzeDetails($reflection);
 
-        $warnings = $this->errorCollector->getWarnings();
-        $this->assertNotEmpty($warnings);
-        $this->assertStringContainsString('Details extraction error', $warnings[0]['message']);
+        $errors = $this->errorCollector->getErrors();
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('Details extraction error', $errors[0]['message']);
+        $this->assertEquals('Exception', $errors[0]['metadata']['exception_class']);
     }
 
     // ========== Edge cases ==========
@@ -275,7 +279,8 @@ class AnonymousClassAnalyzerTest extends TestCase
     #[Test]
     public function it_handles_class_without_attributes_method(): void
     {
-        $mockInstance = new class {
+        $mockInstance = new class
+        {
             public function rules(): array
             {
                 return ['email' => 'required|email'];
@@ -293,7 +298,8 @@ class AnonymousClassAnalyzerTest extends TestCase
     #[Test]
     public function it_handles_class_without_messages_method(): void
     {
-        $mockInstance = new class {
+        $mockInstance = new class
+        {
             public function rules(): array
             {
                 return ['email' => 'required'];

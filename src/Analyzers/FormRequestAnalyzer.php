@@ -206,14 +206,9 @@ class FormRequestAnalyzer
                 }
 
                 $filePath = $reflection->getFileName();
-                if (! $filePath || ! file_exists($filePath)) {
-                    // For classes without file path, return empty conditional rules
-                    return [
-                        'parameters' => $this->anonymousClassAnalyzer->analyze($reflection),
-                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-                        'attributes' => [],
-                        'messages' => [],
-                    ];
+                if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
+                    // For anonymous classes or when file path is not available, use anonymous class analyzer
+                    return $this->anonymousClassAnalyzer->analyzeWithConditionalRules($reflection);
                 }
 
                 $code = file_get_contents($filePath);
