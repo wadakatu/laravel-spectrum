@@ -391,7 +391,17 @@ class FormRequestAnalyzer
                 try {
                     $rules = $method->invoke($instance) ?: [];
                 } catch (\Exception $e) {
-                    // If rules() method fails, return empty
+                    $this->errorCollector?->addWarning(
+                        'FormRequestAnalyzer',
+                        "Failed to invoke rules() method on anonymous FormRequest: {$e->getMessage()}",
+                        [
+                            'class_name' => $reflection->getName(),
+                            'file_path' => $reflection->getFileName() ?: 'unknown',
+                            'method' => 'rules',
+                            'error_type' => 'anonymous_rules_invocation_error',
+                        ]
+                    );
+
                     return [];
                 }
             }
@@ -421,10 +431,11 @@ class FormRequestAnalyzer
         } catch (\Exception $e) {
             $this->errorCollector?->addWarning(
                 'FormRequestAnalyzer',
-                "Failed to analyze anonymous FormRequest with details using reflection: {$e->getMessage()}",
+                "Failed to extract rules/attributes/messages from anonymous FormRequest using reflection: {$e->getMessage()}",
                 [
                     'class_name' => $reflection->getName(),
-                    'error_type' => 'reflection_details_analysis_error',
+                    'file_path' => $reflection->getFileName() ?: 'unknown',
+                    'error_type' => 'anonymous_reflection_details_error',
                 ]
             );
 
@@ -487,7 +498,7 @@ class FormRequestAnalyzer
                         [
                             'class_name' => $reflection->getName(),
                             'file_path' => $filePath,
-                            'error_type' => 'anonymous_class_parse_error',
+                            'error_type' => 'anonymous_ast_parse_error',
                         ]
                     );
                 }
@@ -512,7 +523,17 @@ class FormRequestAnalyzer
                 try {
                     $rules = $method->invoke($instance) ?: [];
                 } catch (\Exception $e) {
-                    // If rules() method fails, return empty
+                    $this->errorCollector?->addWarning(
+                        'FormRequestAnalyzer',
+                        "Failed to invoke rules() method during reflection analysis: {$e->getMessage()}",
+                        [
+                            'class_name' => $reflection->getName(),
+                            'file_path' => $reflection->getFileName() ?: 'unknown',
+                            'method' => 'rules',
+                            'error_type' => 'anonymous_reflection_rules_invocation_error',
+                        ]
+                    );
+
                     return [];
                 }
             }
@@ -534,10 +555,11 @@ class FormRequestAnalyzer
         } catch (\Exception $e) {
             $this->errorCollector?->addWarning(
                 'FormRequestAnalyzer',
-                "Failed to analyze anonymous FormRequest using reflection: {$e->getMessage()}",
+                "Failed to analyze anonymous FormRequest (unable to create instance or invoke methods): {$e->getMessage()}",
                 [
                     'class_name' => $reflection->getName(),
-                    'error_type' => 'reflection_analysis_error',
+                    'file_path' => $reflection->getFileName() ?: 'unknown',
+                    'error_type' => 'anonymous_reflection_analysis_error',
                 ]
             );
 
@@ -587,11 +609,11 @@ class FormRequestAnalyzer
                     // Fall back to reflection-based extraction
                     $this->errorCollector?->addWarning(
                         'FormRequestAnalyzer',
-                        "Failed to parse anonymous class for conditional rules, falling back to reflection: {$e->getMessage()}",
+                        "Failed to parse anonymous class AST for conditional rules, falling back to reflection: {$e->getMessage()}",
                         [
                             'class_name' => $reflection->getName(),
                             'file_path' => $filePath,
-                            'error_type' => 'anonymous_class_conditional_parse_error',
+                            'error_type' => 'anonymous_conditional_ast_parse_error',
                         ]
                     );
                 }
@@ -611,10 +633,11 @@ class FormRequestAnalyzer
         } catch (\Exception $e) {
             $this->errorCollector?->addWarning(
                 'FormRequestAnalyzer',
-                "Failed to analyze anonymous FormRequest with conditional rules: {$e->getMessage()}",
+                "Failed to analyze anonymous FormRequest with conditional rules (unable to create instance or invoke methods): {$e->getMessage()}",
                 [
                     'class_name' => $reflection->getName(),
-                    'error_type' => 'conditional_reflection_analysis_error',
+                    'file_path' => $reflection->getFileName() ?: 'unknown',
+                    'error_type' => 'anonymous_conditional_reflection_error',
                 ]
             );
 
