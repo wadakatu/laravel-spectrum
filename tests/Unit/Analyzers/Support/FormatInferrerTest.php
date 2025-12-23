@@ -24,17 +24,18 @@ class FormatInferrerTest extends TestCase
     }
 
     #[Test]
-    public function it_infers_datetime_format_from_datetime_rule(): void
-    {
-        $this->assertEquals('date-time', $this->inferrer->inferDateFormat(['datetime']));
-        $this->assertEquals('date-time', $this->inferrer->inferDateFormat('datetime'));
-    }
-
-    #[Test]
     public function it_infers_date_format_from_date_format_rule(): void
     {
         $this->assertEquals('date', $this->inferrer->inferDateFormat(['date_format:Y-m-d']));
-        $this->assertEquals('date', $this->inferrer->inferDateFormat('date_format:Y-m-d H:i:s'));
+        $this->assertEquals('date', $this->inferrer->inferDateFormat('date_format:Y/m/d'));
+    }
+
+    #[Test]
+    public function it_infers_datetime_format_from_date_format_with_time(): void
+    {
+        $this->assertEquals('date-time', $this->inferrer->inferDateFormat(['date_format:Y-m-d H:i:s']));
+        $this->assertEquals('date-time', $this->inferrer->inferDateFormat('date_format:Y-m-d H:i'));
+        $this->assertEquals('date-time', $this->inferrer->inferDateFormat('date_format:H:i:s'));
     }
 
     #[Test]
@@ -84,8 +85,8 @@ class FormatInferrerTest extends TestCase
     public function it_infers_date_format_via_infer_format(): void
     {
         $this->assertEquals('date', $this->inferrer->inferFormat(['date']));
-        $this->assertEquals('date-time', $this->inferrer->inferFormat(['datetime']));
         $this->assertEquals('date', $this->inferrer->inferFormat(['date_format:Y-m-d']));
+        $this->assertEquals('date-time', $this->inferrer->inferFormat(['date_format:Y-m-d H:i:s']));
     }
 
     #[Test]
@@ -110,5 +111,22 @@ class FormatInferrerTest extends TestCase
     {
         $this->assertEquals('email', $this->inferrer->inferFormat(['required', 'string', 'email', 'max:255']));
         $this->assertEquals('uuid', $this->inferrer->inferFormat(['required', 'uuid']));
+    }
+
+    #[Test]
+    public function it_handles_empty_input(): void
+    {
+        $this->assertNull($this->inferrer->inferFormat([]));
+        $this->assertNull($this->inferrer->inferFormat(''));
+        $this->assertNull($this->inferrer->inferDateFormat([]));
+        $this->assertNull($this->inferrer->inferDateFormat(''));
+    }
+
+    #[Test]
+    public function it_returns_first_matching_format(): void
+    {
+        // First format rule wins
+        $this->assertEquals('email', $this->inferrer->inferFormat(['email', 'url']));
+        $this->assertEquals('uri', $this->inferrer->inferFormat(['url', 'email']));
     }
 }

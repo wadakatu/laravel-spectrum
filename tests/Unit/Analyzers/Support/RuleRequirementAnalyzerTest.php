@@ -154,4 +154,66 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
         $this->assertEmpty($details);
     }
+
+    #[Test]
+    public function it_handles_empty_input(): void
+    {
+        $this->assertFalse($this->analyzer->isRequired([]));
+        $this->assertFalse($this->analyzer->isRequired(''));
+        $this->assertFalse($this->analyzer->hasConditionalRequired([]));
+        $this->assertFalse($this->analyzer->hasConditionalRequired(''));
+        $this->assertEmpty($this->analyzer->extractConditionalRuleDetails([]));
+        $this->assertEmpty($this->analyzer->extractConditionalRuleDetails(''));
+    }
+
+    #[Test]
+    public function it_does_not_treat_prohibited_rules_as_conditional_required(): void
+    {
+        // hasConditionalRequired only checks for required_* rules, not prohibited_*
+        $this->assertFalse($this->analyzer->hasConditionalRequired(['prohibited_if:status,active']));
+        $this->assertFalse($this->analyzer->hasConditionalRequired(['prohibited_unless:role,admin']));
+        $this->assertFalse($this->analyzer->hasConditionalRequired(['prohibited_with:email']));
+        $this->assertFalse($this->analyzer->hasConditionalRequired(['prohibited_without:phone']));
+    }
+
+    #[Test]
+    public function it_extracts_all_prohibited_rule_types(): void
+    {
+        $rules = ['prohibited_with:email', 'prohibited_without:phone'];
+        $details = $this->analyzer->extractConditionalRuleDetails($rules);
+
+        $this->assertCount(2, $details);
+        $this->assertEquals('prohibited_with', $details[0]['type']);
+        $this->assertEquals('prohibited_without', $details[1]['type']);
+    }
+
+    #[Test]
+    public function it_extracts_all_exclude_rule_types(): void
+    {
+        $rules = ['exclude_unless:role,admin', 'exclude_with:other_field', 'exclude_without:another_field'];
+        $details = $this->analyzer->extractConditionalRuleDetails($rules);
+
+        $this->assertCount(3, $details);
+        $this->assertEquals('exclude_unless', $details[0]['type']);
+        $this->assertEquals('exclude_with', $details[1]['type']);
+        $this->assertEquals('exclude_without', $details[2]['type']);
+    }
+
+    #[Test]
+    public function it_handles_missing_rules_key_in_conditions(): void
+    {
+        // Should gracefully skip entries without 'rules' key
+        $rulesByCondition = [
+            ['condition' => 'status=active'],  // missing 'rules' key
+            ['condition' => 'status=pending', 'rules' => ['required', 'string']],
+        ];
+
+        $this->assertTrue($this->analyzer->isRequiredInAnyCondition($rulesByCondition));
+    }
+
+    #[Test]
+    public function it_returns_false_for_empty_conditions(): void
+    {
+        $this->assertFalse($this->analyzer->isRequiredInAnyCondition([]));
+    }
 }

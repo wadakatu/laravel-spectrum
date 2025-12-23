@@ -124,6 +124,9 @@ class RuleRequirementAnalyzer
     public function isRequiredInAnyCondition(array $rulesByCondition): bool
     {
         foreach ($rulesByCondition as $conditionRules) {
+            if (! isset($conditionRules['rules'])) {
+                continue;
+            }
             if ($this->isRequired($conditionRules['rules'])) {
                 return true;
             }
@@ -135,14 +138,18 @@ class RuleRequirementAnalyzer
     /**
      * Normalize rules to array format.
      *
-     * @param  string|array  $rules
+     * @param  string|array|null  $rules
      */
     private function normalizeRules($rules): array
     {
         if (is_string($rules)) {
-            return explode('|', $rules);
+            return $rules === '' ? [] : explode('|', $rules);
         }
 
-        return $rules;
+        if (is_array($rules)) {
+            return $rules;
+        }
+
+        return [];
     }
 }

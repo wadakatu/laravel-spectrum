@@ -28,12 +28,13 @@ class FormatInferrer
             if ($rule === 'date') {
                 return 'date';
             }
-            if ($rule === 'datetime') {
-                return 'date-time';
-            }
             if (Str::startsWith($rule, 'date_format:')) {
-                // For specific date formats, we still return 'date' as the OpenAPI format
-                // The actual format pattern is captured in the validation rules
+                $format = Str::after($rule, 'date_format:');
+                // Check if format includes time components (H, i, s, G, u)
+                if (preg_match('/[HisGu]/', $format)) {
+                    return 'date-time';
+                }
+
                 return 'date';
             }
         }
@@ -59,10 +60,13 @@ class FormatInferrer
             if ($rule === 'date') {
                 return 'date';
             }
-            if ($rule === 'datetime') {
-                return 'date-time';
-            }
             if (Str::startsWith($rule, 'date_format:')) {
+                $format = Str::after($rule, 'date_format:');
+                // Check if format includes time components (H, i, s, G, u)
+                if (preg_match('/[HisGu]/', $format)) {
+                    return 'date-time';
+                }
+
                 return 'date';
             }
 
@@ -90,14 +94,18 @@ class FormatInferrer
     /**
      * Normalize rules to array format.
      *
-     * @param  string|array  $rules
+     * @param  string|array|null  $rules
      */
     private function normalizeRules($rules): array
     {
         if (is_string($rules)) {
-            return explode('|', $rules);
+            return $rules === '' ? [] : explode('|', $rules);
         }
 
-        return $rules;
+        if (is_array($rules)) {
+            return $rules;
+        }
+
+        return [];
     }
 }
