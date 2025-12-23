@@ -606,18 +606,21 @@ class OpenApiGeneratorTest extends TestCase
         // Use real converter instead of mock for this integration test
         $realConverter = new OpenApi31Converter;
         $generator = new OpenApiGenerator(
-            $this->requestAnalyzer,
-            $this->resourceAnalyzer,
             $this->controllerAnalyzer,
-            $this->inlineValidationAnalyzer,
-            $this->schemaGenerator,
-            $this->errorResponseGenerator,
             $this->authenticationAnalyzer,
             $this->securitySchemeGenerator,
-            $this->paginationSchemaGenerator,
-            $this->paginationDetector,
+            $this->tagGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
             $this->exampleGenerator,
             $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
             $realConverter
         );
 

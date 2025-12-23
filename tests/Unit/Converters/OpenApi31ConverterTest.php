@@ -715,7 +715,7 @@ class OpenApi31ConverterTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_nullable_false(): void
+    public function it_removes_nullable_false(): void
     {
         $spec = [
             'openapi' => '3.0.0',
@@ -740,7 +740,8 @@ class OpenApi31ConverterTest extends TestCase
 
         $idSchema = $result['components']['schemas']['Required']['properties']['id'];
         $this->assertEquals('integer', $idSchema['type']);
-        $this->assertArrayHasKey('nullable', $idSchema);
+        // nullable: false should be removed in OpenAPI 3.1.0 as the keyword doesn't exist
+        $this->assertArrayNotHasKey('nullable', $idSchema);
     }
 
     #[Test]
@@ -1294,5 +1295,174 @@ class OpenApi31ConverterTest extends TestCase
         // Response - text/plain
         $textResSchema = $result['paths']['/data']['post']['responses']['200']['content']['text/plain']['schema'];
         $this->assertEquals(['string', 'null'], $textResSchema['type']);
+    }
+
+    #[Test]
+    public function it_preserves_schema_refs_without_modification(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Success',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            '$ref' => '#/components/schemas/User',
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        '$ref' => '#/components/schemas/CreateUserRequest',
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '201' => [
+                                'description' => 'Created',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'components' => [
+                'schemas' => [
+                    'User' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer'],
+                            'name' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
+                    'CreateUserRequest' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // $ref should be preserved as-is
+        $this->assertEquals(
+            '#/components/schemas/User',
+            $result['paths']['/users']['get']['responses']['200']['content']['application/json']['schema']['$ref']
+        );
+        $this->assertEquals(
+            '#/components/schemas/CreateUserRequest',
+            $result['paths']['/users']['post']['requestBody']['content']['application/json']['schema']['$ref']
+        );
+
+        // Referenced schema should still be converted
+        $nameSchema = $result['components']['schemas']['User']['properties']['name'];
+        $this->assertEquals(['string', 'null'], $nameSchema['type']);
+        $this->assertArrayNotHasKey('nullable', $nameSchema);
+    }
+
+    #[Test]
+    public function it_handles_allof_with_refs(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'BaseModel' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer'],
+                        ],
+                    ],
+                    'ExtendedModel' => [
+                        'allOf' => [
+                            ['$ref' => '#/components/schemas/BaseModel'],
+                            [
+                                'type' => 'object',
+                                'properties' => [
+                                    'extra' => ['type' => 'string', 'nullable' => true],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // $ref in allOf should be preserved
+        $this->assertEquals(
+            '#/components/schemas/BaseModel',
+            $result['components']['schemas']['ExtendedModel']['allOf'][0]['$ref']
+        );
+
+        // Inline schema in allOf should be converted
+        $extraSchema = $result['components']['schemas']['ExtendedModel']['allOf'][1]['properties']['extra'];
+        $this->assertEquals(['string', 'null'], $extraSchema['type']);
+        $this->assertArrayNotHasKey('nullable', $extraSchema);
+    }
+
+    #[Test]
+    public function it_handles_array_items_with_ref(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => [
+                                'description' => 'User list',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'array',
+                                            'items' => [
+                                                '$ref' => '#/components/schemas/User',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'components' => [
+                'schemas' => [
+                    'User' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // $ref in items should be preserved
+        $this->assertEquals(
+            '#/components/schemas/User',
+            $result['paths']['/users']['get']['responses']['200']['content']['application/json']['schema']['items']['$ref']
+        );
     }
 }

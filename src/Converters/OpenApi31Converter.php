@@ -221,16 +221,27 @@ class OpenApi31Converter
      * In OpenAPI 3.0.x: { "type": "string", "nullable": true }
      * In OpenAPI 3.1.0: { "type": ["string", "null"] }
      *
+     * Note: nullable: false is also removed as the nullable keyword
+     * does not exist in OpenAPI 3.1.0.
+     *
      * @param  array<string, mixed>  $schema
      * @return array<string, mixed>
      */
     private function convertNullable(array $schema): array
     {
-        // Only convert if nullable is true and type exists
-        if (! isset($schema['nullable']) || $schema['nullable'] !== true) {
+        // If nullable is not set, nothing to do
+        if (! isset($schema['nullable'])) {
             return $schema;
         }
 
+        // If nullable is false, just remove the key (3.1.0 doesn't use nullable)
+        if ($schema['nullable'] !== true) {
+            unset($schema['nullable']);
+
+            return $schema;
+        }
+
+        // Handle nullable: true
         if (! isset($schema['type'])) {
             // Remove nullable without type conversion
             unset($schema['nullable']);
