@@ -40,6 +40,7 @@ use LaravelSpectrum\Generators\ResponseSchemaGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Generators\TagGenerator;
+use LaravelSpectrum\Generators\TagGroupGenerator;
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
@@ -89,6 +90,7 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(ExampleValueFactory::class);
         $this->app->singleton(ExampleGenerator::class);
         $this->app->singleton(TagGenerator::class);
+        $this->app->singleton(TagGroupGenerator::class);
         $this->app->singleton(OperationMetadataGenerator::class);
         $this->app->singleton(ParameterGenerator::class);
         $this->app->singleton(RequestBodyGenerator::class);

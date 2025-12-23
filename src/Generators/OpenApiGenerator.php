@@ -22,6 +22,7 @@ class OpenApiGenerator
         protected AuthenticationAnalyzer $authenticationAnalyzer,
         protected SecuritySchemeGenerator $securitySchemeGenerator,
         protected TagGenerator $tagGenerator,
+        protected TagGroupGenerator $tagGroupGenerator,
         protected OperationMetadataGenerator $metadataGenerator,
         protected ParameterGenerator $parameterGenerator,
         protected RequestBodyGenerator $requestBodyGenerator,
@@ -73,6 +74,21 @@ class OpenApiGenerator
                     $openapi['paths'][$path][strtolower($method)] = $operation;
                 }
             }
+        }
+
+        // Collect used tags and generate tag definitions
+        $usedTags = $this->collectUsedTags($openapi['paths']);
+
+        // Generate tags section with descriptions
+        $tagDefinitions = $this->tagGroupGenerator->generateTagDefinitions($usedTags);
+        if (! empty($tagDefinitions)) {
+            $openapi['tags'] = $tagDefinitions;
+        }
+
+        // Generate x-tagGroups if configured
+        $tagGroups = $this->tagGroupGenerator->generateTagGroups($usedTags);
+        if (! empty($tagGroups)) {
+            $openapi['x-tagGroups'] = $tagGroups;
         }
 
         // Convert to OpenAPI 3.1.0 format if enabled
@@ -353,5 +369,29 @@ class OpenApiGenerator
             ],
             'description' => $modelName.' object',
         ];
+    }
+
+    /**
+     * Collect all unique tags used in paths.
+     *
+     * @param  array  $paths  OpenAPI paths object
+     * @return array<string> Unique tags sorted alphabetically
+     */
+    protected function collectUsedTags(array $paths): array
+    {
+        $tags = [];
+
+        foreach ($paths as $pathMethods) {
+            foreach ($pathMethods as $operation) {
+                if (isset($operation['tags']) && is_array($operation['tags'])) {
+                    $tags = array_merge($tags, $operation['tags']);
+                }
+            }
+        }
+
+        $uniqueTags = array_unique($tags);
+        sort($uniqueTags);
+
+        return $uniqueTags;
     }
 }

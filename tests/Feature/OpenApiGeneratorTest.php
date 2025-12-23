@@ -196,6 +196,94 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayNotHasKey('webhooks', $openapi);
     }
 
+    #[Test]
+    public function it_generates_tag_groups_when_configured()
+    {
+        // Arrange
+        config([
+            'spectrum.tag_groups' => [
+                'User Management' => ['User'],
+                'Content' => ['Post'],
+            ],
+        ]);
+        Route::get('api/users', [UserController::class, 'index']);
+        Route::get('api/posts', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - x-tagGroups should be present
+        $this->assertArrayHasKey('x-tagGroups', $openapi);
+        $this->assertCount(2, $openapi['x-tagGroups']);
+        $this->assertEquals('User Management', $openapi['x-tagGroups'][0]['name']);
+        $this->assertEquals(['User'], $openapi['x-tagGroups'][0]['tags']);
+        $this->assertEquals('Content', $openapi['x-tagGroups'][1]['name']);
+        $this->assertEquals(['Post'], $openapi['x-tagGroups'][1]['tags']);
+    }
+
+    #[Test]
+    public function it_generates_tags_section_with_descriptions()
+    {
+        // Arrange
+        config([
+            'spectrum.tag_descriptions' => [
+                'User' => 'User management endpoints',
+            ],
+        ]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - tags section should be present
+        $this->assertArrayHasKey('tags', $openapi);
+        $this->assertNotEmpty($openapi['tags']);
+
+        $userTag = collect($openapi['tags'])->firstWhere('name', 'User');
+        $this->assertNotNull($userTag);
+        $this->assertEquals('User management endpoints', $userTag['description']);
+    }
+
+    #[Test]
+    public function it_adds_ungrouped_tags_to_other_group()
+    {
+        // Arrange
+        config([
+            'spectrum.tag_groups' => [
+                'User Management' => ['User'],
+            ],
+            'spectrum.ungrouped_tags_group' => 'Other',
+        ]);
+        Route::get('api/users', [UserController::class, 'index']);
+        Route::get('api/posts', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - x-tagGroups should include "Other" group for Post
+        $this->assertArrayHasKey('x-tagGroups', $openapi);
+        $this->assertCount(2, $openapi['x-tagGroups']);
+
+        $otherGroup = collect($openapi['x-tagGroups'])->firstWhere('name', 'Other');
+        $this->assertNotNull($otherGroup);
+        $this->assertContains('Post', $otherGroup['tags']);
+    }
+
+    #[Test]
+    public function it_does_not_generate_tag_groups_when_not_configured()
+    {
+        // Arrange
+        config(['spectrum.tag_groups' => []]);
+        config(['spectrum.ungrouped_tags_group' => null]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - x-tagGroups should not be present when no groups configured
+        $this->assertArrayNotHasKey('x-tagGroups', $openapi);
+    }
+
     protected function mockControllerAnalysis(string $method, array $result): void
     {
         $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');

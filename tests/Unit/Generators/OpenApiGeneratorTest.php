@@ -19,6 +19,7 @@ use LaravelSpectrum\Generators\ResponseSchemaGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Generators\TagGenerator;
+use LaravelSpectrum\Generators\TagGroupGenerator;
 use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
@@ -35,6 +36,8 @@ class OpenApiGeneratorTest extends TestCase
     private $securitySchemeGenerator;
 
     private $tagGenerator;
+
+    private $tagGroupGenerator;
 
     private $metadataGenerator;
 
@@ -68,6 +71,9 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer = Mockery::mock(AuthenticationAnalyzer::class);
         $this->securitySchemeGenerator = Mockery::mock(SecuritySchemeGenerator::class);
         $this->tagGenerator = Mockery::mock(TagGenerator::class);
+        $this->tagGroupGenerator = Mockery::mock(TagGroupGenerator::class);
+        $this->tagGroupGenerator->shouldReceive('generateTagDefinitions')->andReturn([]);
+        $this->tagGroupGenerator->shouldReceive('generateTagGroups')->andReturn([]);
         $this->metadataGenerator = Mockery::mock(OperationMetadataGenerator::class);
         $this->parameterGenerator = Mockery::mock(ParameterGenerator::class);
         $this->requestBodyGenerator = Mockery::mock(RequestBodyGenerator::class);
@@ -86,6 +92,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->authenticationAnalyzer,
             $this->securitySchemeGenerator,
             $this->tagGenerator,
+            $this->tagGroupGenerator,
             $this->metadataGenerator,
             $this->parameterGenerator,
             $this->requestBodyGenerator,
@@ -676,6 +683,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->authenticationAnalyzer,
             $this->securitySchemeGenerator,
             $this->tagGenerator,
+            $this->tagGroupGenerator,
             $this->metadataGenerator,
             $this->parameterGenerator,
             $this->requestBodyGenerator,
