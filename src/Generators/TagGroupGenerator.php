@@ -12,6 +12,11 @@ namespace LaravelSpectrum\Generators;
 class TagGroupGenerator
 {
     /**
+     * Default name for the group containing ungrouped tags.
+     */
+    private const DEFAULT_UNGROUPED_GROUP_NAME = 'Other';
+
+    /**
      * Generate x-tagGroups structure for OpenAPI specification.
      *
      * @param  array<string>  $usedTags  List of tags actually used in the specification
@@ -19,8 +24,15 @@ class TagGroupGenerator
      */
     public function generateTagGroups(array $usedTags): array
     {
-        /** @var array<string, array<string>> $tagGroups */
+        // Filter and validate used tags
+        $usedTags = $this->filterValidTags($usedTags);
+
         $tagGroups = config('spectrum.tag_groups', []);
+
+        // Validate tag_groups config structure
+        if (! is_array($tagGroups)) {
+            return [];
+        }
 
         if (empty($tagGroups) && empty($usedTags)) {
             return [];
@@ -31,6 +43,13 @@ class TagGroupGenerator
 
         // Build groups with only used tags
         foreach ($tagGroups as $groupName => $tags) {
+            // Skip invalid group entries
+            if (! is_string($groupName) || ! is_array($tags)) {
+                continue;
+            }
+
+            // Filter to only string tags
+            $tags = $this->filterValidTags($tags);
             $filteredTags = array_values(array_intersect($tags, $usedTags));
 
             if (! empty($filteredTags)) {
@@ -43,8 +62,8 @@ class TagGroupGenerator
         }
 
         // Handle ungrouped tags
-        $ungroupedGroupName = config('spectrum.ungrouped_tags_group', 'Other');
-        if ($ungroupedGroupName !== null) {
+        $ungroupedGroupName = config('spectrum.ungrouped_tags_group', self::DEFAULT_UNGROUPED_GROUP_NAME);
+        if ($ungroupedGroupName !== null && is_string($ungroupedGroupName) && $ungroupedGroupName !== '') {
             $ungroupedTags = array_values(array_diff($usedTags, $groupedTags));
 
             if (! empty($ungroupedTags)) {
@@ -66,18 +85,25 @@ class TagGroupGenerator
      */
     public function generateTagDefinitions(array $usedTags): array
     {
+        // Filter and validate used tags
+        $usedTags = $this->filterValidTags($usedTags);
+
         if (empty($usedTags)) {
             return [];
         }
 
-        /** @var array<string, string> $descriptions */
         $descriptions = config('spectrum.tag_descriptions', []);
+
+        // Validate descriptions config structure
+        if (! is_array($descriptions)) {
+            $descriptions = [];
+        }
 
         $result = [];
         foreach ($usedTags as $tag) {
             $tagDefinition = ['name' => $tag];
 
-            if (isset($descriptions[$tag]) && $descriptions[$tag] !== '') {
+            if (isset($descriptions[$tag]) && is_string($descriptions[$tag]) && $descriptions[$tag] !== '') {
                 $tagDefinition['description'] = $descriptions[$tag];
             }
 
@@ -94,6 +120,20 @@ class TagGroupGenerator
     {
         $tagGroups = config('spectrum.tag_groups', []);
 
-        return ! empty($tagGroups);
+        return is_array($tagGroups) && ! empty($tagGroups);
+    }
+
+    /**
+     * Filter array to contain only valid non-empty string values.
+     *
+     * @param  array<mixed>  $tags
+     * @return array<string>
+     */
+    private function filterValidTags(array $tags): array
+    {
+        return array_values(array_filter(
+            $tags,
+            static fn ($tag): bool => is_string($tag) && $tag !== ''
+        ));
     }
 }

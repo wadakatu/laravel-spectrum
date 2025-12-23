@@ -284,6 +284,54 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayNotHasKey('x-tagGroups', $openapi);
     }
 
+    #[Test]
+    public function it_generates_tag_groups_with_openapi_31()
+    {
+        // Arrange
+        config(['spectrum.openapi.version' => '3.1.0']);
+        config([
+            'spectrum.tag_groups' => [
+                'User Management' => ['User'],
+            ],
+            'spectrum.tag_descriptions' => [
+                'User' => 'User endpoints',
+            ],
+        ]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - OpenAPI 3.1.0 features
+        $this->assertEquals('3.1.0', $openapi['openapi']);
+        $this->assertArrayHasKey('webhooks', $openapi);
+
+        // Assert - Tag groups still work with 3.1.0
+        $this->assertArrayHasKey('x-tagGroups', $openapi);
+        $this->assertCount(1, $openapi['x-tagGroups']);
+        $this->assertEquals('User Management', $openapi['x-tagGroups'][0]['name']);
+
+        // Assert - Tags section with descriptions
+        $this->assertArrayHasKey('tags', $openapi);
+        $userTag = collect($openapi['tags'])->firstWhere('name', 'User');
+        $this->assertNotNull($userTag);
+        $this->assertEquals('User endpoints', $userTag['description']);
+    }
+
+    #[Test]
+    public function it_handles_invalid_tag_groups_config_gracefully()
+    {
+        // Arrange - Simulate misconfiguration
+        config(['spectrum.tag_groups' => 'invalid_string']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act - Should not throw exception
+        $openapi = $this->generateOpenApi();
+
+        // Assert - x-tagGroups should not be present
+        $this->assertArrayNotHasKey('x-tagGroups', $openapi);
+    }
+
     protected function mockControllerAnalysis(string $method, array $result): void
     {
         $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');
