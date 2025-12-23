@@ -52,10 +52,7 @@ class ParameterGenerator
             return $parameters;
         }
 
-        $result = [];
-        foreach ($parameters as $routeParam) {
-            $result[] = $routeParam;
-        }
+        $result = $parameters;
 
         foreach ($controllerInfo['enumParameters'] as $enumParam) {
             // Check if this is already a route parameter
