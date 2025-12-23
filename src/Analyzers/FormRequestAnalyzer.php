@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\Support\FormatInferrer;
+use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
@@ -43,7 +44,9 @@ class FormRequestAnalyzer
 
     protected ParameterBuilder $parameterBuilder;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null, ?ParameterBuilder $parameterBuilder = null)
+    protected FormRequestAstExtractor $astExtractor;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null, ?ParameterBuilder $parameterBuilder = null, ?FormRequestAstExtractor $astExtractor = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -56,6 +59,7 @@ class FormRequestAnalyzer
         $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
         $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
         $this->descriptionGenerator = $descriptionGenerator ?? new ValidationDescriptionGenerator($this->enumAnalyzer);
+        $this->astExtractor = $astExtractor ?? new FormRequestAstExtractor($this->printer);
         $this->parameterBuilder = $parameterBuilder ?? new ParameterBuilder(
             $this->typeInference,
             $this->ruleRequirementAnalyzer,
@@ -124,19 +128,19 @@ class FormRequestAnalyzer
             }
 
             // Extract use statements
-            $useStatements = $this->extractUseStatements($ast);
+            $useStatements = $this->astExtractor->extractUseStatements($ast);
 
             // クラスノードを探す
-            $classNode = $this->findClassNode($ast, $reflection->getShortName());
+            $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
             if (! $classNode) {
                 return [];
             }
 
             // rules()メソッドを解析
-            $rules = $this->extractRules($classNode);
+            $rules = $this->astExtractor->extractRules($classNode);
 
             // attributes()メソッドを解析
-            $attributes = $this->extractAttributes($classNode);
+            $attributes = $this->astExtractor->extractAttributes($classNode);
 
             // Get namespace for enum resolution
             $namespace = $reflection->getNamespaceName();
@@ -215,10 +219,10 @@ class FormRequestAnalyzer
                 }
 
                 // Extract use statements
-                $useStatements = $this->extractUseStatements($ast);
+                $useStatements = $this->astExtractor->extractUseStatements($ast);
 
                 // Find class node
-                $classNode = $this->findClassNode($ast, $reflection->getShortName());
+                $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
                 if (! $classNode) {
                     return [
                         'parameters' => [],
@@ -227,11 +231,11 @@ class FormRequestAnalyzer
                 }
 
                 // Extract conditional rules
-                $conditionalRules = $this->extractConditionalRules($classNode);
+                $conditionalRules = $this->astExtractor->extractConditionalRules($classNode);
 
                 // Generate parameters from conditional rules
-                $attributes = $this->extractAttributes($classNode);
-                $messages = $this->extractMessages($classNode);
+                $attributes = $this->astExtractor->extractAttributes($classNode);
+                $messages = $this->astExtractor->extractMessages($classNode);
 
                 if (! empty($conditionalRules['rules_sets'])) {
                     $parameters = $this->parameterBuilder->buildFromConditionalRules(
@@ -250,7 +254,7 @@ class FormRequestAnalyzer
                 }
 
                 // Fallback to regular analysis
-                $rules = $this->extractRules($classNode);
+                $rules = $this->astExtractor->extractRules($classNode);
                 $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes, $reflection->getNamespaceName(), $useStatements);
 
                 return [
@@ -324,19 +328,19 @@ class FormRequestAnalyzer
             }
 
             // クラスノードを探す
-            $classNode = $this->findClassNode($ast, $reflection->getShortName());
+            $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
             if (! $classNode) {
                 return [];
             }
 
             // rules()メソッドを解析
-            $rules = $this->extractRules($classNode);
+            $rules = $this->astExtractor->extractRules($classNode);
 
             // attributes()メソッドを解析
-            $attributes = $this->extractAttributes($classNode);
+            $attributes = $this->astExtractor->extractAttributes($classNode);
 
             // messages()メソッドを解析
-            $messages = $this->extractMessages($classNode);
+            $messages = $this->astExtractor->extractMessages($classNode);
 
             return [
                 'rules' => $rules,
@@ -360,24 +364,6 @@ class FormRequestAnalyzer
 
             return [];
         }
-    }
-
-    /**
-     * messages()メソッドから検証メッセージを抽出
-     */
-    protected function extractMessages(Node\Stmt\Class_ $class): array
-    {
-        $messagesMethod = $this->findMethodNode($class, 'messages');
-        if (! $messagesMethod) {
-            return [];
-        }
-
-        $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$messagesMethod]);
-
-        return $visitor->getArray();
     }
 
     /**
@@ -438,83 +424,6 @@ class FormRequestAnalyzer
     }
 
     /**
-     * クラスノードを探す
-     */
-    protected function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
-    {
-        $visitor = new AST\Visitors\ClassFindingVisitor($className);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getClassNode();
-    }
-
-    /**
-     * rules()メソッドから検証ルールを抽出
-     */
-    protected function extractRules(Node\Stmt\Class_ $class): array
-    {
-        $rulesMethod = $this->findMethodNode($class, 'rules');
-        if (! $rulesMethod) {
-            return [];
-        }
-
-        $visitor = new AST\Visitors\RulesExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$rulesMethod]);
-
-        return $visitor->getRules();
-    }
-
-    /**
-     * attributes()メソッドから属性を抽出
-     */
-    protected function extractAttributes(Node\Stmt\Class_ $class): array
-    {
-        $attributesMethod = $this->findMethodNode($class, 'attributes');
-        if (! $attributesMethod) {
-            return [];
-        }
-
-        $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$attributesMethod]);
-
-        return $visitor->getArray();
-    }
-
-    /**
-     * メソッドノードを探す
-     */
-    protected function findMethodNode(Node\Stmt\Class_ $class, string $methodName): ?Node\Stmt\ClassMethod
-    {
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\ClassMethod &&
-                $stmt->name->toString() === $methodName) {
-                return $stmt;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Extract use statements from AST
-     */
-    protected function extractUseStatements(array $ast): array
-    {
-        $visitor = new AST\Visitors\UseStatementExtractorVisitor;
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getUseStatements();
-    }
-
-    /**
      * Generate parameters from runtime rules (when using reflection on anonymous classes)
      */
     protected function generateParametersFromRuntimeRules(array $rules, array $attributes = [], ?string $namespace = null): array
@@ -551,12 +460,12 @@ class FormRequestAnalyzer
                     $ast = $this->parser->parse($classCode);
                     if ($ast) {
                         // Find the class node (anonymous class)
-                        $classNode = $this->findAnonymousClassNode($ast);
+                        $classNode = $this->astExtractor->findAnonymousClassNode($ast);
                         if ($classNode) {
-                            $rules = $this->extractRules($classNode);
-                            $attributes = $this->extractAttributes($classNode);
+                            $rules = $this->astExtractor->extractRules($classNode);
+                            $attributes = $this->astExtractor->extractAttributes($classNode);
                             $namespace = $reflection->getNamespaceName();
-                            $useStatements = $this->extractUseStatements($ast);
+                            $useStatements = $this->astExtractor->extractUseStatements($ast);
 
                             return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
                         }
@@ -610,38 +519,6 @@ class FormRequestAnalyzer
     }
 
     /**
-     * Find anonymous class node in AST
-     */
-    protected function findAnonymousClassNode(array $ast): ?Node\Stmt\Class_
-    {
-        // Use a visitor to find anonymous class nodes
-        $visitor = new AST\Visitors\AnonymousClassFindingVisitor;
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getClassNode();
-    }
-
-    /**
-     * Extract conditional rules from rules() method
-     */
-    protected function extractConditionalRules(Node\Stmt\Class_ $class): array
-    {
-        $rulesMethod = $this->findMethodNode($class, 'rules');
-        if (! $rulesMethod) {
-            return ['rules_sets' => [], 'merged_rules' => []];
-        }
-
-        $visitor = new AST\Visitors\ConditionalRulesExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$rulesMethod]);
-
-        return $visitor->getRuleSets();
-    }
-
-    /**
      * Analyze anonymous class with conditional rules support
      */
     protected function analyzeAnonymousClassWithConditionalRules(\ReflectionClass $reflection): array
@@ -664,12 +541,12 @@ class FormRequestAnalyzer
                 try {
                     $ast = $this->parser->parse($classCode);
                     if ($ast) {
-                        $classNode = $this->findAnonymousClassNode($ast);
+                        $classNode = $this->astExtractor->findAnonymousClassNode($ast);
                         if ($classNode) {
-                            $conditionalRules = $this->extractConditionalRules($classNode);
+                            $conditionalRules = $this->astExtractor->extractConditionalRules($classNode);
 
                             if (! empty($conditionalRules['rules_sets'])) {
-                                $attributes = $this->extractAttributes($classNode);
+                                $attributes = $this->astExtractor->extractAttributes($classNode);
                                 $parameters = $this->parameterBuilder->buildFromConditionalRules($conditionalRules, $attributes);
 
                                 return [
