@@ -100,6 +100,34 @@ class FormRequestAnalyzerTest extends TestCase
     }
 
     #[Test]
+    public function it_generates_description_with_validation_constraints_when_no_attribute(): void
+    {
+        // Arrange - Create a FormRequest without attributes() method
+        $testRequestClass = new class extends FormRequest
+        {
+            public function rules(): array
+            {
+                return [
+                    'email' => 'required|email|max:255',
+                    'password' => 'required|string|min:8',
+                ];
+            }
+        };
+
+        // Act
+        $parameters = $this->analyzer->analyze(get_class($testRequestClass));
+
+        // Assert - Verify descriptions include constraint info from ValidationDescriptionGenerator
+        $emailParam = $this->findParameterByName($parameters, 'email');
+        $this->assertStringContainsString('Email', $emailParam['description']);
+        $this->assertStringContainsString('(最大255文字)', $emailParam['description']);
+
+        $passwordParam = $this->findParameterByName($parameters, 'password');
+        $this->assertStringContainsString('Password', $passwordParam['description']);
+        $this->assertStringContainsString('(最小8文字)', $passwordParam['description']);
+    }
+
+    #[Test]
     public function it_handles_array_rules()
     {
         // Arrange

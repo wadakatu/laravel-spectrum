@@ -12,9 +12,10 @@ use LaravelSpectrum\Analyzers\EnumAnalyzer;
  */
 class ValidationDescriptionGenerator
 {
-    public function __construct(
-        protected ?EnumAnalyzer $enumAnalyzer = null
-    ) {
+    protected EnumAnalyzer $enumAnalyzer;
+
+    public function __construct(?EnumAnalyzer $enumAnalyzer = null)
+    {
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
     }
 
@@ -38,7 +39,7 @@ class ValidationDescriptionGenerator
 
             // Check for enum rule and add enum class name to description
             $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);
-            if ($enumResult) {
+            if ($enumResult && isset($enumResult['class']) && $enumResult['class'] !== '') {
                 $enumClassName = class_basename($enumResult['class']);
                 $description .= " ({$enumClassName})";
             }
@@ -54,17 +55,13 @@ class ValidationDescriptionGenerator
 
     /**
      * Generate description for a file field.
+     *
+     * This is a convenience method that delegates to generateFileDescriptionWithAttribute
+     * with a null attribute, using the formatted field name as the description base.
      */
     public function generateFileDescription(string $field, array $fileInfo): string
     {
-        $description = $this->formatFieldName($field);
-        $parts = $this->buildFileInfoParts($fileInfo);
-
-        if (! empty($parts)) {
-            $description .= ' ('.implode('. ', $parts).')';
-        }
-
-        return $description;
+        return $this->generateFileDescriptionWithAttribute($field, $fileInfo, null);
     }
 
     /**
@@ -85,7 +82,7 @@ class ValidationDescriptionGenerator
     {
         $description = $this->formatFieldName($field);
 
-        if (count($fieldInfo['rules_by_condition']) > 1) {
+        if (isset($fieldInfo['rules_by_condition']) && count($fieldInfo['rules_by_condition']) > 1) {
             $description .= ' (条件により異なるルールが適用されます)';
         }
 

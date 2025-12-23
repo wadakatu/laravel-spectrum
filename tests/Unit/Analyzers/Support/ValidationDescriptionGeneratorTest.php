@@ -351,4 +351,70 @@ class ValidationDescriptionGeneratorTest extends TestCase
 
         $this->assertStringContainsString('Date must be before or equal to tomorrow', $description);
     }
+
+    #[Test]
+    public function it_handles_timezone_with_group_parameter(): void
+    {
+        $description = $this->generator->generateDescription('tz', ['timezone:africa']);
+
+        $this->assertStringContainsString('Must be a valid timezone', $description);
+    }
+
+    #[Test]
+    public function it_does_not_add_enum_info_when_no_enum_detected(): void
+    {
+        $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
+        $enumAnalyzer->shouldReceive('analyzeValidationRule')
+            ->andReturn(null);
+
+        $generator = new ValidationDescriptionGenerator($enumAnalyzer);
+        $description = $generator->generateDescription('status', ['required', 'string']);
+
+        $this->assertEquals('Status', $description);
+    }
+
+    #[Test]
+    public function it_handles_enum_result_with_empty_class(): void
+    {
+        $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
+        $enumAnalyzer->shouldReceive('analyzeValidationRule')
+            ->andReturn(['class' => '']);
+
+        $generator = new ValidationDescriptionGenerator($enumAnalyzer);
+        $description = $generator->generateDescription('status', ['required']);
+
+        $this->assertEquals('Status', $description);
+    }
+
+    #[Test]
+    public function it_handles_enum_result_without_class_key(): void
+    {
+        $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
+        $enumAnalyzer->shouldReceive('analyzeValidationRule')
+            ->andReturn(['values' => ['active', 'inactive']]);
+
+        $generator = new ValidationDescriptionGenerator($enumAnalyzer);
+        $description = $generator->generateDescription('status', ['required']);
+
+        $this->assertEquals('Status', $description);
+    }
+
+    #[Test]
+    public function it_handles_conditional_description_without_rules_by_condition_key(): void
+    {
+        $description = $this->generator->generateConditionalDescription('payment_method', []);
+
+        $this->assertEquals('Payment Method', $description);
+    }
+
+    #[Test]
+    public function it_handles_required_if_with_multiple_values(): void
+    {
+        $description = $this->generator->generateDescription(
+            'phone',
+            ['required_if:type,home,mobile,work']
+        );
+
+        $this->assertStringContainsString('Required when type is home,mobile,work', $description);
+    }
 }
