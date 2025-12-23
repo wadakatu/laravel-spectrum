@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\Support\FormatInferrer;
+use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
@@ -40,7 +41,9 @@ class FormRequestAnalyzer
 
     protected ValidationDescriptionGenerator $descriptionGenerator;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null)
+    protected ParameterBuilder $parameterBuilder;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null, ?ParameterBuilder $parameterBuilder = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -53,6 +56,15 @@ class FormRequestAnalyzer
         $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
         $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
         $this->descriptionGenerator = $descriptionGenerator ?? new ValidationDescriptionGenerator($this->enumAnalyzer);
+        $this->parameterBuilder = $parameterBuilder ?? new ParameterBuilder(
+            $this->typeInference,
+            $this->ruleRequirementAnalyzer,
+            $this->formatInferrer,
+            $this->descriptionGenerator,
+            $this->enumAnalyzer,
+            $this->fileUploadAnalyzer,
+            $this->errorCollector
+        );
     }
 
     /**
@@ -130,7 +142,7 @@ class FormRequestAnalyzer
             $namespace = $reflection->getNamespaceName();
 
             // パラメータ情報を生成
-            return $this->generateParameters($rules, $attributes, $namespace, $useStatements);
+            return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
 
         } catch (Error $parseError) {
             $this->errorCollector?->addError(
@@ -222,7 +234,7 @@ class FormRequestAnalyzer
                 $messages = $this->extractMessages($classNode);
 
                 if (! empty($conditionalRules['rules_sets'])) {
-                    $parameters = $this->generateParametersFromConditionalRules(
+                    $parameters = $this->parameterBuilder->buildFromConditionalRules(
                         $conditionalRules,
                         $attributes,
                         $reflection->getNamespaceName(),
@@ -239,7 +251,7 @@ class FormRequestAnalyzer
 
                 // Fallback to regular analysis
                 $rules = $this->extractRules($classNode);
-                $parameters = $this->generateParameters($rules, $attributes, $reflection->getNamespaceName(), $useStatements);
+                $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes, $reflection->getNamespaceName(), $useStatements);
 
                 return [
                     'parameters' => $parameters,
@@ -503,93 +515,13 @@ class FormRequestAnalyzer
     }
 
     /**
-     * パラメータ情報を生成
-     */
-    protected function generateParameters(array $rules, array $attributes = [], ?string $namespace = null, array $useStatements = []): array
-    {
-        $parameters = [];
-
-        // Analyze file upload fields
-        $fileFields = $this->fileUploadAnalyzer->analyzeRules($rules);
-
-        foreach ($rules as $field => $rule) {
-            // 特殊なフィールド（_noticeなど）はスキップ
-            if (str_starts_with($field, '_')) {
-                continue;
-            }
-
-            $ruleArray = is_array($rule) ? $rule : explode('|', $rule);
-
-            // Check if this is a file upload field
-            if (isset($fileFields[$field])) {
-                $fileInfo = $fileFields[$field];
-                $parameter = [
-                    'name' => $field,
-                    'in' => 'body',
-                    'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
-                    'type' => 'file',
-                    'format' => 'binary',
-                    'file_info' => $fileInfo,
-                    'description' => $this->descriptionGenerator->generateFileDescriptionWithAttribute($field, $fileInfo, $attributes[$field] ?? null),
-                    'validation' => $ruleArray,
-                ];
-
-                $parameters[] = $parameter;
-
-                continue;
-            }
-
-            // Check for enum rules
-            $enumInfo = null;
-            foreach ($ruleArray as $singleRule) {
-                $enumResult = $this->enumAnalyzer->analyzeValidationRule($singleRule, $namespace, $useStatements);
-                if ($enumResult) {
-                    $enumInfo = $enumResult;
-                    break;
-                }
-            }
-
-            $parameter = [
-                'name' => $field,
-                'in' => 'body',
-                'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
-                'type' => $this->typeInference->inferFromRules($ruleArray),
-                'description' => $attributes[$field] ?? $this->descriptionGenerator->generateDescription($field, $ruleArray, $namespace, $useStatements),
-                'example' => $this->typeInference->generateExample($field, $ruleArray),
-                'validation' => $ruleArray,
-            ];
-
-            // Add format for various field types
-            $format = $this->formatInferrer->inferFormat($ruleArray);
-            if ($format) {
-                $parameter['format'] = $format;
-            }
-
-            // Add conditional rule information
-            if ($this->ruleRequirementAnalyzer->hasConditionalRequired($ruleArray)) {
-                $parameter['conditional_required'] = true;
-                $parameter['conditional_rules'] = $this->ruleRequirementAnalyzer->extractConditionalRuleDetails($ruleArray);
-            }
-
-            // Add enum information if found
-            if ($enumInfo) {
-                $parameter['enum'] = $enumInfo;
-            }
-
-            $parameters[] = $parameter;
-        }
-
-        return $parameters;
-    }
-
-    /**
      * Generate parameters from runtime rules (when using reflection on anonymous classes)
      */
     protected function generateParametersFromRuntimeRules(array $rules, array $attributes = [], ?string $namespace = null): array
     {
         // This method handles rules that contain actual objects (not AST strings)
         // It's used when we extract rules via reflection instead of AST parsing
-        return $this->generateParameters($rules, $attributes, $namespace);
+        return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace);
     }
 
     /**
@@ -626,7 +558,7 @@ class FormRequestAnalyzer
                             $namespace = $reflection->getNamespaceName();
                             $useStatements = $this->extractUseStatements($ast);
 
-                            return $this->generateParameters($rules, $attributes, $namespace, $useStatements);
+                            return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
                         }
                     }
                 } catch (Error $e) {
@@ -710,66 +642,6 @@ class FormRequestAnalyzer
     }
 
     /**
-     * Generate parameters from conditional rules
-     */
-    protected function generateParametersFromConditionalRules(array $conditionalRules, array $attributes = [], string $namespace = '', array $useStatements = []): array
-    {
-        $parameters = [];
-        $processedFields = [];
-
-        // Process all rule sets
-        foreach ($conditionalRules['rules_sets'] as $ruleSet) {
-            foreach ($ruleSet['rules'] as $field => $rule) {
-                if (! isset($processedFields[$field])) {
-                    $processedFields[$field] = [
-                        'name' => $field,
-                        'in' => 'body',
-                        'rules_by_condition' => [],
-                    ];
-                }
-
-                $processedFields[$field]['rules_by_condition'][] = [
-                    'conditions' => $ruleSet['conditions'],
-                    'rules' => is_array($rule) ? $rule : explode('|', $rule),
-                ];
-            }
-        }
-
-        // Generate parameters with merged rules for default type info
-        foreach ($conditionalRules['merged_rules'] as $field => $mergedRules) {
-            // Check for enum rules
-            $enumInfo = null;
-            foreach ($mergedRules as $singleRule) {
-                $enumResult = $this->enumAnalyzer->analyzeValidationRule($singleRule);
-                if ($enumResult) {
-                    $enumInfo = $enumResult;
-                    break;
-                }
-            }
-
-            $parameter = [
-                'name' => $field,
-                'in' => 'body',
-                'required' => $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($processedFields[$field]['rules_by_condition']),
-                'type' => $this->typeInference->inferFromRules($mergedRules),
-                'description' => $attributes[$field] ?? $this->descriptionGenerator->generateConditionalDescription($field, $processedFields[$field]),
-                'conditional_rules' => $processedFields[$field]['rules_by_condition'],
-                'validation' => $mergedRules,
-                'example' => $this->typeInference->generateExample($field, $mergedRules),
-            ];
-
-            // Add enum information if found
-            if ($enumInfo) {
-                $parameter['enum'] = $enumInfo;
-            }
-
-            $parameters[] = $parameter;
-        }
-
-        return $parameters;
-    }
-
-    /**
      * Analyze anonymous class with conditional rules support
      */
     protected function analyzeAnonymousClassWithConditionalRules(\ReflectionClass $reflection): array
@@ -798,7 +670,7 @@ class FormRequestAnalyzer
 
                             if (! empty($conditionalRules['rules_sets'])) {
                                 $attributes = $this->extractAttributes($classNode);
-                                $parameters = $this->generateParametersFromConditionalRules($conditionalRules, $attributes);
+                                $parameters = $this->parameterBuilder->buildFromConditionalRules($conditionalRules, $attributes);
 
                                 return [
                                     'parameters' => $parameters,
