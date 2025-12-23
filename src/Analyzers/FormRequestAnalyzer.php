@@ -62,7 +62,8 @@ class FormRequestAnalyzer
             $this->formatInferrer,
             $this->descriptionGenerator,
             $this->enumAnalyzer,
-            $this->fileUploadAnalyzer
+            $this->fileUploadAnalyzer,
+            $this->errorCollector
         );
     }
 

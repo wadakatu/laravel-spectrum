@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
+use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
 
 /**
@@ -19,7 +20,8 @@ class ParameterBuilder
         protected FormatInferrer $formatInferrer,
         protected ValidationDescriptionGenerator $descriptionGenerator,
         protected EnumAnalyzer $enumAnalyzer,
-        protected FileUploadAnalyzer $fileUploadAnalyzer
+        protected FileUploadAnalyzer $fileUploadAnalyzer,
+        protected ?ErrorCollector $errorCollector = null
     ) {}
 
     /**
@@ -72,10 +74,22 @@ class ParameterBuilder
     {
         // Validate required structure
         if (! isset($conditionalRules['rules_sets']) || ! is_array($conditionalRules['rules_sets'])) {
+            $this->errorCollector?->addWarning(
+                'ParameterBuilder',
+                'Invalid conditional rules structure: missing or invalid "rules_sets" key',
+                ['received_keys' => array_keys($conditionalRules)]
+            );
+
             return [];
         }
 
         if (! isset($conditionalRules['merged_rules']) || ! is_array($conditionalRules['merged_rules'])) {
+            $this->errorCollector?->addWarning(
+                'ParameterBuilder',
+                'Invalid conditional rules structure: missing or invalid "merged_rules" key',
+                ['received_keys' => array_keys($conditionalRules)]
+            );
+
             return [];
         }
 
@@ -83,9 +97,19 @@ class ParameterBuilder
         $processedFields = [];
 
         // Process all rule sets
-        foreach ($conditionalRules['rules_sets'] as $ruleSet) {
+        foreach ($conditionalRules['rules_sets'] as $index => $ruleSet) {
             // Skip malformed rule sets
             if (! isset($ruleSet['rules']) || ! is_array($ruleSet['rules'])) {
+                $this->errorCollector?->addWarning(
+                    'ParameterBuilder',
+                    'Skipping malformed rule set at index '.$index,
+                    [
+                        'has_rules_key' => isset($ruleSet['rules']),
+                        'is_array' => is_array($ruleSet['rules'] ?? null),
+                        'available_keys' => is_array($ruleSet) ? array_keys($ruleSet) : [],
+                    ]
+                );
+
                 continue;
             }
 
@@ -109,6 +133,15 @@ class ParameterBuilder
         foreach ($conditionalRules['merged_rules'] as $field => $mergedRules) {
             // Skip fields not found in processed fields (inconsistent data)
             if (! isset($processedFields[$field])) {
+                $this->errorCollector?->addWarning(
+                    'ParameterBuilder',
+                    'Skipping orphaned field in merged_rules: '.$field,
+                    [
+                        'field' => $field,
+                        'processed_field_names' => array_keys($processedFields),
+                    ]
+                );
+
                 continue;
             }
 
@@ -208,18 +241,19 @@ class ParameterBuilder
         // Check for enum rules
         $enumInfo = $this->findEnumInfo($mergedRules, $namespace, $useStatements);
 
+        // Extract rules_by_condition with fallback for safety
+        $rulesByCondition = $processedField['rules_by_condition'] ?? [];
+
         $parameter = [
             'name' => $field,
             'in' => 'body',
-            'required' => $this->ruleRequirementAnalyzer->isRequiredInAnyCondition(
-                $processedField['rules_by_condition']
-            ),
+            'required' => $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($rulesByCondition),
             'type' => $this->typeInference->inferFromRules($mergedRules),
             'description' => $attributes[$field] ?? $this->descriptionGenerator->generateConditionalDescription(
                 $field,
                 $processedField
             ),
-            'conditional_rules' => $processedField['rules_by_condition'],
+            'conditional_rules' => $rulesByCondition,
             'validation' => $mergedRules,
             'example' => $this->typeInference->generateExample($field, $mergedRules),
         ];

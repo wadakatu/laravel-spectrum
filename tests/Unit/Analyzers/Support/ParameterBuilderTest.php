@@ -559,6 +559,96 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals([], $field['conditional_rules'][0]['conditions']);
     }
 
+    // ========== Suggested improvements tests ==========
+
+    #[Test]
+    public function it_detects_enum_in_conditional_rules(): void
+    {
+        $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
+        $enumAnalyzer->shouldReceive('analyzeValidationRule')
+            ->andReturnUsing(function ($rule) {
+                if (is_string($rule) && str_contains($rule, 'PaymentType')) {
+                    return [
+                        'class' => 'App\\Enums\\PaymentType',
+                        'values' => ['credit', 'debit'],
+                        'type' => 'string',
+                    ];
+                }
+
+                return null;
+            });
+
+        $builder = new ParameterBuilder(
+            $this->typeInference,
+            $this->ruleRequirementAnalyzer,
+            $this->formatInferrer,
+            new ValidationDescriptionGenerator($enumAnalyzer),
+            $enumAnalyzer,
+            $this->fileUploadAnalyzer
+        );
+
+        $conditionalRules = [
+            'rules_sets' => [
+                ['conditions' => [], 'rules' => ['payment' => 'required|App\\Enums\\PaymentType']],
+            ],
+            'merged_rules' => [
+                'payment' => ['required', 'App\\Enums\\PaymentType'],
+            ],
+        ];
+
+        $parameters = $builder->buildFromConditionalRules($conditionalRules);
+
+        $payment = $this->findParameter($parameters, 'payment');
+        $this->assertArrayHasKey('enum', $payment);
+        $this->assertEquals('App\\Enums\\PaymentType', $payment['enum']['class']);
+    }
+
+    #[Test]
+    public function it_uses_custom_attributes_for_file_upload_descriptions(): void
+    {
+        $rules = [
+            'document' => 'required|file|mimes:pdf',
+        ];
+        $attributes = [
+            'document' => 'PDFドキュメント',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules, $attributes);
+
+        $document = $this->findParameter($parameters, 'document');
+        $this->assertStringContainsString('PDFドキュメント', $document['description']);
+    }
+
+    #[Test]
+    public function it_passes_namespace_and_use_statements_to_enum_analyzer(): void
+    {
+        $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
+        // Called by both ParameterBuilder.findEnumInfo() and ValidationDescriptionGenerator.generateDescription()
+        $enumAnalyzer->shouldReceive('analyzeValidationRule')
+            ->with('required', 'App\\Http\\Requests', ['Status' => 'App\\Enums\\Status'])
+            ->andReturn(null);
+        $enumAnalyzer->shouldReceive('analyzeValidationRule')
+            ->with('Status', 'App\\Http\\Requests', ['Status' => 'App\\Enums\\Status'])
+            ->andReturn(['class' => 'App\\Enums\\Status', 'values' => ['active'], 'type' => 'string']);
+
+        $builder = new ParameterBuilder(
+            $this->typeInference,
+            $this->ruleRequirementAnalyzer,
+            $this->formatInferrer,
+            new ValidationDescriptionGenerator($enumAnalyzer),
+            $enumAnalyzer,
+            $this->fileUploadAnalyzer
+        );
+
+        $rules = ['status' => 'required|Status'];
+
+        $parameters = $builder->buildFromRules($rules, [], 'App\\Http\\Requests', ['Status' => 'App\\Enums\\Status']);
+
+        $status = $this->findParameter($parameters, 'status');
+        $this->assertArrayHasKey('enum', $status);
+        $this->assertEquals('App\\Enums\\Status', $status['enum']['class']);
+    }
+
     // ========== Helper methods ==========
 
     private function findParameter(array $parameters, string $name): ?array
