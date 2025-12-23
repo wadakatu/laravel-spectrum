@@ -37,15 +37,17 @@ class IncrementalCacheTest extends TestCase
     public function it_tracks_file_changes(): void
     {
         $this->dependencyGraph->shouldReceive('getAffectedNodes')
-            ->andReturn([]);
+            ->twice()
+            ->andReturn(['tracked:item']);
 
         $this->cache->trackChange('/path/to/file.php', 'modified');
         $this->cache->trackChange('/path/to/another.php', 'created');
 
-        // getInvalidatedItems を呼び出してトラッキングが機能していることを確認
         $invalidated = $this->cache->getInvalidatedItems();
 
         $this->assertIsArray($invalidated);
+        $this->assertNotEmpty($invalidated);
+        $this->assertContains('tracked:item', $invalidated);
     }
 
     #[Test]
@@ -69,18 +71,34 @@ class IncrementalCacheTest extends TestCase
     #[Test]
     public function it_invalidates_affected_cache_entries(): void
     {
+        $cacheKey = 'controller:App\\Http\\Controllers\\UserController';
+        $unchangedKey = 'route:GET:/api/users';
+
         // まずキャッシュにデータを設定
-        $this->cache->remember('controller:App\\Http\\Controllers\\UserController', fn () => ['data' => 'test']);
-        $this->cache->remember('route:GET:/api/users', fn () => ['route' => 'data']);
+        $this->cache->remember($cacheKey, fn () => ['data' => 'test']);
+        $this->cache->remember($unchangedKey, fn () => ['route' => 'data']);
+
+        // キャッシュにデータがあることを確認
+        $allKeys = $this->cache->getAllCacheKeys();
+        $this->assertContains($cacheKey, $allKeys);
+        $this->assertContains($unchangedKey, $allKeys);
 
         $this->dependencyGraph->shouldReceive('getAffectedNodes')
-            ->andReturn(['controller:App\\Http\\Controllers\\UserController']);
+            ->andReturn([$cacheKey]);
 
         $this->cache->trackChange('/app/Http/Controllers/UserController.php');
 
         $count = $this->cache->invalidateAffected();
 
-        $this->assertGreaterThanOrEqual(0, $count);
+        // 1件が無効化されたことを確認
+        $this->assertEquals(1, $count);
+
+        // 無効化されたエントリがキャッシュから削除されていることを確認
+        $remainingKeys = $this->cache->getAllCacheKeys();
+        $this->assertNotContains($cacheKey, $remainingKeys);
+
+        // 無効化されなかったエントリは残っていることを確認
+        $this->assertContains($unchangedKey, $remainingKeys);
     }
 
     #[Test]
@@ -92,10 +110,9 @@ class IncrementalCacheTest extends TestCase
             ->andReturn(['controller:App\\Http\\Controllers\\UserController']);
 
         $this->cache->trackChange('/app/Http/Controllers/UserController.php');
-        $this->cache->getInvalidatedItems();
+        $invalidated = $this->cache->getInvalidatedItems();
 
-        // Mockeryが期待どおりに呼び出されたことを確認
-        $this->assertTrue(true);
+        $this->assertContains('controller:App\\Http\\Controllers\\UserController', $invalidated);
     }
 
     #[Test]
@@ -107,9 +124,9 @@ class IncrementalCacheTest extends TestCase
             ->andReturn(['request:App\\Http\\Requests\\StoreUserRequest']);
 
         $this->cache->trackChange('/app/Http/Requests/StoreUserRequest.php');
-        $this->cache->getInvalidatedItems();
+        $invalidated = $this->cache->getInvalidatedItems();
 
-        $this->assertTrue(true);
+        $this->assertContains('request:App\\Http\\Requests\\StoreUserRequest', $invalidated);
     }
 
     #[Test]
@@ -121,9 +138,9 @@ class IncrementalCacheTest extends TestCase
             ->andReturn(['resource:App\\Http\\Resources\\UserResource']);
 
         $this->cache->trackChange('/app/Http/Resources/UserResource.php');
-        $this->cache->getInvalidatedItems();
+        $invalidated = $this->cache->getInvalidatedItems();
 
-        $this->assertTrue(true);
+        $this->assertContains('resource:App\\Http\\Resources\\UserResource', $invalidated);
     }
 
     #[Test]
@@ -135,9 +152,9 @@ class IncrementalCacheTest extends TestCase
             ->andReturn(['file:/app/Models/User.php']);
 
         $this->cache->trackChange('/app/Models/User.php');
-        $this->cache->getInvalidatedItems();
+        $invalidated = $this->cache->getInvalidatedItems();
 
-        $this->assertTrue(true);
+        $this->assertContains('file:/app/Models/User.php', $invalidated);
     }
 
     #[Test]
@@ -157,14 +174,18 @@ class IncrementalCacheTest extends TestCase
     public function it_tracks_change_type(): void
     {
         $this->dependencyGraph->shouldReceive('getAffectedNodes')
-            ->andReturn([]);
+            ->twice()
+            ->andReturn(['affected:item']);
 
         $this->cache->trackChange('/path/to/file.php', 'created');
         $this->cache->trackChange('/path/to/another.php', 'deleted');
 
-        // 変更タイプが記録されていることを確認（内部実装に依存しないテスト）
         $invalidated = $this->cache->getInvalidatedItems();
+
+        // 変更タイプに関わらず、変更が追跡されていることを確認
         $this->assertIsArray($invalidated);
+        $this->assertNotEmpty($invalidated);
+        $this->assertContains('affected:item', $invalidated);
     }
 
     #[Test]
@@ -206,20 +227,26 @@ class IncrementalCacheTest extends TestCase
 
         $validEntries = $this->cache->getValidEntries();
 
+        // 無効化されたエントリは含まれないことを確認
         $this->assertNotContains('entry1', $validEntries);
+
+        // 無効化されなかったエントリは含まれていることを確認
+        $this->assertContains('entry2', $validEntries);
     }
 
     #[Test]
     public function it_handles_nested_controller_paths(): void
     {
+        $expectedNodeId = 'controller:App\\Http\\Controllers\\Api\\V1\\UserController';
+
         $this->dependencyGraph->shouldReceive('getAffectedNodes')
-            ->with(['controller:App\\Http\\Controllers\\Api\\V1\\UserController'])
+            ->with([$expectedNodeId])
             ->once()
-            ->andReturn([]);
+            ->andReturn([$expectedNodeId]);
 
         $this->cache->trackChange('/app/Http/Controllers/Api/V1/UserController.php');
-        $this->cache->getInvalidatedItems();
+        $invalidated = $this->cache->getInvalidatedItems();
 
-        $this->assertTrue(true);
+        $this->assertContains($expectedNodeId, $invalidated);
     }
 }
