@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
+use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
 use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
@@ -46,7 +47,9 @@ class FormRequestAnalyzer
 
     protected FormRequestAstExtractor $astExtractor;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null, ?ParameterBuilder $parameterBuilder = null, ?FormRequestAstExtractor $astExtractor = null)
+    protected AnonymousClassAnalyzer $anonymousClassAnalyzer;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null, ?ParameterBuilder $parameterBuilder = null, ?FormRequestAstExtractor $astExtractor = null, ?AnonymousClassAnalyzer $anonymousClassAnalyzer = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -67,6 +70,11 @@ class FormRequestAnalyzer
             $this->descriptionGenerator,
             $this->enumAnalyzer,
             $this->fileUploadAnalyzer,
+            $this->errorCollector
+        );
+        $this->anonymousClassAnalyzer = $anonymousClassAnalyzer ?? new AnonymousClassAnalyzer(
+            $this->astExtractor,
+            $this->parameterBuilder,
             $this->errorCollector
         );
     }
@@ -116,7 +124,7 @@ class FormRequestAnalyzer
             $filePath = $reflection->getFileName();
             if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
                 // For anonymous classes or when file path is not available, use reflection-based fallback
-                return $this->analyzeWithReflection($reflection);
+                return $this->anonymousClassAnalyzer->analyze($reflection);
             }
 
             // ファイルをパース
@@ -201,7 +209,7 @@ class FormRequestAnalyzer
                 if (! $filePath || ! file_exists($filePath)) {
                     // For classes without file path, return empty conditional rules
                     return [
-                        'parameters' => $this->analyzeWithReflection($reflection),
+                        'parameters' => $this->anonymousClassAnalyzer->analyze($reflection),
                         'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
                         'attributes' => [],
                         'messages' => [],
@@ -316,7 +324,7 @@ class FormRequestAnalyzer
             $filePath = $reflection->getFileName();
             if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
                 // For anonymous classes or when file path is not available, use reflection-based fallback
-                return $this->analyzeWithDetailsUsingReflection($reflection);
+                return $this->anonymousClassAnalyzer->analyzeDetails($reflection);
             }
 
             // ファイルをパース
@@ -363,291 +371,6 @@ class FormRequestAnalyzer
             ]);
 
             return [];
-        }
-    }
-
-    /**
-     * Reflection-based analysis with details for anonymous classes
-     */
-    protected function analyzeWithDetailsUsingReflection(\ReflectionClass $reflection): array
-    {
-        try {
-            // Fallback: try to create instance with mock request
-            $instance = $reflection->newInstanceWithoutConstructor();
-
-            // Initialize request property to avoid errors
-            if ($reflection->hasProperty('request')) {
-                $requestProp = $reflection->getProperty('request');
-                $requestProp->setAccessible(true);
-                $mockRequest = new \Illuminate\Http\Request;
-                $requestProp->setValue($instance, $mockRequest);
-            }
-
-            // Extract rules using reflection
-            $rules = [];
-            if ($reflection->hasMethod('rules')) {
-                $method = $reflection->getMethod('rules');
-                $method->setAccessible(true);
-                try {
-                    $rules = $method->invoke($instance) ?: [];
-                } catch (\Exception $e) {
-                    $this->errorCollector?->addWarning(
-                        'FormRequestAnalyzer',
-                        "Failed to invoke rules() method on anonymous FormRequest: {$e->getMessage()}",
-                        [
-                            'class_name' => $reflection->getName(),
-                            'file_path' => $reflection->getFileName() ?: 'unknown',
-                            'method' => 'rules',
-                            'error_type' => 'anonymous_rules_invocation_error',
-                        ]
-                    );
-
-                    return [];
-                }
-            }
-
-            // Extract attributes using reflection
-            $attributes = [];
-            if ($reflection->hasMethod('attributes')) {
-                $method = $reflection->getMethod('attributes');
-                $method->setAccessible(true);
-                $attributes = $method->invoke($instance) ?: [];
-            }
-
-            // Extract messages using reflection
-            $messages = [];
-            if ($reflection->hasMethod('messages')) {
-                $method = $reflection->getMethod('messages');
-                $method->setAccessible(true);
-                $messages = $method->invoke($instance) ?: [];
-            }
-
-            return [
-                'rules' => $rules,
-                'attributes' => $attributes,
-                'messages' => $messages,
-            ];
-
-        } catch (\Exception $e) {
-            $this->errorCollector?->addWarning(
-                'FormRequestAnalyzer',
-                "Failed to extract rules/attributes/messages from anonymous FormRequest using reflection: {$e->getMessage()}",
-                [
-                    'class_name' => $reflection->getName(),
-                    'file_path' => $reflection->getFileName() ?: 'unknown',
-                    'error_type' => 'anonymous_reflection_details_error',
-                ]
-            );
-
-            return [];
-        }
-    }
-
-    /**
-     * Generate parameters from runtime rules (when using reflection on anonymous classes)
-     */
-    protected function generateParametersFromRuntimeRules(array $rules, array $attributes = [], ?string $namespace = null): array
-    {
-        // This method handles rules that contain actual objects (not AST strings)
-        // It's used when we extract rules via reflection instead of AST parsing
-        return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace);
-    }
-
-    /**
-     * Reflection-based analysis for anonymous classes
-     */
-    protected function analyzeWithReflection(\ReflectionClass $reflection): array
-    {
-        try {
-            // For AST parsing of anonymous classes, we need to get the source code
-            $filePath = $reflection->getFileName();
-            if ($filePath && file_exists($filePath)) {
-                // Read the file and find the anonymous class definition
-                $code = file_get_contents($filePath);
-                $startLine = $reflection->getStartLine() - 1;
-                $endLine = $reflection->getEndLine();
-
-                // Extract just the class definition
-                $lines = explode("\n", $code);
-                $classCode = implode("\n", array_slice($lines, $startLine, $endLine - $startLine));
-
-                // Wrap in <?php tag for parsing
-                if (! str_contains($classCode, '<?php')) {
-                    $classCode = "<?php\n".$classCode;
-                }
-
-                try {
-                    $ast = $this->parser->parse($classCode);
-                    if ($ast) {
-                        // Find the class node (anonymous class)
-                        $classNode = $this->astExtractor->findAnonymousClassNode($ast);
-                        if ($classNode) {
-                            $rules = $this->astExtractor->extractRules($classNode);
-                            $attributes = $this->astExtractor->extractAttributes($classNode);
-                            $namespace = $reflection->getNamespaceName();
-                            $useStatements = $this->astExtractor->extractUseStatements($ast);
-
-                            return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
-                        }
-                    }
-                } catch (Error $e) {
-                    // Fall back to instance-based extraction
-                    $this->errorCollector?->addWarning(
-                        'FormRequestAnalyzer',
-                        "Failed to parse anonymous class AST, falling back to reflection: {$e->getMessage()}",
-                        [
-                            'class_name' => $reflection->getName(),
-                            'file_path' => $filePath,
-                            'error_type' => 'anonymous_ast_parse_error',
-                        ]
-                    );
-                }
-            }
-
-            // Fallback: try to create instance with mock request
-            $instance = $reflection->newInstanceWithoutConstructor();
-
-            // Initialize request property to avoid errors
-            if ($reflection->hasProperty('request')) {
-                $requestProp = $reflection->getProperty('request');
-                $requestProp->setAccessible(true);
-                $mockRequest = new \Illuminate\Http\Request;
-                $requestProp->setValue($instance, $mockRequest);
-            }
-
-            // Extract rules using reflection - this will get actual objects, not AST strings
-            $rules = [];
-            if ($reflection->hasMethod('rules')) {
-                $method = $reflection->getMethod('rules');
-                $method->setAccessible(true);
-                try {
-                    $rules = $method->invoke($instance) ?: [];
-                } catch (\Exception $e) {
-                    $this->errorCollector?->addWarning(
-                        'FormRequestAnalyzer',
-                        "Failed to invoke rules() method during reflection analysis: {$e->getMessage()}",
-                        [
-                            'class_name' => $reflection->getName(),
-                            'file_path' => $reflection->getFileName() ?: 'unknown',
-                            'method' => 'rules',
-                            'error_type' => 'anonymous_reflection_rules_invocation_error',
-                        ]
-                    );
-
-                    return [];
-                }
-            }
-
-            // Extract attributes using reflection
-            $attributes = [];
-            if ($reflection->hasMethod('attributes')) {
-                $method = $reflection->getMethod('attributes');
-                $method->setAccessible(true);
-                $attributes = $method->invoke($instance) ?: [];
-            }
-
-            $namespace = $reflection->getNamespaceName();
-
-            // When using reflection, we get actual rule objects, not AST strings
-            // So we need to pass these objects directly to generateParameters
-            return $this->generateParametersFromRuntimeRules($rules, $attributes, $namespace);
-
-        } catch (\Exception $e) {
-            $this->errorCollector?->addWarning(
-                'FormRequestAnalyzer',
-                "Failed to analyze anonymous FormRequest (unable to create instance or invoke methods): {$e->getMessage()}",
-                [
-                    'class_name' => $reflection->getName(),
-                    'file_path' => $reflection->getFileName() ?: 'unknown',
-                    'error_type' => 'anonymous_reflection_analysis_error',
-                ]
-            );
-
-            return [];
-        }
-    }
-
-    /**
-     * Analyze anonymous class with conditional rules support
-     */
-    protected function analyzeAnonymousClassWithConditionalRules(\ReflectionClass $reflection): array
-    {
-        try {
-            // For AST parsing of anonymous classes
-            $filePath = $reflection->getFileName();
-            if ($filePath && file_exists($filePath)) {
-                $code = file_get_contents($filePath);
-                $startLine = $reflection->getStartLine() - 1;
-                $endLine = $reflection->getEndLine();
-
-                $lines = explode("\n", $code);
-                $classCode = implode("\n", array_slice($lines, $startLine, $endLine - $startLine));
-
-                if (! str_contains($classCode, '<?php')) {
-                    $classCode = "<?php\n".$classCode;
-                }
-
-                try {
-                    $ast = $this->parser->parse($classCode);
-                    if ($ast) {
-                        $classNode = $this->astExtractor->findAnonymousClassNode($ast);
-                        if ($classNode) {
-                            $conditionalRules = $this->astExtractor->extractConditionalRules($classNode);
-
-                            if (! empty($conditionalRules['rules_sets'])) {
-                                $attributes = $this->astExtractor->extractAttributes($classNode);
-                                $parameters = $this->parameterBuilder->buildFromConditionalRules($conditionalRules, $attributes);
-
-                                return [
-                                    'parameters' => $parameters,
-                                    'conditional_rules' => $conditionalRules,
-                                ];
-                            }
-                        }
-                    }
-                } catch (Error $e) {
-                    // Fall back to reflection-based extraction
-                    $this->errorCollector?->addWarning(
-                        'FormRequestAnalyzer',
-                        "Failed to parse anonymous class AST for conditional rules, falling back to reflection: {$e->getMessage()}",
-                        [
-                            'class_name' => $reflection->getName(),
-                            'file_path' => $filePath,
-                            'error_type' => 'anonymous_conditional_ast_parse_error',
-                        ]
-                    );
-                }
-            }
-
-            // Fallback to reflection-based extraction
-            $result = $this->analyzeWithReflection($reflection);
-
-            return [
-                'parameters' => $result,
-                'conditional_rules' => [
-                    'rules_sets' => [],
-                    'merged_rules' => [],
-                ],
-            ];
-
-        } catch (\Exception $e) {
-            $this->errorCollector?->addWarning(
-                'FormRequestAnalyzer',
-                "Failed to analyze anonymous FormRequest with conditional rules (unable to create instance or invoke methods): {$e->getMessage()}",
-                [
-                    'class_name' => $reflection->getName(),
-                    'file_path' => $reflection->getFileName() ?: 'unknown',
-                    'error_type' => 'anonymous_conditional_reflection_error',
-                ]
-            );
-
-            return [
-                'parameters' => [],
-                'conditional_rules' => [
-                    'rules_sets' => [],
-                    'merged_rules' => [],
-                ],
-            ];
         }
     }
 }
