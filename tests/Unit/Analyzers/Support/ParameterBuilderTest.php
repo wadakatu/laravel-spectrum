@@ -439,6 +439,126 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals('array', $this->findParameter($parameters, 'tags')['type']);
     }
 
+    // ========== Malformed input edge cases ==========
+
+    #[Test]
+    public function it_handles_conditional_rules_without_rules_sets_key(): void
+    {
+        $conditionalRules = [
+            'merged_rules' => ['field' => ['required']],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertIsArray($parameters);
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_handles_conditional_rules_without_merged_rules_key(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                ['conditions' => [], 'rules' => ['field' => 'required']],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertIsArray($parameters);
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_handles_conditional_rules_with_non_array_rules_sets(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => 'invalid',
+            'merged_rules' => [],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertIsArray($parameters);
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_handles_conditional_rules_with_non_array_merged_rules(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [],
+            'merged_rules' => 'invalid',
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertIsArray($parameters);
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_skips_malformed_rule_sets_without_rules_key(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                ['conditions' => ['type' => 'valid'], 'rules' => ['email' => 'required|email']],
+                ['conditions' => ['type' => 'invalid']],
+                ['conditions' => ['type' => 'also_invalid'], 'rules' => 'not_an_array'],
+            ],
+            'merged_rules' => [
+                'email' => ['required', 'email'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertCount(1, $parameters);
+        $email = $this->findParameter($parameters, 'email');
+        $this->assertNotNull($email);
+    }
+
+    #[Test]
+    public function it_skips_fields_in_merged_rules_not_in_rules_sets(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                ['conditions' => [], 'rules' => ['existing_field' => 'required|string']],
+            ],
+            'merged_rules' => [
+                'existing_field' => ['required', 'string'],
+                'orphaned_field' => ['required', 'email'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertCount(1, $parameters);
+        $this->assertNotNull($this->findParameter($parameters, 'existing_field'));
+        $this->assertNull($this->findParameter($parameters, 'orphaned_field'));
+    }
+
+    #[Test]
+    public function it_handles_rule_sets_without_conditions_key(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                ['rules' => ['field' => 'required|string']],
+            ],
+            'merged_rules' => [
+                'field' => ['required', 'string'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $this->assertCount(1, $parameters);
+        $field = $this->findParameter($parameters, 'field');
+        $this->assertNotNull($field);
+        $this->assertArrayHasKey('conditional_rules', $field);
+        $this->assertEquals([], $field['conditional_rules'][0]['conditions']);
+    }
+
     // ========== Helper methods ==========
 
     private function findParameter(array $parameters, string $name): ?array

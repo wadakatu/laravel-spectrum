@@ -70,11 +70,25 @@ class ParameterBuilder
      */
     public function buildFromConditionalRules(array $conditionalRules, array $attributes = [], string $namespace = '', array $useStatements = []): array
     {
+        // Validate required structure
+        if (! isset($conditionalRules['rules_sets']) || ! is_array($conditionalRules['rules_sets'])) {
+            return [];
+        }
+
+        if (! isset($conditionalRules['merged_rules']) || ! is_array($conditionalRules['merged_rules'])) {
+            return [];
+        }
+
         $parameters = [];
         $processedFields = [];
 
         // Process all rule sets
         foreach ($conditionalRules['rules_sets'] as $ruleSet) {
+            // Skip malformed rule sets
+            if (! isset($ruleSet['rules']) || ! is_array($ruleSet['rules'])) {
+                continue;
+            }
+
             foreach ($ruleSet['rules'] as $field => $rule) {
                 if (! isset($processedFields[$field])) {
                     $processedFields[$field] = [
@@ -85,7 +99,7 @@ class ParameterBuilder
                 }
 
                 $processedFields[$field]['rules_by_condition'][] = [
-                    'conditions' => $ruleSet['conditions'],
+                    'conditions' => $ruleSet['conditions'] ?? [],
                     'rules' => is_array($rule) ? $rule : explode('|', $rule),
                 ];
             }
@@ -93,6 +107,11 @@ class ParameterBuilder
 
         // Generate parameters with merged rules for default type info
         foreach ($conditionalRules['merged_rules'] as $field => $mergedRules) {
+            // Skip fields not found in processed fields (inconsistent data)
+            if (! isset($processedFields[$field])) {
+                continue;
+            }
+
             $parameters[] = $this->buildConditionalParameter(
                 $field,
                 $mergedRules,
