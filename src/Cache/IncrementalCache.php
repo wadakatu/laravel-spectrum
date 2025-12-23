@@ -3,7 +3,6 @@
 namespace LaravelSpectrum\Cache;
 
 use LaravelSpectrum\Performance\DependencyGraph;
-use LaravelSpectrum\Services\DocumentationCache;
 
 class IncrementalCache extends DocumentationCache
 {
