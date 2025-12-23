@@ -134,11 +134,6 @@ class OpenApiGenerator
             $requestBody = $this->requestBodyGenerator->generate($controllerInfo, $route);
             if ($requestBody) {
                 $operation['requestBody'] = $requestBody;
-
-                // Add consumes for file uploads
-                if (isset($requestBody['content']['multipart/form-data'])) {
-                    $operation['consumes'] = ['multipart/form-data'];
-                }
             }
         }
 

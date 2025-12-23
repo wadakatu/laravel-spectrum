@@ -601,6 +601,72 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_falls_back_to_30_when_invalid_version_configured()
+    {
+        // Set config to an invalid version
+        config(['spectrum.openapi.version' => '3.1']); // Missing .0
+
+        $routes = [];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
+            ->once();
+
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->once()
+            ->andReturn(null);
+
+        $this->authenticationAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn(['schemes' => []]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->once()
+            ->with([])
+            ->andReturn([]);
+
+        // Converter should NOT be called for invalid version
+        $this->openApi31Converter->shouldNotReceive('convert');
+
+        $result = $this->generator->generate($routes);
+
+        // Should fall back to 3.0.0
+        $this->assertEquals('3.0.0', $result['openapi']);
+    }
+
+    #[Test]
+    public function it_falls_back_to_30_when_version_is_null()
+    {
+        // Set config to null
+        config(['spectrum.openapi.version' => null]);
+
+        $routes = [];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
+            ->once();
+
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->once()
+            ->andReturn(null);
+
+        $this->authenticationAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn(['schemes' => []]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->once()
+            ->with([])
+            ->andReturn([]);
+
+        // Converter should NOT be called for null version
+        $this->openApi31Converter->shouldNotReceive('convert');
+
+        $result = $this->generator->generate($routes);
+
+        // Should fall back to 3.0.0
+        $this->assertEquals('3.0.0', $result['openapi']);
+    }
+
+    #[Test]
     public function it_converts_nullable_to_type_array_in_31()
     {
         // Use real converter instead of mock for this integration test
