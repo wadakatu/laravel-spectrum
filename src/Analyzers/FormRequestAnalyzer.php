@@ -419,6 +419,15 @@ class FormRequestAnalyzer
             ];
 
         } catch (\Exception $e) {
+            $this->errorCollector?->addWarning(
+                'FormRequestAnalyzer',
+                "Failed to analyze anonymous FormRequest with details using reflection: {$e->getMessage()}",
+                [
+                    'class_name' => $reflection->getName(),
+                    'error_type' => 'reflection_details_analysis_error',
+                ]
+            );
+
             return [];
         }
     }
@@ -472,6 +481,15 @@ class FormRequestAnalyzer
                     }
                 } catch (Error $e) {
                     // Fall back to instance-based extraction
+                    $this->errorCollector?->addWarning(
+                        'FormRequestAnalyzer',
+                        "Failed to parse anonymous class AST, falling back to reflection: {$e->getMessage()}",
+                        [
+                            'class_name' => $reflection->getName(),
+                            'file_path' => $filePath,
+                            'error_type' => 'anonymous_class_parse_error',
+                        ]
+                    );
                 }
             }
 
@@ -514,6 +532,15 @@ class FormRequestAnalyzer
             return $this->generateParametersFromRuntimeRules($rules, $attributes, $namespace);
 
         } catch (\Exception $e) {
+            $this->errorCollector?->addWarning(
+                'FormRequestAnalyzer',
+                "Failed to analyze anonymous FormRequest using reflection: {$e->getMessage()}",
+                [
+                    'class_name' => $reflection->getName(),
+                    'error_type' => 'reflection_analysis_error',
+                ]
+            );
+
             return [];
         }
     }
@@ -558,6 +585,15 @@ class FormRequestAnalyzer
                     }
                 } catch (Error $e) {
                     // Fall back to reflection-based extraction
+                    $this->errorCollector?->addWarning(
+                        'FormRequestAnalyzer',
+                        "Failed to parse anonymous class for conditional rules, falling back to reflection: {$e->getMessage()}",
+                        [
+                            'class_name' => $reflection->getName(),
+                            'file_path' => $filePath,
+                            'error_type' => 'anonymous_class_conditional_parse_error',
+                        ]
+                    );
                 }
             }
 
@@ -573,6 +609,15 @@ class FormRequestAnalyzer
             ];
 
         } catch (\Exception $e) {
+            $this->errorCollector?->addWarning(
+                'FormRequestAnalyzer',
+                "Failed to analyze anonymous FormRequest with conditional rules: {$e->getMessage()}",
+                [
+                    'class_name' => $reflection->getName(),
+                    'error_type' => 'conditional_reflection_analysis_error',
+                ]
+            );
+
             return [
                 'parameters' => [],
                 'conditional_rules' => [
