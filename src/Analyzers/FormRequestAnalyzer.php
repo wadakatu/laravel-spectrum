@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
@@ -32,7 +33,9 @@ class FormRequestAnalyzer
 
     protected ?ErrorCollector $errorCollector = null;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null)
+    protected RuleRequirementAnalyzer $ruleRequirementAnalyzer;
+
+    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null)
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
@@ -42,6 +45,7 @@ class FormRequestAnalyzer
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
         $this->errorCollector = $errorCollector;
+        $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
     }
 
     /**
@@ -515,7 +519,7 @@ class FormRequestAnalyzer
                 $parameter = [
                     'name' => $field,
                     'in' => 'body',
-                    'required' => $this->isRequired($ruleArray),
+                    'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
                     'type' => 'file',
                     'format' => 'binary',
                     'file_info' => $fileInfo,
@@ -541,7 +545,7 @@ class FormRequestAnalyzer
             $parameter = [
                 'name' => $field,
                 'in' => 'body',
-                'required' => $this->isRequired($ruleArray),
+                'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
                 'type' => $this->typeInference->inferFromRules($ruleArray),
                 'description' => $attributes[$field] ?? $this->generateDescription($field, $ruleArray, $namespace, $useStatements),
                 'example' => $this->typeInference->generateExample($field, $ruleArray),
@@ -555,9 +559,9 @@ class FormRequestAnalyzer
             }
 
             // Add conditional rule information
-            if ($this->hasConditionalRequired($ruleArray)) {
+            if ($this->ruleRequirementAnalyzer->hasConditionalRequired($ruleArray)) {
                 $parameter['conditional_required'] = true;
-                $parameter['conditional_rules'] = $this->extractConditionalRuleDetails($ruleArray);
+                $parameter['conditional_rules'] = $this->ruleRequirementAnalyzer->extractConditionalRuleDetails($ruleArray);
             }
 
             // Add enum information if found
@@ -579,91 +583,6 @@ class FormRequestAnalyzer
         // This method handles rules that contain actual objects (not AST strings)
         // It's used when we extract rules via reflection instead of AST parsing
         return $this->generateParameters($rules, $attributes, $namespace);
-    }
-
-    /**
-     * 必須フィールドかどうかを判定
-     */
-    protected function isRequired($rules): bool
-    {
-        if (is_string($rules)) {
-            $rules = explode('|', $rules);
-        }
-
-        foreach ($rules as $rule) {
-            $ruleName = is_string($rule) ? explode(':', $rule)[0] : '';
-            // Only 'required' without conditions makes a field truly required
-            // Conditional required rules (required_if, etc.) don't make a field unconditionally required
-            if ($ruleName === 'required') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 条件付き必須ルールがあるかどうかを判定
-     */
-    protected function hasConditionalRequired($rules): bool
-    {
-        if (is_string($rules)) {
-            $rules = explode('|', $rules);
-        }
-
-        foreach ($rules as $rule) {
-            $ruleName = is_string($rule) ? explode(':', $rule)[0] : '';
-            if (in_array($ruleName, ['required_if', 'required_unless', 'required_with', 'required_without', 'required_with_all', 'required_without_all'])) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 条件付きルールの詳細を抽出
-     */
-    protected function extractConditionalRuleDetails($rules): array
-    {
-        if (is_string($rules)) {
-            $rules = explode('|', $rules);
-        }
-
-        $conditionalRules = [];
-
-        foreach ($rules as $rule) {
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            $parts = explode(':', $rule, 2);
-            $ruleName = $parts[0];
-            $ruleParams = isset($parts[1]) ? $parts[1] : '';
-
-            // Handle conditional rules
-            if (in_array($ruleName, ['required_if', 'required_unless', 'required_with', 'required_without', 'required_with_all', 'required_without_all'])) {
-                $conditionalRules[] = [
-                    'type' => $ruleName,
-                    'parameters' => $ruleParams,
-                    'full_rule' => $rule,
-                ];
-            } elseif (in_array($ruleName, ['prohibited_if', 'prohibited_unless', 'prohibited_with', 'prohibited_without'])) {
-                $conditionalRules[] = [
-                    'type' => $ruleName,
-                    'parameters' => $ruleParams,
-                    'full_rule' => $rule,
-                ];
-            } elseif (in_array($ruleName, ['exclude_if', 'exclude_unless', 'exclude_with', 'exclude_without'])) {
-                $conditionalRules[] = [
-                    'type' => $ruleName,
-                    'parameters' => $ruleParams,
-                    'full_rule' => $rule,
-                ];
-            }
-        }
-
-        return $conditionalRules;
     }
 
     protected function inferDateFormat($rules): ?string
@@ -1089,7 +1008,7 @@ class FormRequestAnalyzer
             $parameter = [
                 'name' => $field,
                 'in' => 'body',
-                'required' => $this->isRequiredInAnyCondition($processedFields[$field]['rules_by_condition']),
+                'required' => $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($processedFields[$field]['rules_by_condition']),
                 'type' => $this->typeInference->inferFromRules($mergedRules),
                 'description' => $attributes[$field] ?? $this->generateConditionalDescription($field, $processedFields[$field]),
                 'conditional_rules' => $processedFields[$field]['rules_by_condition'],
@@ -1106,20 +1025,6 @@ class FormRequestAnalyzer
         }
 
         return $parameters;
-    }
-
-    /**
-     * Check if field is required in any condition
-     */
-    protected function isRequiredInAnyCondition(array $rulesByCondition): bool
-    {
-        foreach ($rulesByCondition as $conditionRules) {
-            if ($this->isRequired($conditionRules['rules'])) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
