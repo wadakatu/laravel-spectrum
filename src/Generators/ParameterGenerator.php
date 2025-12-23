@@ -52,27 +52,33 @@ class ParameterGenerator
             return $parameters;
         }
 
+        $result = [];
+        foreach ($parameters as $routeParam) {
+            $result[] = $routeParam;
+        }
+
         foreach ($controllerInfo['enumParameters'] as $enumParam) {
             // Check if this is already a route parameter
-            $isRouteParam = false;
-            foreach ($parameters as &$routeParam) {
+            $matchIndex = null;
+            foreach ($result as $index => $routeParam) {
                 if ($routeParam['name'] === $enumParam['name']) {
-                    $isRouteParam = true;
-                    // Add enum information to existing route parameter
-                    $routeParam['schema'] = [
-                        'type' => $enumParam['type'],
-                        'enum' => $enumParam['enum'],
-                    ];
-                    if ($enumParam['description']) {
-                        $routeParam['description'] = $enumParam['description'];
-                    }
+                    $matchIndex = $index;
                     break;
                 }
             }
 
-            // If not a route parameter, add as query parameter
-            if (! $isRouteParam) {
-                $parameters[] = [
+            if ($matchIndex !== null) {
+                // Add enum information to existing route parameter
+                $result[$matchIndex]['schema'] = [
+                    'type' => $enumParam['type'],
+                    'enum' => $enumParam['enum'],
+                ];
+                if (! empty($enumParam['description'])) {
+                    $result[$matchIndex]['description'] = $enumParam['description'];
+                }
+            } else {
+                // If not a route parameter, add as query parameter
+                $newParam = [
                     'name' => $enumParam['name'],
                     'in' => 'query',
                     'required' => $enumParam['required'],
@@ -80,12 +86,15 @@ class ParameterGenerator
                         'type' => $enumParam['type'],
                         'enum' => $enumParam['enum'],
                     ],
-                    'description' => $enumParam['description'],
                 ];
+                if (! empty($enumParam['description'])) {
+                    $newParam['description'] = $enumParam['description'];
+                }
+                $result[] = $newParam;
             }
         }
 
-        return $parameters;
+        return $result;
     }
 
     /**
@@ -138,45 +147,5 @@ class ParameterGenerator
         }
 
         return $parameters;
-    }
-
-    /**
-     * Extract constraints from validation rules.
-     *
-     * @param  array<string|object>  $rules  Validation rules
-     * @return array<string, int> Constraints (minimum, maximum)
-     */
-    public function extractConstraintsFromRules(array $rules): array
-    {
-        $constraints = [];
-
-        foreach ($rules as $rule) {
-            if (is_string($rule)) {
-                $parts = explode(':', $rule);
-                $ruleName = $parts[0];
-                $parameters = isset($parts[1]) ? explode(',', $parts[1]) : [];
-
-                switch ($ruleName) {
-                    case 'min':
-                        if (isset($parameters[0])) {
-                            $constraints['minimum'] = (int) $parameters[0];
-                        }
-                        break;
-                    case 'max':
-                        if (isset($parameters[0])) {
-                            $constraints['maximum'] = (int) $parameters[0];
-                        }
-                        break;
-                    case 'between':
-                        if (isset($parameters[0]) && isset($parameters[1])) {
-                            $constraints['minimum'] = (int) $parameters[0];
-                            $constraints['maximum'] = (int) $parameters[1];
-                        }
-                        break;
-                }
-            }
-        }
-
-        return $constraints;
     }
 }

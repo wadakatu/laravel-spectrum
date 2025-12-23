@@ -228,4 +228,30 @@ class TagGeneratorTest extends TestCase
 
         $this->assertEquals(['Product'], $tags);
     }
+
+    #[Test]
+    public function it_returns_empty_tags_for_controller_named_only_controller(): void
+    {
+        $route = [
+            'uri' => 'api/v1/{resource}',
+            'controller' => 'Controller',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals([], $tags);
+    }
+
+    #[Test]
+    public function it_handles_empty_uri(): void
+    {
+        $route = [
+            'uri' => '',
+            'controller' => 'UserController',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals(['User'], $tags);
+    }
 }

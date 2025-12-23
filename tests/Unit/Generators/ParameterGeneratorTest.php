@@ -233,68 +233,6 @@ class ParameterGeneratorTest extends TestCase
         $this->assertEquals('query', $parameters[2]['in']);
     }
 
-    // extractConstraintsFromRules tests
-
-    #[Test]
-    public function it_extracts_minimum_constraint(): void
-    {
-        $rules = ['min:5'];
-
-        $constraints = $this->generator->extractConstraintsFromRules($rules);
-
-        $this->assertEquals(['minimum' => 5], $constraints);
-    }
-
-    #[Test]
-    public function it_extracts_maximum_constraint(): void
-    {
-        $rules = ['max:100'];
-
-        $constraints = $this->generator->extractConstraintsFromRules($rules);
-
-        $this->assertEquals(['maximum' => 100], $constraints);
-    }
-
-    #[Test]
-    public function it_extracts_between_constraints(): void
-    {
-        $rules = ['between:1,50'];
-
-        $constraints = $this->generator->extractConstraintsFromRules($rules);
-
-        $this->assertEquals(['minimum' => 1, 'maximum' => 50], $constraints);
-    }
-
-    #[Test]
-    public function it_extracts_multiple_constraints(): void
-    {
-        $rules = ['integer', 'min:1', 'max:100'];
-
-        $constraints = $this->generator->extractConstraintsFromRules($rules);
-
-        $this->assertEquals(['minimum' => 1, 'maximum' => 100], $constraints);
-    }
-
-    #[Test]
-    public function it_ignores_non_string_rules(): void
-    {
-        $rules = [new \stdClass, 'min:5'];
-
-        $constraints = $this->generator->extractConstraintsFromRules($rules);
-
-        $this->assertEquals(['minimum' => 5], $constraints);
-    }
-
-    #[Test]
-    public function it_returns_empty_for_rules_without_constraints(): void
-    {
-        $rules = ['required', 'string', 'email'];
-
-        $constraints = $this->generator->extractConstraintsFromRules($rules);
-
-        $this->assertEquals([], $constraints);
-    }
-
     #[Test]
     public function it_handles_empty_parameters(): void
     {
@@ -304,5 +242,70 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertEquals([], $parameters);
+    }
+
+    #[Test]
+    public function it_does_not_add_empty_description_to_enum_route_parameter(): void
+    {
+        $route = [
+            'parameters' => [
+                ['name' => 'status', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string']],
+            ],
+        ];
+        $controllerInfo = [
+            'enumParameters' => [
+                [
+                    'name' => 'status',
+                    'type' => 'string',
+                    'enum' => ['active', 'inactive'],
+                    'description' => '', // Empty description
+                    'required' => true,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertArrayNotHasKey('description', $parameters[0]);
+    }
+
+    #[Test]
+    public function it_does_not_add_empty_description_to_enum_query_parameter(): void
+    {
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'enumParameters' => [
+                [
+                    'name' => 'status',
+                    'type' => 'string',
+                    'enum' => ['active', 'inactive'],
+                    'description' => '', // Empty description
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertArrayNotHasKey('description', $parameters[0]);
+    }
+
+    #[Test]
+    public function it_handles_required_query_parameter(): void
+    {
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'api_key',
+                    'type' => 'string',
+                    'required' => true,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertTrue($parameters[0]['required']);
     }
 }

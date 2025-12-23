@@ -208,4 +208,30 @@ class OperationMetadataGeneratorTest extends TestCase
 
         $this->assertEquals('UserProfile', $name);
     }
+
+    #[Test]
+    public function it_returns_default_resource_name_for_parameter_only_uri(): void
+    {
+        $name = $this->generator->extractResourceName('{tenant}/{resource}');
+
+        $this->assertEquals('Resource', $name);
+    }
+
+    #[Test]
+    public function it_returns_default_resource_name_for_single_parameter_uri(): void
+    {
+        $name = $this->generator->extractResourceName('{id}');
+
+        $this->assertEquals('Resource', $name);
+    }
+
+    #[Test]
+    public function it_generates_default_summary_for_head_method(): void
+    {
+        $route = ['uri' => 'api/users'];
+
+        $summary = $this->generator->generateSummary($route, 'head');
+
+        $this->assertEquals('Head User', $summary);
+    }
 }

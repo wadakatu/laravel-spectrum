@@ -312,4 +312,48 @@ class RequestBodyGeneratorTest extends TestCase
 
         $this->assertNotNull($result);
     }
+
+    #[Test]
+    public function it_returns_null_when_form_request_has_no_parameters(): void
+    {
+        $controllerInfo = ['formRequest' => 'App\Http\Requests\EmptyRequest'];
+        $route = ['uri' => 'api/users'];
+
+        $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
+            ->once()
+            ->andReturn(['parameters' => [], 'conditional_rules' => []]);
+
+        $this->mockRequestAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([]);
+
+        $result = $this->generator->generate($controllerInfo, $route);
+
+        $this->assertNull($result);
+    }
+
+    #[Test]
+    public function it_returns_null_when_file_upload_schema_has_no_content(): void
+    {
+        $controllerInfo = ['formRequest' => 'App\Http\Requests\UploadRequest'];
+        $route = ['uri' => 'api/upload'];
+
+        $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
+            ->once()
+            ->andReturn(['parameters' => [], 'conditional_rules' => []]);
+
+        $this->mockRequestAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([
+                ['name' => 'file', 'type' => 'file', 'required' => true],
+            ]);
+
+        $this->mockSchemaGenerator->shouldReceive('generateFromParameters')
+            ->once()
+            ->andReturn(['type' => 'object']); // No 'content' key
+
+        $result = $this->generator->generate($controllerInfo, $route);
+
+        $this->assertNull($result);
+    }
 }

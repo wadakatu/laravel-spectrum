@@ -75,6 +75,7 @@ class OperationMetadataGenerator
      *
      * Gets the last meaningful segment from the URI, removing parameters.
      * If the last segment is only a parameter, looks at previous segments.
+     * Falls back to "Resource" if no meaningful segment is found.
      *
      * @param  string  $uri  Route URI
      * @return string Extracted resource name in StudlyCase
@@ -95,6 +96,7 @@ class OperationMetadataGenerator
             }
         }
 
-        return '';
+        // Return default value when no meaningful segment is found
+        return 'Resource';
     }
 }
