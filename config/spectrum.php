@@ -100,6 +100,46 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tag Groups (x-tagGroups)
+    |--------------------------------------------------------------------------
+    |
+    | Group tags together for better organization in documentation viewers
+    | that support x-tagGroups extension (e.g., Redoc).
+    | The order of groups determines the display order.
+    |
+    */
+    'tag_groups' => [
+        // 'User Management' => ['User', 'Profile', 'Auth'],
+        // 'Content' => ['Post', 'Comment', 'Media'],
+        // 'Administration' => ['Admin', 'Settings'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tag Descriptions
+    |--------------------------------------------------------------------------
+    |
+    | Add descriptions to tags that will appear in the OpenAPI tags section.
+    |
+    */
+    'tag_descriptions' => [
+        // 'User' => 'User management and authentication endpoints',
+        // 'Post' => 'Blog post CRUD operations',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ungrouped Tags Group Name
+    |--------------------------------------------------------------------------
+    |
+    | Tags not assigned to any group will be placed in this group.
+    | Set to null to disable (ungrouped tags won't appear in x-tagGroups).
+    |
+    */
+    'ungrouped_tags_group' => 'Other',
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Configuration
     |--------------------------------------------------------------------------
     |
