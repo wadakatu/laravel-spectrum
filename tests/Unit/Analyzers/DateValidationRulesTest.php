@@ -37,7 +37,7 @@ class DateValidationRulesTest extends TestCase
             {
                 return [
                     'birth_date' => 'required|date',
-                    'appointment_time' => 'required|datetime',
+                    'appointment_time' => 'required|date_format:Y-m-d H:i:s',
                     'formatted_date' => 'required|date_format:Y-m-d',
                     'custom_time' => 'required|date_format:H:i:s',
                     'iso_datetime' => 'required|date_format:Y-m-d\TH:i:sP',
@@ -59,6 +59,7 @@ class DateValidationRulesTest extends TestCase
         $appointmentParam = $this->findParameterByName($parameters, 'appointment_time');
         $this->assertEquals('string', $appointmentParam['type']);
         $this->assertEquals('date-time', $appointmentParam['format'] ?? null);
+        $this->assertContains('date_format:Y-m-d H:i:s', $appointmentParam['validation']);
 
         $formattedDateParam = $this->findParameterByName($parameters, 'formatted_date');
         $this->assertContains('date_format:Y-m-d', $formattedDateParam['validation']);
