@@ -2,19 +2,14 @@
 
 namespace LaravelSpectrum\Support;
 
+use LaravelSpectrum\Analyzers\Support\AstNodeValueExtractor;
 use PhpParser\Node;
-use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
-use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Scalar\DNumber;
-use PhpParser\Node\Scalar\LNumber;
-use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\NodeTraverser;
@@ -28,9 +23,12 @@ class QueryParameterDetector
 
     private Parser $parser;
 
-    public function __construct(Parser $parser)
+    private AstNodeValueExtractor $valueExtractor;
+
+    public function __construct(Parser $parser, ?AstNodeValueExtractor $valueExtractor = null)
     {
         $this->parser = $parser;
+        $this->valueExtractor = $valueExtractor ?? new AstNodeValueExtractor;
     }
 
     /**
@@ -110,7 +108,7 @@ class QueryParameterDetector
             return;
         }
 
-        $paramName = $this->extractStringValue($args[0]->value);
+        $paramName = $this->valueExtractor->extractStringValue($args[0]->value);
         if (! $paramName) {
             return;
         }
@@ -118,7 +116,7 @@ class QueryParameterDetector
         $param = [
             'name' => $paramName,
             'method' => $methodName,
-            'default' => isset($args[1]) ? $this->extractValue($args[1]->value) : null,
+            'default' => isset($args[1]) ? $this->valueExtractor->extractValue($args[1]->value) : null,
             'context' => [],
         ];
 
@@ -146,7 +144,7 @@ class QueryParameterDetector
             return;
         }
 
-        $paramName = $this->extractStringValue($args[0]->value);
+        $paramName = $this->valueExtractor->extractStringValue($args[0]->value);
         if (! $paramName) {
             return;
         }
@@ -154,7 +152,7 @@ class QueryParameterDetector
         $this->detectedParams[] = [
             'name' => $paramName,
             'method' => $methodName,
-            'default' => isset($args[1]) ? $this->extractValue($args[1]->value) : null,
+            'default' => isset($args[1]) ? $this->valueExtractor->extractValue($args[1]->value) : null,
             'context' => [],
         ];
     }
@@ -187,7 +185,7 @@ class QueryParameterDetector
             $node->left->name instanceof Node\Identifier) {
 
             $propName = $node->left->name->toString();
-            $default = $this->extractValue($node->right);
+            $default = $this->valueExtractor->extractValue($node->right);
 
             // Check if we already have this parameter
             $found = false;
@@ -227,7 +225,7 @@ class QueryParameterDetector
         if ($needle instanceof MethodCall &&
             $needle->var instanceof Variable &&
             $needle->var->name === 'request') {
-            $paramName = $this->extractStringValue($needle->args[0]->value ?? null);
+            $paramName = $this->valueExtractor->extractStringValue($needle->args[0]->value ?? null);
         } elseif ($needle instanceof Variable) {
             // Try to trace back the variable to a request call
             $paramName = $this->traceVariableToRequest($needle->name);
@@ -238,7 +236,7 @@ class QueryParameterDetector
         }
 
         // Extract enum values from array
-        $enumValues = $this->extractArrayValues($node->args[1]->value);
+        $enumValues = $this->valueExtractor->extractArrayValues($node->args[1]->value);
 
         if ($enumValues) {
             $this->updateParameterContext($paramName, ['enum_values' => $enumValues]);
@@ -257,7 +255,7 @@ class QueryParameterDetector
                 $node->cond->var->name === 'request') {
                 $method = $node->cond->name instanceof Node\Identifier ? $node->cond->name->toString() : null;
                 if (in_array($method, ['has', 'filled']) && ! empty($node->cond->args)) {
-                    $paramName = $this->extractStringValue($node->cond->args[0]->value);
+                    $paramName = $this->valueExtractor->extractStringValue($node->cond->args[0]->value);
                     if ($paramName) {
                         $this->updateParameterContext($paramName, [$method.'_check' => true]);
                     }
@@ -281,7 +279,7 @@ class QueryParameterDetector
                 $enumValues = $existingEnumValues;
                 foreach ($node->cases as $case) {
                     if ($case->cond) {
-                        $value = $this->extractValue($case->cond);
+                        $value = $this->valueExtractor->extractValue($case->cond);
                         if ($value !== null && ! in_array($value, $enumValues)) {
                             $enumValues[] = $value;
                         }
@@ -310,7 +308,7 @@ class QueryParameterDetector
                 foreach ($node->arms as $arm) {
                     if ($arm->conds !== null) {
                         foreach ($arm->conds as $cond) {
-                            $value = $this->extractValue($cond);
+                            $value = $this->valueExtractor->extractValue($cond);
                             if ($value !== null && ! in_array($value, $enumValues)) {
                                 $enumValues[] = $value;
                             }
@@ -341,88 +339,6 @@ class QueryParameterDetector
     }
 
     /**
-     * Extract string value from node
-     */
-    private function extractStringValue(?Node $node): ?string
-    {
-        if (! $node) {
-            return null;
-        }
-
-        if ($node instanceof String_) {
-            return $node->value;
-        }
-
-        return null;
-    }
-
-    /**
-     * Extract value from node (string, number, bool, array)
-     */
-    private function extractValue(?Node $node)
-    {
-        if (! $node) {
-            return null;
-        }
-
-        if ($node instanceof String_) {
-            return $node->value;
-        }
-
-        if ($node instanceof LNumber) {
-            return $node->value;
-        }
-
-        if ($node instanceof DNumber) {
-            return $node->value;
-        }
-
-        if ($node instanceof ConstFetch) {
-            $name = $node->name->toString();
-            if ($name === 'true') {
-                return true;
-            }
-            if ($name === 'false') {
-                return false;
-            }
-            if ($name === 'null') {
-                return null;
-            }
-        }
-
-        if ($node instanceof Array_) {
-            return $this->extractArrayValues($node);
-        }
-
-        return null;
-    }
-
-    /**
-     * Extract array values
-     */
-    private function extractArrayValues(Node $node): ?array
-    {
-        if (! $node instanceof Array_) {
-            return null;
-        }
-
-        $values = [];
-        /** @var (?ArrayItem)[] $items */
-        $items = $node->items;
-        foreach ($items as $item) {
-            if ($item === null) {
-                continue;
-            }
-            $value = $this->extractValue($item->value);
-            if ($value !== null) {
-                $values[] = $value;
-            }
-        }
-
-        return $values;
-    }
-
-    /**
      * Track variable assignments
      */
     public function trackVariableAssignment(Node\Expr\Assign $node): void
@@ -440,7 +356,7 @@ class QueryParameterDetector
 
             $methodName = $node->expr->name instanceof Node\Identifier ? $node->expr->name->toString() : null;
             if ($methodName && $this->isRequestMethod($methodName) && ! empty($node->expr->args)) {
-                $paramName = $this->extractStringValue($node->expr->args[0]->value);
+                $paramName = $this->valueExtractor->extractStringValue($node->expr->args[0]->value);
                 if ($paramName) {
                     $this->variableAssignments[$varName] = $paramName;
                 }
