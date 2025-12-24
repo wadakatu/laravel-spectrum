@@ -51,6 +51,8 @@ use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use LaravelSpectrum\Support\TypeInference;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
 
 class SpectrumServiceProvider extends ServiceProvider
 {
@@ -60,6 +62,11 @@ class SpectrumServiceProvider extends ServiceProvider
             __DIR__.'/../config/spectrum.php',
             'spectrum'
         );
+
+        // PHP-Parser のシングルトン登録（AST解析で共有）
+        $this->app->singleton(Parser::class, function () {
+            return (new ParserFactory)->createForNewestSupportedVersion();
+        });
 
         // シングルトンとして登録
         $this->app->singleton(DocumentationCache::class);

@@ -6,6 +6,7 @@ use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use LaravelSpectrum\Tests\Fixtures\Controllers\FilteredController;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
 
 class QueryParameterAnalyzerTest extends TestCase
@@ -15,8 +16,9 @@ class QueryParameterAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->analyzer = new QueryParameterAnalyzer(
-            new QueryParameterDetector,
+            new QueryParameterDetector($parser),
             new QueryParameterTypeInference
         );
     }

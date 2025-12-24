@@ -20,7 +20,6 @@ use PhpParser\Node\Stmt\Switch_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\Parser;
-use PhpParser\ParserFactory;
 
 class QueryParameterDetector
 {
@@ -30,9 +29,9 @@ class QueryParameterDetector
 
     private Parser $parser;
 
-    public function __construct()
+    public function __construct(Parser $parser)
     {
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->parser = $parser;
     }
 
     /**

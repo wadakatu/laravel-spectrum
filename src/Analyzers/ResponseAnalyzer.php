@@ -7,21 +7,22 @@ use LaravelSpectrum\Support\CollectionAnalyzer;
 use LaravelSpectrum\Support\ModelSchemaExtractor;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
-use PhpParser\ParserFactory;
+use PhpParser\Parser;
 
 class ResponseAnalyzer
 {
-    private $parser;
+    private Parser $parser;
 
     private ModelSchemaExtractor $modelExtractor;
 
     private CollectionAnalyzer $collectionAnalyzer;
 
     public function __construct(
+        Parser $parser,
         ModelSchemaExtractor $modelExtractor,
         CollectionAnalyzer $collectionAnalyzer
     ) {
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->parser = $parser;
         $this->modelExtractor = $modelExtractor;
         $this->collectionAnalyzer = $collectionAnalyzer;
     }

@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Tests\Unit\Analyzers;
 use LaravelSpectrum\Analyzers\PaginationAnalyzer;
 use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Tests\Fixtures\Controllers\PaginatedController;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -15,7 +16,8 @@ class PaginationAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new PaginationAnalyzer(new PaginationDetector);
+        $parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->analyzer = new PaginationAnalyzer($parser, new PaginationDetector);
     }
 
     public function test_detects_basic_paginate_method(): void
