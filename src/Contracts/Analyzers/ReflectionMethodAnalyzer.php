@@ -18,7 +18,7 @@ interface ReflectionMethodAnalyzer extends Analyzer
      * Analyze a method using reflection and return the analysis results.
      *
      * @param  ReflectionMethod  $method  The reflection method to analyze
-     * @return array<string, mixed> The analysis results
+     * @return array<string, mixed> The analysis results (empty array if analysis yields no results)
      */
     public function analyze(ReflectionMethod $method): array;
 }

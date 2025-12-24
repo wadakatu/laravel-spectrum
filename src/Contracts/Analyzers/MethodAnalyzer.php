@@ -15,9 +15,9 @@ interface MethodAnalyzer extends Analyzer
     /**
      * Analyze a method within a class and return the analysis results.
      *
-     * @param  class-string  $controller  The fully qualified class name
+     * @param  class-string  $class  The fully qualified class name
      * @param  string  $method  The method name to analyze
-     * @return array<string, mixed> The analysis results
+     * @return array<string, mixed> The analysis results (empty array if class/method not found)
      */
-    public function analyze(string $controller, string $method): array;
+    public function analyze(string $class, string $method): array;
 }

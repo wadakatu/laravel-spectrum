@@ -16,7 +16,7 @@ interface ClassAnalyzer extends Analyzer
      * Analyze a class and return the analysis results.
      *
      * @param  class-string  $class  The fully qualified class name to analyze
-     * @return array<string, mixed> The analysis results
+     * @return array<string, mixed> The analysis results (empty array if class not found or not supported)
      */
     public function analyze(string $class): array;
 }

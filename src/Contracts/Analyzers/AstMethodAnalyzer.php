@@ -18,7 +18,7 @@ interface AstMethodAnalyzer extends Analyzer
      * Analyze a method AST node and return the analysis results.
      *
      * @param  ClassMethod  $method  The AST node representing a class method
-     * @return array<string, mixed> The analysis results
+     * @return array<string, mixed> The analysis results (empty array if no patterns detected)
      */
     public function analyze(ClassMethod $method): array;
 }
