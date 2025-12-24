@@ -6,7 +6,6 @@ namespace LaravelSpectrum\Support;
 
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitorAbstract;
 
 class CollectionAnalyzer
 {
@@ -133,27 +132,15 @@ class CollectionAnalyzer
             $closure = $args[0]['node'];
 
             // クロージャのreturn文を解析
-            $visitor = new class extends NodeVisitorAbstract
-            {
-                public $returnStructure = null;
-
-                public function enterNode(Node $node)
-                {
-                    if ($node instanceof Node\Stmt\Return_ && $node->expr) {
-                        $this->returnStructure = $node->expr;
-                    }
-
-                    return null;
-                }
-            };
+            $visitor = new \LaravelSpectrum\Analyzers\AST\Visitors\CollectionMapVisitor;
 
             $traverser = new NodeTraverser;
             $traverser->addVisitor($visitor);
             $traverser->traverse([$closure]);
 
-            if ($visitor->returnStructure) {
+            if ($visitor->getReturnStructure()) {
                 // return文の構造から新しいスキーマを生成
-                $itemSchema = $this->extractStructureFromNode($visitor->returnStructure);
+                $itemSchema = $this->extractStructureFromNode($visitor->getReturnStructure());
 
                 return [
                     'type' => 'array',
