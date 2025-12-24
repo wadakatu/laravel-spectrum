@@ -226,9 +226,12 @@ class SchemaGenerator
      */
     public function generateFromResource(array $resourceStructure): array
     {
+        // Extract properties from the structured format
+        $resourceProperties = $resourceStructure['properties'] ?? [];
+
         $properties = [];
 
-        foreach ($resourceStructure as $field => $info) {
+        foreach ($resourceProperties as $field => $info) {
             $schema = [
                 'type' => $info['type'],
             ];

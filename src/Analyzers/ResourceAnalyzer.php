@@ -40,13 +40,14 @@ class ResourceAnalyzer implements HasErrors
     /**
      * Resourceクラスを解析してレスポンス構造を抽出
      *
-     * @param  bool  $useNewFormat  新しいフォーマット（properties/conditionalFields等）を使用するか
+     * Returns a structured format with 'properties' key containing field definitions,
+     * along with metadata like 'conditionalFields', 'nestedResources', etc.
      */
-    public function analyze(string $resourceClass, bool $useNewFormat = false): array
+    public function analyze(string $resourceClass): array
     {
         try {
-            return $this->cache->rememberResource($resourceClass, function () use ($resourceClass, $useNewFormat) {
-                return $this->performAnalysis($resourceClass, $useNewFormat);
+            return $this->cache->rememberResource($resourceClass, function () use ($resourceClass) {
+                return $this->performAnalysis($resourceClass);
             });
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::AnalysisError, [
@@ -60,7 +61,7 @@ class ResourceAnalyzer implements HasErrors
     /**
      * 実際の解析処理
      */
-    protected function performAnalysis(string $resourceClass, bool $useNewFormat = false): array
+    protected function performAnalysis(string $resourceClass): array
     {
         if (! class_exists($resourceClass)) {
             return [];
@@ -114,27 +115,6 @@ class ResourceAnalyzer implements HasErrors
                         ['class' => $resourceClass]
                     );
                 }
-            }
-
-            // 新しいフォーマットを使用する場合はそのまま返す
-            if ($useNewFormat) {
-                return $structure;
-            }
-
-            // 旧API互換性のため、既存のテストでフラット構造を期待する場合
-            if (! empty($structure['properties'])) {
-                // propertiesをルートレベルにマージ
-                $flatStructure = $structure['properties'];
-
-                // その他のメタデータも保持（プレフィックスなし）
-                if (! empty($structure['isCollection'])) {
-                    $flatStructure['isCollection'] = $structure['isCollection'];
-                }
-                if (! empty($structure['with'])) {
-                    $flatStructure['with'] = $structure['with'];
-                }
-
-                return $flatStructure;
             }
 
             return $structure;

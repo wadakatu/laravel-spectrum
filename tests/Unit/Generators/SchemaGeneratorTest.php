@@ -166,10 +166,12 @@ class SchemaGeneratorTest extends TestCase
     public function it_generates_schema_from_resource_without_example_keys()
     {
         $resourceStructure = [
-            'id' => ['type' => 'integer'],
-            'name' => ['type' => 'string'],
-            'email' => ['type' => 'string', 'example' => 'user@example.com'],
-            'created_at' => ['type' => 'string'],
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+                'email' => ['type' => 'string', 'example' => 'user@example.com'],
+                'created_at' => ['type' => 'string'],
+            ],
         ];
 
         $schema = $this->generator->generateFromResource($resourceStructure);
