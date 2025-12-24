@@ -6,6 +6,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Str;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
@@ -21,7 +22,7 @@ use PhpParser\NodeVisitorAbstract;
  * to extract transform method properties, available/default includes, and metadata
  * for OpenAPI documentation generation.
  */
-class FractalTransformerAnalyzer implements HasErrors
+class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 {
     use HasErrorCollection;
 

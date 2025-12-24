@@ -6,6 +6,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Contracts\Analyzers\MethodAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -16,7 +17,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
 
-class ControllerAnalyzer implements HasErrors
+class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 {
     use HasErrorCollection;
 
