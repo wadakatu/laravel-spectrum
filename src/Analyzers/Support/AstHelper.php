@@ -106,19 +106,18 @@ class AstHelper
     /**
      * Traverse AST nodes with a visitor.
      *
-     * This helper reduces the common 3-line traversal pattern to a single method call.
+     * This helper encapsulates the NodeTraverser creation/configuration pattern,
+     * reducing boilerplate and ensuring consistent traversal setup across analyzers.
      * The visitor is responsible for collecting results during traversal.
      *
      * @param  array<Node>  $nodes  The AST nodes to traverse
      * @param  NodeVisitor  $visitor  The visitor to use for traversal
-     * @return array<Node> The modified AST nodes after traversal
      */
-    public function traverse(array $nodes, NodeVisitor $visitor): array
+    public function traverse(array $nodes, NodeVisitor $visitor): void
     {
         $traverser = new NodeTraverser;
         $traverser->addVisitor($visitor);
-
-        return $traverser->traverse($nodes);
+        $traverser->traverse($nodes);
     }
 
     /**

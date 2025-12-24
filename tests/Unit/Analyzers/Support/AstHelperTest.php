@@ -439,6 +439,57 @@ PHP;
         $this->assertEmpty($useStatements);
     }
 
+    // ========== traverse tests ==========
+
+    #[Test]
+    public function it_traverses_ast_with_visitor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    public function testMethod(): void {}
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+
+        $visitor = new \LaravelSpectrum\Analyzers\AST\Visitors\ClassFindingVisitor('TestClass');
+        $this->helper->traverse($ast, $visitor);
+
+        $this->assertNotNull($visitor->getClassNode());
+        $this->assertEquals('TestClass', $visitor->getClassNode()->name->toString());
+    }
+
+    #[Test]
+    public function it_traverses_method_nodes_with_visitor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    public function rules(): array
+    {
+        return ['name' => 'required'];
+    }
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+        $rulesMethod = $this->helper->findMethodNode($classNode, 'rules');
+
+        $printer = new \PhpParser\PrettyPrinter\Standard;
+        $visitor = new \LaravelSpectrum\Analyzers\AST\Visitors\RulesExtractorVisitor($printer);
+        $this->helper->traverse([$rulesMethod], $visitor);
+
+        $rules = $visitor->getRules();
+        $this->assertArrayHasKey('name', $rules);
+        $this->assertEquals('required', $rules['name']);
+    }
+
     // ========== Constructor tests ==========
 
     #[Test]
