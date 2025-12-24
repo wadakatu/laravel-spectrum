@@ -23,12 +23,17 @@ Fix in this order:
 
 ### 3. Commit and Push Fixes
 
-After fixing each category:
+After fixing each category, commit with a descriptive message that reflects the actual changes:
 
 ```bash
-git add -A && git commit -m "fix: address PR review findings"
+git add -A && git commit -m "fix: <describe what was fixed>"
 git push
 ```
+
+Use appropriate commit message based on fix type:
+- `fix: resolve null safety issue in XxxAnalyzer`
+- `fix: add missing error handling for API calls`
+- `refactor: simplify validation logic per review feedback`
 
 ### 4. Re-run Review (Optional)
 
