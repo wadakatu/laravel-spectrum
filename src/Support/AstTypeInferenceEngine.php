@@ -24,8 +24,13 @@ final class AstTypeInferenceEngine
     /**
      * Infer type information from an AST node.
      *
+     * Returns an array with OpenAPI-compatible type information:
+     * - 'type': The OpenAPI type (string, integer, number, boolean, array, object, null)
+     * - 'properties': For objects, a map of property names to their type arrays (recursive structure)
+     * - 'format': Optional format hint (date-time, email, uri, uuid, etc.)
+     *
      * @param  Node  $node  The AST node to analyze
-     * @return array{type: string, properties?: array<string, array>, format?: string}
+     * @return array{type: string, properties?: array<string, array<string, mixed>>, format?: string}
      */
     public function inferFromNode(Node $node): array
     {
@@ -296,13 +301,17 @@ final class AstTypeInferenceEngine
 
     /**
      * Convert field name inference result to standard type array.
+     *
+     * Maps semantic types from FieldNameInference to OpenAPI-compatible types.
      */
     private function convertFieldInferenceToType(array $inference): array
     {
         $type = $inference['type'] ?? 'string';
         $format = $inference['format'] ?? null;
 
-        // Map semantic types to OpenAPI types
+        // Map semantic types to OpenAPI types.
+        // NOTE: Keep in sync with FieldNameInference::getFieldPatterns().
+        // Any new semantic types added there need corresponding mappings here.
         $typeMapping = [
             'id' => 'integer',
             'uuid' => 'string',

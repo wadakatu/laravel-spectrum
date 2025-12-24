@@ -7,19 +7,15 @@ namespace LaravelSpectrum\Tests\Unit\Support;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Tests\TestCase;
 use PhpParser\Node;
-use PhpParser\ParserFactory;
 
 class AstTypeInferenceEngineTest extends TestCase
 {
     private AstTypeInferenceEngine $engine;
 
-    private \PhpParser\Parser $parser;
-
     protected function setUp(): void
     {
         parent::setUp();
         $this->engine = new AstTypeInferenceEngine;
-        $this->parser = (new ParserFactory)->createForHostVersion();
     }
 
     public function test_infer_string_scalar(): void
@@ -387,6 +383,70 @@ class AstTypeInferenceEngineTest extends TestCase
     {
         // Use a node that's not explicitly handled
         $node = new Node\Expr\Variable('unknown');
+
+        $result = $this->engine->inferFromNode($node);
+
+        $this->assertSame(['type' => 'string'], $result);
+    }
+
+    public function test_infer_method_call_can_prefix(): void
+    {
+        $node = new Node\Expr\MethodCall(
+            new Node\Expr\Variable('user'),
+            new Node\Identifier('canEdit')
+        );
+
+        $result = $this->engine->inferFromNode($node);
+
+        $this->assertSame(['type' => 'boolean'], $result);
+    }
+
+    public function test_infer_dynamic_property_fetch_defaults_to_string(): void
+    {
+        // Dynamic property access like $obj->$propertyName
+        $node = new Node\Expr\PropertyFetch(
+            new Node\Expr\Variable('obj'),
+            new Node\Expr\Variable('propertyName')
+        );
+
+        $result = $this->engine->inferFromNode($node);
+
+        $this->assertSame(['type' => 'string'], $result);
+    }
+
+    public function test_infer_dynamic_method_call_defaults_to_string(): void
+    {
+        // Dynamic method call like $obj->$methodName()
+        $node = new Node\Expr\MethodCall(
+            new Node\Expr\Variable('obj'),
+            new Node\Expr\Variable('methodName')
+        );
+
+        $result = $this->engine->inferFromNode($node);
+
+        $this->assertSame(['type' => 'string'], $result);
+    }
+
+    public function test_infer_only_method_with_non_array_argument(): void
+    {
+        // only() called with a variable instead of array literal
+        $node = new Node\Expr\MethodCall(
+            new Node\Expr\Variable('model'),
+            new Node\Identifier('only'),
+            [new Node\Arg(new Node\Expr\Variable('fields'))]
+        );
+
+        $result = $this->engine->inferFromNode($node);
+
+        $this->assertSame(['type' => 'object', 'properties' => []], $result);
+    }
+
+    public function test_infer_func_call_json_encode(): void
+    {
+        $node = new Node\Expr\FuncCall(
+            new Node\Name('json_encode'),
+            [new Node\Arg(new Node\Expr\Variable('data'))]
+        );
 
         $result = $this->engine->inferFromNode($node);
 
