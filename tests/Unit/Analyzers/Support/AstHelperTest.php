@@ -285,6 +285,62 @@ PHP;
         $this->assertNull($property);
     }
 
+    #[Test]
+    public function it_finds_property_in_multi_declaration_statement(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    protected $firstProp, $secondProp, $thirdProp;
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+
+        $secondProp = $this->helper->findPropertyNode($classNode, 'secondProp');
+        $this->assertNotNull($secondProp);
+        $this->assertInstanceOf(Node\Stmt\Property::class, $secondProp);
+    }
+
+    #[Test]
+    public function it_finds_property_without_default_value(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    protected string $uninitializedProp;
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+
+        $prop = $this->helper->findPropertyNode($classNode, 'uninitializedProp');
+        $this->assertNotNull($prop);
+        $this->assertInstanceOf(Node\Stmt\Property::class, $prop);
+    }
+
+    #[Test]
+    public function it_returns_null_for_empty_class(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class EmptyClass {}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'EmptyClass');
+
+        $prop = $this->helper->findPropertyNode($classNode, 'anyProp');
+        $this->assertNull($prop);
+    }
+
     // ========== findAnonymousClassNode tests ==========
 
     #[Test]
