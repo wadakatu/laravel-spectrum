@@ -14,9 +14,9 @@ use PhpParser\ParserFactory;
  * Provides common AST parsing and traversal utilities.
  *
  * This helper class centralizes AST operations used across multiple analyzers,
- * including file parsing, class/method node finding, and statement extraction.
+ * including file parsing, class/method/property node finding, and statement extraction.
  *
- * Used by FormRequestAstExtractor, ResourceAnalyzer, and ControllerAnalyzer.
+ * Used by FormRequestAstExtractor, ResourceAnalyzer, ControllerAnalyzer, and FractalTransformerAnalyzer.
  */
 class AstHelper
 {
@@ -133,6 +133,28 @@ class AstHelper
             if ($stmt instanceof Node\Stmt\ClassMethod &&
                 $stmt->name->toString() === $methodName) {
                 return $stmt;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find a property node by name in a class.
+     *
+     * @param  Node\Stmt\Class_  $class  The class node to search within
+     * @param  string  $propertyName  The name of the property to find
+     * @return Node\Stmt\Property|null The found property node or null if not found
+     */
+    public function findPropertyNode(Node\Stmt\Class_ $class, string $propertyName): ?Node\Stmt\Property
+    {
+        foreach ($class->stmts as $stmt) {
+            if ($stmt instanceof Node\Stmt\Property) {
+                foreach ($stmt->props as $prop) {
+                    if ($prop->name->toString() === $propertyName) {
+                        return $stmt;
+                    }
+                }
             }
         }
 
