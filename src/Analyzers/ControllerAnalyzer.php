@@ -10,6 +10,7 @@ use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
+use LaravelSpectrum\Support\MethodSourceExtractor;
 use PhpParser\Node;
 use ReflectionClass;
 use ReflectionMethod;
@@ -33,6 +34,8 @@ class ControllerAnalyzer implements HasErrors
 
     protected AstHelper $astHelper;
 
+    protected MethodSourceExtractor $methodSourceExtractor;
+
     public function __construct(
         FormRequestAnalyzer $formRequestAnalyzer,
         InlineValidationAnalyzer $inlineValidationAnalyzer,
@@ -41,6 +44,7 @@ class ControllerAnalyzer implements HasErrors
         EnumAnalyzer $enumAnalyzer,
         ResponseAnalyzer $responseAnalyzer,
         AstHelper $astHelper,
+        ?MethodSourceExtractor $methodSourceExtractor = null,
         ?ErrorCollector $errorCollector = null
     ) {
         $this->initializeErrorCollector($errorCollector);
@@ -51,6 +55,7 @@ class ControllerAnalyzer implements HasErrors
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
         $this->astHelper = $astHelper;
+        $this->methodSourceExtractor = $methodSourceExtractor ?? new MethodSourceExtractor;
     }
 
     /**
@@ -106,7 +111,7 @@ class ControllerAnalyzer implements HasErrors
         }
 
         // メソッドのソースコードからResourceを検出（簡易版）
-        $source = $this->getMethodSource($methodReflection);
+        $source = $this->methodSourceExtractor->extractSource($methodReflection);
 
         // Resourceクラスの使用を検出
         if (preg_match('/(\w+Resource)::collection/', $source, $matches)) {
@@ -145,7 +150,15 @@ class ControllerAnalyzer implements HasErrors
                         $validationRules = $formRequestAnalysis['rules'];
                     }
                 } catch (\Exception $e) {
-                    // Ignore errors
+                    $this->logWarning(
+                        "Failed to analyze FormRequest {$result['formRequest']}: {$e->getMessage()}",
+                        AnalyzerErrorType::AnalysisError,
+                        [
+                            'formRequest' => $result['formRequest'],
+                            'controller' => $controller,
+                            'method' => $method,
+                        ]
+                    );
                 }
             }
 
@@ -169,21 +182,6 @@ class ControllerAnalyzer implements HasErrors
         }
 
         return $result;
-    }
-
-    /**
-     * メソッドのソースコードを取得
-     */
-    protected function getMethodSource(ReflectionMethod $method): string
-    {
-        $filename = $method->getFileName();
-        $startLine = $method->getStartLine() - 1;
-        $endLine = $method->getEndLine();
-        $length = $endLine - $startLine;
-
-        $source = file($filename);
-
-        return implode('', array_slice($source, $startLine, $length));
     }
 
     /**
