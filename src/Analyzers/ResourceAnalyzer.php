@@ -14,7 +14,6 @@ use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
 use PhpParser\Error;
 use PhpParser\Node;
-use PhpParser\NodeTraverser;
 use PhpParser\PrettyPrinter;
 
 class ResourceAnalyzer implements HasErrors
@@ -22,8 +21,6 @@ class ResourceAnalyzer implements HasErrors
     use HasErrorCollection;
 
     protected AstHelper $astHelper;
-
-    protected NodeTraverser $traverser;
 
     protected PrettyPrinter\Standard $printer;
 
@@ -37,7 +34,6 @@ class ResourceAnalyzer implements HasErrors
         $this->initializeErrorCollector($errorCollector);
         $this->astHelper = $astHelper;
         $this->cache = $cache;
-        $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
     }
 
@@ -169,9 +165,7 @@ class ResourceAnalyzer implements HasErrors
         }
 
         $visitor = new AST\Visitors\ResourceStructureVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$toArrayMethod]);
+        $this->astHelper->traverse([$toArrayMethod], $visitor);
 
         $result = $visitor->getStructure();
 
@@ -195,9 +189,7 @@ class ResourceAnalyzer implements HasErrors
         }
 
         $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$withMethod]);
+        $this->astHelper->traverse([$withMethod], $visitor);
 
         return $visitor->getArray();
     }

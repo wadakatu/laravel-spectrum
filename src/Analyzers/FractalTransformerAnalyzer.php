@@ -12,7 +12,6 @@ use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
 use PhpParser\Node;
-use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
 /**
@@ -157,9 +156,7 @@ class FractalTransformerAnalyzer implements HasErrors
             }
         };
 
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$transformMethod]);
+        $this->astHelper->traverse([$transformMethod], $visitor);
 
         if ($visitor->returnArray) {
             $properties = $this->parseArrayNode($visitor->returnArray);
@@ -435,9 +432,7 @@ class FractalTransformerAnalyzer implements HasErrors
             }
         };
 
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$method]);
+        $this->astHelper->traverse([$method], $visitor);
 
         return $visitor->returnInfo;
     }
