@@ -7,7 +7,7 @@ namespace LaravelSpectrum\Support;
 /**
  * Utility class for formatting file sizes to human-readable format.
  */
-class FileSizeFormatter
+final class FileSizeFormatter
 {
     private const BYTES_PER_GB = 1073741824;
 
@@ -17,9 +17,15 @@ class FileSizeFormatter
 
     /**
      * Format file size to human readable format.
+     *
+     * @throws \InvalidArgumentException if bytes is negative
      */
     public static function format(int $bytes): string
     {
+        if ($bytes < 0) {
+            throw new \InvalidArgumentException('Byte value cannot be negative');
+        }
+
         if ($bytes >= self::BYTES_PER_GB) {
             $size = $bytes / self::BYTES_PER_GB;
 
