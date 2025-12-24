@@ -56,11 +56,12 @@ class FormRequestAstExtractor
      * Parse PHP code string and return its AST.
      *
      * @param  string  $code  The PHP code to parse
+     * @param  string|null  $sourceContext  Optional context for error messages (e.g., file path)
      * @return array<Node\Stmt>|null The parsed AST nodes or null if parse error occurs
      */
-    public function parseCode(string $code): ?array
+    public function parseCode(string $code, ?string $sourceContext = null): ?array
     {
-        return $this->astHelper->parseCode($code);
+        return $this->astHelper->parseCode($code, $sourceContext);
     }
 
     /**

@@ -3,7 +3,9 @@
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Node;
 use ReflectionClass;
 use ReflectionMethod;
@@ -25,6 +27,8 @@ class ControllerAnalyzer
 
     protected AstHelper $astHelper;
 
+    protected ?ErrorCollector $errorCollector = null;
+
     public function __construct(
         FormRequestAnalyzer $formRequestAnalyzer,
         InlineValidationAnalyzer $inlineValidationAnalyzer,
@@ -32,7 +36,8 @@ class ControllerAnalyzer
         QueryParameterAnalyzer $queryParameterAnalyzer,
         EnumAnalyzer $enumAnalyzer,
         ResponseAnalyzer $responseAnalyzer,
-        ?AstHelper $astHelper = null
+        ?AstHelper $astHelper = null,
+        ?ErrorCollector $errorCollector = null
     ) {
         $this->formRequestAnalyzer = $formRequestAnalyzer;
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
@@ -40,7 +45,8 @@ class ControllerAnalyzer
         $this->queryParameterAnalyzer = $queryParameterAnalyzer;
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
-        $this->astHelper = $astHelper ?? new AstHelper;
+        $this->errorCollector = $errorCollector;
+        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
     }
 
     /**
@@ -236,7 +242,19 @@ class ControllerAnalyzer
             // メソッドノードを探す
             return $this->astHelper->findMethodNode($classNode, $methodName);
         } catch (\Exception $e) {
-            // パースエラーの場合はnullを返す
+            $this->errorCollector?->addWarning(
+                'ControllerAnalyzer',
+                "Failed to get method node for {$reflection->getName()}::{$methodName}: {$e->getMessage()}",
+                [
+                    'class' => $reflection->getName(),
+                    'method' => $methodName,
+                    'error_type' => 'method_node_error',
+                ]
+            );
+
+            Log::debug("Failed to get method node: {$reflection->getName()}::{$methodName}", [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return null;

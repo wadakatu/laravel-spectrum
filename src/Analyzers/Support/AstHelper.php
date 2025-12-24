@@ -16,13 +16,13 @@ use PhpParser\ParserFactory;
  * This helper class centralizes AST operations used across multiple analyzers,
  * including file parsing, class/method node finding, and statement extraction.
  *
- * Extracted from FormRequestAstExtractor and ResourceAnalyzer to reduce duplication.
+ * Used by FormRequestAstExtractor, ResourceAnalyzer, and ControllerAnalyzer.
  */
 class AstHelper
 {
-    protected Parser $parser;
+    protected readonly Parser $parser;
 
-    protected ErrorCollector $errorCollector;
+    protected readonly ErrorCollector $errorCollector;
 
     /**
      * Create a new AstHelper instance.
@@ -48,7 +48,7 @@ class AstHelper
     {
         if (! file_exists($filePath)) {
             $this->errorCollector->addWarning(
-                'AstHelper',
+                self::class,
                 "File does not exist: {$filePath}",
                 ['file_path' => $filePath, 'error_type' => 'file_not_found']
             );
@@ -59,7 +59,7 @@ class AstHelper
         $code = file_get_contents($filePath);
         if ($code === false) {
             $this->errorCollector->addError(
-                'AstHelper',
+                self::class,
                 "Failed to read file: {$filePath}",
                 ['file_path' => $filePath, 'error_type' => 'file_read_error']
             );
@@ -88,13 +88,13 @@ class AstHelper
                 'error_type' => 'parse_error',
             ];
 
-            // Include file_path for file-based parsing to maintain test compatibility
+            // Include file_path when sourceContext is provided for traceability
             if ($sourceContext !== null) {
                 $metadata['file_path'] = $sourceContext;
             }
 
             $this->errorCollector->addError(
-                'AstHelper',
+                self::class,
                 "Failed to parse PHP {$context}",
                 $metadata
             );
