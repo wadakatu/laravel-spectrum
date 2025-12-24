@@ -48,11 +48,13 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze(UserResource::class);
 
         // Assert
-        $this->assertArrayHasKey('id', $structure);
-        $this->assertArrayHasKey('name', $structure);
-        $this->assertArrayHasKey('email', $structure);
-        $this->assertEquals('integer', $structure['id']['type']);
-        $this->assertEquals('string', $structure['name']['type']);
+        $this->assertArrayHasKey('properties', $structure);
+        $properties = $structure['properties'];
+        $this->assertArrayHasKey('id', $properties);
+        $this->assertArrayHasKey('name', $properties);
+        $this->assertArrayHasKey('email', $properties);
+        $this->assertEquals('integer', $properties['id']['type']);
+        $this->assertEquals('string', $properties['name']['type']);
     }
 
     #[Test]
@@ -65,8 +67,9 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $this->assertEquals('string', $structure['created_at']['type']);
-        $this->assertStringContainsString(' ', $structure['created_at']['example']);
+        $properties = $structure['properties'];
+        $this->assertEquals('string', $properties['created_at']['type']);
+        $this->assertStringContainsString(' ', $properties['created_at']['example']);
     }
 
     #[Test]
@@ -90,10 +93,11 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $this->assertArrayHasKey('id', $structure);
-        $this->assertArrayHasKey('posts_count', $structure);
-        $this->assertEquals('integer', $structure['id']['type']);
-        $this->assertEquals('integer', $structure['posts_count']['type']);
+        $properties = $structure['properties'];
+        $this->assertArrayHasKey('id', $properties);
+        $this->assertArrayHasKey('posts_count', $properties);
+        $this->assertEquals('integer', $properties['id']['type']);
+        $this->assertEquals('integer', $properties['posts_count']['type']);
     }
 
     #[Test]
@@ -106,10 +110,11 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $this->assertArrayHasKey('tags', $structure);
-        $this->assertArrayHasKey('categories', $structure);
-        $this->assertEquals('array', $structure['tags']['type']);
-        $this->assertEquals('array', $structure['categories']['type']);
+        $properties = $structure['properties'];
+        $this->assertArrayHasKey('tags', $properties);
+        $this->assertArrayHasKey('categories', $properties);
+        $this->assertEquals('array', $properties['tags']['type']);
+        $this->assertEquals('array', $properties['categories']['type']);
     }
 
     #[Test]
@@ -122,13 +127,14 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $this->assertEquals('boolean', $structure['verified']['type']);
+        $properties = $structure['properties'];
+        $this->assertEquals('boolean', $properties['verified']['type']);
     }
 
     #[Test]
     public function it_can_analyze_simple_resource()
     {
-        $result = $this->analyzer->analyze(SimpleUserResource::class, true);
+        $result = $this->analyzer->analyze(SimpleUserResource::class);
 
         $this->assertArrayHasKey('properties', $result);
         $this->assertArrayHasKey('id', $result['properties']);
@@ -143,7 +149,7 @@ class ResourceAnalyzerTest extends TestCase
     #[Test]
     public function it_can_analyze_conditional_fields()
     {
-        $result = $this->analyzer->analyze(ConditionalFieldsResource::class, true);
+        $result = $this->analyzer->analyze(ConditionalFieldsResource::class);
 
         $this->assertArrayHasKey('conditionalFields', $result);
         $this->assertNotEmpty($result['conditionalFields']);
@@ -155,7 +161,7 @@ class ResourceAnalyzerTest extends TestCase
     #[Test]
     public function it_can_analyze_nested_resources()
     {
-        $result = $this->analyzer->analyze(NestedResourcesResource::class, true);
+        $result = $this->analyzer->analyze(NestedResourcesResource::class);
 
         $this->assertArrayHasKey('nestedResources', $result);
         $this->assertContains('PostResource', $result['nestedResources']);
@@ -168,7 +174,7 @@ class ResourceAnalyzerTest extends TestCase
     #[Test]
     public function it_can_analyze_when_loaded_relationships()
     {
-        $result = $this->analyzer->analyze(RelationshipResource::class, true);
+        $result = $this->analyzer->analyze(RelationshipResource::class);
 
         $this->assertArrayHasKey('posts', $result['properties']);
         $this->assertTrue($result['properties']['posts']['conditional']);
@@ -179,7 +185,7 @@ class ResourceAnalyzerTest extends TestCase
     #[Test]
     public function it_can_analyze_date_formatting()
     {
-        $result = $this->analyzer->analyze(DateFormattingResource::class, true);
+        $result = $this->analyzer->analyze(DateFormattingResource::class);
 
         $this->assertEquals('string', $result['properties']['created_at']['type']);
         $this->assertEquals('date-time', $result['properties']['created_at']['format']);
@@ -188,7 +194,7 @@ class ResourceAnalyzerTest extends TestCase
     #[Test]
     public function it_can_analyze_method_chains()
     {
-        $result = $this->analyzer->analyze(MethodChainResource::class, true);
+        $result = $this->analyzer->analyze(MethodChainResource::class);
 
         // Enumのvalue
         $this->assertEquals('string', $result['properties']['status']['type']);
@@ -201,7 +207,7 @@ class ResourceAnalyzerTest extends TestCase
     #[Test]
     public function it_can_generate_openapi_schema()
     {
-        $result = $this->analyzer->analyze(SimpleUserResource::class, true);
+        $result = $this->analyzer->analyze(SimpleUserResource::class);
         $schema = $this->analyzer->generateSchema($result);
 
         $this->assertEquals('object', $schema['type']);
