@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Tests\Unit\Support;
 
 use LaravelSpectrum\Support\MethodSourceExtractor;
-use PHPUnit\Framework\TestCase;
+use LaravelSpectrum\Tests\TestCase;
 use ReflectionMethod;
 
 class MethodSourceExtractorTest extends TestCase
@@ -25,7 +25,7 @@ class MethodSourceExtractorTest extends TestCase
         $source = $this->extractor->extractSource($method);
 
         $this->assertStringContainsString('public function simpleMethod()', $source);
-        $this->assertStringContainsString('return "hello";', $source);
+        $this->assertStringContainsString("return 'hello';", $source);
     }
 
     public function test_extract_source_includes_method_signature(): void
@@ -55,7 +55,7 @@ class MethodSourceExtractorTest extends TestCase
         $body = $this->extractor->extractBody($method);
 
         $this->assertStringNotContainsString('public function simpleMethod()', $body);
-        $this->assertStringContainsString('return "hello";', $body);
+        $this->assertStringContainsString("return 'hello';", $body);
     }
 
     public function test_extract_body_with_complex_signature(): void
@@ -114,7 +114,96 @@ class MethodSourceExtractorTest extends TestCase
         $body = $this->extractor->extractBody($method);
 
         $this->assertStringNotContainsString('public function methodWithUnionReturnType()', $body);
-        $this->assertStringContainsString('return "string or int";', $body);
+        $this->assertStringContainsString("return 'string or int';", $body);
+    }
+
+    public function test_extract_source_returns_empty_for_internal_method(): void
+    {
+        // Test with a PHP internal method (no source file)
+        $method = new ReflectionMethod(\DateTime::class, 'format');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertSame('', $source);
+    }
+
+    public function test_extract_body_returns_empty_for_internal_method(): void
+    {
+        // Test with a PHP internal method (no source file)
+        $method = new ReflectionMethod(\ArrayObject::class, 'count');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertSame('', $body);
+    }
+
+    public function test_extract_source_handles_static_method(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'staticMethod');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString('public static function staticMethod()', $source);
+        $this->assertStringContainsString("return 'static';", $source);
+    }
+
+    public function test_extract_body_handles_static_method(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'staticMethod');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringNotContainsString('public static function staticMethod()', $body);
+        $this->assertStringContainsString("return 'static';", $body);
+    }
+
+    public function test_extract_source_handles_empty_body_method(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'emptyMethod');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString('public function emptyMethod(): void', $source);
+    }
+
+    public function test_extract_body_handles_empty_body_method(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'emptyMethod');
+
+        $body = $this->extractor->extractBody($method);
+
+        // Empty body should just contain whitespace or be empty
+        $this->assertStringNotContainsString('public function emptyMethod()', $body);
+    }
+
+    public function test_extract_body_handles_method_with_default_parameter_values(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithDefaultParams');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringNotContainsString('public function methodWithDefaultParams', $body);
+        $this->assertStringContainsString('return $name', $body);
+    }
+
+    public function test_extract_source_handles_method_with_default_parameter_values(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithDefaultParams');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString("'default'", $source);
+        $this->assertStringContainsString('= 0', $source);
+    }
+
+    public function test_extract_body_handles_method_with_typed_namespace_parameter(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithTypedParam');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringNotContainsString('public function methodWithTypedParam', $body);
+        $this->assertStringContainsString('return $object', $body);
     }
 }
 
@@ -125,12 +214,12 @@ class SampleClassForExtraction
 {
     public function simpleMethod()
     {
-        return "hello";
+        return 'hello';
     }
 
     public function methodWithParams(string $name, int $age)
     {
-        return $name . ' is ' . $age;
+        return $name.' is '.$age;
     }
 
     public function methodWithReturnType(): array
@@ -163,6 +252,23 @@ class SampleClassForExtraction
 
     public function methodWithUnionReturnType(): string|int
     {
-        return "string or int";
+        return 'string or int';
+    }
+
+    public static function staticMethod(): string
+    {
+        return 'static';
+    }
+
+    public function emptyMethod(): void {}
+
+    public function methodWithDefaultParams(string $name = 'default', int $count = 0): string
+    {
+        return $name.': '.$count;
+    }
+
+    public function methodWithTypedParam(\stdClass $object): mixed
+    {
+        return $object;
     }
 }

@@ -150,7 +150,15 @@ class ControllerAnalyzer implements HasErrors
                         $validationRules = $formRequestAnalysis['rules'];
                     }
                 } catch (\Exception $e) {
-                    // Ignore errors
+                    $this->logWarning(
+                        "Failed to analyze FormRequest {$result['formRequest']}: {$e->getMessage()}",
+                        AnalyzerErrorType::AnalysisError,
+                        [
+                            'formRequest' => $result['formRequest'],
+                            'controller' => $controller,
+                            'method' => $method,
+                        ]
+                    );
                 }
             }
 

@@ -22,11 +22,23 @@ final class MethodSourceExtractor
     {
         $filename = $method->getFileName();
         if ($filename === false || ! file_exists($filename)) {
+            $this->logDebug('Cannot read method source: file not found or internal method', [
+                'class' => $method->getDeclaringClass()->getName(),
+                'method' => $method->getName(),
+                'filename' => $filename,
+            ]);
+
             return '';
         }
 
         $lines = file($filename);
         if ($lines === false) {
+            $this->logDebug('Cannot read method source: file read failed', [
+                'class' => $method->getDeclaringClass()->getName(),
+                'method' => $method->getName(),
+                'filename' => $filename,
+            ]);
+
             return '';
         }
 
@@ -51,12 +63,30 @@ final class MethodSourceExtractor
         }
 
         // Match method body within braces, handling various signature formats
-        $pattern = '/function\s+' . preg_quote($method->getName(), '/') . '\s*\([^)]*\)\s*(?::\s*[?\w\\\\|]+\s*)?{(.*)}/s';
+        $pattern = '/function\s+'.preg_quote($method->getName(), '/').'\s*\([^)]*\)\s*(?::\s*[?\w\\\\|]+\s*)?{(.*)}/s';
 
         if (preg_match($pattern, $source, $matches)) {
             return $matches[1];
         }
 
+        $this->logDebug('Regex body extraction failed, returning full source', [
+            'class' => $method->getDeclaringClass()->getName(),
+            'method' => $method->getName(),
+        ]);
+
         return $source;
+    }
+
+    /**
+     * Log a debug message if the Laravel logger is available.
+     *
+     * @param  string  $message  The message to log
+     * @param  array<string, mixed>  $context  Additional context data
+     */
+    private function logDebug(string $message, array $context = []): void
+    {
+        if (function_exists('logger')) {
+            logger()->debug("[MethodSourceExtractor] {$message}", $context);
+        }
     }
 }
