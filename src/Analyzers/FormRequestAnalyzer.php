@@ -11,6 +11,7 @@ use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -28,7 +29,7 @@ use LaravelSpectrum\Support\TypeInference;
  * - Conditional validation rules
  * - Custom attributes and messages
  */
-class FormRequestAnalyzer
+class FormRequestAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -136,7 +137,7 @@ class FormRequestAnalyzer
         if (! $classNode) {
             $this->logWarning(
                 "Class node not found in AST for {$reflection->getName()}",
-                AnalyzerErrorType::CLASS_NODE_NOT_FOUND,
+                AnalyzerErrorType::ClassNodeNotFound,
                 [
                     'class' => $reflection->getName(),
                     'short_name' => $reflection->getShortName(),
@@ -167,10 +168,8 @@ class FormRequestAnalyzer
                 return $this->performAnalysis($requestClass);
             });
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::ANALYSIS_ERROR, [
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $requestClass,
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
             return [];
@@ -206,7 +205,7 @@ class FormRequestAnalyzer
             );
 
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::ANALYSIS_ERROR, [
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $requestClass,
             ]);
 
@@ -269,7 +268,7 @@ class FormRequestAnalyzer
                 ];
 
             } catch (\Exception $e) {
-                $this->logException($e, AnalyzerErrorType::CONDITIONAL_ANALYSIS_ERROR, [
+                $this->logException($e, AnalyzerErrorType::ConditionalAnalysisError, [
                     'class' => $requestClass,
                 ]);
 
@@ -312,7 +311,7 @@ class FormRequestAnalyzer
             ];
 
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::ANALYSIS_ERROR, [
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $requestClass,
             ]);
 

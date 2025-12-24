@@ -7,6 +7,7 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Contracts\HasExamples;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -16,7 +17,7 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\PrettyPrinter;
 
-class ResourceAnalyzer
+class ResourceAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -52,10 +53,8 @@ class ResourceAnalyzer
                 return $this->performAnalysis($resourceClass, $useNewFormat);
             });
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::ANALYSIS_ERROR, [
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $resourceClass,
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
             return [];
@@ -115,7 +114,7 @@ class ResourceAnalyzer
                 } catch (\Exception $e) {
                     $this->logWarning(
                         "Failed to get custom examples from Resource {$resourceClass}: {$e->getMessage()}",
-                        AnalyzerErrorType::ANALYSIS_ERROR,
+                        AnalyzerErrorType::AnalysisError,
                         ['class' => $resourceClass]
                     );
                 }
@@ -145,13 +144,13 @@ class ResourceAnalyzer
             return $structure;
 
         } catch (Error $parseError) {
-            $this->logException($parseError, AnalyzerErrorType::PARSE_ERROR, [
+            $this->logException($parseError, AnalyzerErrorType::ParseError, [
                 'class' => $resourceClass,
             ]);
 
             return [];
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::ANALYSIS_ERROR, [
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $resourceClass,
             ]);
 

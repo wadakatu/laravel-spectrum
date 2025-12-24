@@ -7,11 +7,12 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
 
-class RouteAnalyzer
+class RouteAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -123,7 +124,7 @@ class RouteAnalyzer
             } catch (\Throwable $e) {
                 $this->logError(
                     "Failed to load route file {$routeFile}: {$e->getMessage()}",
-                    AnalyzerErrorType::ROUTE_LOADING_ERROR,
+                    AnalyzerErrorType::RouteLoadingError,
                     ['file' => $routeFile]
                 );
             }
@@ -187,7 +188,7 @@ class RouteAnalyzer
             } catch (\Exception $e) {
                 $this->logError(
                     "Failed to analyze route {$route->uri()}: {$e->getMessage()}",
-                    AnalyzerErrorType::ANALYSIS_ERROR,
+                    AnalyzerErrorType::AnalysisError,
                     [
                         'uri' => $route->uri(),
                         'methods' => $route->methods(),

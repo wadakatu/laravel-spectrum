@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\FileSizeFormatter;
@@ -13,7 +14,7 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
-class InlineValidationAnalyzer
+class InlineValidationAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -477,7 +478,7 @@ class InlineValidationAnalyzer
             // 複数のバリデーションがある場合はマージ
             return $this->mergeValidations($visitor->validations);
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::INLINE_VALIDATION_ERROR, [
+            $this->logException($e, AnalyzerErrorType::InlineValidationError, [
                 'method' => $method->name->toString(),
             ]);
 

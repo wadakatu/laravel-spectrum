@@ -6,6 +6,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -14,7 +15,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
 
-class ControllerAnalyzer
+class ControllerAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -247,7 +248,7 @@ class ControllerAnalyzer
         } catch (\Exception $e) {
             $this->logWarning(
                 "Failed to get method node for {$reflection->getName()}::{$methodName}: {$e->getMessage()}",
-                AnalyzerErrorType::METHOD_NODE_ERROR,
+                AnalyzerErrorType::MethodNodeError,
                 [
                     'class' => $reflection->getName(),
                     'method' => $methodName,

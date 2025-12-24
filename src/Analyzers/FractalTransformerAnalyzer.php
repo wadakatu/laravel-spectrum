@@ -6,6 +6,7 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Str;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -20,7 +21,7 @@ use PhpParser\NodeVisitorAbstract;
  * to extract transform method properties, available/default includes, and metadata
  * for OpenAPI documentation generation.
  */
-class FractalTransformerAnalyzer
+class FractalTransformerAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -48,7 +49,7 @@ class FractalTransformerAnalyzer
         if (! class_exists($transformerClass)) {
             $this->logWarning(
                 "Class does not exist: {$transformerClass}",
-                AnalyzerErrorType::CLASS_NOT_FOUND,
+                AnalyzerErrorType::ClassNotFound,
                 ['class' => $transformerClass]
             );
 
@@ -62,7 +63,7 @@ class FractalTransformerAnalyzer
             if (! $reflection->isSubclassOf('League\Fractal\TransformerAbstract')) {
                 $this->logWarning(
                     "Class {$transformerClass} does not extend League\\Fractal\\TransformerAbstract",
-                    AnalyzerErrorType::INVALID_PARENT_CLASS,
+                    AnalyzerErrorType::InvalidParentClass,
                     ['class' => $transformerClass]
                 );
 
@@ -73,7 +74,7 @@ class FractalTransformerAnalyzer
             if (! $filePath) {
                 $this->logWarning(
                     "Could not determine file path for class: {$transformerClass}",
-                    AnalyzerErrorType::FILE_NOT_FOUND,
+                    AnalyzerErrorType::FileNotFound,
                     ['class' => $transformerClass]
                 );
 
@@ -90,7 +91,7 @@ class FractalTransformerAnalyzer
             if (! $classNode) {
                 $this->logWarning(
                     "Could not find class node for {$reflection->getShortName()} in {$filePath}",
-                    AnalyzerErrorType::CLASS_NODE_NOT_FOUND,
+                    AnalyzerErrorType::ClassNodeNotFound,
                     [
                         'class' => $transformerClass,
                         'short_name' => $reflection->getShortName(),
@@ -109,13 +110,13 @@ class FractalTransformerAnalyzer
                 'meta' => $this->extractMetaData($classNode),
             ];
         } catch (\ReflectionException $e) {
-            $this->logException($e, AnalyzerErrorType::REFLECTION_ERROR, [
+            $this->logException($e, AnalyzerErrorType::ReflectionError, [
                 'class' => $transformerClass,
             ]);
 
             return [];
         } catch (\Exception $e) {
-            $this->logException($e, AnalyzerErrorType::UNEXPECTED_ERROR, [
+            $this->logException($e, AnalyzerErrorType::UnexpectedError, [
                 'class' => $transformerClass,
             ]);
 
