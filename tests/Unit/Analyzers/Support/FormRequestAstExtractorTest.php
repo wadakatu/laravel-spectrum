@@ -22,6 +22,87 @@ class FormRequestAstExtractorTest extends TestCase
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
+    // ========== parseFile tests ==========
+
+    #[Test]
+    public function it_parses_file_successfully(): void
+    {
+        // Use a known fixture file
+        $filePath = __DIR__.'/../../../Fixtures/FormRequests/EnumTestRequest.php';
+
+        $ast = $this->extractor->parseFile($filePath);
+
+        $this->assertNotNull($ast);
+        $this->assertIsArray($ast);
+        $this->assertNotEmpty($ast);
+    }
+
+    #[Test]
+    public function it_returns_null_when_file_does_not_exist(): void
+    {
+        $ast = $this->extractor->parseFile('/non/existent/path/file.php');
+
+        $this->assertNull($ast);
+    }
+
+    #[Test]
+    public function it_parses_file_with_class_content(): void
+    {
+        $filePath = __DIR__.'/../../../Fixtures/FormRequests/EnumTestRequest.php';
+
+        $ast = $this->extractor->parseFile($filePath);
+        $classNode = $this->extractor->findClassNode($ast, 'EnumTestRequest');
+
+        $this->assertNotNull($classNode);
+        $this->assertEquals('EnumTestRequest', $classNode->name->toString());
+    }
+
+    // ========== parseCode tests ==========
+
+    #[Test]
+    public function it_parses_code_string_successfully(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    public function rules(): array
+    {
+        return ['name' => 'required'];
+    }
+}
+PHP;
+
+        $ast = $this->extractor->parseCode($code);
+
+        $this->assertNotNull($ast);
+        $this->assertIsArray($ast);
+        $this->assertNotEmpty($ast);
+    }
+
+    #[Test]
+    public function it_parses_code_and_finds_class(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class MyFormRequest
+{
+    public function rules(): array
+    {
+        return ['email' => 'required|email'];
+    }
+}
+PHP;
+
+        $ast = $this->extractor->parseCode($code);
+        $classNode = $this->extractor->findClassNode($ast, 'MyFormRequest');
+
+        $this->assertNotNull($classNode);
+        $this->assertEquals('MyFormRequest', $classNode->name->toString());
+    }
+
     // ========== findClassNode tests ==========
 
     #[Test]

@@ -5,18 +5,59 @@ namespace LaravelSpectrum\Analyzers\Support;
 use LaravelSpectrum\Analyzers\AST;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 
 /**
  * Extracts information from FormRequest AST nodes.
  *
+ * Handles both parsing PHP files into AST and extracting specific information
+ * like validation rules, attributes, and messages from FormRequest classes.
+ *
  * Extracted from FormRequestAnalyzer to improve single responsibility.
  */
 class FormRequestAstExtractor
 {
+    protected Parser $parser;
+
     public function __construct(
-        protected PrettyPrinter\Standard $printer
-    ) {}
+        protected PrettyPrinter\Standard $printer,
+        ?Parser $parser = null
+    ) {
+        $this->parser = $parser ?? (new ParserFactory)->createForNewestSupportedVersion();
+    }
+
+    /**
+     * Parse a PHP file and return its AST.
+     *
+     * @param  string  $filePath  The path to the PHP file to parse
+     * @return array<Node\Stmt>|null The parsed AST nodes or null if parsing fails
+     */
+    public function parseFile(string $filePath): ?array
+    {
+        if (! file_exists($filePath)) {
+            return null;
+        }
+
+        $code = file_get_contents($filePath);
+        if ($code === false) {
+            return null;
+        }
+
+        return $this->parser->parse($code);
+    }
+
+    /**
+     * Parse PHP code string and return its AST.
+     *
+     * @param  string  $code  The PHP code to parse
+     * @return array<Node\Stmt>|null The parsed AST nodes or null if parsing fails
+     */
+    public function parseCode(string $code): ?array
+    {
+        return $this->parser->parse($code);
+    }
 
     /**
      * Find a class node by name in the AST.
