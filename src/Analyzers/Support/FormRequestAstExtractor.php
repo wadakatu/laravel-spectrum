@@ -4,11 +4,9 @@ namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\AST;
 use LaravelSpectrum\Support\ErrorCollector;
-use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 
 /**
@@ -17,13 +15,14 @@ use PhpParser\PrettyPrinter;
  * Handles both parsing PHP files into AST and extracting specific information
  * like validation rules, attributes, and messages from FormRequest classes.
  *
+ * Delegates common AST operations to AstHelper while providing FormRequest-specific
+ * extraction methods.
+ *
  * Extracted from FormRequestAnalyzer to improve single responsibility.
  */
 class FormRequestAstExtractor
 {
-    protected Parser $parser;
-
-    protected ErrorCollector $errorCollector;
+    protected AstHelper $astHelper;
 
     /**
      * Create a new FormRequestAstExtractor instance.
@@ -31,14 +30,15 @@ class FormRequestAstExtractor
      * @param  PrettyPrinter\Standard  $printer  The PHP-Parser pretty printer for code output
      * @param  Parser|null  $parser  Optional custom parser instance (defaults to newest supported version)
      * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging parse failures
+     * @param  AstHelper|null  $astHelper  Optional AstHelper instance for common AST operations
      */
     public function __construct(
         protected PrettyPrinter\Standard $printer,
         ?Parser $parser = null,
-        ?ErrorCollector $errorCollector = null
+        ?ErrorCollector $errorCollector = null,
+        ?AstHelper $astHelper = null
     ) {
-        $this->parser = $parser ?? (new ParserFactory)->createForNewestSupportedVersion();
-        $this->errorCollector = $errorCollector ?? new ErrorCollector;
+        $this->astHelper = $astHelper ?? new AstHelper($parser, $errorCollector);
     }
 
     /**
@@ -49,42 +49,7 @@ class FormRequestAstExtractor
      */
     public function parseFile(string $filePath): ?array
     {
-        if (! file_exists($filePath)) {
-            $this->errorCollector->addWarning(
-                'FormRequestAstExtractor',
-                "File does not exist: {$filePath}",
-                ['file_path' => $filePath, 'error_type' => 'file_not_found']
-            );
-
-            return null;
-        }
-
-        $code = file_get_contents($filePath);
-        if ($code === false) {
-            $this->errorCollector->addError(
-                'FormRequestAstExtractor',
-                "Failed to read file: {$filePath}",
-                ['file_path' => $filePath, 'error_type' => 'file_read_error']
-            );
-
-            return null;
-        }
-
-        try {
-            return $this->parser->parse($code);
-        } catch (Error $e) {
-            $this->errorCollector->addError(
-                'FormRequestAstExtractor',
-                "Failed to parse PHP file: {$filePath}",
-                [
-                    'file_path' => $filePath,
-                    'parse_error' => $e->getMessage(),
-                    'error_type' => 'parse_error',
-                ]
-            );
-
-            return null;
-        }
+        return $this->astHelper->parseFile($filePath);
     }
 
     /**
@@ -95,20 +60,7 @@ class FormRequestAstExtractor
      */
     public function parseCode(string $code): ?array
     {
-        try {
-            return $this->parser->parse($code);
-        } catch (Error $e) {
-            $this->errorCollector->addError(
-                'FormRequestAstExtractor',
-                'Failed to parse PHP code',
-                [
-                    'parse_error' => $e->getMessage(),
-                    'error_type' => 'parse_error',
-                ]
-            );
-
-            return null;
-        }
+        return $this->astHelper->parseCode($code);
     }
 
     /**
@@ -120,12 +72,7 @@ class FormRequestAstExtractor
      */
     public function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
     {
-        $visitor = new AST\Visitors\ClassFindingVisitor($className);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getClassNode();
+        return $this->astHelper->findClassNode($ast, $className);
     }
 
     /**
@@ -137,14 +84,7 @@ class FormRequestAstExtractor
      */
     public function findMethodNode(Node\Stmt\Class_ $class, string $methodName): ?Node\Stmt\ClassMethod
     {
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\ClassMethod &&
-                $stmt->name->toString() === $methodName) {
-                return $stmt;
-            }
-        }
-
-        return null;
+        return $this->astHelper->findMethodNode($class, $methodName);
     }
 
     /**
@@ -155,12 +95,7 @@ class FormRequestAstExtractor
      */
     public function findAnonymousClassNode(array $ast): ?Node\Stmt\Class_
     {
-        $visitor = new AST\Visitors\AnonymousClassFindingVisitor;
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getClassNode();
+        return $this->astHelper->findAnonymousClassNode($ast);
     }
 
     /**
@@ -234,12 +169,7 @@ class FormRequestAstExtractor
      */
     public function extractUseStatements(array $ast): array
     {
-        $visitor = new AST\Visitors\UseStatementExtractorVisitor;
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getUseStatements();
+        return $this->astHelper->extractUseStatements($ast);
     }
 
     /**
