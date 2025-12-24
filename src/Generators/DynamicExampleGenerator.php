@@ -1,22 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Generators;
 
 use Faker\Factory as FakerFactory;
 use Faker\Generator as Faker;
-use Illuminate\Support\Str;
+use LaravelSpectrum\Support\Example\FieldPatternRegistry;
+use LaravelSpectrum\Support\Example\ValueProviders\FakerValueProvider;
 
+/**
+ * Generates dynamic example data from OpenAPI schemas.
+ *
+ * Used by MockServer for generating realistic API responses.
+ * Supports schema constraints (min/max, enum, pattern) and recursive object/array generation.
+ */
 class DynamicExampleGenerator
 {
     private Faker $faker;
 
-    public function __construct()
-    {
-        $this->faker = FakerFactory::create();
+    private FieldPatternRegistry $registry;
+
+    private FakerValueProvider $valueProvider;
+
+    public function __construct(
+        ?FieldPatternRegistry $registry = null,
+        ?Faker $faker = null
+    ) {
+        $this->faker = $faker ?? FakerFactory::create();
+        $this->registry = $registry ?? new FieldPatternRegistry;
+        $this->valueProvider = new FakerValueProvider($this->faker, $this->registry);
     }
 
     /**
-     * Generate example data from OpenAPI schema
+     * Generate example data from OpenAPI schema.
      */
     public function generateFromSchema(array $schema, array $options = []): mixed
     {
@@ -38,7 +55,16 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Generate string example
+     * Set faker instance (useful for testing with seed).
+     */
+    public function setFaker(Faker $faker): void
+    {
+        $this->faker = $faker;
+        $this->valueProvider = new FakerValueProvider($this->faker, $this->registry);
+    }
+
+    /**
+     * Generate string example.
      */
     private function generateString(array $schema, array $options = []): string
     {
@@ -49,7 +75,7 @@ class DynamicExampleGenerator
 
         // Handle format
         if (isset($schema['format'])) {
-            return $this->generateFormattedString($schema['format'], $options);
+            return $this->generateFormattedString($schema['format']);
         }
 
         // Generate based on field name if realistic data is requested
@@ -77,74 +103,44 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Generate formatted string
+     * Generate formatted string.
      */
-    private function generateFormattedString(string $format, array $options = []): string
+    private function generateFormattedString(string $format): string
     {
-        return match ($format) {
-            'email' => $this->faker->safeEmail(),
-            'uri', 'url' => $this->faker->url(),
-            'uuid' => $this->faker->uuid(),
-            'date' => $this->faker->date('Y-m-d'),
-            'date-time' => $this->faker->date('Y-m-d\TH:i:s\Z'),
-            'time' => $this->faker->time('H:i:s'),
-            'hostname' => $this->faker->domainName(),
-            'ipv4' => $this->faker->ipv4(),
-            'ipv6' => $this->faker->ipv6(),
-            'password' => Str::random(12),
-            default => $this->faker->word(),
-        };
+        return $this->valueProvider->generateByFormat($format);
     }
 
     /**
-     * Generate realistic string based on field name
+     * Generate realistic string based on field name using registry.
      */
     private function generateRealisticString(string $fieldName): ?string
     {
-        $fieldName = strtolower($fieldName);
+        if (empty($fieldName)) {
+            return null;
+        }
 
-        // Common field name patterns
-        $patterns = [
-            '/first_?name/i' => fn () => $this->faker->firstName(),
-            '/last_?name/i' => fn () => $this->faker->lastName(),
-            '/full_?name|name/i' => fn () => $this->faker->name(),
-            '/email/i' => fn () => $this->faker->safeEmail(),
-            '/phone/i' => fn () => $this->faker->phoneNumber(),
-            '/address/i' => fn () => $this->faker->address(),
-            '/street/i' => fn () => $this->faker->streetAddress(),
-            '/city/i' => fn () => $this->faker->city(),
-            '/state/i' => fn () => $this->faker->word(),
-            '/country/i' => fn () => $this->faker->country(),
-            '/zip|postal/i' => fn () => $this->faker->postcode(),
-            '/company/i' => fn () => $this->faker->company(),
-            '/title/i' => fn () => $this->faker->sentence(3),
-            '/description|bio/i' => fn () => $this->faker->paragraph(),
-            '/url|website/i' => fn () => $this->faker->url(),
-            '/username/i' => fn () => $this->faker->userName(),
-            '/slug/i' => fn () => $this->faker->slug(),
-        ];
+        $config = $this->registry->matchPattern($fieldName);
 
-        foreach ($patterns as $pattern => $generator) {
-            if (preg_match($pattern, $fieldName)) {
-                return $generator();
-            }
+        if ($config !== null && $config['fakerMethod'] !== null) {
+            $result = $this->invokeFakerMethod($config['fakerMethod'], $config['fakerArgs']);
+
+            return is_string($result) ? $result : (string) $result;
         }
 
         return null;
     }
 
     /**
-     * Generate string from pattern
+     * Generate string from pattern.
      */
     private function generateFromPattern(string $pattern, int $minLength, int $maxLength): string
     {
         // For complex patterns, return a simple string that likely matches
-        // This is a simplified implementation
         return $this->faker->lexify(str_repeat('?', $minLength));
     }
 
     /**
-     * Generate integer example
+     * Generate integer example.
      */
     private function generateInteger(array $schema): int
     {
@@ -159,7 +155,7 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Generate number example
+     * Generate number example.
      */
     private function generateNumber(array $schema): float
     {
@@ -174,7 +170,7 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Generate boolean example
+     * Generate boolean example.
      */
     private function generateBoolean(): bool
     {
@@ -182,7 +178,7 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Generate array example
+     * Generate array example.
      */
     private function generateArray(array $schema, array $options = []): array
     {
@@ -203,7 +199,7 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Generate object example
+     * Generate object example.
      */
     private function generateObject(array $schema, array $options = []): array
     {
@@ -233,7 +229,6 @@ class DynamicExampleGenerator
 
         // Handle additionalProperties
         if (isset($schema['additionalProperties']) && $schema['additionalProperties'] === true) {
-            // Add some random properties
             $additionalCount = $this->faker->numberBetween(0, 3);
             for ($i = 0; $i < $additionalCount; $i++) {
                 $key = $this->faker->word();
@@ -245,10 +240,32 @@ class DynamicExampleGenerator
     }
 
     /**
-     * Set faker instance (useful for testing with seed)
+     * Invoke a Faker method with arguments.
      */
-    public function setFaker(Faker $faker): void
+    private function invokeFakerMethod(string $method, array $args): mixed
     {
-        $this->faker = $faker;
+        // Handle chained methods like 'unique->numberBetween'
+        if (str_contains($method, '->')) {
+            $parts = explode('->', $method);
+            $result = $this->faker;
+            foreach ($parts as $i => $part) {
+                if ($i === count($parts) - 1) {
+                    $result = $result->$part(...$args);
+                } else {
+                    $result = $result->$part;
+                }
+            }
+
+            return $result;
+        }
+
+        $result = $this->faker->$method(...$args);
+
+        // Format DateTime objects
+        if ($result instanceof \DateTime) {
+            return $result->format('Y-m-d\TH:i:s\Z');
+        }
+
+        return $result;
     }
 }

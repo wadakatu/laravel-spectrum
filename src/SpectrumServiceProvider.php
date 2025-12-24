@@ -52,6 +52,7 @@ use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
 use LaravelSpectrum\Support\CollectionAnalyzer;
+use LaravelSpectrum\Support\Example\FieldPatternRegistry;
 use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Support\ModelSchemaExtractor;
 use LaravelSpectrum\Support\PaginationDetector;
@@ -89,6 +90,7 @@ class SpectrumServiceProvider extends ServiceProvider
         // シングルトンとして登録
         $this->app->singleton(DocumentationCache::class);
         $this->app->singleton(TypeInference::class);
+        $this->app->singleton(FieldPatternRegistry::class);
         $this->app->singleton(FieldNameInference::class);
         $this->app->singleton(PaginationDetector::class);
         $this->app->singleton(QueryParameterDetector::class);

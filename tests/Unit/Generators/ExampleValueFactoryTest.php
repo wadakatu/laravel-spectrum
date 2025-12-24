@@ -3,7 +3,6 @@
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\ExampleValueFactory;
-use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Tests\TestCase;
 
 class ExampleValueFactoryTest extends TestCase
@@ -17,8 +16,7 @@ class ExampleValueFactoryTest extends TestCase
         // Disable Faker for existing tests to use static values
         config(['spectrum.example_generation.use_faker' => false]);
 
-        $fieldInference = new FieldNameInference;
-        $this->factory = new ExampleValueFactory($fieldInference);
+        $this->factory = new ExampleValueFactory;
     }
 
     public function test_generates_values_by_field_name(): void
@@ -40,10 +38,10 @@ class ExampleValueFactoryTest extends TestCase
             $this->factory->create('timestamp', ['type' => 'string', 'format' => 'date-time'])
         );
 
-        // Date format
+        // Date format (using generic name to test format, not field pattern)
         $this->assertEquals(
             '2024-01-15',
-            $this->factory->create('birth_date', ['type' => 'string', 'format' => 'date'])
+            $this->factory->create('some_date', ['type' => 'string', 'format' => 'date'])
         );
 
         // Email format

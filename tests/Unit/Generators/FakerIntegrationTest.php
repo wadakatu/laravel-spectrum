@@ -4,7 +4,6 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
-use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -21,7 +20,7 @@ class FakerIntegrationTest extends TestCase
         config(['spectrum.example_generation.use_faker' => true]);
         config(['spectrum.example_generation.faker_seed' => 12345]); // For consistent tests
 
-        $this->valueFactory = new ExampleValueFactory(new FieldNameInference);
+        $this->valueFactory = new ExampleValueFactory;
         $this->generator = new ExampleGenerator($this->valueFactory);
     }
 
@@ -39,7 +38,7 @@ class FakerIntegrationTest extends TestCase
     {
         // Test Japanese locale
         config(['spectrum.example_generation.faker_locale' => 'ja_JP']);
-        $valueFactory = new ExampleValueFactory(new FieldNameInference, 'ja_JP');
+        $valueFactory = new ExampleValueFactory(null, 'ja_JP');
 
         $phone = $valueFactory->create('phone_number', ['type' => 'string']);
 
@@ -115,7 +114,7 @@ class FakerIntegrationTest extends TestCase
     public function it_falls_back_to_static_values_when_faker_disabled()
     {
         config(['spectrum.example_generation.use_faker' => false]);
-        $valueFactory = new ExampleValueFactory(new FieldNameInference);
+        $valueFactory = new ExampleValueFactory;
 
         $email = $valueFactory->create('email', ['type' => 'string', 'format' => 'email']);
 
@@ -179,10 +178,10 @@ class FakerIntegrationTest extends TestCase
     {
         config(['spectrum.example_generation.faker_seed' => 100]);
 
-        $factory1 = new ExampleValueFactory(new FieldNameInference);
+        $factory1 = new ExampleValueFactory;
         $value1 = $factory1->create('name', ['type' => 'string']);
 
-        $factory2 = new ExampleValueFactory(new FieldNameInference);
+        $factory2 = new ExampleValueFactory;
         $value2 = $factory2->create('name', ['type' => 'string']);
 
         $this->assertEquals($value1, $value2);
