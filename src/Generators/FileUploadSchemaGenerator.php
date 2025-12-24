@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 use LaravelSpectrum\Support\FileSizeFormatter;
 
 class FileUploadSchemaGenerator
 {
+    protected SchemaPropertyMapper $propertyMapper;
+
+    public function __construct(?SchemaPropertyMapper $propertyMapper = null)
+    {
+        $this->propertyMapper = $propertyMapper ?? new SchemaPropertyMapper;
+    }
+
     /**
      * @param  array<string, mixed>  $fileField
      * @return array<string, mixed>
@@ -128,22 +136,11 @@ class FileUploadSchemaGenerator
     {
         $properties = [];
 
-        // Add regular fields
+        // Add regular fields using the property mapper
         foreach ($fields as $name => $field) {
-            $properties[$name] = [
-                'type' => $field['type'] ?? 'string',
-            ];
-
-            if (isset($field['maxLength'])) {
-                $properties[$name]['maxLength'] = $field['maxLength'];
-            }
-
-            // Add other properties as needed
-            foreach (['minLength', 'pattern', 'enum', 'format', 'minimum', 'maximum'] as $prop) {
-                if (isset($field[$prop])) {
-                    $properties[$name][$prop] = $field[$prop];
-                }
-            }
+            $property = $this->propertyMapper->mapType($field);
+            $property = $this->propertyMapper->mapAll($field, $property);
+            $properties[$name] = $property;
         }
 
         // Add file fields

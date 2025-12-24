@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 use LaravelSpectrum\Support\TypeInference;
 
 class SchemaGenerator
@@ -10,10 +11,16 @@ class SchemaGenerator
 
     protected TypeInference $typeInference;
 
-    public function __construct(?FileUploadSchemaGenerator $fileUploadSchemaGenerator = null, ?TypeInference $typeInference = null)
-    {
+    protected SchemaPropertyMapper $propertyMapper;
+
+    public function __construct(
+        ?FileUploadSchemaGenerator $fileUploadSchemaGenerator = null,
+        ?TypeInference $typeInference = null,
+        ?SchemaPropertyMapper $propertyMapper = null
+    ) {
         $this->fileUploadSchemaGenerator = $fileUploadSchemaGenerator ?? new FileUploadSchemaGenerator;
         $this->typeInference = $typeInference ?? new TypeInference;
+        $this->propertyMapper = $propertyMapper ?? new SchemaPropertyMapper;
     }
 
     /**
@@ -49,48 +56,8 @@ class SchemaGenerator
                 continue;
             }
 
-            $property = [
-                'type' => $parameter['type'] ?? 'string',
-            ];
-
-            // Add optional properties if they exist
-            if (isset($parameter['description'])) {
-                $property['description'] = $parameter['description'];
-            }
-            if (isset($parameter['example'])) {
-                $property['example'] = $parameter['example'];
-            }
-            if (isset($parameter['format'])) {
-                $property['format'] = $parameter['format'];
-            }
-            if (isset($parameter['enum'])) {
-                // Handle enum from EnumAnalyzer structure
-                if (is_array($parameter['enum']) && isset($parameter['enum']['values'])) {
-                    $property['enum'] = $parameter['enum']['values'];
-                    // Override type if enum has specific type
-                    if (isset($parameter['enum']['type'])) {
-                        $property['type'] = $parameter['enum']['type'];
-                    }
-                } else {
-                    // Handle simple enum array (for backward compatibility)
-                    $property['enum'] = $parameter['enum'];
-                }
-            }
-            if (isset($parameter['minimum'])) {
-                $property['minimum'] = $parameter['minimum'];
-            }
-            if (isset($parameter['maximum'])) {
-                $property['maximum'] = $parameter['maximum'];
-            }
-            if (isset($parameter['minLength'])) {
-                $property['minLength'] = $parameter['minLength'];
-            }
-            if (isset($parameter['maxLength'])) {
-                $property['maxLength'] = $parameter['maxLength'];
-            }
-            if (isset($parameter['pattern'])) {
-                $property['pattern'] = $parameter['pattern'];
-            }
+            $property = $this->propertyMapper->mapType($parameter);
+            $property = $this->propertyMapper->mapAll($parameter, $property);
 
             $properties[$parameter['name']] = $property;
 
@@ -127,20 +94,12 @@ class SchemaGenerator
 
             $fieldName = $this->normalizeFieldName($field['name']);
 
-            $properties[$fieldName] = [
-                'type' => $field['type'] ?? 'string',
-            ];
+            $property = $this->propertyMapper->mapType($field);
+            $property = $this->propertyMapper->mapSimpleProperties($field, $property);
+            $property = $this->propertyMapper->mapConstraints($field, $property);
+            $property = $this->propertyMapper->mapEnum($field, $property);
 
-            // Add other properties
-            if (isset($field['description'])) {
-                $properties[$fieldName]['description'] = $field['description'];
-            }
-            if (isset($field['maxLength'])) {
-                $properties[$fieldName]['maxLength'] = $field['maxLength'];
-            }
-            if (isset($field['enum']) && is_array($field['enum']) && isset($field['enum']['values'])) {
-                $properties[$fieldName]['enum'] = $field['enum']['values'];
-            }
+            $properties[$fieldName] = $property;
 
             if ($field['required'] ?? false) {
                 $required[] = $fieldName;
@@ -646,22 +605,14 @@ class SchemaGenerator
         ];
 
         foreach ($properties as $key => $property) {
-            $propSchema = [
-                'type' => $property['type'],
-            ];
-
-            if (isset($property['example'])) {
-                $propSchema['example'] = $property['example'];
-            }
-
-            if (isset($property['nullable']) && $property['nullable']) {
-                $propSchema['nullable'] = true;
-            }
-
             // ネストしたプロパティの処理
             if (isset($property['properties'])) {
                 $propSchema = $this->convertFractalPropertiesToSchema($property['properties']);
                 $propSchema['type'] = 'object';
+            } else {
+                $propSchema = $this->propertyMapper->mapType($property);
+                $propSchema = $this->propertyMapper->mapSimpleProperties($property, $propSchema);
+                $propSchema = $this->propertyMapper->mapBooleanProperties($property, $propSchema);
             }
 
             $schema['properties'][$key] = $propSchema;
