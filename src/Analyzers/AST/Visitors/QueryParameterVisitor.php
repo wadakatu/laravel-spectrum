@@ -22,11 +22,22 @@ class QueryParameterVisitor extends NodeVisitorAbstract
 {
     private QueryParameterDetector $detector;
 
+    /**
+     * Create a new query parameter visitor.
+     *
+     * @param  QueryParameterDetector  $detector  The detector used to process parameter access patterns
+     */
     public function __construct(QueryParameterDetector $detector)
     {
         $this->detector = $detector;
     }
 
+    /**
+     * Process each node during traversal to detect request parameter access.
+     *
+     * @param  Node  $node  The current node being visited
+     * @return int|null Visitor return value (null to continue traversal)
+     */
     public function enterNode(Node $node): ?int
     {
         // Track variable assignments
@@ -77,7 +88,13 @@ class QueryParameterVisitor extends NodeVisitorAbstract
         return null;
     }
 
-    private function isRequestClass($node): bool
+    /**
+     * Check if a node represents the Request class.
+     *
+     * @param  Node  $node  The node to check
+     * @return bool True if the node represents the Request class
+     */
+    private function isRequestClass(Node $node): bool
     {
         if ($node instanceof Node\Name) {
             $name = $node->toString();

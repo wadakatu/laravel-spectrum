@@ -17,15 +17,44 @@ use PhpParser\NodeVisitorAbstract;
  */
 class PaginationCallVisitor extends NodeVisitorAbstract
 {
+    /**
+     * Detected pagination calls.
+     *
+     * @var array<int, array{type: string, model: string, resource: ?string, source?: string}>
+     */
     private array $paginationCalls = [];
 
     private PaginationDetector $detector;
 
+    /**
+     * Create a new pagination call visitor.
+     *
+     * @param  PaginationDetector  $detector  The detector used to extract model information
+     */
     public function __construct(PaginationDetector $detector)
     {
         $this->detector = $detector;
     }
 
+    /**
+     * Reset state before traversing a new AST.
+     *
+     * @param  array<Node>  $nodes  The nodes to be traversed
+     * @return null
+     */
+    public function beforeTraverse(array $nodes): ?array
+    {
+        $this->paginationCalls = [];
+
+        return null;
+    }
+
+    /**
+     * Process each node during traversal to detect pagination calls.
+     *
+     * @param  Node  $node  The current node being visited
+     * @return int|null Visitor return value (null to continue traversal)
+     */
     public function enterNode(Node $node): ?int
     {
         // Check for Resource::collection pattern
@@ -74,13 +103,21 @@ class PaginationCallVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    /**
+     * Get all detected pagination calls.
+     *
+     * @return array<int, array{type: string, model: string, resource: ?string, source?: string}>
+     */
     public function getPaginationCalls(): array
     {
         return $this->paginationCalls;
     }
 
     /**
-     * Check if node is a pagination method call and extract info
+     * Check if node is a pagination method call and extract info.
+     *
+     * @param  MethodCall|StaticCall  $node  The node to check
+     * @return array{type: string, model: string, resource: null, source?: string}|null
      */
     private function checkPaginationCall(MethodCall|StaticCall $node): ?array
     {
@@ -118,7 +155,10 @@ class PaginationCallVisitor extends NodeVisitorAbstract
     }
 
     /**
-     * Get class name from node
+     * Get class name from node.
+     *
+     * @param  Node  $node  The node to extract class name from
+     * @return string|null The class name or null if not extractable
      */
     private function getClassName(Node $node): ?string
     {
@@ -130,7 +170,10 @@ class PaginationCallVisitor extends NodeVisitorAbstract
     }
 
     /**
-     * Check if node represents a query builder pattern
+     * Check if node represents a query builder pattern.
+     *
+     * @param  Node  $node  The node to check
+     * @return bool True if node is a query builder pattern
      */
     private function isQueryBuilder(Node $node): bool
     {
