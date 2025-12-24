@@ -4,7 +4,6 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
-use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Tests\Fixtures\Resources\PostResource;
 use LaravelSpectrum\Tests\Fixtures\Resources\UserResourceWithExample;
 use LaravelSpectrum\Tests\TestCase;
@@ -20,7 +19,7 @@ class ExampleGeneratorTest extends TestCase
         // Disable Faker for existing tests to use static values
         config(['spectrum.example_generation.use_faker' => false]);
 
-        $valueFactory = new ExampleValueFactory(new FieldNameInference);
+        $valueFactory = new ExampleValueFactory;
         $this->generator = new ExampleGenerator($valueFactory);
     }
 
