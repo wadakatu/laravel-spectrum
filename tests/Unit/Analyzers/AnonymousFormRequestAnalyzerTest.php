@@ -7,9 +7,7 @@ use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Support\TypeInference;
-use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
-use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\TestCase;
 
 class AnonymousFormRequestAnalyzerTest extends TestCase
@@ -20,7 +18,7 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
     {
         parent::setUp();
         $this->analyzer = new InlineValidationAnalyzer(
-            new TypeInference(new NodeTraverser, new Standard),
+            new TypeInference,
             new EnumAnalyzer,
             new FileUploadAnalyzer
         );
