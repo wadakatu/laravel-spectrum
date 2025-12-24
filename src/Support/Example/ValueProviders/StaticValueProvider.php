@@ -47,7 +47,7 @@ final class StaticValueProvider implements ExampleGenerationStrategy
     public function generateByFormat(string $format): mixed
     {
         return match ($format) {
-            'date-time' => '2024-01-15T10:30:00Z',
+            'date-time', 'datetime' => '2024-01-15T10:30:00Z',
             'date' => '2024-01-15',
             'time' => '10:30:00',
             'email' => 'user@example.com',

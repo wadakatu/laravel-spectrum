@@ -1,0 +1,254 @@
+<?php
+
+namespace LaravelSpectrum\Tests\Unit\Support\Example;
+
+use LaravelSpectrum\Support\Example\FieldPatternRegistry;
+use LaravelSpectrum\Tests\TestCase;
+
+class FieldPatternRegistryTest extends TestCase
+{
+    private FieldPatternRegistry $registry;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->registry = new FieldPatternRegistry;
+    }
+
+    public function test_get_config_returns_pattern_for_exact_match(): void
+    {
+        $config = $this->registry->getConfig('email');
+
+        $this->assertNotNull($config);
+        // Registry uses domain-specific types, not OpenAPI types
+        $this->assertEquals('email', $config['type']);
+        $this->assertEquals('email', $config['format']);
+        $this->assertEquals('safeEmail', $config['fakerMethod']);
+    }
+
+    public function test_get_config_returns_pattern_for_compound_field(): void
+    {
+        $config = $this->registry->getConfig('user_email');
+
+        $this->assertNotNull($config);
+        // Registry uses domain-specific types, not OpenAPI types
+        $this->assertEquals('email', $config['type']);
+        $this->assertEquals('email', $config['format']);
+    }
+
+    public function test_get_config_returns_pattern_for_suffix_match(): void
+    {
+        // _id suffix - uses domain-specific type
+        $config = $this->registry->getConfig('user_id');
+        $this->assertNotNull($config);
+        $this->assertEquals('id', $config['type']);
+        $this->assertEquals('integer', $config['format']);
+
+        // _at suffix - uses domain-specific type
+        $config = $this->registry->getConfig('published_at');
+        $this->assertNotNull($config);
+        $this->assertEquals('timestamp', $config['type']);
+        $this->assertEquals('datetime', $config['format']);
+    }
+
+    public function test_get_config_returns_pattern_for_prefix_match(): void
+    {
+        // is_ prefix
+        $config = $this->registry->getConfig('is_active');
+        $this->assertNotNull($config);
+        $this->assertEquals('boolean', $config['type']);
+
+        // has_ prefix
+        $config = $this->registry->getConfig('has_access');
+        $this->assertNotNull($config);
+        $this->assertEquals('boolean', $config['type']);
+    }
+
+    public function test_get_config_returns_null_for_unknown_field(): void
+    {
+        $config = $this->registry->getConfig('random_unknown_field');
+
+        $this->assertNull($config);
+    }
+
+    public function test_match_pattern_is_alias_for_get_config(): void
+    {
+        $getConfigResult = $this->registry->getConfig('email');
+        $matchPatternResult = $this->registry->matchPattern('email');
+
+        $this->assertEquals($getConfigResult, $matchPatternResult);
+    }
+
+    public function test_register_pattern_adds_custom_pattern(): void
+    {
+        $this->registry->registerPattern('custom_field', [
+            'type' => 'string',
+            'format' => 'custom',
+            'fakerMethod' => 'word',
+            'staticValue' => 'custom_value',
+        ]);
+
+        $config = $this->registry->getConfig('custom_field');
+
+        $this->assertNotNull($config);
+        $this->assertEquals('string', $config['type']);
+        $this->assertEquals('custom', $config['format']);
+        $this->assertEquals('word', $config['fakerMethod']);
+        $this->assertEquals('custom_value', $config['staticValue']);
+    }
+
+    public function test_register_pattern_custom_takes_priority(): void
+    {
+        // Override built-in email pattern
+        $this->registry->registerPattern('email', [
+            'type' => 'string',
+            'format' => 'custom-email',
+            'fakerMethod' => 'email',
+            'staticValue' => 'custom@example.com',
+        ]);
+
+        $config = $this->registry->getConfig('email');
+
+        $this->assertEquals('custom-email', $config['format']);
+        $this->assertEquals('custom@example.com', $config['staticValue']);
+    }
+
+    public function test_register_pattern_throws_on_empty_pattern(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Pattern name cannot be empty');
+
+        $this->registry->registerPattern('', [
+            'type' => 'string',
+            'staticValue' => 'test',
+        ]);
+    }
+
+    public function test_register_pattern_throws_on_missing_type(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("must have a non-empty 'type' field");
+
+        $this->registry->registerPattern('test', [
+            'staticValue' => 'test',
+        ]);
+    }
+
+    public function test_register_pattern_throws_on_empty_type(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("must have a non-empty 'type' field");
+
+        $this->registry->registerPattern('test', [
+            'type' => '',
+            'staticValue' => 'test',
+        ]);
+    }
+
+    public function test_register_pattern_throws_on_missing_static_value(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("must have a 'staticValue' field");
+
+        $this->registry->registerPattern('test', [
+            'type' => 'string',
+        ]);
+    }
+
+    public function test_register_pattern_allows_null_static_value(): void
+    {
+        $this->registry->registerPattern('nullable_field', [
+            'type' => 'string',
+            'staticValue' => null,
+        ]);
+
+        $config = $this->registry->getConfig('nullable_field');
+
+        $this->assertNotNull($config);
+        $this->assertNull($config['staticValue']);
+    }
+
+    public function test_get_all_patterns_returns_merged_patterns(): void
+    {
+        $this->registry->registerPattern('custom', [
+            'type' => 'string',
+            'staticValue' => 'custom',
+        ]);
+
+        $patterns = $this->registry->getAllPatterns();
+
+        // Should contain both built-in and custom patterns
+        $this->assertArrayHasKey('custom', $patterns);
+        $this->assertArrayHasKey('email', $patterns);
+        $this->assertArrayHasKey('id', $patterns);
+    }
+
+    public function test_handles_password_field(): void
+    {
+        $config = $this->registry->getConfig('password');
+
+        $this->assertNotNull($config);
+        // Registry uses domain-specific type
+        $this->assertEquals('password', $config['type']);
+        $this->assertEquals('password', $config['format']);
+        $this->assertEquals('********', $config['staticValue']);
+    }
+
+    public function test_handles_uuid_field(): void
+    {
+        $config = $this->registry->getConfig('uuid');
+
+        $this->assertNotNull($config);
+        // Registry uses domain-specific type
+        $this->assertEquals('uuid', $config['type']);
+        $this->assertEquals('uuid', $config['format']);
+    }
+
+    public function test_handles_monetary_fields(): void
+    {
+        $config = $this->registry->getConfig('price');
+        $this->assertNotNull($config);
+        // Registry uses domain-specific type 'money'
+        $this->assertEquals('money', $config['type']);
+        $this->assertEquals('decimal', $config['format']);
+
+        $config = $this->registry->getConfig('amount');
+        $this->assertNotNull($config);
+        $this->assertEquals('money', $config['type']);
+        $this->assertEquals('decimal', $config['format']);
+    }
+
+    public function test_handles_location_fields(): void
+    {
+        $config = $this->registry->getConfig('latitude');
+        $this->assertNotNull($config);
+        // Registry uses domain-specific type 'location'
+        $this->assertEquals('location', $config['type']);
+        $this->assertEquals('decimal', $config['format']);
+
+        $config = $this->registry->getConfig('longitude');
+        $this->assertNotNull($config);
+        $this->assertEquals('location', $config['type']);
+        $this->assertEquals('decimal', $config['format']);
+
+        $config = $this->registry->getConfig('address');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config['type']);
+        $this->assertEquals('text', $config['format']);
+    }
+
+    public function test_handles_url_fields(): void
+    {
+        $config = $this->registry->getConfig('url');
+        $this->assertNotNull($config);
+        // Registry uses domain-specific type 'url'
+        $this->assertEquals('url', $config['type']);
+        $this->assertEquals('url', $config['format']);
+
+        $config = $this->registry->getConfig('website');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config['type']);
+        $this->assertEquals('url', $config['format']);
+    }
+}

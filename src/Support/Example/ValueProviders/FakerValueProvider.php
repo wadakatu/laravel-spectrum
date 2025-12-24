@@ -6,6 +6,7 @@ namespace LaravelSpectrum\Support\Example\ValueProviders;
 
 use DateTime;
 use Faker\Generator as FakerGenerator;
+use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Contracts\ExampleGenerationStrategy;
 use LaravelSpectrum\Support\Example\FieldPatternRegistry;
 
@@ -24,14 +25,21 @@ final class FakerValueProvider implements ExampleGenerationStrategy
      */
     public function generate(string $fieldName, array $config): mixed
     {
-        // Check registry for field pattern
         $pattern = $this->registry->getConfig($fieldName);
 
-        if ($pattern !== null && $pattern['fakerMethod'] !== null) {
-            return $this->invokeFakerMethod($pattern['fakerMethod'], $pattern['fakerArgs']);
+        if ($pattern !== null) {
+            // If fakerMethod is set, invoke it
+            if ($pattern['fakerMethod'] !== null) {
+                return $this->invokeFakerMethod($pattern['fakerMethod'], $pattern['fakerArgs']);
+            }
+
+            // Handle special cases where fakerMethod is null but pattern exists
+            // (e.g., password fields that need special handling)
+            if ($pattern['format'] !== null) {
+                return $this->generateByFormat($pattern['format']);
+            }
         }
 
-        // Fall back to type-based generation
         $type = $config['type'] ?? 'string';
         $format = $config['format'] ?? null;
 
@@ -53,7 +61,7 @@ final class FakerValueProvider implements ExampleGenerationStrategy
             'uuid' => $this->faker->uuid(),
             'date' => $this->faker->date('Y-m-d'),
             'time' => $this->faker->time('H:i:s'),
-            'date-time' => $this->faker->dateTime()->format('Y-m-d\TH:i:s\Z'),
+            'date-time', 'datetime' => $this->faker->dateTime()->format('Y-m-d\TH:i:s\Z'),
             'password' => 'hashed_'.$this->faker->lexify('????????'),
             'byte' => base64_encode($this->faker->text(20)),
             'binary' => $this->faker->sha256(),
@@ -75,8 +83,19 @@ final class FakerValueProvider implements ExampleGenerationStrategy
             'boolean' => $this->faker->boolean(),
             'array' => [],
             'object' => new \stdClass,
-            default => $this->generateString($constraints),
+            'string' => $this->generateString($constraints),
+            default => $this->handleUnknownType($type, $constraints),
         };
+    }
+
+    /**
+     * Handle unknown OpenAPI types with logging.
+     */
+    private function handleUnknownType(string $type, array $constraints): string
+    {
+        Log::warning("Unknown OpenAPI type '{$type}' encountered. Falling back to string generation.");
+
+        return $this->generateString($constraints);
     }
 
     /**
@@ -89,8 +108,56 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * Invoke a Faker method with arguments.
+     *
+     * @param  string  $method  The Faker method name (supports chained methods like 'unique->numberBetween')
+     * @param  array<int, mixed>  $args  Arguments to pass to the method
+     * @return mixed The generated value
+     *
+     * @throws \RuntimeException If the Faker method is invalid or arguments are incorrect
      */
     private function invokeFakerMethod(string $method, array $args): mixed
+    {
+        try {
+            $result = $this->executeMethodChain($method, $args);
+
+            // Format DateTime objects consistently
+            if ($result instanceof DateTime) {
+                return $result->format('Y-m-d\TH:i:s\Z');
+            }
+
+            return $result;
+        } catch (\BadMethodCallException|\InvalidArgumentException $e) {
+            Log::error("Invalid Faker method '{$method}' in field pattern registry.", [
+                'method' => $method,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \RuntimeException(
+                "Invalid Faker method '{$method}' in field pattern registry. "
+                .'Check FieldPatternRegistry for typos. Original error: '.$e->getMessage(),
+                0,
+                $e
+            );
+        } catch (\ArgumentCountError|\TypeError $e) {
+            Log::error("Invalid arguments for Faker method '{$method}'.", [
+                'method' => $method,
+                'args' => $args,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \RuntimeException(
+                "Invalid arguments for Faker method '{$method}': ".json_encode($args).'. '
+                .'Original error: '.$e->getMessage(),
+                0,
+                $e
+            );
+        }
+    }
+
+    /**
+     * Execute a Faker method chain.
+     */
+    private function executeMethodChain(string $method, array $args): mixed
     {
         // Handle chained methods like 'unique->numberBetween'
         if (str_contains($method, '->')) {
@@ -98,10 +165,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
             $result = $this->faker;
             foreach ($parts as $i => $part) {
                 if ($i === count($parts) - 1) {
-                    // Last part - call with args
                     $result = $result->$part(...$args);
                 } else {
-                    // Intermediate part - call without args
                     $result = $result->$part;
                 }
             }
@@ -109,14 +174,7 @@ final class FakerValueProvider implements ExampleGenerationStrategy
             return $result;
         }
 
-        $result = $this->faker->$method(...$args);
-
-        // Format DateTime objects
-        if ($result instanceof DateTime) {
-            return $result->format('Y-m-d\TH:i:s\Z');
-        }
-
-        return $result;
+        return $this->faker->$method(...$args);
     }
 
     /**

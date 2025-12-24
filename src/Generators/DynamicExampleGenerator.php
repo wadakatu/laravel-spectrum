@@ -121,8 +121,9 @@ class DynamicExampleGenerator
 
         $config = $this->registry->matchPattern($fieldName);
 
-        if ($config !== null && $config['fakerMethod'] !== null) {
-            $result = $this->invokeFakerMethod($config['fakerMethod'], $config['fakerArgs']);
+        if ($config !== null) {
+            // Use valueProvider which has proper error handling
+            $result = $this->valueProvider->generate($fieldName, $config);
 
             return is_string($result) ? $result : (string) $result;
         }
@@ -237,35 +238,5 @@ class DynamicExampleGenerator
         }
 
         return $object;
-    }
-
-    /**
-     * Invoke a Faker method with arguments.
-     */
-    private function invokeFakerMethod(string $method, array $args): mixed
-    {
-        // Handle chained methods like 'unique->numberBetween'
-        if (str_contains($method, '->')) {
-            $parts = explode('->', $method);
-            $result = $this->faker;
-            foreach ($parts as $i => $part) {
-                if ($i === count($parts) - 1) {
-                    $result = $result->$part(...$args);
-                } else {
-                    $result = $result->$part;
-                }
-            }
-
-            return $result;
-        }
-
-        $result = $this->faker->$method(...$args);
-
-        // Format DateTime objects
-        if ($result instanceof \DateTime) {
-            return $result->format('Y-m-d\TH:i:s\Z');
-        }
-
-        return $result;
     }
 }

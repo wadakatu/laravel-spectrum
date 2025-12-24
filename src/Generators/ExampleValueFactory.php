@@ -6,6 +6,7 @@ namespace LaravelSpectrum\Generators;
 
 use Faker\Factory as FakerFactory;
 use Faker\Generator as Faker;
+use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Contracts\ExampleGenerationStrategy;
 use LaravelSpectrum\Support\Example\FieldPatternRegistry;
 use LaravelSpectrum\Support\Example\ValueProviders\FakerValueProvider;
@@ -45,8 +46,15 @@ class ExampleValueFactory
     public function create(string $fieldName, array $fieldSchema, ?callable $customGenerator = null): mixed
     {
         // Use custom generator if provided
-        if ($customGenerator !== null && $this->faker !== null) {
-            return $customGenerator($this->faker);
+        if ($customGenerator !== null) {
+            if ($this->faker === null) {
+                Log::warning(
+                    "Custom generator for field '{$fieldName}' ignored because Faker is disabled. "
+                    .'Enable Faker in config/spectrum.php or remove the custom generator.'
+                );
+            } else {
+                return $customGenerator($this->faker);
+            }
         }
 
         // OpenAPI priorities: const > examples > enum > default > generate

@@ -21,6 +21,13 @@ final class FieldPatternRegistry
     /**
      * Get generation configuration for a field name.
      *
+     * Looks up the field name in the following order:
+     * 1. Custom patterns registered at runtime
+     * 2. Exact match (normalized: lowercase, no dashes/underscores)
+     * 3. Compound field name suffix (e.g., user_email -> email)
+     * 4. Suffix/prefix pattern matching
+     *
+     * @param  string  $fieldName  The field name to look up
      * @return array{type: string, format: ?string, fakerMethod: ?string, fakerArgs: array, staticValue: mixed}|null
      */
     public function getConfig(string $fieldName): ?array
@@ -57,8 +64,11 @@ final class FieldPatternRegistry
     }
 
     /**
-     * Match field name against suffix and prefix patterns.
+     * Alias for getConfig().
      *
+     * Matches a field name against all registered patterns (custom, exact, compound, suffix/prefix).
+     *
+     * @param  string  $fieldName  The field name to match
      * @return array{type: string, format: ?string, fakerMethod: ?string, fakerArgs: array, staticValue: mixed}|null
      */
     public function matchPattern(string $fieldName): ?array
@@ -69,11 +79,32 @@ final class FieldPatternRegistry
     /**
      * Register a custom pattern.
      *
+     * @param  string  $pattern  The pattern name (field name to match)
      * @param  array{type: string, format: ?string, fakerMethod: ?string, fakerArgs?: array, staticValue: mixed}  $config
+     *
+     * @throws \InvalidArgumentException If pattern is empty or config is missing required fields
      */
     public function registerPattern(string $pattern, array $config): void
     {
+        if (empty($pattern)) {
+            throw new \InvalidArgumentException('Pattern name cannot be empty.');
+        }
+
+        if (! isset($config['type']) || ! is_string($config['type']) || $config['type'] === '') {
+            throw new \InvalidArgumentException(
+                "Pattern '{$pattern}' must have a non-empty 'type' field."
+            );
+        }
+
+        if (! array_key_exists('staticValue', $config)) {
+            throw new \InvalidArgumentException(
+                "Pattern '{$pattern}' must have a 'staticValue' field (can be null)."
+            );
+        }
+
         $this->customPatterns[$pattern] = array_merge([
+            'format' => null,
+            'fakerMethod' => null,
             'fakerArgs' => [],
         ], $config);
     }
