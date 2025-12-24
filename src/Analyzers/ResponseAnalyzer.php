@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Analyzers\AST\Visitors\ReturnStatementVisitor;
 use LaravelSpectrum\Support\CollectionAnalyzer;
+use LaravelSpectrum\Support\MethodSourceExtractor;
 use LaravelSpectrum\Support\ModelSchemaExtractor;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -17,14 +20,18 @@ class ResponseAnalyzer
 
     private CollectionAnalyzer $collectionAnalyzer;
 
+    private MethodSourceExtractor $methodSourceExtractor;
+
     public function __construct(
         Parser $parser,
         ModelSchemaExtractor $modelExtractor,
-        CollectionAnalyzer $collectionAnalyzer
+        CollectionAnalyzer $collectionAnalyzer,
+        ?MethodSourceExtractor $methodSourceExtractor = null
     ) {
         $this->parser = $parser;
         $this->modelExtractor = $modelExtractor;
         $this->collectionAnalyzer = $collectionAnalyzer;
+        $this->methodSourceExtractor = $methodSourceExtractor ?? new MethodSourceExtractor;
     }
 
     public function analyze(string $controllerClass, string $method): array
@@ -34,7 +41,7 @@ class ResponseAnalyzer
             $methodReflection = $reflection->getMethod($method);
 
             // メソッドのソースコードを取得
-            $source = $this->extractMethodSource($methodReflection);
+            $source = $this->methodSourceExtractor->extractBody($methodReflection);
             $ast = $this->parser->parse('<?php '.$source);
 
             // return文を検出
@@ -248,9 +255,12 @@ class ResponseAnalyzer
             // 名前空間の解決
             if (! str_contains($modelClass, '\\')) {
                 // コントローラーの名前空間から推測
-                $namespace = substr($controllerClass, 0, strrpos($controllerClass, '\\'));
-                $namespace = str_replace('\\Http\\Controllers', '', $namespace);
-                $modelClass = $namespace.'\\Models\\'.$modelClass;
+                $lastBackslash = strrpos($controllerClass, '\\');
+                if ($lastBackslash !== false) {
+                    $namespace = substr($controllerClass, 0, $lastBackslash);
+                    $namespace = str_replace('\\Http\\Controllers', '', $namespace);
+                    $modelClass = $namespace.'\\Models\\'.$modelClass;
+                }
             }
 
             return $this->modelExtractor->extractSchema($modelClass);
@@ -318,21 +328,6 @@ class ResponseAnalyzer
         }
 
         return '';
-    }
-
-    private function extractMethodSource(\ReflectionMethod $method): string
-    {
-        $filename = $method->getFileName();
-        $startLine = $method->getStartLine() - 1;
-        $endLine = $method->getEndLine();
-
-        $source = file($filename);
-        $methodSource = implode('', array_slice($source, $startLine, $endLine - $startLine));
-
-        // クラス定義を除去してメソッドボディのみを抽出
-        preg_match('/function\s+'.$method->getName().'\s*\([^)]*\)\s*(?::\s*\w+\s*)?{(.*)}/s', $methodSource, $matches);
-
-        return $matches[1] ?? $methodSource;
     }
 
     private function mergeResponses(array $responses): array
