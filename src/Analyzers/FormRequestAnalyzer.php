@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
-use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
 use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
@@ -10,7 +11,10 @@ use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
+use LaravelSpectrum\Support\HasErrorCollection;
 use LaravelSpectrum\Support\TypeInference;
 
 /**
@@ -25,8 +29,10 @@ use LaravelSpectrum\Support\TypeInference;
  * - Conditional validation rules
  * - Custom attributes and messages
  */
-class FormRequestAnalyzer
+class FormRequestAnalyzer implements HasErrors
 {
+    use HasErrorCollection;
+
     /**
      * Empty result structure for conditional rules analysis.
      *
@@ -44,8 +50,6 @@ class FormRequestAnalyzer
     protected EnumAnalyzer $enumAnalyzer;
 
     protected FileUploadAnalyzer $fileUploadAnalyzer;
-
-    protected ?ErrorCollector $errorCollector = null;
 
     protected RuleRequirementAnalyzer $ruleRequirementAnalyzer;
 
@@ -72,6 +76,7 @@ class FormRequestAnalyzer
         AnonymousClassAnalyzer $anonymousClassAnalyzer,
         ?ErrorCollector $errorCollector = null
     ) {
+        $this->initializeErrorCollector($errorCollector);
         $this->typeInference = $typeInference;
         $this->cache = $cache;
         $this->enumAnalyzer = $enumAnalyzer;
@@ -82,7 +87,6 @@ class FormRequestAnalyzer
         $this->parameterBuilder = $parameterBuilder;
         $this->astExtractor = $astExtractor;
         $this->anonymousClassAnalyzer = $anonymousClassAnalyzer;
-        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -131,14 +135,13 @@ class FormRequestAnalyzer
 
         $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
         if (! $classNode) {
-            $this->errorCollector?->addWarning(
-                'FormRequestAnalyzer',
+            $this->logWarning(
                 "Class node not found in AST for {$reflection->getName()}",
+                AnalyzerErrorType::ClassNodeNotFound,
                 [
                     'class' => $reflection->getName(),
                     'short_name' => $reflection->getShortName(),
                     'file' => $filePath,
-                    'error_type' => 'class_node_not_found',
                 ]
             );
 
@@ -165,17 +168,10 @@ class FormRequestAnalyzer
                 return $this->performAnalysis($requestClass);
             });
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
-                'FormRequestAnalyzer',
-                "Failed to analyze {$requestClass}: {$e->getMessage()}",
-                [
-                    'class' => $requestClass,
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                ]
-            );
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
+                'class' => $requestClass,
+            ]);
 
-            // エラーが発生しても空の配列を返して処理を継続
             return [];
         }
     }
@@ -209,17 +205,8 @@ class FormRequestAnalyzer
             );
 
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
-                'FormRequestAnalyzer',
-                "Failed to analyze FormRequest {$requestClass}: {$e->getMessage()}",
-                [
-                    'class' => $requestClass,
-                    'error_type' => 'analysis_error',
-                ]
-            );
-
-            Log::warning("Failed to analyze FormRequest: {$requestClass}", [
-                'error' => $e->getMessage(),
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
+                'class' => $requestClass,
             ]);
 
             return [];
@@ -281,17 +268,8 @@ class FormRequestAnalyzer
                 ];
 
             } catch (\Exception $e) {
-                $this->errorCollector?->addError(
-                    'FormRequestAnalyzer',
-                    "Failed to analyze FormRequest with conditions {$requestClass}: {$e->getMessage()}",
-                    [
-                        'class' => $requestClass,
-                        'error_type' => 'conditional_analysis_error',
-                    ]
-                );
-
-                Log::warning("Failed to analyze FormRequest with conditions: {$requestClass}", [
-                    'error' => $e->getMessage(),
+                $this->logException($e, AnalyzerErrorType::ConditionalAnalysisError, [
+                    'class' => $requestClass,
                 ]);
 
                 return self::EMPTY_CONDITIONAL_RESULT;
@@ -333,17 +311,8 @@ class FormRequestAnalyzer
             ];
 
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
-                'FormRequestAnalyzer',
-                "Failed to analyze FormRequest with details {$requestClass}: {$e->getMessage()}",
-                [
-                    'class' => $requestClass,
-                    'error_type' => 'details_analysis_error',
-                ]
-            );
-
-            Log::warning("Failed to analyze FormRequest with details: {$requestClass}", [
-                'error' => $e->getMessage(),
+            $this->logException($e, AnalyzerErrorType::AnalysisError, [
+                'class' => $requestClass,
             ]);
 
             return [];

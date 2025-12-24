@@ -1,24 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
+use LaravelSpectrum\Support\HasErrorCollection;
 
-class RouteAnalyzer
+class RouteAnalyzer implements HasErrors
 {
+    use HasErrorCollection;
+
     protected array $excludedMiddleware = ['web', 'api'];
 
     protected DocumentationCache $cache;
 
-    protected ?ErrorCollector $errorCollector = null;
-
     public function __construct(DocumentationCache $cache, ?ErrorCollector $errorCollector = null)
     {
+        $this->initializeErrorCollector($errorCollector);
         $this->cache = $cache;
-        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -117,23 +122,11 @@ class RouteAnalyzer
                     require $routeFile;
                 }
             } catch (\Throwable $e) {
-                $this->errorCollector?->addError(
-                    'RouteAnalyzer',
+                $this->logError(
                     "Failed to load route file {$routeFile}: {$e->getMessage()}",
-                    [
-                        'file' => $routeFile,
-                        'error_type' => 'route_loading_error',
-                    ]
+                    AnalyzerErrorType::RouteLoadingError,
+                    ['file' => $routeFile]
                 );
-
-                // エラーが発生した場合はログに記録
-                if (function_exists('logger')) {
-                    logger()->error('Failed to load route file: '.$routeFile, [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                    ]);
-                }
-                // エラーをスローしないで続行
             }
         }
     }
@@ -193,9 +186,9 @@ class RouteAnalyzer
                     'parameters' => $this->extractRouteParameters($route),
                 ];
             } catch (\Exception $e) {
-                $this->errorCollector?->addError(
-                    'RouteAnalyzer',
+                $this->logError(
                     "Failed to analyze route {$route->uri()}: {$e->getMessage()}",
+                    AnalyzerErrorType::AnalysisError,
                     [
                         'uri' => $route->uri(),
                         'methods' => $route->methods(),
@@ -203,7 +196,6 @@ class RouteAnalyzer
                     ]
                 );
 
-                // エラーが発生してもスキップして次のルートを処理
                 continue;
             }
         }
