@@ -7,6 +7,7 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Contracts\HasExamples;
 use LaravelSpectrum\Support\AnalyzerErrorType;
@@ -16,7 +17,7 @@ use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter;
 
-class ResourceAnalyzer implements HasErrors
+class ResourceAnalyzer implements ClassAnalyzer, HasErrors
 {
     use HasErrorCollection;
 

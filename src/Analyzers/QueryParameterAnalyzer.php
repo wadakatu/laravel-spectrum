@@ -2,11 +2,12 @@
 
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\Contracts\Analyzers\ReflectionMethodAnalyzer;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use ReflectionMethod;
 
-class QueryParameterAnalyzer
+class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
 {
     public function __construct(
         private QueryParameterDetector $detector,

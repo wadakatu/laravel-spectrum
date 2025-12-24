@@ -11,6 +11,7 @@ use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -29,7 +30,7 @@ use LaravelSpectrum\Support\TypeInference;
  * - Conditional validation rules
  * - Custom attributes and messages
  */
-class FormRequestAnalyzer implements HasErrors
+class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
 {
     use HasErrorCollection;
 

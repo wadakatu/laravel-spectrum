@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\Contracts\Analyzers\AstMethodAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -14,7 +15,7 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
-class InlineValidationAnalyzer implements HasErrors
+class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
 {
     use HasErrorCollection;
 

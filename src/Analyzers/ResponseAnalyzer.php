@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Analyzers\AST\Visitors\ReturnStatementVisitor;
+use LaravelSpectrum\Contracts\Analyzers\MethodAnalyzer;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\CollectionAnalyzer;
 use LaravelSpectrum\Support\MethodSourceExtractor;
@@ -13,7 +14,7 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\Parser;
 
-class ResponseAnalyzer
+class ResponseAnalyzer implements MethodAnalyzer
 {
     private Parser $parser;
 
