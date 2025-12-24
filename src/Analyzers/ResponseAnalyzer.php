@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Analyzers\AST\Visitors\ReturnStatementVisitor;
+use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\CollectionAnalyzer;
 use LaravelSpectrum\Support\MethodSourceExtractor;
 use LaravelSpectrum\Support\ModelSchemaExtractor;
@@ -22,16 +23,20 @@ class ResponseAnalyzer
 
     private MethodSourceExtractor $methodSourceExtractor;
 
+    private AstTypeInferenceEngine $typeInferenceEngine;
+
     public function __construct(
         Parser $parser,
         ModelSchemaExtractor $modelExtractor,
         CollectionAnalyzer $collectionAnalyzer,
-        ?MethodSourceExtractor $methodSourceExtractor = null
+        ?MethodSourceExtractor $methodSourceExtractor = null,
+        ?AstTypeInferenceEngine $typeInferenceEngine = null
     ) {
         $this->parser = $parser;
         $this->modelExtractor = $modelExtractor;
         $this->collectionAnalyzer = $collectionAnalyzer;
         $this->methodSourceExtractor = $methodSourceExtractor ?? new MethodSourceExtractor;
+        $this->typeInferenceEngine = $typeInferenceEngine ?? new AstTypeInferenceEngine;
     }
 
     public function analyze(string $controllerClass, string $method): array
@@ -156,7 +161,7 @@ class ResponseAnalyzer
                 if ($item && $item->key) {
                     $key = $this->getNodeValue($item->key);
                     if ($key !== null) {
-                        $structure[$key] = $this->inferType($item->value);
+                        $structure[$key] = $this->typeInferenceEngine->inferFromNode($item->value);
                     }
                 }
             }
@@ -175,62 +180,6 @@ class ResponseAnalyzer
         }
 
         return null;
-    }
-
-    private function inferType($node): array
-    {
-        if ($node instanceof Node\Scalar\String_) {
-            return ['type' => 'string'];
-        }
-        if ($node instanceof Node\Scalar\Int_) {
-            return ['type' => 'integer'];
-        }
-        if ($node instanceof Node\Scalar\Float_) {
-            return ['type' => 'number'];
-        }
-        if ($node instanceof Node\Expr\ConstFetch) {
-            $name = $node->name->toLowerString();
-            if ($name === 'true' || $name === 'false') {
-                return ['type' => 'boolean'];
-            }
-            if ($name === 'null') {
-                return ['type' => 'null'];
-            }
-        }
-        if ($node instanceof Node\Expr\Array_) {
-            // ネストした配列の場合
-            $properties = $this->extractArrayStructure($node);
-            if (! empty($properties)) {
-                return ['type' => 'object', 'properties' => $properties];
-            }
-
-            return ['type' => 'array'];
-        }
-        if ($node instanceof Node\Expr\MethodCall) {
-            // only()メソッドの場合は配列を返す
-            if ($node->name instanceof Node\Identifier && $node->name->toString() === 'only') {
-                $fields = [];
-                if (isset($node->args[0]) && $node->args[0]->value instanceof Node\Expr\Array_) {
-                    foreach ($node->args[0]->value->items as $item) {
-                        if ($item && $item->value instanceof Node\Scalar\String_) {
-                            $fieldName = $item->value->value;
-                            $fields[$fieldName] = ['type' => 'string']; // デフォルトでstring
-                        }
-                    }
-                }
-
-                return ['type' => 'object', 'properties' => $fields];
-            }
-
-            // その他のメソッド呼び出しの場合（例: now()->toIso8601String()）
-            return ['type' => 'string'];
-        }
-        if ($node instanceof Node\Expr\PropertyFetch) {
-            // プロパティアクセスの場合（例: $user->name）
-            return ['type' => 'string'];
-        }
-
-        return ['type' => 'string']; // デフォルト
     }
 
     private function isEloquentModel($expr, string $controllerClass): bool

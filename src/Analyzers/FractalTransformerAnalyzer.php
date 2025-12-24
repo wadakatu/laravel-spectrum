@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
+use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
 use PhpParser\Node;
@@ -27,18 +28,23 @@ class FractalTransformerAnalyzer implements HasErrors
 
     protected AstHelper $astHelper;
 
+    protected AstTypeInferenceEngine $typeInferenceEngine;
+
     /**
      * Create a new FractalTransformerAnalyzer instance.
      *
      * @param  AstHelper  $astHelper  AstHelper instance for AST operations
      * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging analysis failures
+     * @param  AstTypeInferenceEngine|null  $typeInferenceEngine  Optional type inference engine
      */
     public function __construct(
         AstHelper $astHelper,
-        ?ErrorCollector $errorCollector = null
+        ?ErrorCollector $errorCollector = null,
+        ?AstTypeInferenceEngine $typeInferenceEngine = null
     ) {
         $this->initializeErrorCollector($errorCollector);
         $this->astHelper = $astHelper;
+        $this->typeInferenceEngine = $typeInferenceEngine ?? new AstTypeInferenceEngine;
     }
 
     /**
@@ -185,7 +191,7 @@ class FractalTransformerAnalyzer implements HasErrors
             $value = $item->value;
 
             $properties[$key] = [
-                'type' => $this->inferTypeFromNode($value),
+                'type' => $this->typeInferenceEngine->inferTypeString($value),
                 'example' => $this->generateExampleFromNode($key, $value),
                 'nullable' => $this->isNullable($value),
             ];
@@ -219,94 +225,6 @@ class FractalTransformerAnalyzer implements HasErrors
     }
 
     /**
-     * ノードから型を推測
-     */
-    protected function inferTypeFromNode(Node $node): string
-    {
-        // キャスト演算子のチェック
-        if ($node instanceof Node\Expr\Cast\Int_) {
-            return 'integer';
-        }
-        if ($node instanceof Node\Expr\Cast\String_) {
-            return 'string';
-        }
-        if ($node instanceof Node\Expr\Cast\Bool_) {
-            return 'boolean';
-        }
-        if ($node instanceof Node\Expr\Cast\Array_) {
-            return 'array';
-        }
-
-        // 関数呼び出しのチェック
-        if ($node instanceof Node\Expr\FuncCall) {
-            $funcName = $node->name instanceof Node\Name ? $node->name->toString() : '';
-            if ($funcName === 'json_decode') {
-                return 'array';
-            }
-        }
-
-        // 配列
-        if ($node instanceof Node\Expr\Array_) {
-            // 連想配列かどうかチェック
-            $hasStringKeys = false;
-            /** @var array<int, Node\Expr\ArrayItem|null> $items */
-            $items = $node->items;
-            foreach ($items as $item) {
-                if ($item && isset($item->key) && $item->key instanceof Node\Scalar\String_) {
-                    $hasStringKeys = true;
-                    break;
-                }
-            }
-
-            return $hasStringKeys ? 'object' : 'array';
-        }
-
-        // プロパティアクセス
-        if ($node instanceof Node\Expr\PropertyFetch) {
-            $propName = $node->name instanceof Node\Identifier ? $node->name->toString() : '';
-
-            // 一般的なプロパティ名から型を推測
-            if (in_array($propName, ['id', 'count', 'view_count', 'like_count', 'share_count'])) {
-                return 'integer';
-            }
-            if (in_array($propName, ['is_active', 'is_featured', 'is_archived'])) {
-                return 'boolean';
-            }
-            if (in_array($propName, ['created_at', 'updated_at', 'published_at', 'processed_at'])) {
-                return 'string';
-            }
-            if (in_array($propName, ['attributes', 'settings', 'data'])) {
-                return 'object';
-            }
-        }
-
-        // 三項演算子
-        if ($node instanceof Node\Expr\Ternary) {
-            // 三項演算子の場合: condition ? if : else
-            // $node->if が null の場合は省略形: condition ?: else
-            if ($node->if !== null) {
-                return $this->inferTypeFromNode($node->if);
-            }
-
-            // 省略形の場合は条件式の型を返す
-            return $this->inferTypeFromNode($node->cond);
-        }
-
-        // メソッド呼び出し
-        if ($node instanceof Node\Expr\MethodCall) {
-            $methodName = $node->name instanceof Node\Identifier ? $node->name->toString() : '';
-            if (in_array($methodName, ['toIso8601String', 'toString', 'toDateTimeString'])) {
-                return 'string';
-            }
-            if (in_array($methodName, ['toArray'])) {
-                return 'array';
-            }
-        }
-
-        return 'string'; // デフォルト
-    }
-
-    /**
      * nullable判定
      */
     protected function isNullable(Node $node): bool
@@ -333,7 +251,7 @@ class FractalTransformerAnalyzer implements HasErrors
      */
     protected function generateExampleFromNode(string $key, Node $node)
     {
-        $type = $this->inferTypeFromNode($node);
+        $type = $this->typeInferenceEngine->inferTypeString($node);
 
         switch ($type) {
             case 'integer':

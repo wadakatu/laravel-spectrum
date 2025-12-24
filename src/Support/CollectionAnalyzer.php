@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Support;
 
 use PhpParser\Node;
@@ -10,9 +12,14 @@ class CollectionAnalyzer
 {
     private ModelSchemaExtractor $modelExtractor;
 
-    public function __construct()
-    {
-        $this->modelExtractor = new ModelSchemaExtractor;
+    private AstTypeInferenceEngine $typeInferenceEngine;
+
+    public function __construct(
+        ?ModelSchemaExtractor $modelExtractor = null,
+        ?AstTypeInferenceEngine $typeInferenceEngine = null
+    ) {
+        $this->modelExtractor = $modelExtractor ?? new ModelSchemaExtractor;
+        $this->typeInferenceEngine = $typeInferenceEngine ?? new AstTypeInferenceEngine;
     }
 
     public function analyzeCollectionChain(Node $node): array
@@ -271,7 +278,7 @@ class CollectionAnalyzer
             foreach ($node->items as $item) {
                 if ($item && $item->key instanceof Node\Scalar\String_) {
                     $key = $item->key->value;
-                    $properties[$key] = $this->inferTypeFromNode($item->value);
+                    $properties[$key] = $this->typeInferenceEngine->inferFromNode($item->value);
                 }
             }
 
@@ -282,47 +289,5 @@ class CollectionAnalyzer
         }
 
         return ['type' => 'object'];
-    }
-
-    private function inferTypeFromNode(Node $node): array
-    {
-        if ($node instanceof Node\Scalar\String_) {
-            return ['type' => 'string'];
-        }
-
-        if ($node instanceof Node\Scalar\Int_) {
-            return ['type' => 'integer'];
-        }
-
-        if ($node instanceof Node\Scalar\Float_) {
-            return ['type' => 'number'];
-        }
-
-        if ($node instanceof Node\Expr\ConstFetch) {
-            $name = $node->name->toLowerString();
-            if ($name === 'true' || $name === 'false') {
-                return ['type' => 'boolean'];
-            }
-            if ($name === 'null') {
-                return ['type' => 'null'];
-            }
-        }
-
-        if ($node instanceof Node\Expr\PropertyFetch) {
-            // プロパティアクセスの場合、デフォルトでstring
-            return ['type' => 'string'];
-        }
-
-        if ($node instanceof Node\Expr\MethodCall) {
-            // メソッド呼び出しの場合、デフォルトでstring
-            return ['type' => 'string'];
-        }
-
-        if ($node instanceof Node\Expr\Array_) {
-            // ネストした配列
-            return ['type' => 'array'];
-        }
-
-        return ['type' => 'string'];
     }
 }
