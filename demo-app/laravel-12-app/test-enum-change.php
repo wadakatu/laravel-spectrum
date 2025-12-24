@@ -10,11 +10,7 @@ $kernel->bootstrap();
 echo 'Cache enabled: '.(config('spectrum.cache.enabled') ? 'YES' : 'NO')."\n\n";
 
 // Initial analysis
-$analyzer = new \LaravelSpectrum\Analyzers\FormRequestAnalyzer(
-    new \LaravelSpectrum\Support\TypeInference,
-    new \LaravelSpectrum\Cache\DocumentationCache,
-    new \LaravelSpectrum\Analyzers\EnumAnalyzer
-);
+$analyzer = app(\LaravelSpectrum\Analyzers\FormRequestAnalyzer::class);
 
 echo "=== Initial analysis ===\n";
 $result1 = $analyzer->analyze(\App\Http\Requests\StoreUserRequest::class);
@@ -38,11 +34,7 @@ fgets(STDIN);
 
 // Re-analyze after change
 echo "\n=== Re-analyzing after change ===\n";
-$analyzer2 = new \LaravelSpectrum\Analyzers\FormRequestAnalyzer(
-    new \LaravelSpectrum\Support\TypeInference,
-    new \LaravelSpectrum\Cache\DocumentationCache,
-    new \LaravelSpectrum\Analyzers\EnumAnalyzer
-);
+$analyzer2 = app(\LaravelSpectrum\Analyzers\FormRequestAnalyzer::class);
 
 $result2 = $analyzer2->analyze(\App\Http\Requests\StoreUserRequest::class);
 $roleEnum2 = null;

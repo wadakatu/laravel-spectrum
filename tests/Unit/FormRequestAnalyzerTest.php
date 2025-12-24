@@ -4,17 +4,11 @@ namespace LaravelSpectrum\Tests\Unit;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use LaravelSpectrum\Analyzers\EnumAnalyzer;
-use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
-use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
-use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
-use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
-use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -51,13 +45,7 @@ class FormRequestAnalyzerTest extends TestCase
             });
 
         return new FormRequestAnalyzer(
-            $this->app->make(TypeInference::class),
             $cache,
-            $this->app->make(EnumAnalyzer::class),
-            $this->app->make(FileUploadAnalyzer::class),
-            $this->app->make(RuleRequirementAnalyzer::class),
-            $this->app->make(FormatInferrer::class),
-            $this->app->make(ValidationDescriptionGenerator::class),
             $this->app->make(ParameterBuilder::class),
             $mockAstExtractor,
             $this->app->make(AnonymousClassAnalyzer::class)
