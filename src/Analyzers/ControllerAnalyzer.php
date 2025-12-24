@@ -3,9 +3,10 @@
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
+use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Node;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -24,7 +25,9 @@ class ControllerAnalyzer
 
     protected ResponseAnalyzer $responseAnalyzer;
 
-    protected Parser $parser;
+    protected AstHelper $astHelper;
+
+    protected ?ErrorCollector $errorCollector = null;
 
     public function __construct(
         FormRequestAnalyzer $formRequestAnalyzer,
@@ -32,7 +35,9 @@ class ControllerAnalyzer
         PaginationAnalyzer $paginationAnalyzer,
         QueryParameterAnalyzer $queryParameterAnalyzer,
         EnumAnalyzer $enumAnalyzer,
-        ResponseAnalyzer $responseAnalyzer
+        ResponseAnalyzer $responseAnalyzer,
+        ?AstHelper $astHelper = null,
+        ?ErrorCollector $errorCollector = null
     ) {
         $this->formRequestAnalyzer = $formRequestAnalyzer;
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
@@ -40,7 +45,8 @@ class ControllerAnalyzer
         $this->queryParameterAnalyzer = $queryParameterAnalyzer;
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->errorCollector = $errorCollector;
+        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
     }
 
     /**
@@ -222,48 +228,33 @@ class ControllerAnalyzer
                 return null;
             }
 
-            $code = file_get_contents($filename);
-            $ast = $this->parser->parse($code);
-
+            $ast = $this->astHelper->parseFile($filename);
             if (! $ast) {
                 return null;
             }
 
-            // クラスとメソッドを探す
-            foreach ($ast as $node) {
-                if ($node instanceof Node\Stmt\Class_ || $node instanceof Node\Stmt\Namespace_) {
-                    $classNode = $this->findClassNode($node, $reflection->getShortName());
-                    if ($classNode) {
-                        foreach ($classNode->stmts as $stmt) {
-                            if ($stmt instanceof Node\Stmt\ClassMethod && $stmt->name->name === $methodName) {
-                                return $stmt;
-                            }
-                        }
-                    }
-                }
+            // クラスノードを探す
+            $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
+            if (! $classNode) {
+                return null;
             }
+
+            // メソッドノードを探す
+            return $this->astHelper->findMethodNode($classNode, $methodName);
         } catch (\Exception $e) {
-            // パースエラーの場合はnullを返す
-        }
+            $this->errorCollector?->addWarning(
+                'ControllerAnalyzer',
+                "Failed to get method node for {$reflection->getName()}::{$methodName}: {$e->getMessage()}",
+                [
+                    'class' => $reflection->getName(),
+                    'method' => $methodName,
+                    'error_type' => 'method_node_error',
+                ]
+            );
 
-        return null;
-    }
-
-    /**
-     * クラスノードを探す
-     */
-    protected function findClassNode(Node $node, string $className): ?Node\Stmt\Class_
-    {
-        if ($node instanceof Node\Stmt\Class_ && $node->name && $node->name->name === $className) {
-            return $node;
-        }
-
-        if ($node instanceof Node\Stmt\Namespace_) {
-            foreach ($node->stmts as $stmt) {
-                if ($stmt instanceof Node\Stmt\Class_ && $stmt->name && $stmt->name->name === $className) {
-                    return $stmt;
-                }
-            }
+            Log::debug("Failed to get method node: {$reflection->getName()}::{$methodName}", [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return null;

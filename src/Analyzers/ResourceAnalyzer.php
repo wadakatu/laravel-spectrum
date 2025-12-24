@@ -4,19 +4,18 @@ namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
+use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\HasExamples;
 use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 
 class ResourceAnalyzer
 {
-    protected Parser $parser;
+    protected AstHelper $astHelper;
 
     protected NodeTraverser $traverser;
 
@@ -26,11 +25,11 @@ class ResourceAnalyzer
 
     protected ?ErrorCollector $errorCollector = null;
 
-    public function __construct(DocumentationCache $cache, ?ErrorCollector $errorCollector = null)
+    public function __construct(DocumentationCache $cache, ?ErrorCollector $errorCollector = null, ?AstHelper $astHelper = null)
     {
         $this->cache = $cache;
         $this->errorCollector = $errorCollector;
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
     }
@@ -85,15 +84,13 @@ class ResourceAnalyzer
             }
 
             // ファイルをパース
-            $code = file_get_contents($filePath);
-            $ast = $this->parser->parse($code);
-
+            $ast = $this->astHelper->parseFile($filePath);
             if (! $ast) {
                 return [];
             }
 
             // クラスノードを探す
-            $classNode = $this->findClassNode($ast, $reflection->getShortName());
+            $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
             if (! $classNode) {
                 return [];
             }
@@ -188,24 +185,11 @@ class ResourceAnalyzer
     }
 
     /**
-     * クラスノードを探す
-     */
-    protected function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
-    {
-        $visitor = new AST\Visitors\ClassFindingVisitor($className);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        return $visitor->getClassNode();
-    }
-
-    /**
      * toArray()メソッドを解析
      */
     protected function analyzeToArrayMethod(Node\Stmt\Class_ $class): array
     {
-        $toArrayMethod = $this->findMethodNode($class, 'toArray');
+        $toArrayMethod = $this->astHelper->findMethodNode($class, 'toArray');
         if (! $toArrayMethod) {
             return [];
         }
@@ -231,7 +215,7 @@ class ResourceAnalyzer
      */
     protected function analyzeWithMethod(Node\Stmt\Class_ $class): array
     {
-        $withMethod = $this->findMethodNode($class, 'with');
+        $withMethod = $this->astHelper->findMethodNode($class, 'with');
         if (! $withMethod) {
             return [];
         }
@@ -242,21 +226,6 @@ class ResourceAnalyzer
         $traverser->traverse([$withMethod]);
 
         return $visitor->getArray();
-    }
-
-    /**
-     * メソッドノードを探す
-     */
-    protected function findMethodNode(Node\Stmt\Class_ $class, string $methodName): ?Node\Stmt\ClassMethod
-    {
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\ClassMethod &&
-                $stmt->name->toString() === $methodName) {
-                return $stmt;
-            }
-        }
-
-        return null;
     }
 
     /**
