@@ -7,6 +7,7 @@ use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PhpParser\Parser;
 
 /**
@@ -103,6 +104,23 @@ class AstHelper
     }
 
     /**
+     * Traverse AST nodes with a visitor.
+     *
+     * This helper encapsulates the NodeTraverser creation/configuration pattern,
+     * reducing boilerplate and ensuring consistent traversal setup across analyzers.
+     * The visitor is responsible for collecting results during traversal.
+     *
+     * @param  array<Node>  $nodes  The AST nodes to traverse
+     * @param  NodeVisitor  $visitor  The visitor to use for traversal
+     */
+    public function traverse(array $nodes, NodeVisitor $visitor): void
+    {
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($nodes);
+    }
+
+    /**
      * Find a class node by name in the AST.
      *
      * @param  array<Node\Stmt>  $ast  The parsed AST nodes from PhpParser
@@ -112,9 +130,7 @@ class AstHelper
     public function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
     {
         $visitor = new AST\Visitors\ClassFindingVisitor($className);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
+        $this->traverse($ast, $visitor);
 
         return $visitor->getClassNode();
     }
@@ -169,9 +185,7 @@ class AstHelper
     public function findAnonymousClassNode(array $ast): ?Node\Stmt\Class_
     {
         $visitor = new AST\Visitors\AnonymousClassFindingVisitor;
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
+        $this->traverse($ast, $visitor);
 
         return $visitor->getClassNode();
     }
@@ -185,9 +199,7 @@ class AstHelper
     public function extractUseStatements(array $ast): array
     {
         $visitor = new AST\Visitors\UseStatementExtractorVisitor;
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
+        $this->traverse($ast, $visitor);
 
         return $visitor->getUseStatements();
     }

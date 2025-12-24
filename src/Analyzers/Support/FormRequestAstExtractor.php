@@ -4,7 +4,6 @@ namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\AST;
 use PhpParser\Node;
-use PhpParser\NodeTraverser;
 use PhpParser\PrettyPrinter;
 
 /**
@@ -107,9 +106,7 @@ class FormRequestAstExtractor
         }
 
         $visitor = new AST\Visitors\RulesExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$rulesMethod]);
+        $this->astHelper->traverse([$rulesMethod], $visitor);
 
         return $visitor->getRules();
     }
@@ -128,9 +125,7 @@ class FormRequestAstExtractor
         }
 
         $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$attributesMethod]);
+        $this->astHelper->traverse([$attributesMethod], $visitor);
 
         return $visitor->getArray();
     }
@@ -149,9 +144,7 @@ class FormRequestAstExtractor
         }
 
         $visitor = new AST\Visitors\ArrayReturnExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$messagesMethod]);
+        $this->astHelper->traverse([$messagesMethod], $visitor);
 
         return $visitor->getArray();
     }
@@ -181,9 +174,7 @@ class FormRequestAstExtractor
         }
 
         $visitor = new AST\Visitors\ConditionalRulesExtractorVisitor($this->printer);
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor($visitor);
-        $traverser->traverse([$rulesMethod]);
+        $this->astHelper->traverse([$rulesMethod], $visitor);
 
         return $visitor->getRuleSets();
     }
