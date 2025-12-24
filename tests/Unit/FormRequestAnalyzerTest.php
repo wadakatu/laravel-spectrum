@@ -469,6 +469,99 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertIsArray($conditionalRules['merged_rules']);
     }
 
+    #[Test]
+    public function it_returns_empty_array_for_non_existent_class()
+    {
+        // Act
+        $parameters = $this->analyzer->analyze('NonExistentClass\\DoesNotExist');
+
+        // Assert
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_class_not_extending_form_request()
+    {
+        // Arrange - A regular class that doesn't extend FormRequest
+        $notFormRequestClass = new class
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $parameters = $this->analyzer->analyze(get_class($notFormRequestClass));
+
+        // Assert
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_returns_empty_result_for_conditional_analysis_of_non_existent_class()
+    {
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules('NonExistentClass\\DoesNotExist');
+
+        // Assert
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertEmpty($result['parameters']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+    }
+
+    #[Test]
+    public function it_returns_empty_result_for_conditional_analysis_of_non_form_request_class()
+    {
+        // Arrange - A regular class that doesn't extend FormRequest
+        $notFormRequestClass = new class
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules(get_class($notFormRequestClass));
+
+        // Assert
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertEmpty($result['parameters']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_details_analysis_of_non_existent_class()
+    {
+        // Act
+        $result = $this->analyzer->analyzeWithDetails('NonExistentClass\\DoesNotExist');
+
+        // Assert
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_details_analysis_of_non_form_request_class()
+    {
+        // Arrange - A regular class that doesn't extend FormRequest
+        $notFormRequestClass = new class
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $result = $this->analyzer->analyzeWithDetails(get_class($notFormRequestClass));
+
+        // Assert
+        $this->assertEmpty($result);
+    }
+
     private function findParameterByName(array $parameters, string $name): ?array
     {
         foreach ($parameters as $parameter) {

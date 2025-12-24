@@ -12,7 +12,7 @@ use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
-use PhpParser\Error;
+use PhpParser\Node;
 use PhpParser\PrettyPrinter;
 
 /**
@@ -83,6 +83,65 @@ class FormRequestAnalyzer
     }
 
     /**
+     * Prepare analysis context for a FormRequest class.
+     *
+     * This helper method consolidates the common setup logic used by multiple analysis methods.
+     * It validates the class, creates reflection, checks for anonymous classes, and parses the AST.
+     *
+     * @param  string  $requestClass  The fully qualified FormRequest class name
+     * @return array{
+     *     type: 'skip'|'anonymous'|'ready',
+     *     reflection?: \ReflectionClass<\Illuminate\Foundation\Http\FormRequest>,
+     *     ast?: array<Node\Stmt>,
+     *     classNode?: Node\Stmt\Class_,
+     *     useStatements?: array<string, string>,
+     *     namespace?: string
+     * } Returns an array indicating the analysis state:
+     *   - 'skip': Class doesn't exist or is not a FormRequest subclass
+     *   - 'anonymous': Class is anonymous or file path unavailable (includes 'reflection')
+     *   - 'ready': Full analysis context ready (includes all fields)
+     */
+    protected function prepareAnalysisContext(string $requestClass): array
+    {
+        if (! class_exists($requestClass)) {
+            return ['type' => 'skip'];
+        }
+
+        $reflection = new \ReflectionClass($requestClass);
+
+        if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+            return ['type' => 'skip'];
+        }
+
+        $filePath = $reflection->getFileName();
+        if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
+            return [
+                'type' => 'anonymous',
+                'reflection' => $reflection,
+            ];
+        }
+
+        $ast = $this->astExtractor->parseFile($filePath);
+        if (! $ast) {
+            return ['type' => 'skip'];
+        }
+
+        $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
+        if (! $classNode) {
+            return ['type' => 'skip'];
+        }
+
+        return [
+            'type' => 'ready',
+            'reflection' => $reflection,
+            'ast' => $ast,
+            'classNode' => $classNode,
+            'useStatements' => $this->astExtractor->extractUseStatements($ast),
+            'namespace' => $reflection->getNamespaceName(),
+        ];
+    }
+
+    /**
      * FormRequestクラスを解析してパラメータ情報を抽出
      */
     public function analyze(string $requestClass): array
@@ -112,66 +171,29 @@ class FormRequestAnalyzer
      */
     protected function performAnalysis(string $requestClass): array
     {
-        if (! class_exists($requestClass)) {
-            return [];
-        }
-
         try {
-            $reflection = new \ReflectionClass($requestClass);
+            $context = $this->prepareAnalysisContext($requestClass);
 
-            // FormRequestを継承していない場合はスキップ
-            if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+            if ($context['type'] === 'skip') {
                 return [];
             }
 
-            $filePath = $reflection->getFileName();
-            if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
-                // For anonymous classes or when file path is not available, use reflection-based fallback
-                return $this->anonymousClassAnalyzer->analyze($reflection);
+            if ($context['type'] === 'anonymous') {
+                return $this->anonymousClassAnalyzer->analyze($context['reflection']);
             }
 
-            // ファイルをパース
-            $ast = $this->astExtractor->parseFile($filePath);
-            if (! $ast) {
-                return [];
-            }
+            // Extract rules and attributes from AST
+            $rules = $this->astExtractor->extractRules($context['classNode']);
+            $attributes = $this->astExtractor->extractAttributes($context['classNode']);
 
-            // Extract use statements
-            $useStatements = $this->astExtractor->extractUseStatements($ast);
-
-            // クラスノードを探す
-            $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
-            if (! $classNode) {
-                return [];
-            }
-
-            // rules()メソッドを解析
-            $rules = $this->astExtractor->extractRules($classNode);
-
-            // attributes()メソッドを解析
-            $attributes = $this->astExtractor->extractAttributes($classNode);
-
-            // Get namespace for enum resolution
-            $namespace = $reflection->getNamespaceName();
-
-            // パラメータ情報を生成
-            return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
-
-        } catch (Error $parseError) {
-            $this->errorCollector?->addError(
-                'FormRequestAnalyzer',
-                "Failed to parse FormRequest {$requestClass}: {$parseError->getMessage()}",
-                [
-                    'class' => $requestClass,
-                    'error_type' => 'parse_error',
-                ]
+            // Build parameters
+            return $this->parameterBuilder->buildFromRules(
+                $rules,
+                $attributes,
+                $context['namespace'],
+                $context['useStatements']
             );
 
-            Log::warning("Failed to parse FormRequest: {$requestClass}", [
-                'error' => $parseError->getMessage(),
-            ]);
-
-            return [];
         } catch (\Exception $e) {
             $this->errorCollector?->addError(
                 'FormRequestAnalyzer',
@@ -195,56 +217,34 @@ class FormRequestAnalyzer
      */
     public function analyzeWithConditionalRules(string $requestClass): array
     {
-        return $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
+        $emptyResult = [
+            'parameters' => [],
+            'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+        ];
+
+        return $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass, $emptyResult) {
             try {
-                $reflection = new \ReflectionClass($requestClass);
+                $context = $this->prepareAnalysisContext($requestClass);
 
-                if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
-                    return [
-                        'parameters' => [],
-                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-                    ];
+                if ($context['type'] === 'skip') {
+                    return $emptyResult;
                 }
 
-                $filePath = $reflection->getFileName();
-                if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
-                    // For anonymous classes or when file path is not available, use anonymous class analyzer
-                    return $this->anonymousClassAnalyzer->analyzeWithConditionalRules($reflection);
-                }
-
-                $ast = $this->astExtractor->parseFile($filePath);
-                if (! $ast) {
-                    return [
-                        'parameters' => [],
-                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-                    ];
-                }
-
-                // Extract use statements
-                $useStatements = $this->astExtractor->extractUseStatements($ast);
-
-                // Find class node
-                $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
-                if (! $classNode) {
-                    return [
-                        'parameters' => [],
-                        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-                    ];
+                if ($context['type'] === 'anonymous') {
+                    return $this->anonymousClassAnalyzer->analyzeWithConditionalRules($context['reflection']);
                 }
 
                 // Extract conditional rules
-                $conditionalRules = $this->astExtractor->extractConditionalRules($classNode);
-
-                // Generate parameters from conditional rules
-                $attributes = $this->astExtractor->extractAttributes($classNode);
-                $messages = $this->astExtractor->extractMessages($classNode);
+                $conditionalRules = $this->astExtractor->extractConditionalRules($context['classNode']);
+                $attributes = $this->astExtractor->extractAttributes($context['classNode']);
+                $messages = $this->astExtractor->extractMessages($context['classNode']);
 
                 if (! empty($conditionalRules['rules_sets'])) {
                     $parameters = $this->parameterBuilder->buildFromConditionalRules(
                         $conditionalRules,
                         $attributes,
-                        $reflection->getNamespaceName(),
-                        $useStatements
+                        $context['namespace'],
+                        $context['useStatements']
                     );
 
                     return [
@@ -256,8 +256,13 @@ class FormRequestAnalyzer
                 }
 
                 // Fallback to regular analysis
-                $rules = $this->astExtractor->extractRules($classNode);
-                $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes, $reflection->getNamespaceName(), $useStatements);
+                $rules = $this->astExtractor->extractRules($context['classNode']);
+                $parameters = $this->parameterBuilder->buildFromRules(
+                    $rules,
+                    $attributes,
+                    $context['namespace'],
+                    $context['useStatements']
+                );
 
                 return [
                     'parameters' => $parameters,
@@ -276,14 +281,11 @@ class FormRequestAnalyzer
                     ]
                 );
 
-                \Illuminate\Support\Facades\Log::warning("Failed to analyze FormRequest with conditions: {$requestClass}", [
+                Log::warning("Failed to analyze FormRequest with conditions: {$requestClass}", [
                     'error' => $e->getMessage(),
                 ]);
 
-                return [
-                    'parameters' => [],
-                    'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-                ];
+                return $emptyResult;
             }
         });
     }
@@ -303,49 +305,22 @@ class FormRequestAnalyzer
      */
     protected function performAnalysisWithDetails(string $requestClass): array
     {
-        if (! class_exists($requestClass)) {
-            return [];
-        }
-
         try {
-            $reflection = new \ReflectionClass($requestClass);
+            $context = $this->prepareAnalysisContext($requestClass);
 
-            // FormRequestを継承していない場合はスキップ
-            if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
+            if ($context['type'] === 'skip') {
                 return [];
             }
 
-            $filePath = $reflection->getFileName();
-            if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
-                // For anonymous classes or when file path is not available, use reflection-based fallback
-                return $this->anonymousClassAnalyzer->analyzeDetails($reflection);
+            if ($context['type'] === 'anonymous') {
+                return $this->anonymousClassAnalyzer->analyzeDetails($context['reflection']);
             }
 
-            // ファイルをパース
-            $ast = $this->astExtractor->parseFile($filePath);
-            if (! $ast) {
-                return [];
-            }
-
-            // クラスノードを探す
-            $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
-            if (! $classNode) {
-                return [];
-            }
-
-            // rules()メソッドを解析
-            $rules = $this->astExtractor->extractRules($classNode);
-
-            // attributes()メソッドを解析
-            $attributes = $this->astExtractor->extractAttributes($classNode);
-
-            // messages()メソッドを解析
-            $messages = $this->astExtractor->extractMessages($classNode);
-
+            // Extract rules, attributes, and messages from AST
             return [
-                'rules' => $rules,
-                'attributes' => $attributes,
-                'messages' => $messages,
+                'rules' => $this->astExtractor->extractRules($context['classNode']),
+                'attributes' => $this->astExtractor->extractAttributes($context['classNode']),
+                'messages' => $this->astExtractor->extractMessages($context['classNode']),
             ];
 
         } catch (\Exception $e) {
