@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
-use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
-use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
-use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
-use LaravelSpectrum\Support\TypeInference;
 
 /**
  * Analyzes Laravel FormRequest classes to extract validation rules and parameters.
@@ -44,19 +40,7 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
         'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
     ];
 
-    protected TypeInference $typeInference;
-
     protected DocumentationCache $cache;
-
-    protected EnumAnalyzer $enumAnalyzer;
-
-    protected FileUploadAnalyzer $fileUploadAnalyzer;
-
-    protected RuleRequirementAnalyzer $ruleRequirementAnalyzer;
-
-    protected FormatInferrer $formatInferrer;
-
-    protected ValidationDescriptionGenerator $descriptionGenerator;
 
     protected ParameterBuilder $parameterBuilder;
 
@@ -65,26 +49,14 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
     protected AnonymousClassAnalyzer $anonymousClassAnalyzer;
 
     public function __construct(
-        TypeInference $typeInference,
         DocumentationCache $cache,
-        EnumAnalyzer $enumAnalyzer,
-        FileUploadAnalyzer $fileUploadAnalyzer,
-        RuleRequirementAnalyzer $ruleRequirementAnalyzer,
-        FormatInferrer $formatInferrer,
-        ValidationDescriptionGenerator $descriptionGenerator,
         ParameterBuilder $parameterBuilder,
         FormRequestAstExtractor $astExtractor,
         AnonymousClassAnalyzer $anonymousClassAnalyzer,
         ?ErrorCollector $errorCollector = null
     ) {
         $this->initializeErrorCollector($errorCollector);
-        $this->typeInference = $typeInference;
         $this->cache = $cache;
-        $this->enumAnalyzer = $enumAnalyzer;
-        $this->fileUploadAnalyzer = $fileUploadAnalyzer;
-        $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer;
-        $this->formatInferrer = $formatInferrer;
-        $this->descriptionGenerator = $descriptionGenerator;
         $this->parameterBuilder = $parameterBuilder;
         $this->astExtractor = $astExtractor;
         $this->anonymousClassAnalyzer = $anonymousClassAnalyzer;
