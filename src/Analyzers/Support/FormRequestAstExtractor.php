@@ -3,20 +3,113 @@
 namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\AST;
+use LaravelSpectrum\Support\ErrorCollector;
+use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 
 /**
  * Extracts information from FormRequest AST nodes.
  *
+ * Handles both parsing PHP files into AST and extracting specific information
+ * like validation rules, attributes, and messages from FormRequest classes.
+ *
  * Extracted from FormRequestAnalyzer to improve single responsibility.
  */
 class FormRequestAstExtractor
 {
+    protected Parser $parser;
+
+    protected ErrorCollector $errorCollector;
+
+    /**
+     * Create a new FormRequestAstExtractor instance.
+     *
+     * @param  PrettyPrinter\Standard  $printer  The PHP-Parser pretty printer for code output
+     * @param  Parser|null  $parser  Optional custom parser instance (defaults to newest supported version)
+     * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging parse failures
+     */
     public function __construct(
-        protected PrettyPrinter\Standard $printer
-    ) {}
+        protected PrettyPrinter\Standard $printer,
+        ?Parser $parser = null,
+        ?ErrorCollector $errorCollector = null
+    ) {
+        $this->parser = $parser ?? (new ParserFactory)->createForNewestSupportedVersion();
+        $this->errorCollector = $errorCollector ?? new ErrorCollector;
+    }
+
+    /**
+     * Parse a PHP file and return its AST.
+     *
+     * @param  string  $filePath  The path to the PHP file to parse
+     * @return array<Node\Stmt>|null The parsed AST nodes or null if file not found, read fails, or parse error occurs
+     */
+    public function parseFile(string $filePath): ?array
+    {
+        if (! file_exists($filePath)) {
+            $this->errorCollector->addWarning(
+                'FormRequestAstExtractor',
+                "File does not exist: {$filePath}",
+                ['file_path' => $filePath, 'error_type' => 'file_not_found']
+            );
+
+            return null;
+        }
+
+        $code = file_get_contents($filePath);
+        if ($code === false) {
+            $this->errorCollector->addError(
+                'FormRequestAstExtractor',
+                "Failed to read file: {$filePath}",
+                ['file_path' => $filePath, 'error_type' => 'file_read_error']
+            );
+
+            return null;
+        }
+
+        try {
+            return $this->parser->parse($code);
+        } catch (Error $e) {
+            $this->errorCollector->addError(
+                'FormRequestAstExtractor',
+                "Failed to parse PHP file: {$filePath}",
+                [
+                    'file_path' => $filePath,
+                    'parse_error' => $e->getMessage(),
+                    'error_type' => 'parse_error',
+                ]
+            );
+
+            return null;
+        }
+    }
+
+    /**
+     * Parse PHP code string and return its AST.
+     *
+     * @param  string  $code  The PHP code to parse
+     * @return array<Node\Stmt>|null The parsed AST nodes or null if parse error occurs
+     */
+    public function parseCode(string $code): ?array
+    {
+        try {
+            return $this->parser->parse($code);
+        } catch (Error $e) {
+            $this->errorCollector->addError(
+                'FormRequestAstExtractor',
+                'Failed to parse PHP code',
+                [
+                    'parse_error' => $e->getMessage(),
+                    'error_type' => 'parse_error',
+                ]
+            );
+
+            return null;
+        }
+    }
 
     /**
      * Find a class node by name in the AST.
@@ -37,6 +130,10 @@ class FormRequestAstExtractor
 
     /**
      * Find a method node by name in a class.
+     *
+     * @param  Node\Stmt\Class_  $class  The class node to search within
+     * @param  string  $methodName  The name of the method to find
+     * @return Node\Stmt\ClassMethod|null The found method node or null if not found
      */
     public function findMethodNode(Node\Stmt\Class_ $class, string $methodName): ?Node\Stmt\ClassMethod
     {
@@ -68,6 +165,9 @@ class FormRequestAstExtractor
 
     /**
      * Extract validation rules from the rules() method.
+     *
+     * @param  Node\Stmt\Class_  $class  The FormRequest class node
+     * @return array<string, mixed> Extracted validation rules as field => rules mapping
      */
     public function extractRules(Node\Stmt\Class_ $class): array
     {
@@ -86,6 +186,9 @@ class FormRequestAstExtractor
 
     /**
      * Extract attributes from the attributes() method.
+     *
+     * @param  Node\Stmt\Class_  $class  The FormRequest class node
+     * @return array<string, string> Extracted attributes as field => label mapping
      */
     public function extractAttributes(Node\Stmt\Class_ $class): array
     {
@@ -104,6 +207,9 @@ class FormRequestAstExtractor
 
     /**
      * Extract validation messages from the messages() method.
+     *
+     * @param  Node\Stmt\Class_  $class  The FormRequest class node
+     * @return array<string, string> Custom validation messages as rule.field => message mapping
      */
     public function extractMessages(Node\Stmt\Class_ $class): array
     {
@@ -138,6 +244,9 @@ class FormRequestAstExtractor
 
     /**
      * Extract conditional rules from the rules() method.
+     *
+     * @param  Node\Stmt\Class_  $class  The FormRequest class node
+     * @return array{rules_sets: array<mixed>, merged_rules: array<string, mixed>} Extracted conditional rule sets
      */
     public function extractConditionalRules(Node\Stmt\Class_ $class): array
     {

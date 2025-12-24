@@ -13,21 +13,23 @@ use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Error;
-use PhpParser\Node;
-use PhpParser\NodeTraverser;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 
+/**
+ * Analyzes Laravel FormRequest classes to extract validation rules and parameters.
+ *
+ * Delegates AST parsing and extraction to FormRequestAstExtractor and builds
+ * OpenAPI-compatible parameter schemas from the extracted information.
+ *
+ * Supports:
+ * - Standard FormRequest classes with rules() method
+ * - Anonymous FormRequest classes (via AnonymousClassAnalyzer)
+ * - Conditional validation rules
+ * - Custom attributes and messages
+ */
 class FormRequestAnalyzer
 {
     protected TypeInference $typeInference;
-
-    protected Parser $parser;
-
-    protected NodeTraverser $traverser;
-
-    protected PrettyPrinter\Standard $printer;
 
     protected DocumentationCache $cache;
 
@@ -53,16 +55,17 @@ class FormRequestAnalyzer
     {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
-        $this->traverser = new NodeTraverser;
-        $this->printer = new PrettyPrinter\Standard;
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
         $this->errorCollector = $errorCollector;
         $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
         $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
         $this->descriptionGenerator = $descriptionGenerator ?? new ValidationDescriptionGenerator($this->enumAnalyzer);
-        $this->astExtractor = $astExtractor ?? new FormRequestAstExtractor($this->printer);
+        $this->astExtractor = $astExtractor ?? new FormRequestAstExtractor(
+            new PrettyPrinter\Standard,
+            null,
+            $this->errorCollector
+        );
         $this->parameterBuilder = $parameterBuilder ?? new ParameterBuilder(
             $this->typeInference,
             $this->ruleRequirementAnalyzer,
@@ -128,9 +131,7 @@ class FormRequestAnalyzer
             }
 
             // ファイルをパース
-            $code = file_get_contents($filePath);
-            $ast = $this->parser->parse($code);
-
+            $ast = $this->astExtractor->parseFile($filePath);
             if (! $ast) {
                 return [];
             }
@@ -211,9 +212,7 @@ class FormRequestAnalyzer
                     return $this->anonymousClassAnalyzer->analyzeWithConditionalRules($reflection);
                 }
 
-                $code = file_get_contents($filePath);
-                $ast = $this->parser->parse($code);
-
+                $ast = $this->astExtractor->parseFile($filePath);
                 if (! $ast) {
                     return [
                         'parameters' => [],
@@ -323,9 +322,7 @@ class FormRequestAnalyzer
             }
 
             // ファイルをパース
-            $code = file_get_contents($filePath);
-            $ast = $this->parser->parse($code);
-
+            $ast = $this->astExtractor->parseFile($filePath);
             if (! $ast) {
                 return [];
             }
