@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
+use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\TestCase;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
@@ -14,11 +15,18 @@ class FormRequestAstExtractorTest extends TestCase
 
     private \PhpParser\Parser $parser;
 
+    private ErrorCollector $errorCollector;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->extractor = new FormRequestAstExtractor(new PrettyPrinter\Standard);
+        $this->errorCollector = new ErrorCollector;
+        $this->extractor = new FormRequestAstExtractor(
+            new PrettyPrinter\Standard,
+            null,
+            $this->errorCollector
+        );
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -101,6 +109,107 @@ PHP;
 
         $this->assertNotNull($classNode);
         $this->assertEquals('MyFormRequest', $classNode->name->toString());
+    }
+
+    // ========== Parse error handling tests ==========
+
+    #[Test]
+    public function it_returns_null_and_logs_error_for_invalid_php_syntax_in_code(): void
+    {
+        $invalidCode = '<?php class { broken syntax';
+
+        $ast = $this->extractor->parseCode($invalidCode);
+
+        $this->assertNull($ast);
+
+        $errors = $this->errorCollector->getErrors();
+        $this->assertNotEmpty($errors);
+        $this->assertEquals('parse_error', $errors[0]['metadata']['error_type']);
+    }
+
+    #[Test]
+    public function it_returns_null_and_logs_error_for_invalid_php_syntax_in_file(): void
+    {
+        // Create a temporary file with invalid PHP
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_').'.php';
+        file_put_contents($tempFile, '<?php class Test { invalid syntax');
+
+        try {
+            $ast = $this->extractor->parseFile($tempFile);
+
+            $this->assertNull($ast);
+
+            $errors = $this->errorCollector->getErrors();
+            $this->assertNotEmpty($errors);
+            $this->assertEquals('parse_error', $errors[0]['metadata']['error_type']);
+            $this->assertStringContainsString($tempFile, $errors[0]['metadata']['file_path']);
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    #[Test]
+    public function it_logs_warning_when_file_does_not_exist(): void
+    {
+        $ast = $this->extractor->parseFile('/non/existent/path/file.php');
+
+        $this->assertNull($ast);
+
+        $warnings = $this->errorCollector->getWarnings();
+        $this->assertNotEmpty($warnings);
+        $this->assertEquals('file_not_found', $warnings[0]['metadata']['error_type']);
+    }
+
+    // ========== Empty file/code handling tests ==========
+
+    #[Test]
+    public function it_handles_empty_code_string(): void
+    {
+        $ast = $this->extractor->parseCode('');
+
+        // Empty string returns empty array from parser
+        $this->assertIsArray($ast);
+        $this->assertEmpty($ast);
+    }
+
+    #[Test]
+    public function it_handles_code_with_only_php_tag(): void
+    {
+        $ast = $this->extractor->parseCode('<?php');
+
+        $this->assertIsArray($ast);
+        $this->assertEmpty($ast);
+    }
+
+    #[Test]
+    public function it_handles_empty_file(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'empty_').'.php';
+        file_put_contents($tempFile, '');
+
+        try {
+            $ast = $this->extractor->parseFile($tempFile);
+            // Empty file returns empty array from parser
+            $this->assertIsArray($ast);
+            $this->assertEmpty($ast);
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    #[Test]
+    public function it_handles_file_with_only_php_tag(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'empty_').'.php';
+        file_put_contents($tempFile, '<?php');
+
+        try {
+            $ast = $this->extractor->parseFile($tempFile);
+            $this->assertIsArray($ast);
+            $this->assertEmpty($ast);
+        } finally {
+            unlink($tempFile);
+        }
     }
 
     // ========== findClassNode tests ==========

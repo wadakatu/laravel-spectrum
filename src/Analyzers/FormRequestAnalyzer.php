@@ -15,6 +15,18 @@ use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Error;
 use PhpParser\PrettyPrinter;
 
+/**
+ * Analyzes Laravel FormRequest classes to extract validation rules and parameters.
+ *
+ * Delegates AST parsing and extraction to FormRequestAstExtractor and builds
+ * OpenAPI-compatible parameter schemas from the extracted information.
+ *
+ * Supports:
+ * - Standard FormRequest classes with rules() method
+ * - Anonymous FormRequest classes (via AnonymousClassAnalyzer)
+ * - Conditional validation rules
+ * - Custom attributes and messages
+ */
 class FormRequestAnalyzer
 {
     protected TypeInference $typeInference;
