@@ -33,6 +33,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
           coverage: xdebug
+          ini-values: memory_limit=256M
 
       - name: Setup problem matchers
         run: |
@@ -48,7 +49,7 @@ jobs:
         run: composer show -D
 
       - name: Execute tests
-        run: php -d memory_limit=256M vendor/bin/phpunit --coverage-clover coverage.xml
+        run: vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
