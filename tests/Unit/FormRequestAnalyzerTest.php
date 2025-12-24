@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Tests\Unit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
@@ -467,6 +468,235 @@ class FormRequestAnalyzerTest extends TestCase
         // For anonymous classes, the rules_sets will be empty as AST parsing is limited
         $this->assertIsArray($conditionalRules['rules_sets']);
         $this->assertIsArray($conditionalRules['merged_rules']);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_non_existent_class()
+    {
+        // Act
+        $parameters = $this->analyzer->analyze('NonExistentClass\\DoesNotExist');
+
+        // Assert
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_class_not_extending_form_request()
+    {
+        // Arrange - A regular class that doesn't extend FormRequest
+        $notFormRequestClass = new class
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $parameters = $this->analyzer->analyze(get_class($notFormRequestClass));
+
+        // Assert
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_returns_empty_result_for_conditional_analysis_of_non_existent_class()
+    {
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules('NonExistentClass\\DoesNotExist');
+
+        // Assert
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertEmpty($result['parameters']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+    }
+
+    #[Test]
+    public function it_returns_empty_result_for_conditional_analysis_of_non_form_request_class()
+    {
+        // Arrange - A regular class that doesn't extend FormRequest
+        $notFormRequestClass = new class
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules(get_class($notFormRequestClass));
+
+        // Assert
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertEmpty($result['parameters']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_details_analysis_of_non_existent_class()
+    {
+        // Act
+        $result = $this->analyzer->analyzeWithDetails('NonExistentClass\\DoesNotExist');
+
+        // Assert
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_details_analysis_of_non_form_request_class()
+    {
+        // Arrange - A regular class that doesn't extend FormRequest
+        $notFormRequestClass = new class
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $result = $this->analyzer->analyzeWithDetails(get_class($notFormRequestClass));
+
+        // Assert
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_when_ast_parsing_fails()
+    {
+        // Arrange - Create a mock AST extractor that returns null for parseFile
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn(null);
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new FormRequestAnalyzer(
+            new TypeInference,
+            $cache,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            $mockAstExtractor
+        );
+
+        // Act
+        $parameters = $analyzer->analyze(StoreUserRequest::class);
+
+        // Assert
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_when_class_node_not_found_in_ast()
+    {
+        // Arrange - Create a mock AST extractor that returns valid AST but null classNode
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn([]);  // Return empty array (valid AST)
+        $mockAstExtractor->method('findClassNode')->willReturn(null);  // Class node not found
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new FormRequestAnalyzer(
+            new TypeInference,
+            $cache,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            $mockAstExtractor
+        );
+
+        // Act
+        $parameters = $analyzer->analyze(StoreUserRequest::class);
+
+        // Assert
+        $this->assertEmpty($parameters);
+    }
+
+    #[Test]
+    public function it_returns_empty_conditional_result_when_ast_parsing_fails()
+    {
+        // Arrange - Create a mock AST extractor that returns null for parseFile
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn(null);
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new FormRequestAnalyzer(
+            new TypeInference,
+            $cache,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            $mockAstExtractor
+        );
+
+        // Act
+        $result = $analyzer->analyzeWithConditionalRules(StoreUserRequest::class);
+
+        // Assert
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertEmpty($result['parameters']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+    }
+
+    #[Test]
+    public function it_returns_empty_details_when_ast_parsing_fails()
+    {
+        // Arrange - Create a mock AST extractor that returns null for parseFile
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn(null);
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new FormRequestAnalyzer(
+            new TypeInference,
+            $cache,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            $mockAstExtractor
+        );
+
+        // Act
+        $result = $analyzer->analyzeWithDetails(StoreUserRequest::class);
+
+        // Assert
+        $this->assertEmpty($result);
     }
 
     private function findParameterByName(array $parameters, string $name): ?array

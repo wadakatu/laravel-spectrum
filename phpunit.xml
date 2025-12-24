@@ -6,6 +6,9 @@
          cacheDirectory=".phpunit.cache"
          displayDetailsOnTestsThatTriggerDeprecations="true"
 >
+    <php>
+        <ini name="memory_limit" value="256M"/>
+    </php>
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
