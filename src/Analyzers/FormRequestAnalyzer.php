@@ -12,7 +12,6 @@ use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
-use PhpParser\Node;
 use PhpParser\PrettyPrinter;
 
 /**
@@ -29,6 +28,16 @@ use PhpParser\PrettyPrinter;
  */
 class FormRequestAnalyzer
 {
+    /**
+     * Empty result structure for conditional rules analysis.
+     *
+     * @var array{parameters: array<mixed>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<mixed>}}
+     */
+    private const EMPTY_CONDITIONAL_RESULT = [
+        'parameters' => [],
+        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+    ];
+
     protected TypeInference $typeInference;
 
     protected DocumentationCache $cache;
@@ -92,13 +101,13 @@ class FormRequestAnalyzer
      * @return array{
      *     type: 'skip'|'anonymous'|'ready',
      *     reflection?: \ReflectionClass<\Illuminate\Foundation\Http\FormRequest>,
-     *     ast?: array<Node\Stmt>,
-     *     classNode?: Node\Stmt\Class_,
+     *     ast?: array<\PhpParser\Node\Stmt>,
+     *     classNode?: \PhpParser\Node\Stmt\Class_,
      *     useStatements?: array<string, string>,
      *     namespace?: string
      * } Returns an array indicating the analysis state:
-     *   - 'skip': Class doesn't exist or is not a FormRequest subclass
-     *   - 'anonymous': Class is anonymous or file path unavailable (includes 'reflection')
+     *   - 'skip': Class doesn't exist, is not a FormRequest subclass, AST parsing failed, or class node not found in AST
+     *   - 'anonymous': Class is anonymous, file path unavailable, or file does not exist (includes 'reflection')
      *   - 'ready': Full analysis context ready (includes all fields)
      */
     protected function prepareAnalysisContext(string $requestClass): array
@@ -128,6 +137,17 @@ class FormRequestAnalyzer
 
         $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
         if (! $classNode) {
+            $this->errorCollector?->addWarning(
+                'FormRequestAnalyzer',
+                "Class node not found in AST for {$reflection->getName()}",
+                [
+                    'class' => $reflection->getName(),
+                    'short_name' => $reflection->getShortName(),
+                    'file' => $filePath,
+                    'error_type' => 'class_node_not_found',
+                ]
+            );
+
             return ['type' => 'skip'];
         }
 
@@ -217,17 +237,12 @@ class FormRequestAnalyzer
      */
     public function analyzeWithConditionalRules(string $requestClass): array
     {
-        $emptyResult = [
-            'parameters' => [],
-            'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-        ];
-
-        return $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass, $emptyResult) {
+        return $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
             try {
                 $context = $this->prepareAnalysisContext($requestClass);
 
                 if ($context['type'] === 'skip') {
-                    return $emptyResult;
+                    return self::EMPTY_CONDITIONAL_RESULT;
                 }
 
                 if ($context['type'] === 'anonymous') {
@@ -285,7 +300,7 @@ class FormRequestAnalyzer
                     'error' => $e->getMessage(),
                 ]);
 
-                return $emptyResult;
+                return self::EMPTY_CONDITIONAL_RESULT;
             }
         });
     }
