@@ -136,17 +136,18 @@ class QueryParameterTypeInferenceTest extends TestCase
 
     public function test_get_constraints_from_rules(): void
     {
+        // For string type (default), min/max → minLength/maxLength
         $rules = ['min:5'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
-        $this->assertEquals(['minimum' => 5], $constraints);
+        $this->assertEquals(['minLength' => 5], $constraints);
 
         $rules = ['max:100'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
-        $this->assertEquals(['maximum' => 100], $constraints);
+        $this->assertEquals(['maxLength' => 100], $constraints);
 
         $rules = ['between:10,50'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
-        $this->assertEquals(['minimum' => 10, 'maximum' => 50], $constraints);
+        $this->assertEquals(['minLength' => 10, 'maxLength' => 50], $constraints);
 
         $rules = ['size:10'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
@@ -160,7 +161,7 @@ class QueryParameterTypeInferenceTest extends TestCase
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['pattern' => '/^[A-Z]+$/'], $constraints);
 
-        // Multiple rules
+        // For integer type, min/max → minimum/maximum
         $rules = ['integer', 'min:1', 'max:100'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
         $this->assertEquals(['minimum' => 1, 'maximum' => 100], $constraints);

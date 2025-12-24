@@ -114,6 +114,7 @@ class ValidationRuleTypeMapperTest extends TestCase
     public function it_infers_date_format(): void
     {
         $this->assertEquals('date', $this->mapper->inferFormat(['date']));
+        $this->assertEquals('date', $this->mapper->inferFormat(['date_format:Y-m-d']));
         $this->assertEquals('date-time', $this->mapper->inferFormat(['date_format:Y-m-d H:i:s']));
         $this->assertEquals('date-time', $this->mapper->inferFormat(['after:2024-01-01']));
     }
@@ -160,24 +161,37 @@ class ValidationRuleTypeMapperTest extends TestCase
     #[Test]
     public function it_extracts_minimum_constraint(): void
     {
+        // For string type (default), min → minLength
         $constraints = $this->mapper->extractConstraints(['min:5']);
+        $this->assertEquals(5, $constraints['minLength']);
 
+        // For integer type, min → minimum
+        $constraints = $this->mapper->extractConstraints(['integer', 'min:5']);
         $this->assertEquals(5, $constraints['minimum']);
     }
 
     #[Test]
     public function it_extracts_maximum_constraint(): void
     {
+        // For string type (default), max → maxLength
         $constraints = $this->mapper->extractConstraints(['max:100']);
+        $this->assertEquals(100, $constraints['maxLength']);
 
+        // For number type, max → maximum
+        $constraints = $this->mapper->extractConstraints(['numeric', 'max:100']);
         $this->assertEquals(100, $constraints['maximum']);
     }
 
     #[Test]
     public function it_extracts_between_constraints(): void
     {
+        // For string type (default), between → minLength/maxLength
         $constraints = $this->mapper->extractConstraints(['between:1,10']);
+        $this->assertEquals(1, $constraints['minLength']);
+        $this->assertEquals(10, $constraints['maxLength']);
 
+        // For integer type, between → minimum/maximum
+        $constraints = $this->mapper->extractConstraints(['integer', 'between:1,10']);
         $this->assertEquals(1, $constraints['minimum']);
         $this->assertEquals(10, $constraints['maximum']);
     }

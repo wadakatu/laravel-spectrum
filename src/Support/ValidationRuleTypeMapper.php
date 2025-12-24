@@ -170,12 +170,18 @@ final class ValidationRuleTypeMapper
                 return self::FORMAT_RULES[$ruleName];
             }
 
-            // Date format rule
+            // Date format rule - check if format includes time components
             if (Str::startsWith($rule, 'date_format:')) {
-                return 'date-time';
+                $format = Str::after($rule, 'date_format:');
+                // Check if format includes time components (H, i, s, G, u)
+                if (preg_match('/[HisGu]/', $format)) {
+                    return 'date-time';
+                }
+
+                return 'date';
             }
 
-            // Other date-related rules
+            // Other date-related rules (after:, before:, etc.)
             if ($this->isDateRule($rule) && $ruleName !== 'date') {
                 return 'date-time';
             }
@@ -230,12 +236,19 @@ final class ValidationRuleTypeMapper
     /**
      * Extract constraints from validation rules.
      *
+     * Automatically infers the type from rules to determine correct constraint keys:
+     * - For string types: min/max/between → minLength/maxLength
+     * - For numeric types: min/max/between → minimum/maximum
+     *
      * @param  array<mixed>  $rules
+     * @param  string|null  $type  Optional explicit type, if null will be inferred from rules
      * @return array<string, mixed> Constraints like minimum, maximum, minLength, maxLength, pattern, enum
      */
-    public function extractConstraints(array $rules): array
+    public function extractConstraints(array $rules, ?string $type = null): array
     {
         $constraints = [];
+        $inferredType = $type ?? $this->inferType($rules);
+        $useNumericConstraints = in_array($inferredType, ['integer', 'number'], true);
 
         foreach ($rules as $rule) {
             if (! is_string($rule)) {
@@ -249,20 +262,33 @@ final class ValidationRuleTypeMapper
             switch ($ruleName) {
                 case 'min':
                     if (isset($parameters[0])) {
-                        $constraints['minimum'] = (int) $parameters[0];
+                        if ($useNumericConstraints) {
+                            $constraints['minimum'] = (int) $parameters[0];
+                        } else {
+                            $constraints['minLength'] = (int) $parameters[0];
+                        }
                     }
                     break;
 
                 case 'max':
                     if (isset($parameters[0])) {
-                        $constraints['maximum'] = (int) $parameters[0];
+                        if ($useNumericConstraints) {
+                            $constraints['maximum'] = (int) $parameters[0];
+                        } else {
+                            $constraints['maxLength'] = (int) $parameters[0];
+                        }
                     }
                     break;
 
                 case 'between':
                     if (isset($parameters[0], $parameters[1])) {
-                        $constraints['minimum'] = (int) $parameters[0];
-                        $constraints['maximum'] = (int) $parameters[1];
+                        if ($useNumericConstraints) {
+                            $constraints['minimum'] = (int) $parameters[0];
+                            $constraints['maximum'] = (int) $parameters[1];
+                        } else {
+                            $constraints['minLength'] = (int) $parameters[0];
+                            $constraints['maxLength'] = (int) $parameters[1];
+                        }
                     }
                     break;
 
@@ -279,8 +305,10 @@ final class ValidationRuleTypeMapper
 
                 case 'regex':
                 case 'pattern':
-                    if (isset($parameters[0])) {
-                        $constraints['pattern'] = $parameters[0];
+                    // Handle regex patterns that may contain colons
+                    if (isset($parts[1])) {
+                        // Rejoin all parts after the first colon to preserve the full pattern
+                        $constraints['pattern'] = implode(':', array_slice($parts, 1));
                     }
                     break;
 
@@ -332,5 +360,24 @@ final class ValidationRuleTypeMapper
         }
 
         return false;
+    }
+
+    /**
+     * Normalize rules to array format.
+     *
+     * @param  string|array<mixed>|null  $rules
+     * @return array<mixed>
+     */
+    public function normalizeRules(string|array|null $rules): array
+    {
+        if ($rules === null) {
+            return [];
+        }
+
+        if (is_string($rules)) {
+            return $rules === '' ? [] : explode('|', $rules);
+        }
+
+        return $rules;
     }
 }

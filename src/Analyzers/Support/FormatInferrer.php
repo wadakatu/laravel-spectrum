@@ -2,15 +2,22 @@
 
 namespace LaravelSpectrum\Analyzers\Support;
 
-use Illuminate\Support\Str;
+use LaravelSpectrum\Support\ValidationRuleTypeMapper;
 
 /**
  * Infers OpenAPI formats from Laravel validation rules.
  *
  * Extracted from FormRequestAnalyzer to improve single responsibility.
+ * Delegates to ValidationRuleTypeMapper for centralized format inference.
  */
 class FormatInferrer
 {
+    public function __construct(
+        protected ?ValidationRuleTypeMapper $ruleTypeMapper = null,
+    ) {
+        $this->ruleTypeMapper = $ruleTypeMapper ?? new ValidationRuleTypeMapper;
+    }
+
     /**
      * Infer date format from validation rules.
      *
@@ -18,28 +25,11 @@ class FormatInferrer
      */
     public function inferDateFormat($rules): ?string
     {
-        $rules = $this->normalizeRules($rules);
+        $normalizedRules = $this->ruleTypeMapper->normalizeRules($rules);
+        $format = $this->ruleTypeMapper->inferFormat($normalizedRules);
 
-        foreach ($rules as $rule) {
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            if ($rule === 'date') {
-                return 'date';
-            }
-            if (Str::startsWith($rule, 'date_format:')) {
-                $format = Str::after($rule, 'date_format:');
-                // Check if format includes time components (H, i, s, G, u)
-                if (preg_match('/[HisGu]/', $format)) {
-                    return 'date-time';
-                }
-
-                return 'date';
-            }
-        }
-
-        return null;
+        // Return only date-related formats
+        return in_array($format, ['date', 'date-time'], true) ? $format : null;
     }
 
     /**
@@ -49,63 +39,8 @@ class FormatInferrer
      */
     public function inferFormat($rules): ?string
     {
-        $rules = $this->normalizeRules($rules);
+        $normalizedRules = $this->ruleTypeMapper->normalizeRules($rules);
 
-        foreach ($rules as $rule) {
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            // Date formats
-            if ($rule === 'date') {
-                return 'date';
-            }
-            if (Str::startsWith($rule, 'date_format:')) {
-                $format = Str::after($rule, 'date_format:');
-                // Check if format includes time components (H, i, s, G, u)
-                if (preg_match('/[HisGu]/', $format)) {
-                    return 'date-time';
-                }
-
-                return 'date';
-            }
-
-            // Other formats
-            if ($rule === 'email') {
-                return 'email';
-            }
-            if ($rule === 'url') {
-                return 'uri';
-            }
-            if ($rule === 'uuid') {
-                return 'uuid';
-            }
-            if ($rule === 'ip' || $rule === 'ipv4') {
-                return 'ipv4';
-            }
-            if ($rule === 'ipv6') {
-                return 'ipv6';
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Normalize rules to array format.
-     *
-     * @param  string|array|null  $rules
-     */
-    private function normalizeRules($rules): array
-    {
-        if (is_string($rules)) {
-            return $rules === '' ? [] : explode('|', $rules);
-        }
-
-        if (is_array($rules)) {
-            return $rules;
-        }
-
-        return [];
+        return $this->ruleTypeMapper->inferFormat($normalizedRules);
     }
 }
