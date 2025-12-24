@@ -11,7 +11,7 @@ use PhpParser\NodeVisitorAbstract;
  */
 class CollectionMapVisitor extends NodeVisitorAbstract
 {
-    public ?Node $returnStructure = null;
+    private ?Node $returnStructure = null;
 
     public function enterNode(Node $node): ?int
     {

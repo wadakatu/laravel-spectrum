@@ -79,11 +79,11 @@ class PaginationCallVisitor extends NodeVisitorAbstract
         return $this->paginationCalls;
     }
 
-    private function checkPaginationCall($node): ?array
+    /**
+     * Check if node is a pagination method call and extract info
+     */
+    private function checkPaginationCall(MethodCall|StaticCall $node): ?array
     {
-        if (! ($node instanceof MethodCall || $node instanceof StaticCall)) {
-            return null;
-        }
 
         $methodName = null;
         if ($node->name instanceof Identifier) {
@@ -117,7 +117,10 @@ class PaginationCallVisitor extends NodeVisitorAbstract
         return $result;
     }
 
-    private function getClassName($node): ?string
+    /**
+     * Get class name from node
+     */
+    private function getClassName(Node $node): ?string
     {
         if ($node instanceof Name) {
             return $node->getLast();
@@ -126,7 +129,10 @@ class PaginationCallVisitor extends NodeVisitorAbstract
         return null;
     }
 
-    private function isQueryBuilder($node): bool
+    /**
+     * Check if node represents a query builder pattern
+     */
+    private function isQueryBuilder(Node $node): bool
     {
         if (! $node instanceof MethodCall) {
             return false;
