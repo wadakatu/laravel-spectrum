@@ -2,26 +2,39 @@
 
 namespace LaravelSpectrum\Analyzers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
-use PhpParser\ParserFactory;
-use PhpParser\PrettyPrinter\Standard;
 
+/**
+ * Analyzes Fractal Transformer classes to extract schema information.
+ *
+ * This analyzer processes classes extending League\Fractal\TransformerAbstract
+ * to extract transform method properties, available/default includes, and metadata
+ * for OpenAPI documentation generation.
+ */
 class FractalTransformerAnalyzer
 {
-    protected $parser;
+    protected AstHelper $astHelper;
 
-    protected $traverser;
+    protected ?ErrorCollector $errorCollector;
 
-    protected $printer;
-
-    public function __construct()
-    {
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
-        $this->traverser = new NodeTraverser;
-        $this->printer = new Standard;
+    /**
+     * Create a new FractalTransformerAnalyzer instance.
+     *
+     * @param  AstHelper|null  $astHelper  Optional AstHelper instance for AST operations
+     * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging analysis failures
+     */
+    public function __construct(
+        ?AstHelper $astHelper = null,
+        ?ErrorCollector $errorCollector = null
+    ) {
+        $this->errorCollector = $errorCollector;
+        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
     }
 
     /**
@@ -30,85 +43,109 @@ class FractalTransformerAnalyzer
     public function analyze(string $transformerClass): array
     {
         if (! class_exists($transformerClass)) {
+            $this->errorCollector?->addWarning(
+                'FractalTransformerAnalyzer',
+                "Class does not exist: {$transformerClass}",
+                ['class' => $transformerClass, 'error_type' => 'class_not_found']
+            );
+
             return [];
         }
 
-        $reflection = new \ReflectionClass($transformerClass);
+        try {
+            $reflection = new \ReflectionClass($transformerClass);
 
-        // League\Fractal\TransformerAbstractを継承しているか確認
-        if (! $reflection->isSubclassOf('League\Fractal\TransformerAbstract')) {
+            // League\Fractal\TransformerAbstractを継承しているか確認
+            if (! $reflection->isSubclassOf('League\Fractal\TransformerAbstract')) {
+                $this->errorCollector?->addWarning(
+                    'FractalTransformerAnalyzer',
+                    "Class {$transformerClass} does not extend League\\Fractal\\TransformerAbstract",
+                    ['class' => $transformerClass, 'error_type' => 'invalid_parent_class']
+                );
+
+                return [];
+            }
+
+            $filePath = $reflection->getFileName();
+            if (! $filePath) {
+                $this->errorCollector?->addWarning(
+                    'FractalTransformerAnalyzer',
+                    "Could not determine file path for class: {$transformerClass}",
+                    ['class' => $transformerClass, 'error_type' => 'no_file_path']
+                );
+
+                return [];
+            }
+
+            $ast = $this->astHelper->parseFile($filePath);
+            if (! $ast) {
+                // AstHelper already logs parse errors
+                return [];
+            }
+
+            $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
+            if (! $classNode) {
+                $this->errorCollector?->addWarning(
+                    'FractalTransformerAnalyzer',
+                    "Could not find class node for {$reflection->getShortName()} in {$filePath}",
+                    [
+                        'class' => $transformerClass,
+                        'short_name' => $reflection->getShortName(),
+                        'file_path' => $filePath,
+                        'error_type' => 'class_node_not_found',
+                    ]
+                );
+
+                return [];
+            }
+
+            return [
+                'type' => 'fractal',
+                'properties' => $this->extractTransformMethod($classNode),
+                'availableIncludes' => $this->extractAvailableIncludes($classNode),
+                'defaultIncludes' => $this->extractDefaultIncludes($classNode),
+                'meta' => $this->extractMetaData($classNode),
+            ];
+        } catch (\ReflectionException $e) {
+            $this->errorCollector?->addError(
+                'FractalTransformerAnalyzer',
+                "Failed to reflect class {$transformerClass}: {$e->getMessage()}",
+                [
+                    'class' => $transformerClass,
+                    'error_type' => 'reflection_error',
+                    'exception_class' => $e::class,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            Log::error("Failed to reflect Fractal Transformer: {$transformerClass}", [
+                'error' => $e->getMessage(),
+                'exception_class' => $e::class,
+            ]);
+
+            return [];
+        } catch (\Exception $e) {
+            $this->errorCollector?->addError(
+                'FractalTransformerAnalyzer',
+                "Unexpected error analyzing {$transformerClass}: {$e->getMessage()}",
+                [
+                    'class' => $transformerClass,
+                    'error_type' => 'unexpected_error',
+                    'exception_class' => $e::class,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            Log::error("Unexpected error analyzing Fractal Transformer: {$transformerClass}", [
+                'error' => $e->getMessage(),
+                'exception_class' => $e::class,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return [];
         }
-
-        $filePath = $reflection->getFileName();
-        $code = file_get_contents($filePath);
-        $ast = $this->parser->parse($code);
-
-        $classNode = $this->findClassNode($ast, $reflection->getShortName());
-        if (! $classNode) {
-            return [];
-        }
-
-        return [
-            'type' => 'fractal',
-            'properties' => $this->extractTransformMethod($classNode),
-            'availableIncludes' => $this->extractAvailableIncludes($classNode),
-            'defaultIncludes' => $this->extractDefaultIncludes($classNode),
-            'meta' => $this->extractMetaData($classNode),
-        ];
-    }
-
-    /**
-     * クラスノードを検索
-     */
-    protected function findClassNode(array $ast, string $className): ?Node\Stmt\Class_
-    {
-        foreach ($ast as $node) {
-            if ($node instanceof Node\Stmt\Class_ && $node->name->toString() === $className) {
-                return $node;
-            }
-            if ($node instanceof Node\Stmt\Namespace_) {
-                foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof Node\Stmt\Class_ && $stmt->name->toString() === $className) {
-                        return $stmt;
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * メソッドノードを検索
-     */
-    protected function findMethodNode(Node\Stmt\Class_ $class, string $methodName): ?Node\Stmt\ClassMethod
-    {
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\ClassMethod && $stmt->name->toString() === $methodName) {
-                return $stmt;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * プロパティノードを検索
-     */
-    protected function findPropertyNode(Node\Stmt\Class_ $class, string $propertyName): ?Node\Stmt\Property
-    {
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\Property) {
-                foreach ($stmt->props as $prop) {
-                    if ($prop->name->toString() === $propertyName) {
-                        return $stmt;
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -116,7 +153,7 @@ class FractalTransformerAnalyzer
      */
     protected function extractTransformMethod(Node\Stmt\Class_ $class): array
     {
-        $transformMethod = $this->findMethodNode($class, 'transform');
+        $transformMethod = $this->astHelper->findMethodNode($class, 'transform');
         if (! $transformMethod) {
             return [];
         }
@@ -378,32 +415,18 @@ class FractalTransformerAnalyzer
      */
     protected function extractAvailableIncludes(Node\Stmt\Class_ $class): array
     {
-        $property = null;
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\Property) {
-                foreach ($stmt->props as $prop) {
-                    if ($prop->name->toString() === 'availableIncludes' && $prop->default) {
-                        $property = $prop;
-                        break 2;
-                    }
-                }
-            }
-        }
-
-        if (! $property) {
+        $defaultValue = $this->getPropertyDefaultArray($class, 'availableIncludes');
+        if (! $defaultValue) {
             return [];
         }
 
         $includes = [];
-
-        if ($property->default instanceof Node\Expr\Array_) {
-            /** @var array<int, Node\Expr\ArrayItem|null> $items */
-            $items = $property->default->items;
-            foreach ($items as $item) {
-                if ($item && isset($item->value) && $item->value instanceof Node\Scalar\String_) {
-                    $includeName = $item->value->value;
-                    $includes[$includeName] = $this->analyzeIncludeMethod($class, $includeName);
-                }
+        /** @var array<int, Node\Expr\ArrayItem|null> $items */
+        $items = $defaultValue->items;
+        foreach ($items as $item) {
+            if ($item && isset($item->value) && $item->value instanceof Node\Scalar\String_) {
+                $includeName = $item->value->value;
+                $includes[$includeName] = $this->analyzeIncludeMethod($class, $includeName);
             }
         }
 
@@ -415,35 +438,45 @@ class FractalTransformerAnalyzer
      */
     protected function extractDefaultIncludes(Node\Stmt\Class_ $class): array
     {
-        $property = null;
-        foreach ($class->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\Property) {
-                foreach ($stmt->props as $prop) {
-                    if ($prop->name->toString() === 'defaultIncludes' && $prop->default) {
-                        $property = $prop;
-                        break 2;
-                    }
-                }
-            }
-        }
-
-        if (! $property) {
+        $defaultValue = $this->getPropertyDefaultArray($class, 'defaultIncludes');
+        if (! $defaultValue) {
             return [];
         }
 
         $includes = [];
-
-        if ($property->default instanceof Node\Expr\Array_) {
-            /** @var array<int, Node\Expr\ArrayItem|null> $items */
-            $items = $property->default->items;
-            foreach ($items as $item) {
-                if ($item && isset($item->value) && $item->value instanceof Node\Scalar\String_) {
-                    $includes[] = $item->value->value;
-                }
+        /** @var array<int, Node\Expr\ArrayItem|null> $items */
+        $items = $defaultValue->items;
+        foreach ($items as $item) {
+            if ($item && isset($item->value) && $item->value instanceof Node\Scalar\String_) {
+                $includes[] = $item->value->value;
             }
         }
 
         return $includes;
+    }
+
+    /**
+     * プロパティのデフォルト配列値を取得
+     *
+     * @param  Node\Stmt\Class_  $class  The class node to search within
+     * @param  string  $propertyName  The name of the property to find
+     * @return Node\Expr\Array_|null The default array value or null if not found
+     */
+    protected function getPropertyDefaultArray(Node\Stmt\Class_ $class, string $propertyName): ?Node\Expr\Array_
+    {
+        $propertyStmt = $this->astHelper->findPropertyNode($class, $propertyName);
+        if (! $propertyStmt) {
+            return null;
+        }
+
+        // Find the property item with the matching name and array default value
+        foreach ($propertyStmt->props as $prop) {
+            if ($prop->name->toString() === $propertyName && $prop->default instanceof Node\Expr\Array_) {
+                return $prop->default;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -452,7 +485,7 @@ class FractalTransformerAnalyzer
     protected function analyzeIncludeMethod(Node\Stmt\Class_ $class, string $includeName): array
     {
         $methodName = 'include'.Str::studly($includeName);
-        $method = $this->findMethodNode($class, $methodName);
+        $method = $this->astHelper->findMethodNode($class, $methodName);
 
         if (! $method) {
             return ['type' => 'unknown'];

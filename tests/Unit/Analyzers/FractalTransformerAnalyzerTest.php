@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
+use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer;
@@ -153,5 +154,39 @@ class FractalTransformerAnalyzerTest extends TestCase
 
         $this->assertArrayHasKey('example', $result['properties']['email']);
         $this->assertStringContainsString('@', $result['properties']['email']['example']);
+    }
+
+    // ========== ErrorCollector tests ==========
+
+    #[Test]
+    public function it_logs_warning_to_error_collector_when_class_does_not_exist(): void
+    {
+        $errorCollector = new ErrorCollector;
+        $analyzer = new FractalTransformerAnalyzer(null, $errorCollector);
+
+        $result = $analyzer->analyze('NonExistentTransformerClass');
+
+        $this->assertEmpty($result);
+
+        $warnings = $errorCollector->getWarnings();
+        $this->assertNotEmpty($warnings);
+        $this->assertEquals('class_not_found', $warnings[0]['metadata']['error_type']);
+        $this->assertStringContainsString('NonExistentTransformerClass', $warnings[0]['message']);
+    }
+
+    #[Test]
+    public function it_logs_warning_to_error_collector_when_class_is_not_transformer(): void
+    {
+        $errorCollector = new ErrorCollector;
+        $analyzer = new FractalTransformerAnalyzer(null, $errorCollector);
+
+        $result = $analyzer->analyze(\stdClass::class);
+
+        $this->assertEmpty($result);
+
+        $warnings = $errorCollector->getWarnings();
+        $this->assertNotEmpty($warnings);
+        $this->assertEquals('invalid_parent_class', $warnings[0]['metadata']['error_type']);
+        $this->assertStringContainsString('stdClass', $warnings[0]['message']);
     }
 }

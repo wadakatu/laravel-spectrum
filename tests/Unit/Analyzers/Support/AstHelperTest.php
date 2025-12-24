@@ -234,6 +234,113 @@ PHP;
         $this->assertNull($method);
     }
 
+    // ========== findPropertyNode tests ==========
+
+    #[Test]
+    public function it_finds_property_node_by_name(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    protected array $availableIncludes = ['user', 'comments'];
+
+    protected array $defaultIncludes = ['author'];
+
+    public string $publicProp = 'test';
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+
+        $availableIncludes = $this->helper->findPropertyNode($classNode, 'availableIncludes');
+        $this->assertNotNull($availableIncludes);
+        $this->assertInstanceOf(Node\Stmt\Property::class, $availableIncludes);
+
+        $defaultIncludes = $this->helper->findPropertyNode($classNode, 'defaultIncludes');
+        $this->assertNotNull($defaultIncludes);
+
+        $publicProp = $this->helper->findPropertyNode($classNode, 'publicProp');
+        $this->assertNotNull($publicProp);
+    }
+
+    #[Test]
+    public function it_returns_null_when_property_not_found(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    protected string $existingProp = 'value';
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+
+        $property = $this->helper->findPropertyNode($classNode, 'nonExistentProp');
+        $this->assertNull($property);
+    }
+
+    #[Test]
+    public function it_finds_property_in_multi_declaration_statement(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    protected $firstProp, $secondProp, $thirdProp;
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+
+        $secondProp = $this->helper->findPropertyNode($classNode, 'secondProp');
+        $this->assertNotNull($secondProp);
+        $this->assertInstanceOf(Node\Stmt\Property::class, $secondProp);
+    }
+
+    #[Test]
+    public function it_finds_property_without_default_value(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class TestClass
+{
+    protected string $uninitializedProp;
+}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'TestClass');
+
+        $prop = $this->helper->findPropertyNode($classNode, 'uninitializedProp');
+        $this->assertNotNull($prop);
+        $this->assertInstanceOf(Node\Stmt\Property::class, $prop);
+    }
+
+    #[Test]
+    public function it_returns_null_for_empty_class(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class EmptyClass {}
+PHP;
+
+        $ast = $this->helper->parseCode($code);
+        $classNode = $this->helper->findClassNode($ast, 'EmptyClass');
+
+        $prop = $this->helper->findPropertyNode($classNode, 'anyProp');
+        $this->assertNull($prop);
+    }
+
     // ========== findAnonymousClassNode tests ==========
 
     #[Test]
