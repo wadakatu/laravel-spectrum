@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\FileSizeFormatter;
+use LaravelSpectrum\Support\HasErrorCollection;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -11,20 +15,20 @@ use PhpParser\NodeVisitorAbstract;
 
 class InlineValidationAnalyzer
 {
+    use HasErrorCollection;
+
     protected TypeInference $typeInference;
 
     protected EnumAnalyzer $enumAnalyzer;
 
     protected FileUploadAnalyzer $fileUploadAnalyzer;
 
-    protected ?ErrorCollector $errorCollector = null;
-
     public function __construct(TypeInference $typeInference, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null)
     {
+        $this->initializeErrorCollector($errorCollector);
         $this->typeInference = $typeInference;
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
-        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -473,16 +477,10 @@ class InlineValidationAnalyzer
             // 複数のバリデーションがある場合はマージ
             return $this->mergeValidations($visitor->validations);
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
-                'InlineValidationAnalyzer',
-                "Failed to analyze inline validation in method: {$e->getMessage()}",
-                [
-                    'method' => $method->name->toString(),
-                    'error_type' => 'inline_validation_error',
-                ]
-            );
+            $this->logException($e, AnalyzerErrorType::INLINE_VALIDATION_ERROR, [
+                'method' => $method->name->toString(),
+            ]);
 
-            // エラーが発生しても空の配列を返して処理を継続
             return [];
         }
     }

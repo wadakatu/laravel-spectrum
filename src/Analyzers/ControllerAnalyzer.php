@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
+use LaravelSpectrum\Support\HasErrorCollection;
 use PhpParser\Node;
 use ReflectionClass;
 use ReflectionMethod;
@@ -13,6 +16,8 @@ use ReflectionNamedType;
 
 class ControllerAnalyzer
 {
+    use HasErrorCollection;
+
     protected FormRequestAnalyzer $formRequestAnalyzer;
 
     protected InlineValidationAnalyzer $inlineValidationAnalyzer;
@@ -27,8 +32,6 @@ class ControllerAnalyzer
 
     protected AstHelper $astHelper;
 
-    protected ?ErrorCollector $errorCollector = null;
-
     public function __construct(
         FormRequestAnalyzer $formRequestAnalyzer,
         InlineValidationAnalyzer $inlineValidationAnalyzer,
@@ -39,6 +42,7 @@ class ControllerAnalyzer
         AstHelper $astHelper,
         ?ErrorCollector $errorCollector = null
     ) {
+        $this->initializeErrorCollector($errorCollector);
         $this->formRequestAnalyzer = $formRequestAnalyzer;
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
         $this->paginationAnalyzer = $paginationAnalyzer;
@@ -46,7 +50,6 @@ class ControllerAnalyzer
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
         $this->astHelper = $astHelper;
-        $this->errorCollector = $errorCollector;
     }
 
     /**
@@ -242,19 +245,14 @@ class ControllerAnalyzer
             // メソッドノードを探す
             return $this->astHelper->findMethodNode($classNode, $methodName);
         } catch (\Exception $e) {
-            $this->errorCollector?->addWarning(
-                'ControllerAnalyzer',
+            $this->logWarning(
                 "Failed to get method node for {$reflection->getName()}::{$methodName}: {$e->getMessage()}",
+                AnalyzerErrorType::METHOD_NODE_ERROR,
                 [
                     'class' => $reflection->getName(),
                     'method' => $methodName,
-                    'error_type' => 'method_node_error',
                 ]
             );
-
-            Log::debug("Failed to get method node: {$reflection->getName()}::{$methodName}", [
-                'error' => $e->getMessage(),
-            ]);
         }
 
         return null;
