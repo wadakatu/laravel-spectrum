@@ -4,7 +4,6 @@ namespace Tests\Unit\Analyzers\AST;
 
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
-use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -23,7 +22,9 @@ class ConditionalRulesTest extends TestCase
                 return $callback();
             });
 
-        $this->analyzer = new FormRequestAnalyzer(new TypeInference, $cache);
+        // Register mock cache in container and get analyzer via DI
+        $this->app->instance(DocumentationCache::class, $cache);
+        $this->analyzer = $this->app->make(FormRequestAnalyzer::class);
     }
 
     #[Test]

@@ -36,7 +36,9 @@ class ResourceAnalyzerTest extends TestCase
                 return $callback();
             });
 
-        $this->analyzer = new ResourceAnalyzer($cache);
+        // Register mock cache in container and get analyzer via DI
+        $this->app->instance(DocumentationCache::class, $cache);
+        $this->analyzer = $this->app->make(ResourceAnalyzer::class);
     }
 
     #[Test]

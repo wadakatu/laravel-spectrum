@@ -5,7 +5,6 @@ namespace LaravelSpectrum\Tests\Unit\Performance;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Generators\SchemaGenerator;
-use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\LargeFormRequests\MediumFormRequest;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Group;
@@ -29,7 +28,9 @@ class LargeFormRequestPerformanceTest extends TestCase
                 return $callback();
             });
 
-        $this->analyzer = new FormRequestAnalyzer(new TypeInference, $cache);
+        // Register mock cache in container and get analyzer via DI
+        $this->app->instance(DocumentationCache::class, $cache);
+        $this->analyzer = $this->app->make(FormRequestAnalyzer::class);
         $this->schemaGenerator = new SchemaGenerator;
     }
 

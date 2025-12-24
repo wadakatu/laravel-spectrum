@@ -5,7 +5,6 @@ namespace LaravelSpectrum\Analyzers\Support;
 use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Error;
 use PhpParser\Parser;
-use PhpParser\ParserFactory;
 
 /**
  * Analyzes anonymous FormRequest classes using reflection and AST parsing.
@@ -31,19 +30,19 @@ class AnonymousClassAnalyzer
     protected ErrorCollector $errorCollector;
 
     /**
+     * @param  Parser  $parser  PHP-Parser instance for AST parsing
      * @param  FormRequestAstExtractor  $astExtractor  AST extractor for parsing PHP code
      * @param  ParameterBuilder  $parameterBuilder  Builder for creating parameter definitions
      * @param  ErrorCollector|null  $errorCollector  Collector for warnings/errors (created if not provided)
-     * @param  Parser|null  $parser  Optional PHP-Parser instance (defaults to newest supported version)
      */
     public function __construct(
+        Parser $parser,
         protected FormRequestAstExtractor $astExtractor,
         protected ParameterBuilder $parameterBuilder,
-        ?ErrorCollector $errorCollector = null,
-        ?Parser $parser = null
+        ?ErrorCollector $errorCollector = null
     ) {
+        $this->parser = $parser;
         $this->errorCollector = $errorCollector ?? new ErrorCollector;
-        $this->parser = $parser ?? (new ParserFactory)->createForNewestSupportedVersion();
     }
 
     /**

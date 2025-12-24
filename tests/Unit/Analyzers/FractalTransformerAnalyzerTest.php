@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
+use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
@@ -17,7 +18,7 @@ class FractalTransformerAnalyzerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->analyzer = new FractalTransformerAnalyzer;
+        $this->analyzer = $this->app->make(FractalTransformerAnalyzer::class);
     }
 
     #[Test]
@@ -162,7 +163,10 @@ class FractalTransformerAnalyzerTest extends TestCase
     public function it_logs_warning_to_error_collector_when_class_does_not_exist(): void
     {
         $errorCollector = new ErrorCollector;
-        $analyzer = new FractalTransformerAnalyzer(null, $errorCollector);
+        $analyzer = new FractalTransformerAnalyzer(
+            $this->app->make(AstHelper::class),
+            $errorCollector
+        );
 
         $result = $analyzer->analyze('NonExistentTransformerClass');
 
@@ -178,7 +182,10 @@ class FractalTransformerAnalyzerTest extends TestCase
     public function it_logs_warning_to_error_collector_when_class_is_not_transformer(): void
     {
         $errorCollector = new ErrorCollector;
-        $analyzer = new FractalTransformerAnalyzer(null, $errorCollector);
+        $analyzer = new FractalTransformerAnalyzer(
+            $this->app->make(AstHelper::class),
+            $errorCollector
+        );
 
         $result = $analyzer->analyze(\stdClass::class);
 

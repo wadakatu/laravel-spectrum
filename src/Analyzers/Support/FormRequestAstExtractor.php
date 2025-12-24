@@ -3,10 +3,8 @@
 namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\AST;
-use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
-use PhpParser\Parser;
 use PhpParser\PrettyPrinter;
 
 /**
@@ -27,18 +25,14 @@ class FormRequestAstExtractor
     /**
      * Create a new FormRequestAstExtractor instance.
      *
+     * @param  AstHelper  $astHelper  AstHelper instance for common AST operations
      * @param  PrettyPrinter\Standard  $printer  The PHP-Parser pretty printer for code output
-     * @param  Parser|null  $parser  Optional custom parser instance (defaults to newest supported version)
-     * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging parse failures
-     * @param  AstHelper|null  $astHelper  Optional AstHelper instance for common AST operations
      */
     public function __construct(
-        protected PrettyPrinter\Standard $printer,
-        ?Parser $parser = null,
-        ?ErrorCollector $errorCollector = null,
-        ?AstHelper $astHelper = null
+        AstHelper $astHelper,
+        protected PrettyPrinter\Standard $printer
     ) {
-        $this->astHelper = $astHelper ?? new AstHelper($parser, $errorCollector);
+        $this->astHelper = $astHelper;
     }
 
     /**

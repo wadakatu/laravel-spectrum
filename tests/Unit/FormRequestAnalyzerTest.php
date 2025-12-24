@@ -4,8 +4,15 @@ namespace LaravelSpectrum\Tests\Unit;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use LaravelSpectrum\Analyzers\EnumAnalyzer;
+use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
+use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
+use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
+use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
+use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
@@ -27,7 +34,34 @@ class FormRequestAnalyzerTest extends TestCase
                 return $callback();
             });
 
-        $this->analyzer = new FormRequestAnalyzer(new TypeInference, $cache);
+        // Register mock cache in container and get analyzer via DI
+        $this->app->instance(DocumentationCache::class, $cache);
+        $this->analyzer = $this->app->make(FormRequestAnalyzer::class);
+    }
+
+    /**
+     * Create a FormRequestAnalyzer with a mocked AstExtractor for testing edge cases.
+     */
+    protected function createAnalyzerWithMockedAstExtractor(FormRequestAstExtractor $mockAstExtractor): FormRequestAnalyzer
+    {
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        return new FormRequestAnalyzer(
+            $this->app->make(TypeInference::class),
+            $cache,
+            $this->app->make(EnumAnalyzer::class),
+            $this->app->make(FileUploadAnalyzer::class),
+            $this->app->make(RuleRequirementAnalyzer::class),
+            $this->app->make(FormatInferrer::class),
+            $this->app->make(ValidationDescriptionGenerator::class),
+            $this->app->make(ParameterBuilder::class),
+            $mockAstExtractor,
+            $this->app->make(AnonymousClassAnalyzer::class)
+        );
     }
 
     #[Test]
@@ -570,24 +604,7 @@ class FormRequestAnalyzerTest extends TestCase
         $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
         $mockAstExtractor->method('parseFile')->willReturn(null);
 
-        $cache = $this->createMock(DocumentationCache::class);
-        $cache->method('rememberFormRequest')
-            ->willReturnCallback(function ($class, $callback) {
-                return $callback();
-            });
-
-        $analyzer = new FormRequestAnalyzer(
-            new TypeInference,
-            $cache,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            $mockAstExtractor
-        );
+        $analyzer = $this->createAnalyzerWithMockedAstExtractor($mockAstExtractor);
 
         // Act
         $parameters = $analyzer->analyze(StoreUserRequest::class);
@@ -604,24 +621,7 @@ class FormRequestAnalyzerTest extends TestCase
         $mockAstExtractor->method('parseFile')->willReturn([]);  // Return empty array (valid AST)
         $mockAstExtractor->method('findClassNode')->willReturn(null);  // Class node not found
 
-        $cache = $this->createMock(DocumentationCache::class);
-        $cache->method('rememberFormRequest')
-            ->willReturnCallback(function ($class, $callback) {
-                return $callback();
-            });
-
-        $analyzer = new FormRequestAnalyzer(
-            new TypeInference,
-            $cache,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            $mockAstExtractor
-        );
+        $analyzer = $this->createAnalyzerWithMockedAstExtractor($mockAstExtractor);
 
         // Act
         $parameters = $analyzer->analyze(StoreUserRequest::class);
@@ -637,24 +637,7 @@ class FormRequestAnalyzerTest extends TestCase
         $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
         $mockAstExtractor->method('parseFile')->willReturn(null);
 
-        $cache = $this->createMock(DocumentationCache::class);
-        $cache->method('rememberFormRequest')
-            ->willReturnCallback(function ($class, $callback) {
-                return $callback();
-            });
-
-        $analyzer = new FormRequestAnalyzer(
-            new TypeInference,
-            $cache,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            $mockAstExtractor
-        );
+        $analyzer = $this->createAnalyzerWithMockedAstExtractor($mockAstExtractor);
 
         // Act
         $result = $analyzer->analyzeWithConditionalRules(StoreUserRequest::class);
@@ -673,24 +656,7 @@ class FormRequestAnalyzerTest extends TestCase
         $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
         $mockAstExtractor->method('parseFile')->willReturn(null);
 
-        $cache = $this->createMock(DocumentationCache::class);
-        $cache->method('rememberFormRequest')
-            ->willReturnCallback(function ($class, $callback) {
-                return $callback();
-            });
-
-        $analyzer = new FormRequestAnalyzer(
-            new TypeInference,
-            $cache,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            $mockAstExtractor
-        );
+        $analyzer = $this->createAnalyzerWithMockedAstExtractor($mockAstExtractor);
 
         // Act
         $result = $analyzer->analyzeWithDetails(StoreUserRequest::class);

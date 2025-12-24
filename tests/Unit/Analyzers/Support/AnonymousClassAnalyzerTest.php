@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
+use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -11,6 +12,7 @@ use LaravelSpectrum\Tests\TestCase;
 use Mockery;
 use PhpParser\Error as PhpParserError;
 use PhpParser\Parser;
+use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -24,15 +26,20 @@ class AnonymousClassAnalyzerTest extends TestCase
 
     private ErrorCollector $errorCollector;
 
+    private Parser $parser;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->astExtractor = new FormRequestAstExtractor(new PrettyPrinter\Standard);
+        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $astHelper = new AstHelper($this->parser);
+        $this->astExtractor = new FormRequestAstExtractor($astHelper, new PrettyPrinter\Standard);
         $this->parameterBuilder = Mockery::mock(ParameterBuilder::class);
         $this->errorCollector = new ErrorCollector;
 
         $this->analyzer = new AnonymousClassAnalyzer(
+            $this->parser,
             $this->astExtractor,
             $this->parameterBuilder,
             $this->errorCollector
@@ -355,10 +362,10 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockParser->shouldReceive('parse')->andReturn(null);
 
         $analyzer = new AnonymousClassAnalyzer(
+            $mockParser,
             $this->astExtractor,
             $this->parameterBuilder,
-            $this->errorCollector,
-            $mockParser
+            $this->errorCollector
         );
 
         // Create a temporary file to pass the file_exists check
@@ -397,6 +404,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockAstExtractor->shouldReceive('findAnonymousClassNode')->andReturn(null);
 
         $analyzer = new AnonymousClassAnalyzer(
+            $this->parser,
             $mockAstExtractor,
             $this->parameterBuilder,
             $this->errorCollector
@@ -438,10 +446,10 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockParser->shouldReceive('parse')->andThrow(new PhpParserError('Syntax error'));
 
         $analyzer = new AnonymousClassAnalyzer(
+            $mockParser,
             $this->astExtractor,
             $this->parameterBuilder,
-            $this->errorCollector,
-            $mockParser
+            $this->errorCollector
         );
 
         // Create a temporary file to pass the file_exists check
@@ -576,6 +584,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockAstExtractor->shouldReceive('extractUseStatements')->andReturn([]);
 
         $analyzer = new AnonymousClassAnalyzer(
+            $this->parser,
             $mockAstExtractor,
             $this->parameterBuilder,
             $this->errorCollector
@@ -623,10 +632,10 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockParser->shouldReceive('parse')->andReturn(null);
 
         $analyzer = new AnonymousClassAnalyzer(
+            $mockParser,
             $this->astExtractor,
             $this->parameterBuilder,
-            $this->errorCollector,
-            $mockParser
+            $this->errorCollector
         );
 
         // Create a temporary file to pass the file_exists check
@@ -763,10 +772,10 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockParser->shouldReceive('parse')->andThrow(new PhpParserError('Conditional syntax error'));
 
         $analyzer = new AnonymousClassAnalyzer(
+            $mockParser,
             $this->astExtractor,
             $this->parameterBuilder,
-            $this->errorCollector,
-            $mockParser
+            $this->errorCollector
         );
 
         $tempFile = tempnam(sys_get_temp_dir(), 'test_');
@@ -801,6 +810,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockAstExtractor->shouldReceive('findAnonymousClassNode')->andReturn(null);
 
         $analyzer = new AnonymousClassAnalyzer(
+            $this->parser,
             $mockAstExtractor,
             $this->parameterBuilder,
             $this->errorCollector
@@ -835,6 +845,7 @@ class AnonymousClassAnalyzerTest extends TestCase
     public function it_creates_error_collector_when_not_provided(): void
     {
         $analyzer = new AnonymousClassAnalyzer(
+            $this->parser,
             $this->astExtractor,
             $this->parameterBuilder,
             null // No error collector provided
@@ -858,6 +869,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         // Use real ParameterBuilder for integration test
         $realParameterBuilder = $this->app->make(ParameterBuilder::class);
         $analyzer = new AnonymousClassAnalyzer(
+            $this->parser,
             $this->astExtractor,
             $realParameterBuilder,
             $this->errorCollector

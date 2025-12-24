@@ -12,7 +12,6 @@ use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
-use PhpParser\PrettyPrinter;
 
 /**
  * Analyzes Laravel FormRequest classes to extract validation rules and parameters.
@@ -60,35 +59,30 @@ class FormRequestAnalyzer
 
     protected AnonymousClassAnalyzer $anonymousClassAnalyzer;
 
-    public function __construct(TypeInference $typeInference, DocumentationCache $cache, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null, ?RuleRequirementAnalyzer $ruleRequirementAnalyzer = null, ?FormatInferrer $formatInferrer = null, ?ValidationDescriptionGenerator $descriptionGenerator = null, ?ParameterBuilder $parameterBuilder = null, ?FormRequestAstExtractor $astExtractor = null, ?AnonymousClassAnalyzer $anonymousClassAnalyzer = null)
-    {
+    public function __construct(
+        TypeInference $typeInference,
+        DocumentationCache $cache,
+        EnumAnalyzer $enumAnalyzer,
+        FileUploadAnalyzer $fileUploadAnalyzer,
+        RuleRequirementAnalyzer $ruleRequirementAnalyzer,
+        FormatInferrer $formatInferrer,
+        ValidationDescriptionGenerator $descriptionGenerator,
+        ParameterBuilder $parameterBuilder,
+        FormRequestAstExtractor $astExtractor,
+        AnonymousClassAnalyzer $anonymousClassAnalyzer,
+        ?ErrorCollector $errorCollector = null
+    ) {
         $this->typeInference = $typeInference;
         $this->cache = $cache;
-        $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
-        $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
+        $this->enumAnalyzer = $enumAnalyzer;
+        $this->fileUploadAnalyzer = $fileUploadAnalyzer;
+        $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer;
+        $this->formatInferrer = $formatInferrer;
+        $this->descriptionGenerator = $descriptionGenerator;
+        $this->parameterBuilder = $parameterBuilder;
+        $this->astExtractor = $astExtractor;
+        $this->anonymousClassAnalyzer = $anonymousClassAnalyzer;
         $this->errorCollector = $errorCollector;
-        $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
-        $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
-        $this->descriptionGenerator = $descriptionGenerator ?? new ValidationDescriptionGenerator($this->enumAnalyzer);
-        $this->astExtractor = $astExtractor ?? new FormRequestAstExtractor(
-            new PrettyPrinter\Standard,
-            null,
-            $this->errorCollector
-        );
-        $this->parameterBuilder = $parameterBuilder ?? new ParameterBuilder(
-            $this->typeInference,
-            $this->ruleRequirementAnalyzer,
-            $this->formatInferrer,
-            $this->descriptionGenerator,
-            $this->enumAnalyzer,
-            $this->fileUploadAnalyzer,
-            $this->errorCollector
-        );
-        $this->anonymousClassAnalyzer = $anonymousClassAnalyzer ?? new AnonymousClassAnalyzer(
-            $this->astExtractor,
-            $this->parameterBuilder,
-            $this->errorCollector
-        );
     }
 
     /**

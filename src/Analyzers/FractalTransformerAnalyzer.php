@@ -26,15 +26,15 @@ class FractalTransformerAnalyzer
     /**
      * Create a new FractalTransformerAnalyzer instance.
      *
-     * @param  AstHelper|null  $astHelper  Optional AstHelper instance for AST operations
+     * @param  AstHelper  $astHelper  AstHelper instance for AST operations
      * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging analysis failures
      */
     public function __construct(
-        ?AstHelper $astHelper = null,
+        AstHelper $astHelper,
         ?ErrorCollector $errorCollector = null
     ) {
+        $this->astHelper = $astHelper;
         $this->errorCollector = $errorCollector;
-        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
     }
 
     /**

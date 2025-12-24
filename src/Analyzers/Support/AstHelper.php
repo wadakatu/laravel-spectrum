@@ -8,7 +8,6 @@ use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\Parser;
-use PhpParser\ParserFactory;
 
 /**
  * Provides common AST parsing and traversal utilities.
@@ -27,14 +26,14 @@ class AstHelper
     /**
      * Create a new AstHelper instance.
      *
-     * @param  Parser|null  $parser  Optional custom parser instance (defaults to newest supported version)
+     * @param  Parser  $parser  PHP-Parser instance for AST parsing
      * @param  ErrorCollector|null  $errorCollector  Optional error collector for logging parse failures
      */
     public function __construct(
-        ?Parser $parser = null,
+        Parser $parser,
         ?ErrorCollector $errorCollector = null
     ) {
-        $this->parser = $parser ?? (new ParserFactory)->createForNewestSupportedVersion();
+        $this->parser = $parser;
         $this->errorCollector = $errorCollector ?? new ErrorCollector;
     }
 

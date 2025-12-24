@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Feature;
 
-use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
-use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
-use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\FormRequests\FileUploadRequest;
 use LaravelSpectrum\Tests\Fixtures\FormRequests\MultipleFilesRequest;
-use PHPUnit\Framework\TestCase;
+use LaravelSpectrum\Tests\TestCase;
 
 class FileUploadAnalyzerIntegrationTest extends TestCase
 {
@@ -23,8 +20,6 @@ class FileUploadAnalyzerIntegrationTest extends TestCase
 
     private SchemaGenerator $schemaGenerator;
 
-    private OpenApiGenerator $openApiGenerator;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,14 +27,11 @@ class FileUploadAnalyzerIntegrationTest extends TestCase
         $cache = $this->createMock(DocumentationCache::class);
         $cache->method('rememberFormRequest')->willReturnCallback(fn ($key, $callback) => $callback());
 
-        $typeInference = new TypeInference;
-        $fileUploadAnalyzer = new FileUploadAnalyzer;
-
-        $this->formRequestAnalyzer = new FormRequestAnalyzer($typeInference, $cache, null, $fileUploadAnalyzer);
-        $this->inlineValidationAnalyzer = new InlineValidationAnalyzer($typeInference, null, $fileUploadAnalyzer);
+        // Register mock cache in container and get analyzers via DI
+        $this->app->instance(DocumentationCache::class, $cache);
+        $this->formRequestAnalyzer = $this->app->make(FormRequestAnalyzer::class);
+        $this->inlineValidationAnalyzer = $this->app->make(InlineValidationAnalyzer::class);
         $this->schemaGenerator = new SchemaGenerator;
-
-        $this->openApiGenerator = $this->createMock(OpenApiGenerator::class);
     }
 
     public function test_file_upload_request_generates_multipart_schema(): void
