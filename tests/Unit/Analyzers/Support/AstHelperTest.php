@@ -6,6 +6,8 @@ use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\TestCase;
 use PhpParser\Node;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 
 class AstHelperTest extends TestCase
@@ -14,12 +16,15 @@ class AstHelperTest extends TestCase
 
     private ErrorCollector $errorCollector;
 
+    private Parser $parser;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->errorCollector = new ErrorCollector;
-        $this->helper = new AstHelper(null, $this->errorCollector);
+        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->helper = new AstHelper($this->parser, $this->errorCollector);
     }
 
     // ========== parseFile tests ==========
@@ -439,7 +444,7 @@ PHP;
     #[Test]
     public function it_creates_default_error_collector_when_not_provided(): void
     {
-        $helper = new AstHelper;
+        $helper = new AstHelper($this->parser);
 
         // Should work without errors
         $ast = $helper->parseCode('<?php class Test {}');

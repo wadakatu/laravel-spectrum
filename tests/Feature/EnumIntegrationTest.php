@@ -3,20 +3,16 @@
 namespace LaravelSpectrum\Tests\Feature;
 
 use Illuminate\Validation\Rule;
-use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Generators\SchemaGenerator;
-use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\Fixtures\Enums\PriorityEnum;
 use LaravelSpectrum\Tests\Fixtures\Enums\StatusEnum;
 use LaravelSpectrum\Tests\TestCase;
 
 class EnumIntegrationTest extends TestCase
 {
-    private EnumAnalyzer $enumAnalyzer;
-
     private FormRequestAnalyzer $formRequestAnalyzer;
 
     private InlineValidationAnalyzer $inlineValidationAnalyzer;
@@ -27,12 +23,17 @@ class EnumIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        $this->enumAnalyzer = new EnumAnalyzer;
-        $typeInference = new TypeInference;
-        $cache = new DocumentationCache;
+        // Create a mock cache that always calls the callback
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
 
-        $this->formRequestAnalyzer = new FormRequestAnalyzer($typeInference, $cache, $this->enumAnalyzer);
-        $this->inlineValidationAnalyzer = new InlineValidationAnalyzer($typeInference, $this->enumAnalyzer);
+        // Register mock cache in container and get analyzers via DI
+        $this->app->instance(DocumentationCache::class, $cache);
+        $this->formRequestAnalyzer = $this->app->make(FormRequestAnalyzer::class);
+        $this->inlineValidationAnalyzer = $this->app->make(InlineValidationAnalyzer::class);
         $this->schemaGenerator = new SchemaGenerator;
     }
 

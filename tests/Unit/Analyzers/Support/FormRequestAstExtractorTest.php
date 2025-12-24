@@ -2,9 +2,11 @@
 
 namespace LaravelSpectrum\Tests\Unit\Analyzers\Support;
 
+use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\TestCase;
+use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,7 +15,7 @@ class FormRequestAstExtractorTest extends TestCase
 {
     private FormRequestAstExtractor $extractor;
 
-    private \PhpParser\Parser $parser;
+    private Parser $parser;
 
     private ErrorCollector $errorCollector;
 
@@ -22,12 +24,12 @@ class FormRequestAstExtractorTest extends TestCase
         parent::setUp();
 
         $this->errorCollector = new ErrorCollector;
-        $this->extractor = new FormRequestAstExtractor(
-            new PrettyPrinter\Standard,
-            null,
-            $this->errorCollector
-        );
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $astHelper = new AstHelper($this->parser, $this->errorCollector);
+        $this->extractor = new FormRequestAstExtractor(
+            $astHelper,
+            new PrettyPrinter\Standard
+        );
     }
 
     // ========== parseFile tests ==========

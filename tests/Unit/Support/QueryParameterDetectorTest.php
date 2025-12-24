@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Support;
 
 use LaravelSpectrum\Support\QueryParameterDetector;
+use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -10,13 +11,13 @@ class QueryParameterDetectorTest extends TestCase
 {
     private QueryParameterDetector $detector;
 
-    private $parser;
+    private Parser $parser;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->detector = new QueryParameterDetector;
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->detector = new QueryParameterDetector($this->parser);
     }
 
     public function test_detects_basic_input_method(): void

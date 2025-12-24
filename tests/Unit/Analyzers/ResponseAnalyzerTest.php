@@ -7,6 +7,7 @@ use LaravelSpectrum\Support\CollectionAnalyzer;
 use LaravelSpectrum\Support\ModelSchemaExtractor;
 use LaravelSpectrum\Tests\Fixtures\Models\User;
 use LaravelSpectrum\Tests\TestCase;
+use PhpParser\ParserFactory;
 
 class ResponseAnalyzerTest extends TestCase
 {
@@ -16,7 +17,9 @@ class ResponseAnalyzerTest extends TestCase
     {
         parent::setUp();
 
+        $parser = (new ParserFactory)->createForNewestSupportedVersion();
         $this->analyzer = new ResponseAnalyzer(
+            $parser,
             new ModelSchemaExtractor,
             new CollectionAnalyzer
         );

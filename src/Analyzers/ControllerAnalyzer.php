@@ -36,7 +36,7 @@ class ControllerAnalyzer
         QueryParameterAnalyzer $queryParameterAnalyzer,
         EnumAnalyzer $enumAnalyzer,
         ResponseAnalyzer $responseAnalyzer,
-        ?AstHelper $astHelper = null,
+        AstHelper $astHelper,
         ?ErrorCollector $errorCollector = null
     ) {
         $this->formRequestAnalyzer = $formRequestAnalyzer;
@@ -45,8 +45,8 @@ class ControllerAnalyzer
         $this->queryParameterAnalyzer = $queryParameterAnalyzer;
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
+        $this->astHelper = $astHelper;
         $this->errorCollector = $errorCollector;
-        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
     }
 
     /**

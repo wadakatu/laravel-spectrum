@@ -4,19 +4,21 @@ namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Support\PaginationDetector;
 use PhpParser\Error;
-use PhpParser\ParserFactory;
+use PhpParser\Parser;
 use ReflectionMethod;
 
 class PaginationAnalyzer
 {
     private PaginationDetector $paginationDetector;
 
-    private $parser;
+    private Parser $parser;
 
-    public function __construct(PaginationDetector $paginationDetector)
-    {
+    public function __construct(
+        Parser $parser,
+        PaginationDetector $paginationDetector
+    ) {
+        $this->parser = $parser;
         $this->paginationDetector = $paginationDetector;
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
     /**

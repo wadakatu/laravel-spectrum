@@ -25,11 +25,14 @@ class ResourceAnalyzer
 
     protected ?ErrorCollector $errorCollector = null;
 
-    public function __construct(DocumentationCache $cache, ?ErrorCollector $errorCollector = null, ?AstHelper $astHelper = null)
-    {
+    public function __construct(
+        AstHelper $astHelper,
+        DocumentationCache $cache,
+        ?ErrorCollector $errorCollector = null
+    ) {
+        $this->astHelper = $astHelper;
         $this->cache = $cache;
         $this->errorCollector = $errorCollector;
-        $this->astHelper = $astHelper ?? new AstHelper(null, $errorCollector);
         $this->traverser = new NodeTraverser;
         $this->printer = new PrettyPrinter\Standard;
     }

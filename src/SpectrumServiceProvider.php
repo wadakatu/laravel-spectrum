@@ -14,6 +14,13 @@ use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Analyzers\ResponseAnalyzer;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
+use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
+use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Analyzers\Support\FormatInferrer;
+use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
+use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
+use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
+use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\CacheCommand;
 use LaravelSpectrum\Console\Commands\ExportInsomniaCommand;
@@ -51,6 +58,9 @@ use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use LaravelSpectrum\Support\TypeInference;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
+use PhpParser\PrettyPrinter;
 
 class SpectrumServiceProvider extends ServiceProvider
 {
@@ -60,6 +70,21 @@ class SpectrumServiceProvider extends ServiceProvider
             __DIR__.'/../config/spectrum.php',
             'spectrum'
         );
+
+        // PHP-Parser のシングルトン登録（AST解析で共有）
+        $this->app->singleton(Parser::class, function () {
+            return (new ParserFactory)->createForNewestSupportedVersion();
+        });
+
+        // AST関連のシングルトン登録
+        $this->app->singleton(PrettyPrinter\Standard::class);
+        $this->app->singleton(AstHelper::class);
+        $this->app->singleton(FormRequestAstExtractor::class);
+        $this->app->singleton(RuleRequirementAnalyzer::class);
+        $this->app->singleton(FormatInferrer::class);
+        $this->app->singleton(ValidationDescriptionGenerator::class);
+        $this->app->singleton(ParameterBuilder::class);
+        $this->app->singleton(AnonymousClassAnalyzer::class);
 
         // シングルトンとして登録
         $this->app->singleton(DocumentationCache::class);
