@@ -2,8 +2,17 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
+
 class ResponseSchemaGenerator
 {
+    protected SchemaPropertyMapper $propertyMapper;
+
+    public function __construct(?SchemaPropertyMapper $propertyMapper = null)
+    {
+        $this->propertyMapper = $propertyMapper ?? new SchemaPropertyMapper;
+    }
+
     public function generate(array $responseData, int $statusCode = 200): array
     {
         if (empty($responseData) || $responseData['type'] === 'void') {
@@ -69,12 +78,12 @@ class ResponseSchemaGenerator
 
     private function convertPropertyToOpenApi(array $property): array
     {
-        $openApiProperty = [];
+        $openApiProperty = $this->propertyMapper->mapType($property, [], 'object');
+        $openApiProperty = $this->propertyMapper->mapSimpleProperties($property, $openApiProperty);
+        $openApiProperty = $this->propertyMapper->mapEnum($property, $openApiProperty);
+        $openApiProperty = $this->propertyMapper->mapBooleanProperties($property, $openApiProperty);
 
-        if (isset($property['type'])) {
-            $openApiProperty['type'] = $property['type'];
-        }
-
+        // Handle nested properties recursively
         if (isset($property['properties'])) {
             $openApiProperty['properties'] = [];
             foreach ($property['properties'] as $key => $subProperty) {
@@ -82,32 +91,9 @@ class ResponseSchemaGenerator
             }
         }
 
+        // Handle array items recursively
         if (isset($property['items'])) {
             $openApiProperty['items'] = $this->convertPropertyToOpenApi($property['items']);
-        }
-
-        if (isset($property['format'])) {
-            $openApiProperty['format'] = $property['format'];
-        }
-
-        if (isset($property['description'])) {
-            $openApiProperty['description'] = $property['description'];
-        }
-
-        if (isset($property['readOnly']) && $property['readOnly']) {
-            $openApiProperty['readOnly'] = true;
-        }
-
-        if (isset($property['nullable']) && $property['nullable']) {
-            $openApiProperty['nullable'] = true;
-        }
-
-        if (isset($property['enum'])) {
-            $openApiProperty['enum'] = $property['enum'];
-        }
-
-        if (isset($property['example'])) {
-            $openApiProperty['example'] = $property['example'];
         }
 
         return $openApiProperty;
