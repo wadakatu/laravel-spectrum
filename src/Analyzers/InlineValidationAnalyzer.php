@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Support\ErrorCollector;
+use LaravelSpectrum\Support\FileSizeFormatter;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -720,12 +721,12 @@ class InlineValidationAnalyzer
         }
 
         if (isset($fileInfo['max_size'])) {
-            $maxSize = $this->formatFileSize($fileInfo['max_size']);
+            $maxSize = FileSizeFormatter::format($fileInfo['max_size']);
             $parts[] = "Max size: {$maxSize}";
         }
 
         if (isset($fileInfo['min_size'])) {
-            $minSize = $this->formatFileSize($fileInfo['min_size']);
+            $minSize = FileSizeFormatter::format($fileInfo['min_size']);
             $parts[] = "Min size: {$minSize}";
         }
 
@@ -745,31 +746,5 @@ class InlineValidationAnalyzer
         }
 
         return $fieldName.(! empty($parts) ? ' - '.implode('. ', $parts) : '');
-    }
-
-    /**
-     * Format file size to human readable format
-     */
-    protected function formatFileSize(int $bytes): string
-    {
-        if ($bytes >= 1073741824) {
-            $size = $bytes / 1073741824;
-
-            return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
-        }
-
-        if ($bytes >= 1048576) {
-            $size = $bytes / 1048576;
-
-            return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
-        }
-
-        if ($bytes >= 1024) {
-            $size = $bytes / 1024;
-
-            return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
-        }
-
-        return sprintf('%dB', $bytes);
     }
 }

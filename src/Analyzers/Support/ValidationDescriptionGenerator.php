@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers\Support;
 
 use Illuminate\Support\Str;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
+use LaravelSpectrum\Support\FileSizeFormatter;
 
 /**
  * Generates human-readable descriptions for validation fields.
@@ -87,32 +88,6 @@ class ValidationDescriptionGenerator
         }
 
         return $description;
-    }
-
-    /**
-     * Format file size to human readable format.
-     */
-    public function formatFileSize(int $bytes): string
-    {
-        if ($bytes >= 1073741824) {
-            $size = $bytes / 1073741824;
-
-            return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
-        }
-
-        if ($bytes >= 1048576) {
-            $size = $bytes / 1048576;
-
-            return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
-        }
-
-        if ($bytes >= 1024) {
-            $size = $bytes / 1024;
-
-            return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
-        }
-
-        return sprintf('%dB', $bytes);
     }
 
     /**
@@ -213,12 +188,12 @@ class ValidationDescriptionGenerator
         }
 
         if (isset($fileInfo['max_size'])) {
-            $maxSize = $this->formatFileSize($fileInfo['max_size']);
+            $maxSize = FileSizeFormatter::format($fileInfo['max_size']);
             $parts[] = "Max size: {$maxSize}";
         }
 
         if (isset($fileInfo['min_size'])) {
-            $minSize = $this->formatFileSize($fileInfo['min_size']);
+            $minSize = FileSizeFormatter::format($fileInfo['min_size']);
             $parts[] = "Min size: {$minSize}";
         }
 

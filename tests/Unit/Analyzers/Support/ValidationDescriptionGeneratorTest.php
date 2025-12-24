@@ -261,35 +261,6 @@ class ValidationDescriptionGeneratorTest extends TestCase
         $this->assertStringContainsString('条件により異なるルールが適用されます', $description);
     }
 
-    // ========== formatFileSize tests ==========
-
-    #[Test]
-    public function it_formats_bytes(): void
-    {
-        $this->assertEquals('500B', $this->generator->formatFileSize(500));
-    }
-
-    #[Test]
-    public function it_formats_kilobytes(): void
-    {
-        $this->assertEquals('1KB', $this->generator->formatFileSize(1024));
-        $this->assertEquals('1.5KB', $this->generator->formatFileSize(1536));
-    }
-
-    #[Test]
-    public function it_formats_megabytes(): void
-    {
-        $this->assertEquals('1MB', $this->generator->formatFileSize(1048576));
-        $this->assertEquals('2.5MB', $this->generator->formatFileSize(2621440));
-    }
-
-    #[Test]
-    public function it_formats_gigabytes(): void
-    {
-        $this->assertEquals('1GB', $this->generator->formatFileSize(1073741824));
-        $this->assertEquals('1.5GB', $this->generator->formatFileSize(1610612736));
-    }
-
     // ========== Edge cases ==========
 
     #[Test]
