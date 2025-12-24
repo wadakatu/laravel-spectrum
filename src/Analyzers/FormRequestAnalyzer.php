@@ -61,7 +61,11 @@ class FormRequestAnalyzer
         $this->ruleRequirementAnalyzer = $ruleRequirementAnalyzer ?? new RuleRequirementAnalyzer;
         $this->formatInferrer = $formatInferrer ?? new FormatInferrer;
         $this->descriptionGenerator = $descriptionGenerator ?? new ValidationDescriptionGenerator($this->enumAnalyzer);
-        $this->astExtractor = $astExtractor ?? new FormRequestAstExtractor(new PrettyPrinter\Standard);
+        $this->astExtractor = $astExtractor ?? new FormRequestAstExtractor(
+            new PrettyPrinter\Standard,
+            null,
+            $this->errorCollector
+        );
         $this->parameterBuilder = $parameterBuilder ?? new ParameterBuilder(
             $this->typeInference,
             $this->ruleRequirementAnalyzer,
