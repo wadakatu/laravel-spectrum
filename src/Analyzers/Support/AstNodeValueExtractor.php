@@ -17,8 +17,11 @@ use PhpParser\Node\Scalar\String_;
  *
  * This class provides reusable methods for extracting values from
  * common AST node types (strings, numbers, booleans, arrays).
+ *
+ * Note: Values that cannot be extracted (complex expressions, function calls,
+ * variables) are silently skipped in array extraction methods.
  */
-class AstNodeValueExtractor
+final class AstNodeValueExtractor
 {
     /**
      * Extract a value from an AST node.
@@ -139,13 +142,15 @@ class AstNodeValueExtractor
     /**
      * Extract key-value pairs from an Array_ node.
      *
+     * Only string keys are supported. Integer keys are silently skipped.
+     *
      * @param  Node  $node  The Array_ node to extract from
-     * @return array<string, mixed> Associative array of key-value pairs
+     * @return array<string, mixed>|null Associative array of key-value pairs, or null if not an Array_ node
      */
-    public function extractKeyValueArray(Node $node): array
+    public function extractKeyValueArray(Node $node): ?array
     {
         if (! $node instanceof Array_) {
-            return [];
+            return null;
         }
 
         $result = [];

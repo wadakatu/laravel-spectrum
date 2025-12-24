@@ -131,11 +131,11 @@ class AstNodeValueExtractorTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_empty_array_for_non_array_node_in_extract_key_value_array(): void
+    public function it_returns_null_for_non_array_node_in_extract_key_value_array(): void
     {
         $node = new String_('not an array');
 
-        $this->assertSame([], $this->extractor->extractKeyValueArray($node));
+        $this->assertNull($this->extractor->extractKeyValueArray($node));
     }
 
     #[Test]
@@ -209,5 +209,54 @@ class AstNodeValueExtractorTest extends TestCase
     public function extract_float_value_returns_null_for_non_float(): void
     {
         $this->assertNull($this->extractor->extractFloatValue(new String_('hello')));
+    }
+
+    #[Test]
+    public function it_returns_null_for_unknown_constants(): void
+    {
+        $node = new ConstFetch(new Name('SOME_UNDEFINED_CONSTANT'));
+
+        $this->assertNull($this->extractor->extractValue($node));
+    }
+
+    #[Test]
+    public function it_skips_null_items_in_key_value_array(): void
+    {
+        $node = new Array_([
+            new ArrayItem(new String_('value1'), new String_('key1')),
+            null,
+            new ArrayItem(new String_('value2'), new String_('key2')),
+        ]);
+
+        $result = $this->extractor->extractKeyValueArray($node);
+
+        $this->assertSame(['key1' => 'value1', 'key2' => 'value2'], $result);
+    }
+
+    #[Test]
+    public function it_skips_integer_keys_in_key_value_array(): void
+    {
+        $node = new Array_([
+            new ArrayItem(new String_('value1'), new String_('key1')),
+            new ArrayItem(new String_('value2'), new LNumber(42)),
+        ]);
+
+        $result = $this->extractor->extractKeyValueArray($node);
+
+        $this->assertSame(['key1' => 'value1'], $result);
+    }
+
+    #[Test]
+    public function it_skips_items_with_unextractable_values_in_array(): void
+    {
+        $node = new Array_([
+            new ArrayItem(new String_('extractable')),
+            new ArrayItem(new Variable('unextractable')),
+            new ArrayItem(new LNumber(123)),
+        ]);
+
+        $result = $this->extractor->extractArrayValues($node);
+
+        $this->assertSame(['extractable', 123], $result);
     }
 }
