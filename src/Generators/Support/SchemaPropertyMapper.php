@@ -10,7 +10,7 @@ namespace LaravelSpectrum\Generators\Support;
  * Centralizes the repetitive property copying logic used across
  * SchemaGenerator, ResponseSchemaGenerator, and FileUploadSchemaGenerator.
  */
-class SchemaPropertyMapper
+final class SchemaPropertyMapper
 {
     /**
      * Simple properties that can be directly copied without transformation.
@@ -175,7 +175,7 @@ class SchemaPropertyMapper
     public function mapBooleanProperties(array $source, array $target = []): array
     {
         foreach (self::BOOLEAN_PROPERTIES as $property) {
-            if (isset($source[$property]) && $source[$property]) {
+            if (isset($source[$property]) && $source[$property] === true) {
                 $target[$property] = true;
             }
         }
