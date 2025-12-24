@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Support\FileSizeFormatter;
+
 class FileUploadSchemaGenerator
 {
     /**
@@ -62,11 +64,11 @@ class FileUploadSchemaGenerator
 
         // File size constraints
         if (isset($fileField['max_size'])) {
-            $parts[] = 'Max size: '.$this->formatFileSize($fileField['max_size']);
+            $parts[] = 'Max size: '.FileSizeFormatter::format($fileField['max_size']);
         }
 
         if (isset($fileField['min_size'])) {
-            $parts[] = 'Min size: '.$this->formatFileSize($fileField['min_size']);
+            $parts[] = 'Min size: '.FileSizeFormatter::format($fileField['min_size']);
         }
 
         // Dimension constraints
@@ -115,29 +117,6 @@ class FileUploadSchemaGenerator
         }
 
         return $parts;
-    }
-
-    private function formatFileSize(int $bytes): string
-    {
-        if ($bytes >= 1073741824) {
-            $size = $bytes / 1073741824;
-
-            return $size == (int) $size ? sprintf('%dGB', (int) $size) : sprintf('%.1fGB', $size);
-        }
-
-        if ($bytes >= 1048576) {
-            $size = $bytes / 1048576;
-
-            return $size == (int) $size ? sprintf('%dMB', (int) $size) : sprintf('%.1fMB', $size);
-        }
-
-        if ($bytes >= 1024) {
-            $size = $bytes / 1024;
-
-            return $size == (int) $size ? sprintf('%dKB', (int) $size) : sprintf('%.1fKB', $size);
-        }
-
-        return sprintf('%dB', $bytes);
     }
 
     /**

@@ -131,21 +131,6 @@ class FileUploadSchemaGeneratorTest extends TestCase
         $this->assertNotContains('document', $required);
     }
 
-    public function test_format_file_size(): void
-    {
-        $reflection = new \ReflectionClass($this->generator);
-        $method = $reflection->getMethod('formatFileSize');
-        $method->setAccessible(true);
-
-        $this->assertEquals('1KB', $method->invoke($this->generator, 1024));
-        $this->assertEquals('100KB', $method->invoke($this->generator, 102400));
-        $this->assertEquals('1MB', $method->invoke($this->generator, 1048576));
-        $this->assertEquals('2MB', $method->invoke($this->generator, 2097152));
-        $this->assertEquals('1GB', $method->invoke($this->generator, 1073741824));
-        $this->assertEquals('1.5GB', $method->invoke($this->generator, 1610612736));
-        $this->assertEquals('500B', $method->invoke($this->generator, 500));
-    }
-
     public function test_generate_multipart_schema_with_array_files(): void
     {
         $fields = [
