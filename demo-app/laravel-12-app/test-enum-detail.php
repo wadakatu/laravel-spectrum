@@ -7,11 +7,7 @@ $app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$analyzer = new \LaravelSpectrum\Analyzers\FormRequestAnalyzer(
-    new \LaravelSpectrum\Support\TypeInference,
-    new \LaravelSpectrum\Cache\DocumentationCache,
-    new \LaravelSpectrum\Analyzers\EnumAnalyzer
-);
+$analyzer = app(\LaravelSpectrum\Analyzers\FormRequestAnalyzer::class);
 
 $result = $analyzer->analyze(\App\Http\Requests\StoreUserRequest::class);
 

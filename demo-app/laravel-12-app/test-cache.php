@@ -27,22 +27,14 @@ echo 'DocumentationCache->enabled: '.($enabledProp->getValue($cache) ? 'YES' : '
 
 // Test if analyzer uses cache
 echo "\nFirst analysis with new analyzer instance...\n";
-$analyzer1 = new \LaravelSpectrum\Analyzers\FormRequestAnalyzer(
-    new \LaravelSpectrum\Support\TypeInference,
-    new \LaravelSpectrum\Cache\DocumentationCache,
-    new \LaravelSpectrum\Analyzers\EnumAnalyzer
-);
+$analyzer1 = app(\LaravelSpectrum\Analyzers\FormRequestAnalyzer::class);
 $start1 = microtime(true);
 $result1 = $analyzer1->analyze(\App\Http\Requests\StoreUserRequest::class);
 $time1 = microtime(true) - $start1;
 echo 'Time: '.number_format($time1 * 1000, 2)."ms\n";
 
 echo "\nSecond analysis with new analyzer instance...\n";
-$analyzer2 = new \LaravelSpectrum\Analyzers\FormRequestAnalyzer(
-    new \LaravelSpectrum\Support\TypeInference,
-    new \LaravelSpectrum\Cache\DocumentationCache,
-    new \LaravelSpectrum\Analyzers\EnumAnalyzer
-);
+$analyzer2 = app(\LaravelSpectrum\Analyzers\FormRequestAnalyzer::class);
 $start2 = microtime(true);
 $result2 = $analyzer2->analyze(\App\Http\Requests\StoreUserRequest::class);
 $time2 = microtime(true) - $start2;
