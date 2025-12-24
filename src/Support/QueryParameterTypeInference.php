@@ -1,11 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Support;
 
+/**
+ * Type inference for query parameters.
+ *
+ * Provides type inference from Request methods, default values,
+ * context, and validation rules.
+ */
 class QueryParameterTypeInference
 {
+    protected ValidationRuleTypeMapper $ruleTypeMapper;
+
+    public function __construct(?ValidationRuleTypeMapper $ruleTypeMapper = null)
+    {
+        $this->ruleTypeMapper = $ruleTypeMapper ?? new ValidationRuleTypeMapper;
+    }
+
     /**
-     * Infer type from Request method name
+     * Infer type from Request method name.
      */
     public function inferFromMethod(string $methodName): ?string
     {
@@ -22,9 +37,9 @@ class QueryParameterTypeInference
     }
 
     /**
-     * Infer type from default value
+     * Infer type from default value.
      */
-    public function inferFromDefaultValue($defaultValue): string
+    public function inferFromDefaultValue(mixed $defaultValue): string
     {
         if (is_bool($defaultValue)) {
             return 'boolean';
@@ -50,13 +65,15 @@ class QueryParameterTypeInference
     }
 
     /**
-     * Infer type from usage context
+     * Infer type from usage context.
+     *
+     * @param  array<string, mixed>  $context
      */
     public function inferFromContext(array $context): ?string
     {
         // Check for numeric operations
         if (isset($context['numeric_operation'])) {
-            return in_array($context['numeric_operation'], ['float', 'double']) ? 'number' : 'integer';
+            return in_array($context['numeric_operation'], ['float', 'double'], true) ? 'number' : 'integer';
         }
 
         // Check for array operations
@@ -87,11 +104,11 @@ class QueryParameterTypeInference
                 return 'string'; // datetime
             }
 
-            if (in_array($column, ['price', 'amount', 'total', 'balance'])) {
+            if (in_array($column, ['price', 'amount', 'total', 'balance'], true)) {
                 return 'number';
             }
 
-            if (in_array($column, ['active', 'enabled', 'deleted', 'published'])) {
+            if (in_array($column, ['active', 'enabled', 'deleted', 'published'], true)) {
                 return 'boolean';
             }
         }
@@ -100,60 +117,33 @@ class QueryParameterTypeInference
     }
 
     /**
-     * Infer type from validation rules
+     * Infer type from validation rules.
+     *
+     * @param  array<mixed>  $rules
      */
     public function inferFromValidationRules(array $rules): ?string
     {
-        foreach ($rules as $rule) {
-            $ruleName = is_string($rule) ? explode(':', $rule)[0] : (is_object($rule) ? class_basename($rule) : '');
+        $type = $this->ruleTypeMapper->inferType($rules);
 
-            switch ($ruleName) {
-                case 'integer':
-                case 'int':
-                case 'digits':
-                case 'digits_between':
-                    return 'integer';
-
-                case 'numeric':
-                case 'decimal':
-                    return 'number';
-
-                case 'boolean':
-                case 'bool':
-                case 'accepted':
-                    return 'boolean';
-
-                case 'array':
-                    return 'array';
-
-                case 'json':
-                    return 'object';
-
-                case 'date':
-                case 'date_format':
-                case 'before':
-                case 'after':
-                    return 'string'; // with date format
-
-                case 'email':
-                case 'url':
-                case 'ip':
-                case 'uuid':
-                case 'string':
-                    return 'string';
+        // Return null if we got the default 'string' to indicate no specific type was found
+        // This preserves the original behavior where null was returned for unrecognized rules
+        if ($type === 'string' && ! $this->hasExplicitStringRule($rules)) {
+            // Check for enum rule as a fallback
+            if ($this->ruleTypeMapper->hasEnumRule($rules)) {
+                return 'string';
             }
+
+            return null;
         }
 
-        // Check for enum rule
-        if ($this->hasEnumRule($rules)) {
-            return 'string';
-        }
-
-        return null;
+        return $type;
     }
 
     /**
-     * Detect enum values from context
+     * Detect enum values from context.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array<mixed>|null
      */
     public function detectEnumValues(array $context): ?array
     {
@@ -175,7 +165,9 @@ class QueryParameterTypeInference
     }
 
     /**
-     * Get format annotation for type
+     * Get format annotation for type.
+     *
+     * @param  array<string, mixed>  $context
      */
     public function getFormatForType(string $type, array $context = []): ?string
     {
@@ -186,24 +178,8 @@ class QueryParameterTypeInference
             }
 
             // Check validation rules for format hints
-            if (isset($context['validation_rules'])) {
-                foreach ($context['validation_rules'] as $rule) {
-                    if (str_starts_with($rule, 'email')) {
-                        return 'email';
-                    }
-                    if (str_starts_with($rule, 'url')) {
-                        return 'uri';
-                    }
-                    if (str_starts_with($rule, 'uuid')) {
-                        return 'uuid';
-                    }
-                    if (str_starts_with($rule, 'date_format')) {
-                        return 'date-time';
-                    }
-                    if ($rule === 'date') {
-                        return 'date';
-                    }
-                }
+            if (isset($context['validation_rules']) && is_array($context['validation_rules'])) {
+                return $this->ruleTypeMapper->inferFormat($context['validation_rules']);
             }
         }
 
@@ -211,77 +187,37 @@ class QueryParameterTypeInference
     }
 
     /**
-     * Get constraints from validation rules
+     * Get constraints from validation rules.
+     *
+     * @param  array<mixed>  $rules
+     * @return array<string, mixed>
      */
     public function getConstraintsFromRules(array $rules): array
     {
-        $constraints = [];
-
-        foreach ($rules as $rule) {
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            $parts = explode(':', $rule);
-            $ruleName = $parts[0];
-            $parameters = isset($parts[1]) ? explode(',', $parts[1]) : [];
-
-            switch ($ruleName) {
-                case 'min':
-                    if (isset($parameters[0])) {
-                        $constraints['minimum'] = (int) $parameters[0];
-                    }
-                    break;
-
-                case 'max':
-                    if (isset($parameters[0])) {
-                        $constraints['maximum'] = (int) $parameters[0];
-                    }
-                    break;
-
-                case 'between':
-                    if (isset($parameters[0]) && isset($parameters[1])) {
-                        $constraints['minimum'] = (int) $parameters[0];
-                        $constraints['maximum'] = (int) $parameters[1];
-                    }
-                    break;
-
-                case 'size':
-                    if (isset($parameters[0])) {
-                        $constraints['minLength'] = (int) $parameters[0];
-                        $constraints['maxLength'] = (int) $parameters[0];
-                    }
-                    break;
-
-                case 'in':
-                    $constraints['enum'] = $parameters;
-                    break;
-
-                case 'regex':
-                case 'pattern':
-                    if (isset($parameters[0])) {
-                        $constraints['pattern'] = $parameters[0];
-                    }
-                    break;
-            }
-        }
-
-        return $constraints;
+        return $this->ruleTypeMapper->extractConstraints($rules);
     }
 
     /**
-     * Check if rules contain enum constraint
+     * Check if rules contain enum constraint.
+     *
+     * @param  array<mixed>  $rules
      */
-    private function hasEnumRule(array $rules): bool
+    public function hasEnumRule(array $rules): bool
+    {
+        return $this->ruleTypeMapper->hasEnumRule($rules);
+    }
+
+    /**
+     * Check if rules contain an explicit string rule.
+     *
+     * @param  array<mixed>  $rules
+     */
+    private function hasExplicitStringRule(array $rules): bool
     {
         foreach ($rules as $rule) {
-            if (is_string($rule) && str_starts_with($rule, 'in:')) {
-                return true;
-            }
-
-            if (is_object($rule) && method_exists($rule, '__toString')) {
-                $ruleString = (string) $rule;
-                if (str_contains($ruleString, 'Enum') || str_contains($ruleString, 'In')) {
+            if (is_string($rule)) {
+                $ruleName = explode(':', $rule)[0];
+                if (in_array($ruleName, ['string', 'email', 'url', 'uuid', 'ip', 'date', 'date_format'], true)) {
                     return true;
                 }
             }

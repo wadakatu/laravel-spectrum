@@ -6,12 +6,10 @@ use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Support\TypeInference;
-use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
-use PhpParser\PrettyPrinter\Standard;
 
 $analyzer = new InlineValidationAnalyzer(
-    new TypeInference(new NodeTraverser, new Standard),
+    new TypeInference,
     new EnumAnalyzer,
     new FileUploadAnalyzer
 );

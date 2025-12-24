@@ -1,68 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Support;
 
 use Illuminate\Support\Str;
 
+/**
+ * Type inference from Laravel validation rules.
+ *
+ * Provides type inference and example generation based on
+ * validation rules and field names.
+ */
 class TypeInference
 {
-    /**
-     * バリデーションルールから型を推論
-     */
-    public function inferFromRules(array $rules): string
+    protected ValidationRuleTypeMapper $ruleTypeMapper;
+
+    public function __construct(?ValidationRuleTypeMapper $ruleTypeMapper = null)
     {
-        foreach ($rules as $rule) {
-            // Skip non-string rules (e.g., Rule::enum() objects)
-            if (! is_string($rule)) {
-                continue;
-            }
-
-            if ($rule === 'integer' || $rule === 'int') {
-                return 'integer';
-            }
-            if ($rule === 'numeric' || $rule === 'decimal') {
-                return 'number';
-            }
-            if ($rule === 'boolean' || $rule === 'bool') {
-                return 'boolean';
-            }
-            if ($rule === 'array') {
-                return 'array';
-            }
-            if ($rule === 'date' || $rule === 'datetime' || Str::startsWith($rule, 'date_format:') ||
-                Str::startsWith($rule, 'after:') || Str::startsWith($rule, 'before:') ||
-                Str::startsWith($rule, 'after_or_equal:') || Str::startsWith($rule, 'before_or_equal:') ||
-                Str::startsWith($rule, 'date_equals:')) {
-                return 'string'; // date-time format
-            }
-            if ($rule === 'email' || $rule === 'url' || $rule === 'uuid') {
-                return 'string';
-            }
-            if ($rule === 'file' || $rule === 'image') {
-                return 'string'; // binary format
-            }
-            if ($rule === 'timezone' || Str::startsWith($rule, 'timezone:')) {
-                return 'string';
-            }
-            if ($rule === 'json') {
-                return 'object';
-            }
-            if ($rule === 'ip' || $rule === 'ipv4' || $rule === 'ipv6' || $rule === 'mac_address') {
-                return 'string';
-            }
-        }
-
-        return 'string'; // デフォルト
+        $this->ruleTypeMapper = $ruleTypeMapper ?? new ValidationRuleTypeMapper;
     }
 
     /**
-     * フィールド名とルールからサンプル値を生成
+     * Infer type from validation rules.
+     *
+     * @param  array<mixed>  $rules  Laravel validation rules
+     * @return string OpenAPI type (string, integer, number, boolean, array, object)
+     */
+    public function inferFromRules(array $rules): string
+    {
+        return $this->ruleTypeMapper->inferType($rules);
+    }
+
+    /**
+     * Generate an example value based on field name and validation rules.
+     *
+     * @param  array<mixed>  $rules
      */
     public function generateExample(string $field, array $rules): mixed
     {
-        // 型別のサンプル
+        // Type-based examples
         foreach ($rules as $rule) {
-            // Skip non-string rules
             if (! is_string($rule)) {
                 continue;
             }
@@ -114,7 +92,7 @@ class TypeInference
             }
         }
 
-        // フィールド名ベースのサンプル
+        // Field name-based examples
         if (Str::contains($field, ['name'])) {
             return 'John Doe';
         }
@@ -147,7 +125,9 @@ class TypeInference
     }
 
     /**
-     * 整数型のサンプルを生成
+     * Generate an integer example based on field name and constraints.
+     *
+     * @param  array<mixed>  $rules
      */
     private function generateIntegerExample(string $field, array $rules): int
     {
@@ -165,7 +145,7 @@ class TypeInference
             }
         }
 
-        // フィールド名に基づいた適切な値
+        // Field name-based appropriate values
         if (Str::contains($field, ['id'])) {
             return 1;
         }
@@ -180,7 +160,7 @@ class TypeInference
     }
 
     /**
-     * 日付フォーマットに基づいたサンプルを生成
+     * Generate a date example based on format string.
      */
     private function generateDateFormatExample(string $format): string
     {
@@ -205,16 +185,13 @@ class TypeInference
             'd/m/Y g:i A' => '01/01/2024 2:30 PM',
         ];
 
-        // Check if it's a common format
         if (isset($commonFormats[$format])) {
             return $commonFormats[$format];
         }
 
-        // Try to format using DateTime
         try {
             return $now->format($format);
-        } catch (\Exception $e) {
-            // Fallback for invalid formats
+        } catch (\Exception) {
             return '2024-01-01';
         }
     }

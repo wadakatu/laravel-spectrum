@@ -5,24 +5,16 @@ require 'vendor/autoload.php';
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
-use LaravelSpectrum\Generators\ExampleGenerator;
-use LaravelSpectrum\Generators\ExampleValueFactory;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Support\TypeInference;
-use PhpParser\NodeTraverser;
-use PhpParser\PrettyPrinter\Standard;
 
 $analyzer = new InlineValidationAnalyzer(
-    new TypeInference(new NodeTraverser, new Standard),
+    new TypeInference,
     new EnumAnalyzer,
     new FileUploadAnalyzer
 );
 
-$faker = \Faker\Factory::create();
-$generator = new SchemaGenerator(
-    new TypeInference(new NodeTraverser, new Standard),
-    new ExampleGenerator(new ExampleValueFactory($faker))
-);
+$generator = new SchemaGenerator;
 
 // Test with array rules
 $rules = [
