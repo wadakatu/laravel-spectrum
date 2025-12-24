@@ -706,7 +706,7 @@ class AnonymousClassAnalyzerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_default_when_non_critical_method_fails(): void
+    public function it_logs_warning_when_non_critical_method_fails(): void
     {
         $mockInstance = new class
         {
@@ -730,10 +730,124 @@ class AnonymousClassAnalyzerTest extends TestCase
         // Attributes should be empty (default) due to non-critical failure
         $this->assertEmpty($result['attributes']);
 
-        // No error should be logged for non-critical method failure
-        $errors = $this->errorCollector->getErrors();
-        $attributeErrors = array_filter($errors, fn ($e) => str_contains($e['message'], 'attributes'));
-        $this->assertEmpty($attributeErrors);
+        // Warning should be logged for non-critical method failure
+        $warnings = $this->errorCollector->getWarnings();
+        $attributeWarnings = array_filter($warnings, fn ($w) => str_contains($w['message'], 'attributes'));
+        $this->assertNotEmpty($attributeWarnings);
+        $this->assertEquals('anonymous_non_critical_method_failure', array_values($attributeWarnings)[0]['metadata']['error_type']);
+    }
+
+    // ========== Additional edge case tests ==========
+
+    #[Test]
+    public function it_handles_empty_anonymous_request_with_no_methods(): void
+    {
+        $anonymousRequest = AnonymousClassFixture::getEmptyAnonymousRequest();
+        $reflection = new \ReflectionClass($anonymousRequest);
+
+        $this->parameterBuilder->shouldReceive('buildFromRules')
+            ->once()
+            ->with([], [], Mockery::any(), Mockery::any())
+            ->andReturn([]);
+
+        $result = $this->analyzer->analyze($reflection);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_logs_warning_when_conditional_php_parser_throws_error(): void
+    {
+        $mockParser = Mockery::mock(Parser::class);
+        $mockParser->shouldReceive('parse')->andThrow(new PhpParserError('Conditional syntax error'));
+
+        $analyzer = new AnonymousClassAnalyzer(
+            $this->astExtractor,
+            $this->parameterBuilder,
+            $this->errorCollector,
+            $mockParser
+        );
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_');
+        file_put_contents($tempFile, '<?php return new class { public function rules(): array { return []; } };');
+
+        $reflection = Mockery::mock(\ReflectionClass::class);
+        $reflection->shouldReceive('getFileName')->andReturn($tempFile);
+        $reflection->shouldReceive('getStartLine')->andReturn(1);
+        $reflection->shouldReceive('getEndLine')->andReturn(1);
+        $reflection->shouldReceive('getName')->andReturn('TestConditionalClass');
+        $reflection->shouldReceive('getNamespaceName')->andReturn('');
+        $reflection->shouldReceive('newInstanceWithoutConstructor')->andReturn(new \stdClass);
+        $reflection->shouldReceive('hasProperty')->with('request')->andReturn(false);
+        $reflection->shouldReceive('hasMethod')->with('rules')->andReturn(false);
+        $reflection->shouldReceive('hasMethod')->with('attributes')->andReturn(false);
+
+        $this->parameterBuilder->shouldReceive('buildFromRules')->andReturn([]);
+
+        $analyzer->analyzeWithConditionalRules($reflection);
+
+        $warnings = $this->errorCollector->getWarnings();
+        $parseErrorWarnings = array_filter($warnings, fn ($w) => $w['metadata']['error_type'] === 'anonymous_conditional_ast_parse_error');
+        $this->assertNotEmpty($parseErrorWarnings, 'Expected conditional AST parse error warning');
+
+        unlink($tempFile);
+    }
+
+    #[Test]
+    public function it_logs_warning_when_conditional_class_node_not_found(): void
+    {
+        $mockAstExtractor = Mockery::mock(FormRequestAstExtractor::class);
+        $mockAstExtractor->shouldReceive('findAnonymousClassNode')->andReturn(null);
+
+        $analyzer = new AnonymousClassAnalyzer(
+            $mockAstExtractor,
+            $this->parameterBuilder,
+            $this->errorCollector
+        );
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_');
+        file_put_contents($tempFile, '<?php return new class {};');
+
+        $reflection = Mockery::mock(\ReflectionClass::class);
+        $reflection->shouldReceive('getFileName')->andReturn($tempFile);
+        $reflection->shouldReceive('getStartLine')->andReturn(1);
+        $reflection->shouldReceive('getEndLine')->andReturn(1);
+        $reflection->shouldReceive('getName')->andReturn('TestClass');
+        $reflection->shouldReceive('getNamespaceName')->andReturn('');
+        $reflection->shouldReceive('newInstanceWithoutConstructor')->andReturn(new \stdClass);
+        $reflection->shouldReceive('hasProperty')->with('request')->andReturn(false);
+        $reflection->shouldReceive('hasMethod')->with('rules')->andReturn(false);
+        $reflection->shouldReceive('hasMethod')->with('attributes')->andReturn(false);
+
+        $this->parameterBuilder->shouldReceive('buildFromRules')->andReturn([]);
+
+        $analyzer->analyzeWithConditionalRules($reflection);
+
+        $warnings = $this->errorCollector->getWarnings();
+        $nodeNotFoundWarnings = array_filter($warnings, fn ($w) => $w['metadata']['error_type'] === 'anonymous_conditional_class_node_not_found');
+        $this->assertNotEmpty($nodeNotFoundWarnings, 'Expected conditional class node not found warning');
+
+        unlink($tempFile);
+    }
+
+    #[Test]
+    public function it_creates_error_collector_when_not_provided(): void
+    {
+        $analyzer = new AnonymousClassAnalyzer(
+            $this->astExtractor,
+            $this->parameterBuilder,
+            null // No error collector provided
+        );
+
+        $reflection = Mockery::mock(\ReflectionClass::class);
+        $reflection->shouldReceive('getFileName')->andReturn(false);
+        $reflection->shouldReceive('newInstanceWithoutConstructor')->andThrow(new \Exception('Test exception'));
+        $reflection->shouldReceive('getName')->andReturn('TestClass');
+
+        // Should not throw, just return empty array
+        $result = $analyzer->analyze($reflection);
+        $this->assertEmpty($result);
     }
 
     // ========== Integration test ==========

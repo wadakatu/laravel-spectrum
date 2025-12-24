@@ -13,29 +13,36 @@ use PhpParser\ParserFactory;
  * Extracted from FormRequestAnalyzer to improve single responsibility.
  * Handles cases where the FormRequest class is anonymous or when the file path is not available.
  *
+ * Analysis Strategy:
+ * 1. Attempt AST-based parsing when source file is available (most accurate)
+ * 2. Fall back to reflection-based extraction if AST parsing fails
+ *
  * Main public methods:
  * - analyze(): Extract parameters with AST fallback to reflection
  * - analyzeDetails(): Extract raw rules, attributes, and messages
  * - analyzeWithConditionalRules(): Handle conditional validation rules
  *
- * @see FormRequestAnalyzer The parent analyzer that delegates to this class
+ * @see FormRequestAnalyzer The main analyzer that delegates anonymous class handling to this class
  */
 class AnonymousClassAnalyzer
 {
     protected Parser $parser;
 
+    protected ErrorCollector $errorCollector;
+
     /**
      * @param  FormRequestAstExtractor  $astExtractor  AST extractor for parsing PHP code
      * @param  ParameterBuilder  $parameterBuilder  Builder for creating parameter definitions
-     * @param  ErrorCollector|null  $errorCollector  Optional collector for warnings/errors
+     * @param  ErrorCollector|null  $errorCollector  Collector for warnings/errors (created if not provided)
      * @param  Parser|null  $parser  Optional PHP-Parser instance (defaults to newest supported version)
      */
     public function __construct(
         protected FormRequestAstExtractor $astExtractor,
         protected ParameterBuilder $parameterBuilder,
-        protected ?ErrorCollector $errorCollector = null,
+        ?ErrorCollector $errorCollector = null,
         ?Parser $parser = null
     ) {
+        $this->errorCollector = $errorCollector ?? new ErrorCollector;
         $this->parser = $parser ?? (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -64,7 +71,7 @@ class AnonymousClassAnalyzer
             return $this->extractParametersUsingReflection($reflection);
 
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
+            $this->errorCollector->addError(
                 'AnonymousClassAnalyzer',
                 "Failed to analyze anonymous FormRequest (unable to create instance or invoke methods): {$e->getMessage()}",
                 [
@@ -108,7 +115,7 @@ class AnonymousClassAnalyzer
             ];
 
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
+            $this->errorCollector->addError(
                 'AnonymousClassAnalyzer',
                 "Failed to extract rules/attributes/messages from anonymous FormRequest using reflection: {$e->getMessage()}",
                 [
@@ -130,7 +137,7 @@ class AnonymousClassAnalyzer
      * Falls back to standard analysis if AST parsing fails or no conditional rules found.
      *
      * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
-     * @return array{parameters: array<int, array<string, mixed>>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<string, mixed>}, attributes?: array<string, string>, messages?: array<string, string>} The analysis result
+     * @return array{parameters: array<int, array<string, mixed>>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<string, mixed>}} The analysis result
      */
     public function analyzeWithConditionalRules(\ReflectionClass $reflection): array
     {
@@ -143,7 +150,7 @@ class AnonymousClassAnalyzer
                 }
 
                 // Log that conditional rules AST analysis did not produce results
-                $this->errorCollector?->addWarning(
+                $this->errorCollector->addWarning(
                     'AnonymousClassAnalyzer',
                     'Conditional rules AST analysis returned no results, using standard analysis',
                     [
@@ -166,7 +173,7 @@ class AnonymousClassAnalyzer
             ];
 
         } catch (\Exception $e) {
-            $this->errorCollector?->addError(
+            $this->errorCollector->addError(
                 'AnonymousClassAnalyzer',
                 "Failed to analyze anonymous FormRequest with conditional rules (unable to create instance or invoke methods): {$e->getMessage()}",
                 [
@@ -204,7 +211,7 @@ class AnonymousClassAnalyzer
         try {
             $ast = $this->parser->parse($classCode);
             if (! $ast) {
-                $this->errorCollector?->addWarning(
+                $this->errorCollector->addWarning(
                     'AnonymousClassAnalyzer',
                     'Parser returned null AST, falling back to reflection',
                     [
@@ -219,7 +226,7 @@ class AnonymousClassAnalyzer
 
             $classNode = $this->astExtractor->findAnonymousClassNode($ast);
             if (! $classNode) {
-                $this->errorCollector?->addWarning(
+                $this->errorCollector->addWarning(
                     'AnonymousClassAnalyzer',
                     'Anonymous class node not found in AST, falling back to reflection',
                     [
@@ -239,7 +246,7 @@ class AnonymousClassAnalyzer
 
             return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
         } catch (Error $e) {
-            $this->errorCollector?->addWarning(
+            $this->errorCollector->addWarning(
                 'AnonymousClassAnalyzer',
                 "Failed to parse anonymous class AST, falling back to reflection: {$e->getMessage()}",
                 [
@@ -259,7 +266,7 @@ class AnonymousClassAnalyzer
      *
      * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
      * @param  string  $filePath  Path to the file containing the class
-     * @return array{parameters: array<int, array<string, mixed>>, conditional_rules: array<string, mixed>}|null Returns the result if successful, null if AST parsing fails
+     * @return array{parameters: array<int, array<string, mixed>>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<string, mixed>}}|null Returns the result if successful, null if AST parsing fails
      */
     protected function tryConditionalRulesAstAnalysis(\ReflectionClass $reflection, string $filePath): ?array
     {
@@ -271,7 +278,7 @@ class AnonymousClassAnalyzer
         try {
             $ast = $this->parser->parse($classCode);
             if (! $ast) {
-                $this->errorCollector?->addWarning(
+                $this->errorCollector->addWarning(
                     'AnonymousClassAnalyzer',
                     'Parser returned null AST for conditional rules, falling back to standard analysis',
                     [
@@ -286,7 +293,7 @@ class AnonymousClassAnalyzer
 
             $classNode = $this->astExtractor->findAnonymousClassNode($ast);
             if (! $classNode) {
-                $this->errorCollector?->addWarning(
+                $this->errorCollector->addWarning(
                     'AnonymousClassAnalyzer',
                     'Anonymous class node not found for conditional rules, falling back to standard analysis',
                     [
@@ -314,7 +321,7 @@ class AnonymousClassAnalyzer
             // No conditional rules found - will fall back to standard analysis
             return null;
         } catch (Error $e) {
-            $this->errorCollector?->addWarning(
+            $this->errorCollector->addWarning(
                 'AnonymousClassAnalyzer',
                 "Failed to parse anonymous class AST for conditional rules, falling back to reflection: {$e->getMessage()}",
                 [
@@ -340,7 +347,7 @@ class AnonymousClassAnalyzer
     {
         $code = file_get_contents($filePath);
         if ($code === false) {
-            $this->errorCollector?->addError(
+            $this->errorCollector->addError(
                 'AnonymousClassAnalyzer',
                 'Failed to read file contents for anonymous class analysis',
                 [
@@ -357,7 +364,7 @@ class AnonymousClassAnalyzer
         $endLine = $reflection->getEndLine();
 
         if ($startLine === false || $endLine === false) {
-            $this->errorCollector?->addWarning(
+            $this->errorCollector->addWarning(
                 'AnonymousClassAnalyzer',
                 'Line information not available for anonymous class',
                 [
@@ -461,7 +468,7 @@ class AnonymousClassAnalyzer
             return $method->invoke($instance) ?: $default;
         } catch (\Exception $e) {
             if ($criticalForAnalysis) {
-                $this->errorCollector?->addError(
+                $this->errorCollector->addError(
                     'AnonymousClassAnalyzer',
                     "Failed to invoke {$methodName}() method on anonymous FormRequest: {$e->getMessage()}",
                     [
@@ -475,6 +482,19 @@ class AnonymousClassAnalyzer
 
                 return null;
             }
+
+            // Log non-critical failures as warnings for debugging
+            $this->errorCollector->addWarning(
+                'AnonymousClassAnalyzer',
+                "Non-critical method {$methodName}() failed, using default value: {$e->getMessage()}",
+                [
+                    'class_name' => $reflection->getName(),
+                    'file_path' => $reflection->getFileName() ?: 'unknown',
+                    'method' => $methodName,
+                    'error_type' => 'anonymous_non_critical_method_failure',
+                    'exception_class' => get_class($e),
+                ]
+            );
 
             return $default;
         }
