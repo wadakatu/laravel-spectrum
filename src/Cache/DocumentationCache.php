@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Cache;
 
 use Illuminate\Support\Facades\File;
@@ -7,6 +9,14 @@ use Illuminate\Support\Facades\Log;
 
 class DocumentationCache
 {
+    /**
+     * Cache format version.
+     * Increment this when the cache data structure changes
+     * (e.g., adding/removing/renaming keys in the cacheData array,
+     * changing serialization format, or modifying metadata structure).
+     */
+    private const CACHE_VERSION = 1;
+
     private string $cacheDir;
 
     private bool $enabled;
@@ -169,6 +179,7 @@ class DocumentationCache
         }
 
         $cacheData = [
+            'version' => self::CACHE_VERSION,
             'metadata' => $metadata,
             'data' => $data,
         ];
@@ -189,6 +200,19 @@ class DocumentationCache
 
         try {
             $cacheData = unserialize(File::get($cacheFile));
+
+            // バージョンが異なる場合は古いキャッシュとして削除
+            $cachedVersion = $cacheData['version'] ?? 0;
+            if ($cachedVersion !== self::CACHE_VERSION) {
+                Log::debug('DocumentationCache: Invalidating cache due to version mismatch', [
+                    'key' => $key,
+                    'cached_version' => $cachedVersion,
+                    'current_version' => self::CACHE_VERSION,
+                ]);
+                File::delete($cacheFile);
+
+                return null;
+            }
 
             return $cacheData['data'] ?? null;
         } catch (\Exception $e) {
@@ -213,8 +237,28 @@ class DocumentationCache
         try {
             $cacheData = unserialize(File::get($cacheFile));
 
+            // バージョンが異なる場合は古いキャッシュとして削除（get()と同じ動作）
+            $cachedVersion = $cacheData['version'] ?? 0;
+            if ($cachedVersion !== self::CACHE_VERSION) {
+                Log::debug('DocumentationCache: Invalidating cache metadata due to version mismatch', [
+                    'key' => $key,
+                    'cached_version' => $cachedVersion,
+                    'current_version' => self::CACHE_VERSION,
+                ]);
+                File::delete($cacheFile);
+
+                return null;
+            }
+
             return $cacheData['metadata'] ?? null;
         } catch (\Exception $e) {
+            Log::warning('DocumentationCache: Failed to read cache metadata', [
+                'key' => $key,
+                'file' => $cacheFile,
+                'error' => $e->getMessage(),
+            ]);
+            File::delete($cacheFile);
+
             return null;
         }
     }
@@ -304,6 +348,17 @@ class DocumentationCache
 
     /**
      * 統計情報を取得
+     *
+     * @return array{
+     *     enabled: bool,
+     *     cache_directory: string,
+     *     cache_version: int,
+     *     total_files: int,
+     *     total_size: int,
+     *     total_size_human: string,
+     *     oldest_file: string|null,
+     *     newest_file: string|null
+     * }
      */
     public function getStats(): array
     {
@@ -311,6 +366,7 @@ class DocumentationCache
             return [
                 'enabled' => $this->enabled,
                 'cache_directory' => $this->cacheDir,
+                'cache_version' => self::CACHE_VERSION,
                 'total_files' => 0,
                 'total_size' => 0,
                 'total_size_human' => '0 B',
@@ -340,6 +396,7 @@ class DocumentationCache
         return [
             'enabled' => $this->enabled,
             'cache_directory' => $this->cacheDir,
+            'cache_version' => self::CACHE_VERSION,
             'total_files' => count($files),
             'total_size' => $totalSize,
             'total_size_human' => $this->humanFilesize($totalSize),

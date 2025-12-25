@@ -55,6 +55,7 @@ class CacheCommand extends Command
         $this->info('📊 Cache Statistics');
         $this->info('==================');
         $this->info('Status: '.($stats['enabled'] ? 'Enabled' : 'Disabled'));
+        $this->info("Version: {$stats['cache_version']}");
         $this->info("Files: {$stats['total_files']}");
         $this->info("Size: {$stats['total_size_human']}");
 
