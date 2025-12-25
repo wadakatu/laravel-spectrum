@@ -6,6 +6,15 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter;
 
+/**
+ * Laravel API Resource の toArray() メソッドから構造情報を抽出するASTビジター
+ *
+ * JsonResource クラスの toArray() メソッドの返り値配列を解析し、
+ * OpenAPI スキーマ生成に必要なプロパティ情報、条件付きフィールド、
+ * ネストされたリソースクラスを抽出する。
+ *
+ * @see \LaravelSpectrum\Analyzers\ResourceAnalyzer
+ */
 class ResourceStructureVisitor extends NodeVisitorAbstract
 {
     private array $structure = [];
@@ -179,6 +188,16 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
             } else {
                 $info = ['type' => 'mixed'];
             }
+        }
+
+        // Null-safe プロパティアクセス (例: $this->status?->value)
+        elseif ($expr instanceof Node\Expr\NullsafePropertyFetch) {
+            $info = $this->analyzeNullsafePropertyFetch($expr);
+        }
+
+        // Null-safe メソッド呼び出し (例: $this->created_at?->toDateTimeString())
+        elseif ($expr instanceof Node\Expr\NullsafeMethodCall) {
+            $info = $this->analyzeNullsafeMethodCall($expr);
         }
 
         // メソッドチェーン (例: $this->created_at->format())
@@ -358,6 +377,127 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     }
 
     /**
+     * Null-safe プロパティアクセスを解析 (例: $this->status?->value)
+     *
+     * @return array<string, mixed>
+     */
+    private function analyzeNullsafePropertyFetch(Node\Expr\NullsafePropertyFetch $expr): array
+    {
+        // 動的プロパティ名（$this->obj?->$dynamicProperty）は静的解析不可
+        if (! ($expr->name instanceof Node\Identifier)) {
+            return ['type' => 'mixed', 'nullable' => true];
+        }
+
+        $propertyName = $expr->name->toString();
+
+        // $this->property?->value パターン (Enum)
+        if ($propertyName === 'value') {
+            // var が NullsafePropertyFetch または PropertyFetch で $this-> から始まる場合
+            if ($this->isThisPropertyAccess($expr->var)) {
+                return [
+                    'type' => 'string',
+                    'source' => 'enum',
+                    'nullable' => true,
+                ];
+            }
+        }
+
+        // $this->relation?->property パターン
+        if ($this->isThisPropertyAccess($expr->var)) {
+            $info = $this->analyzePropertyAccess($propertyName);
+            $info['nullable'] = true;
+
+            return $info;
+        }
+
+        return ['type' => 'mixed', 'nullable' => true];
+    }
+
+    /**
+     * Null-safe メソッド呼び出しを解析 (例: $this->created_at?->toDateTimeString())
+     *
+     * @return array<string, mixed>
+     */
+    private function analyzeNullsafeMethodCall(Node\Expr\NullsafeMethodCall $call): array
+    {
+        // 動的メソッド名（$this->obj?->$dynamicMethod()）は静的解析不可
+        if (! ($call->name instanceof Node\Identifier)) {
+            return ['type' => 'mixed', 'nullable' => true];
+        }
+
+        $methodName = $call->name->toString();
+
+        // 日付フォーマットメソッド
+        if ($this->isDateFormattingMethod($methodName)) {
+            return [
+                'type' => 'string',
+                'format' => 'date-time',
+                'example' => date('Y-m-d H:i:s'),
+                'nullable' => true,
+            ];
+        }
+
+        // has*, is* メソッド (boolean を返すメソッド)
+        if (str_starts_with($methodName, 'has') || str_starts_with($methodName, 'is')) {
+            return ['type' => 'boolean', 'nullable' => true];
+        }
+
+        return ['type' => 'mixed', 'nullable' => true];
+    }
+
+    /**
+     * $this->property アクセスかどうかを判定
+     */
+    private function isThisPropertyAccess(Node $node): bool
+    {
+        // $this->property
+        if ($node instanceof Node\Expr\PropertyFetch &&
+            $node->var instanceof Node\Expr\Variable &&
+            $node->var->name === 'this') {
+            return true;
+        }
+
+        // $this?->property (あまり一般的ではないが対応)
+        if ($node instanceof Node\Expr\NullsafePropertyFetch &&
+            $node->var instanceof Node\Expr\Variable &&
+            $node->var->name === 'this') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 日付フォーマットメソッドかどうかを判定
+     *
+     * Carbon の日付フォーマットメソッドはパターンで判定:
+     * - format(), isoFormat(), translatedFormat() - 汎用フォーマット
+     * - diffForHumans(), ago() - 人間可読形式
+     * - to*String() - 各種フォーマットへの変換 (toDateTimeString, toIso8601String 等)
+     */
+    private function isDateFormattingMethod(string $methodName): bool
+    {
+        // 明示的な日付フォーマットメソッド
+        $dateFormattingMethods = [
+            'format',
+            'isoFormat',
+            'translatedFormat',
+            'diffForHumans',
+            'ago',
+            'calendar',
+            'longAbsoluteDiffForHumans',
+            'shortAbsoluteDiffForHumans',
+        ];
+
+        if (in_array($methodName, $dateFormattingMethods, true)) {
+            return true;
+        }
+
+        // to*String パターン (toDateString, toIso8601String, toRfc3339String 等)
+        return str_starts_with($methodName, 'to') && str_ends_with($methodName, 'String');
+    }
+
+    /**
      * メソッドチェーンを解析
      */
     private function analyzeMethodChain(Node\Expr\MethodCall $call): array
@@ -365,7 +505,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         $methodName = $call->name->toString();
 
         // 日付フォーマット
-        if (in_array($methodName, ['format', 'toDateString', 'toTimeString', 'toDateTimeString'])) {
+        if ($this->isDateFormattingMethod($methodName)) {
             return [
                 'type' => 'string',
                 'format' => 'date-time',
@@ -536,6 +676,15 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         return $examples[$property] ?? null;
     }
 
+    /**
+     * 解析結果の構造を取得
+     *
+     * @return array{
+     *     properties: array<string, array<string, mixed>>,
+     *     conditionalFields: list<string>,
+     *     nestedResources: list<string>
+     * }
+     */
     public function getStructure(): array
     {
         return [
