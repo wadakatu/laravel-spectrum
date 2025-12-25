@@ -143,7 +143,11 @@ class OpenApiSnapshotTest extends TestCase
     }
 
     /**
-     * Normalize the OpenAPI spec by removing or stabilizing dynamic fields.
+     * Normalize the OpenAPI spec for deterministic snapshot comparison.
+     *
+     * - Sorts paths, schemas, and tags alphabetically for consistent ordering
+     * - Removes Faker-generated example objects
+     * - Replaces datetime values with placeholders
      *
      * @param  array  $openapi  The OpenAPI specification
      * @return array The normalized specification
@@ -171,6 +175,9 @@ class OpenApiSnapshotTest extends TestCase
 
     /**
      * Recursively normalize dynamic values in the spec.
+     *
+     * @param  mixed  $data  The data structure to normalize (array or scalar)
+     * @return mixed The normalized data with dynamic values replaced
      */
     private function normalizeDynamicValues(mixed $data): mixed
     {
@@ -193,6 +200,11 @@ class OpenApiSnapshotTest extends TestCase
 
     /**
      * Normalize individual values that may be dynamic.
+     *
+     * Replaces datetime strings with placeholders to ensure consistent snapshots.
+     *
+     * @param  mixed  $value  The value to normalize
+     * @return mixed The normalized value (datetimes become placeholders)
      */
     private function normalizeValue(mixed $value): mixed
     {
