@@ -31,3 +31,8 @@ CLAUDE.local.md
 
 /.serena/
 test-app/
+
+# Infection mutation testing
+infection.log
+infection.html
+infection-cache/

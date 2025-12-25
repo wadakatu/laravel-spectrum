@@ -1,0 +1,75 @@
+name: Mutation Testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      full_test:
+        description: 'Run full mutation testing (not just changed files)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    name: Infection Mutation Testing
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: pcov
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Run mutation testing (changed files only)
+        if: github.event_name == 'pull_request'
+        run: |
+          vendor/bin/infection \
+            --threads=max \
+            --git-diff-filter=AM \
+            --git-diff-base=origin/${{ github.base_ref }} \
+            --min-msi=50 \
+            --min-covered-msi=65 \
+            --ignore-msi-with-no-mutations \
+            --logger-github
+        env:
+          XDEBUG_MODE: coverage
+
+      - name: Run full mutation testing
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.full_test == 'true')
+        run: |
+          vendor/bin/infection \
+            --threads=max \
+            --min-msi=50 \
+            --min-covered-msi=65 \
+            --logger-github
+        env:
+          XDEBUG_MODE: coverage
+
+      - name: Skip mutation testing (manual trigger without full test)
+        if: github.event_name == 'workflow_dispatch' && inputs.full_test != 'true'
+        run: echo "Skipped - use full_test=true for complete mutation testing"
