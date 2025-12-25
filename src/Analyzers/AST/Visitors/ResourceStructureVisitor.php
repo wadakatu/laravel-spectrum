@@ -181,6 +181,16 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
             }
         }
 
+        // Null-safe プロパティアクセス (例: $this->status?->value)
+        elseif ($expr instanceof Node\Expr\NullsafePropertyFetch) {
+            $info = $this->analyzeNullsafePropertyFetch($expr);
+        }
+
+        // Null-safe メソッド呼び出し (例: $this->created_at?->toDateTimeString())
+        elseif ($expr instanceof Node\Expr\NullsafeMethodCall) {
+            $info = $this->analyzeNullsafeMethodCall($expr);
+        }
+
         // メソッドチェーン (例: $this->created_at->format())
         elseif ($expr instanceof Node\Expr\MethodCall) {
             $info = $this->analyzeMethodChain($expr);
@@ -358,6 +368,104 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
     }
 
     /**
+     * Null-safe プロパティアクセスを解析 (例: $this->status?->value)
+     *
+     * @return array<string, mixed>
+     */
+    private function analyzeNullsafePropertyFetch(Node\Expr\NullsafePropertyFetch $expr): array
+    {
+        $propertyName = $expr->name->toString();
+
+        // $this->property?->value パターン (Enum)
+        if ($propertyName === 'value') {
+            // var が NullsafePropertyFetch または PropertyFetch で $this-> から始まる場合
+            if ($this->isThisPropertyAccess($expr->var)) {
+                return [
+                    'type' => 'string',
+                    'source' => 'enum',
+                    'nullable' => true,
+                ];
+            }
+        }
+
+        // $this->relation?->property パターン
+        if ($this->isThisPropertyAccess($expr->var)) {
+            $info = $this->analyzePropertyAccess($propertyName);
+            $info['nullable'] = true;
+
+            return $info;
+        }
+
+        return ['type' => 'mixed', 'nullable' => true];
+    }
+
+    /**
+     * Null-safe メソッド呼び出しを解析 (例: $this->created_at?->toDateTimeString())
+     *
+     * @return array<string, mixed>
+     */
+    private function analyzeNullsafeMethodCall(Node\Expr\NullsafeMethodCall $call): array
+    {
+        $methodName = $call->name->toString();
+
+        // 日付フォーマットメソッド
+        if ($this->isDateFormattingMethod($methodName)) {
+            return [
+                'type' => 'string',
+                'format' => 'date-time',
+                'example' => date('Y-m-d H:i:s'),
+                'nullable' => true,
+            ];
+        }
+
+        // has*, is* メソッド (boolean を返すメソッド)
+        if (str_starts_with($methodName, 'has') || str_starts_with($methodName, 'is')) {
+            return ['type' => 'boolean', 'nullable' => true];
+        }
+
+        return ['type' => 'mixed', 'nullable' => true];
+    }
+
+    /**
+     * $this->property アクセスかどうかを判定
+     */
+    private function isThisPropertyAccess(Node $node): bool
+    {
+        // $this->property
+        if ($node instanceof Node\Expr\PropertyFetch &&
+            $node->var instanceof Node\Expr\Variable &&
+            $node->var->name === 'this') {
+            return true;
+        }
+
+        // $this?->property (あまり一般的ではないが対応)
+        if ($node instanceof Node\Expr\NullsafePropertyFetch &&
+            $node->var instanceof Node\Expr\Variable &&
+            $node->var->name === 'this') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 日付フォーマットメソッドかどうかを判定
+     *
+     * Carbon の日付フォーマットメソッドはパターンで判定:
+     * - format() - 汎用フォーマット
+     * - to*String() - 各種フォーマットへの変換 (toDateTimeString, toIso8601String 等)
+     */
+    private function isDateFormattingMethod(string $methodName): bool
+    {
+        if ($methodName === 'format') {
+            return true;
+        }
+
+        // to*String パターン (toDateString, toIso8601String, toRfc3339String 等)
+        return str_starts_with($methodName, 'to') && str_ends_with($methodName, 'String');
+    }
+
+    /**
      * メソッドチェーンを解析
      */
     private function analyzeMethodChain(Node\Expr\MethodCall $call): array
@@ -365,7 +473,7 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         $methodName = $call->name->toString();
 
         // 日付フォーマット
-        if (in_array($methodName, ['format', 'toDateString', 'toTimeString', 'toDateTimeString'])) {
+        if ($this->isDateFormattingMethod($methodName)) {
             return [
                 'type' => 'string',
                 'format' => 'date-time',
