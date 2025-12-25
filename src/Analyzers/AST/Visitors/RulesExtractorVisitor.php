@@ -76,12 +76,13 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         $rules = [];
 
         foreach ($array->items as $item) {
+            if ($item === null) {
+                continue;
+            }
+
             $key = $this->evaluateKey($item->key);
             $value = $this->evaluateValue($item->value);
-
-            if ($value !== null) {
-                $rules[$key] = $value;
-            }
+            $rules[$key] = $value;
         }
 
         return $rules;
@@ -160,10 +161,11 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         if ($expr instanceof Node\Expr\Array_) {
             $result = [];
             foreach ($expr->items as $item) {
-                $value = $this->evaluateValue($item->value);
-                if ($value !== null) {
-                    $result[] = $value;
+                if ($item === null) {
+                    continue;
                 }
+                $value = $this->evaluateValue($item->value);
+                $result[] = $value;
             }
 
             return $result;

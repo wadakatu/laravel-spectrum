@@ -25,12 +25,6 @@ parameters:
 			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
 
 		-
-			message: '#^Strict comparison using \!\=\= between array\|int\|string and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\CollectionMapVisitor\:\:beforeTraverse\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -136,12 +130,6 @@ parameters:
 			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:\$ruleSets type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 2
-			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between array\|string and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
 			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
 
 		-
@@ -349,12 +337,6 @@ parameters:
 			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
 
 		-
-			message: '#^Strict comparison using \!\=\= between array\|string and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 2
-			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\UseStatementExtractorVisitor\:\:getUseStatements\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -547,18 +529,6 @@ parameters:
 			path: src/Analyzers/FractalTransformerAnalyzer.php
 
 		-
-			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/FractalTransformerAnalyzer\.php\:146\:\:\$returnArray has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Analyzers/FractalTransformerAnalyzer.php
-
-		-
-			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/FractalTransformerAnalyzer\.php\:401\:\:\$returnInfo has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Analyzers/FractalTransformerAnalyzer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateDescription\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -625,19 +595,19 @@ parameters:
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:258\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:extractValue\(\) has no return type specified\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:258\:\:extractValue\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:getNodeValue\(\) has no return type specified\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:258\:\:getNodeValue\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
@@ -693,18 +663,6 @@ parameters:
 		-
 			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:getNodeValue\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:\$returnedArray has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:\$validations has no type specified\.$#'
-			identifier: missingType.property
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
@@ -3433,26 +3391,8 @@ parameters:
 			path: src/Services/LiveReloadServer.php
 
 		-
-			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$clients has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Services/LiveReloadServer.php
-
-		-
-			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$httpWorker has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Services/LiveReloadServer.php
-
-		-
-			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$instance has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Services/LiveReloadServer.php
-
-		-
-			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$wsWorker has no type specified\.$#'
-			identifier: missingType.property
+			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$clients with generic class SplObjectStorage does not specify its types\: TObject, TData$#'
+			identifier: missingType.generics
 			count: 1
 			path: src/Services/LiveReloadServer.php
 

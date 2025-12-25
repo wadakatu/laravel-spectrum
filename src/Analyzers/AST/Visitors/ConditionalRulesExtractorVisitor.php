@@ -476,7 +476,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
             $key = $this->evaluateKey($item->key);
             $value = $this->evaluateRuleValue($item->value);
 
-            if ($key !== null && $value !== null) {
+            if ($key !== null) {
                 $rules[$key] = $value;
             }
         }
