@@ -1,0 +1,283 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Snapshot Test API",
+        "version": "1.0.0",
+        "description": "API for snapshot testing"
+    },
+    "servers": [
+        {
+            "url": "https://api.example.com/api",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/api/snapshot/posts": {
+            "get": {
+                "summary": "List all Post",
+                "operationId": "getApiSnapshotPosts",
+                "tags": [
+                    "Snapshot",
+                    "Post"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": [],
+                                    "required": []
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found."
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Not found"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "head": {
+                "summary": "Head Post",
+                "operationId": "headApiSnapshotPosts",
+                "tags": [
+                    "Snapshot",
+                    "Post"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": [],
+                                    "required": []
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found."
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Not found"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/snapshot/users": {
+            "get": {
+                "summary": "List all User",
+                "operationId": "getApiSnapshotUsers",
+                "tags": [
+                    "Snapshot",
+                    "User"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found."
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Not found"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "head": {
+                "summary": "Head User",
+                "operationId": "headApiSnapshotUsers",
+                "tags": [
+                    "Snapshot",
+                    "User"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found."
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Not found"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": [],
+        "securitySchemes": []
+    },
+    "tags": [
+        {
+            "name": "Post",
+            "description": "Post management endpoints"
+        },
+        {
+            "name": "Snapshot"
+        },
+        {
+            "name": "User",
+            "description": "User management endpoints"
+        }
+    ],
+    "x-tagGroups": [
+        {
+            "name": "User Management",
+            "tags": [
+                "User"
+            ]
+        },
+        {
+            "name": "Content",
+            "tags": [
+                "Post"
+            ]
+        },
+        {
+            "name": "Other",
+            "tags": [
+                "Snapshot"
+            ]
+        }
+    ]
+}

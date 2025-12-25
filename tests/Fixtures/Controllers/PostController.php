@@ -10,4 +10,19 @@ class PostController
     {
         return response()->json([]);
     }
+
+    public function show($post): JsonResponse
+    {
+        return response()->json([]);
+    }
+
+    public function comments($post): JsonResponse
+    {
+        return response()->json([]);
+    }
+
+    public function storeComment($post): JsonResponse
+    {
+        return response()->json([]);
+    }
 }
