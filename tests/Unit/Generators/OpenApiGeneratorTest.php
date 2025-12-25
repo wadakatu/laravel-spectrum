@@ -1378,6 +1378,128 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('Users', $result['tags'][0]['name']);
     }
 
+    #[Test]
+    public function it_uses_injected_schema_registry(): void
+    {
+        // Create a mock SchemaRegistry
+        $mockRegistry = Mockery::mock(SchemaRegistry::class);
+
+        // The injected registry should be used
+        $mockRegistry->shouldReceive('clear')->once();
+        $mockRegistry->shouldReceive('all')->andReturn([]);
+
+        $generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $this->openApi31Converter,
+            $mockRegistry
+        );
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $result = $generator->generate([]);
+
+        // Mockery will fail if clear() wasn't called on the injected registry
+        // Also verify the result structure to ensure generation completed
+        $this->assertArrayHasKey('openapi', $result);
+    }
+
+    #[Test]
+    public function it_clears_schema_registry_before_each_generation(): void
+    {
+        // Pre-populate the registry
+        $this->schemaRegistry->register('OldSchema', ['type' => 'object']);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        // Generate should clear the registry
+        $result = $this->generator->generate([]);
+
+        // OldSchema should not be in the result because clear() was called
+        $this->assertArrayNotHasKey('OldSchema', $result['components']['schemas']);
+    }
+
+    #[Test]
+    public function it_merges_new_schemas_with_existing_components_schemas(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'index',
+                'middleware' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->andReturnUsing(fn ($uri) => '/'.$uri);
+        $this->metadataGenerator->shouldReceive('generateSummary')->andReturn('Summary');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->andReturn('operationId');
+
+        $this->tagGenerator->shouldReceive('generate')->andReturn(['Users']);
+
+        $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([
+            'resource' => 'App\Http\Resources\UserResource',
+            'returnsCollection' => false,
+        ]);
+
+        $this->resourceAnalyzer->shouldReceive('analyze')
+            ->with('App\Http\Resources\UserResource')
+            ->andReturn([
+                'properties' => [
+                    'id' => ['type' => 'integer'],
+                ],
+            ]);
+
+        $this->schemaGenerator->shouldReceive('generateFromResource')
+            ->andReturn([
+                'type' => 'object',
+                'properties' => [
+                    'id' => ['type' => 'integer'],
+                ],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateFromResource')
+            ->andReturn(['id' => 1]);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify the schema is registered and merged properly
+        $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
+        $this->assertEquals('object', $result['components']['schemas']['UserResource']['type']);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
