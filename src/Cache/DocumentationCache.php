@@ -11,7 +11,9 @@ class DocumentationCache
 {
     /**
      * Cache format version.
-     * Increment this when the cache data structure changes.
+     * Increment this when the cache data structure changes
+     * (e.g., adding/removing/renaming keys in the cacheData array,
+     * changing serialization format, or modifying metadata structure).
      */
     private const CACHE_VERSION = 1;
 
@@ -200,7 +202,13 @@ class DocumentationCache
             $cacheData = unserialize(File::get($cacheFile));
 
             // バージョンが異なる場合は古いキャッシュとして削除
-            if (($cacheData['version'] ?? 0) !== self::CACHE_VERSION) {
+            $cachedVersion = $cacheData['version'] ?? 0;
+            if ($cachedVersion !== self::CACHE_VERSION) {
+                Log::debug('DocumentationCache: Invalidating cache due to version mismatch', [
+                    'key' => $key,
+                    'cached_version' => $cachedVersion,
+                    'current_version' => self::CACHE_VERSION,
+                ]);
                 File::delete($cacheFile);
 
                 return null;
@@ -229,13 +237,28 @@ class DocumentationCache
         try {
             $cacheData = unserialize(File::get($cacheFile));
 
-            // バージョンが異なる場合はnullを返す
-            if (($cacheData['version'] ?? 0) !== self::CACHE_VERSION) {
+            // バージョンが異なる場合は古いキャッシュとして削除（get()と同じ動作）
+            $cachedVersion = $cacheData['version'] ?? 0;
+            if ($cachedVersion !== self::CACHE_VERSION) {
+                Log::debug('DocumentationCache: Invalidating cache metadata due to version mismatch', [
+                    'key' => $key,
+                    'cached_version' => $cachedVersion,
+                    'current_version' => self::CACHE_VERSION,
+                ]);
+                File::delete($cacheFile);
+
                 return null;
             }
 
             return $cacheData['metadata'] ?? null;
         } catch (\Exception $e) {
+            Log::warning('DocumentationCache: Failed to read cache metadata', [
+                'key' => $key,
+                'file' => $cacheFile,
+                'error' => $e->getMessage(),
+            ]);
+            File::delete($cacheFile);
+
             return null;
         }
     }
@@ -325,6 +348,17 @@ class DocumentationCache
 
     /**
      * 統計情報を取得
+     *
+     * @return array{
+     *     enabled: bool,
+     *     cache_directory: string,
+     *     cache_version: int,
+     *     total_files: int,
+     *     total_size: int,
+     *     total_size_human: string,
+     *     oldest_file: string|null,
+     *     newest_file: string|null
+     * }
      */
     public function getStats(): array
     {

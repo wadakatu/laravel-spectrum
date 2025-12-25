@@ -366,6 +366,11 @@ class DependencyResource {
 
         $this->assertEquals(['new' => 'data'], $result);
         $this->assertEquals(1, $callCount);
+
+        // 新しいキャッシュには正しいバージョンが含まれることを確認
+        $newCacheData = unserialize(File::get($cacheFile));
+        $this->assertArrayHasKey('version', $newCacheData);
+        $this->assertGreaterThanOrEqual(1, $newCacheData['version']);
     }
 
     #[Test]
