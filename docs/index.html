@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>laravel-spectrum - Zero-annotation API documentation generator that automatically creates OpenAPI 3.0 documentation from Laravel/Lumen code without requiring manual annotations.</title>
+  <meta name="description" content="Zero-annotation API documentation generator that automatically creates OpenAPI 3.0 documentation from Laravel/Lumen code without requiring manual annotations.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'indigo-600',
+            secondary: 'slate-700',
+            accent: 'emerald-500',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="#" class="text-xl font-bold text-indigo-600">laravel-spectrum</a>
+        <div class="hidden md:flex space-x-8">
+          <a href="#hero" class="text-slate-900 hover:text-indigo-600 transition-colors capitalize">hero</a>
+            <a href="#features" class="text-slate-900 hover:text-indigo-600 transition-colors capitalize">features</a>
+            <a href="#installation" class="text-slate-900 hover:text-indigo-600 transition-colors capitalize">installation</a>
+            <a href="#usage" class="text-slate-900 hover:text-indigo-600 transition-colors capitalize">usage</a>
+            <a href="#cta" class="text-slate-900 hover:text-indigo-600 transition-colors capitalize">cta</a>
+        </div>
+        <a href="https://github.com/wadakatu/laravel-spectrum" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity">
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="pt-16">
+  <section id="hero" class="relative bg-slate-50 overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-slate-50 to-emerald-50"></div>
+  <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-r from-indigo-600/10 to-emerald-500/10 rounded-full blur-3xl"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
+    <div class="text-center">
+      <div class="mb-8">
+        <span class="inline-block text-6xl mb-4">📚</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight">
+        Zero-Annotation
+        <span class="block bg-gradient-to-r from-indigo-600 to-emerald-500 bg-clip-text text-transparent">
+          API Documentation
+        </span>
+      </h1>
+      <p class="text-xl sm:text-2xl text-slate-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+        Automatically generate OpenAPI 3.0 documentation from your Laravel/Lumen code without writing a single annotation
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+        <button class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg">
+          Get Started
+        </button>
+        <button class="w-full sm:w-auto border-2 border-slate-700 text-slate-700 hover:bg-slate-700 hover:text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200">
+          View on GitHub
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div class="bg-white/60 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:shadow-lg transition-all duration-200">
+          <div class="text-emerald-500 text-2xl mb-3">⚡</div>
+          <h3 class="font-semibold text-slate-900 mb-2">Zero Configuration</h3>
+          <p class="text-slate-700 text-sm">Install and run - no setup required</p>
+        </div>
+        <div class="bg-white/60 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:shadow-lg transition-all duration-200">
+          <div class="text-indigo-600 text-2xl mb-3">🔍</div>
+          <h3 class="font-semibold text-slate-900 mb-2">Automatic Analysis</h3>
+          <p class="text-slate-700 text-sm">Smart code parsing and documentation generation</p>
+        </div>
+        <div class="bg-white/60 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:shadow-lg transition-all duration-200">
+          <div class="text-emerald-500 text-2xl mb-3">📤</div>
+          <h3 class="font-semibold text-slate-900 mb-2">Export Ready</h3>
+          <p class="text-slate-700 text-sm">Postman, Insomnia, and mock server support</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <section id="features" class="py-16 bg-slate-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl mb-4">
+        Effortless API Documentation
+      </h2>
+      <p class="text-lg text-slate-700 max-w-2xl mx-auto">
+        Generate comprehensive OpenAPI 3.0 documentation from your Laravel code without writing a single annotation
+      </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <article class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1">
+        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+          <span class="text-2xl">⚡</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 mb-3">Zero Configuration</h3>
+        <p class="text-slate-700">Get started instantly with no setup required. Laravel Spectrum analyzes your existing code and generates documentation automatically.</p>
+      </article>
+
+      <article class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1">
+        <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
+          <span class="text-2xl">🔍</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 mb-3">Smart Code Analysis</h3>
+        <p class="text-slate-700">Advanced static analysis extracts API endpoints, parameters, responses, and validation rules directly from your Laravel controllers and routes.</p>
+      </article>
+
+      <article class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1">
+        <div class="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-4">
+          <span class="text-2xl">📋</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 mb-3">OpenAPI 3.0 Standard</h3>
+        <p class="text-slate-700">Generate industry-standard OpenAPI 3.0 specifications that work seamlessly with any API documentation tool or client generator.</p>
+      </article>
+
+      <article class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1">
+        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+          <span class="text-2xl">📤</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 mb-3">Export Anywhere</h3>
+        <p class="text-slate-700">Export your documentation to Postman collections, Insomnia workspaces, or any tool that supports OpenAPI specifications.</p>
+      </article>
+
+      <article class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1">
+        <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
+          <span class="text-2xl">🚀</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 mb-3">Built-in Mock Server</h3>
+        <p class="text-slate-700">Test your APIs immediately with the integrated mock server that generates realistic responses based on your documentation.</p>
+      </article>
+
+      <article class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1">
+        <div class="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-4">
+          <span class="text-2xl">🔄</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 mb-3">Always Up-to-Date</h3>
+        <p class="text-slate-700">Documentation stays synchronized with your code automatically. No more outdated docs or manual maintenance overhead.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+  <section id="installation" class="py-16 bg-slate-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+        📦 Installation
+      </h2>
+      <p class="text-lg text-slate-700 max-w-2xl mx-auto">
+        Get started with Laravel Spectrum in seconds. Choose your preferred package manager below.
+      </p>
+    </div>
+
+    <div class="space-y-6 mb-12">
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-3 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+            <span class="text-white font-medium ml-4">Composer</span>
+          </div>
+          <button class="text-white hover:text-indigo-200 transition-colors duration-200 text-sm font-medium">
+            Copy
+          </button>
+        </div>
+        <div class="p-6">
+          <code class="text-slate-900 font-mono text-sm sm:text-base">
+            composer require --dev laravel-spectrum/spectrum
+          </code>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-3 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+            <span class="text-white font-medium ml-4">NPM</span>
+          </div>
+          <button class="text-white hover:text-slate-200 transition-colors duration-200 text-sm font-medium">
+            Copy
+          </button>
+        </div>
+        <div class="p-6">
+          <code class="text-slate-900 font-mono text-sm sm:text-base">
+            npm install --save-dev laravel-spectrum
+          </code>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+            <span class="text-white font-medium ml-4">Yarn</span>
+          </div>
+          <button class="text-white hover:text-emerald-200 transition-colors duration-200 text-sm font-medium">
+            Copy
+          </button>
+        </div>
+        <div class="p-6">
+          <code class="text-slate-900 font-mono text-sm sm:text-base">
+            yarn add --dev laravel-spectrum
+          </code>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+            <span class="text-white font-medium ml-4">PNPM</span>
+          </div>
+          <button class="text-white hover:text-purple-200 transition-colors duration-200 text-sm font-medium">
+            Copy
+          </button>
+        </div>
+        <div class="p-6">
+          <code class="text-slate-900 font-mono text-sm sm:text-base">
+            pnpm add --save-dev laravel-spectrum
+          </code>
+        </div>
+      </article>
+    </div>
+
+    <div class="bg-gradient-to-r from-indigo-50 to-emerald-50 rounded-xl p-6 sm:p-8 border border-indigo-100">
+      <h3 class="text-xl font-semibold text-slate-900 mb-3 flex items-center">
+        🚀 <span class="ml-2">Next Steps</span>
+      </h3>
+      <p class="text-slate-700 leading-relaxed">
+        Once installed, Laravel Spectrum will automatically analyze your Laravel/Lumen application and generate OpenAPI 3.0 documentation. 
+        No configuration required! Run your application and visit the generated documentation endpoint to see your API docs in action.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+          Zero Configuration
+        </span>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+          Auto-Generated
+        </span>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+          OpenAPI 3.0
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <section id="usage" class="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">Usage Examples</h2>
+      <p class="text-lg text-slate-700 max-w-2xl mx-auto">Get started with laravel-spectrum in minutes. No configuration required - just install and generate your API documentation automatically.</p>
+    </div>
+
+    <div class="space-y-12">
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <div class="p-6 sm:p-8">
+          <div class="flex items-center mb-4">
+            <span class="text-2xl mr-3">⚡</span>
+            <h3 class="text-xl font-semibold text-slate-900">Quick Start</h3>
+          </div>
+          <p class="text-slate-600 mb-6">Install and generate your first API documentation with zero configuration.</p>
+          <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+            <pre class="text-sm"><code class="text-emerald-400"># Install via Composer</code>
+<code class="text-slate-300">composer require --dev laravel-spectrum/spectrum</code>
+
+<code class="text-emerald-400"># Generate OpenAPI documentation</code>
+<code class="text-slate-300">php artisan spectrum:generate</code>
+
+<code class="text-emerald-400"># View your documentation</code>
+<code class="text-indigo-400">http://your-app.test/docs</code></pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <div class="p-6 sm:p-8">
+          <div class="flex items-center mb-4">
+            <span class="text-2xl mr-3">🔧</span>
+            <h3 class="text-xl font-semibold text-slate-900">Custom Configuration</h3>
+          </div>
+          <p class="text-slate-600 mb-6">Customize your documentation output with optional configuration settings.</p>
+          <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+            <pre class="text-sm"><code class="text-emerald-400"># Publish configuration file</code>
+<code class="text-slate-300">php artisan vendor:publish --tag=spectrum-config</code>
+
+<code class="text-emerald-400"># Generate with custom settings</code>
+<code class="text-slate-300">php artisan spectrum:generate \
+  --output=./docs/api.json \
+  --title="My API Documentation" \
+  --version=1.0.0</code></pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <div class="p-6 sm:p-8">
+          <div class="flex items-center mb-4">
+            <span class="text-2xl mr-3">📤</span>
+            <h3 class="text-xl font-semibold text-slate-900">Export & Mock Server</h3>
+          </div>
+          <p class="text-slate-600 mb-6">Export your API documentation to popular tools and start a mock server for testing.</p>
+          <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+            <pre class="text-sm"><code class="text-emerald-400"># Export to Postman collection</code>
+<code class="text-slate-300">php artisan spectrum:export --format=postman</code>
+
+<code class="text-emerald-400"># Export to Insomnia collection</code>
+<code class="text-slate-300">php artisan spectrum:export --format=insomnia</code>
+
+<code class="text-emerald-400"># Start mock server</code>
+<code class="text-slate-300">php artisan spectrum:mock --port=8080</code></pre>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="mt-12 text-center">
+      <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-emerald-500 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-emerald-600 transition-all duration-300 transform hover:scale-105">
+        <span class="mr-2">🚀</span>
+        Ready to generate your API docs automatically?
+      </div>
+    </div>
+  </div>
+</section>
+
+  <section id="cta" class="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-700 py-16 sm:py-24">
+  <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
+  <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <div class="mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-full mb-6">
+        <span class="text-2xl">🚀</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
+        Ready to Generate Documentation
+        <span class="block text-emerald-300">Without Writing a Single Annotation?</span>
+      </h2>
+      <p class="text-lg sm:text-xl text-indigo-100 max-w-2xl mx-auto mb-8">
+        Join thousands of developers who have eliminated manual API documentation. Install Laravel Spectrum and get professional OpenAPI 3.0 docs in minutes, not hours.
+      </p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <a href="#install" class="group inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-indigo-600 bg-white rounded-lg hover:bg-indigo-50 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">
+        <span>Get Started Now</span>
+        <svg class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+        </svg>
+      </a>
+      <a href="#demo" class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white/30 rounded-lg hover:border-white hover:bg-white/10 transition-all duration-200">
+        View Live Demo
+      </a>
+    </div>
+    <p class="text-sm text-indigo-200 mt-6">
+      ✨ Zero configuration • 📝 Automatic generation • 🔄 Export to Postman/Insomnia
+    </p>
+  </div>
+</section>
+
+  <section id="footer" class="bg-slate-700 text-slate-50 py-12 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <div class="md:col-span-2">
+        <div class="flex items-center mb-4">
+          <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-emerald-500 rounded-lg mr-3 flex items-center justify-center">
+            <span class="text-white font-bold text-sm">LS</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">laravel-spectrum</h3>
+        </div>
+        <p class="text-slate-300 text-sm leading-relaxed max-w-md">
+          Zero-annotation API documentation generator that automatically creates OpenAPI 3.0 documentation from Laravel/Lumen code without requiring manual annotations.
+        </p>
+      </div>
+      
+      <nav class="space-y-3">
+        <h4 class="font-semibold text-white mb-3">Navigation</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-slate-300 hover:text-emerald-500 transition-colors duration-200 text-sm">Home</a></li>
+          <li><a href="#" class="text-slate-300 hover:text-emerald-500 transition-colors duration-200 text-sm">Documentation</a></li>
+          <li><a href="#" class="text-slate-300 hover:text-emerald-500 transition-colors duration-200 text-sm">GitHub</a></li>
+          <li><a href="#" class="text-slate-300 hover:text-emerald-500 transition-colors duration-200 text-sm">Examples</a></li>
+        </ul>
+      </nav>
+      
+      <div class="space-y-3">
+        <h4 class="font-semibold text-white mb-3">Connect</h4>
+        <div class="flex space-x-4">
+          <a href="#" class="w-10 h-10 bg-slate-600 hover:bg-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200">
+            <span class="text-lg">📧</span>
+          </a>
+          <a href="#" class="w-10 h-10 bg-slate-600 hover:bg-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200">
+            <span class="text-lg">🐙</span>
+          </a>
+          <a href="#" class="w-10 h-10 bg-slate-600 hover:bg-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200">
+            <span class="text-lg">💬</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="border-t border-slate-600 pt-6 flex flex-col sm:flex-row justify-between items-center">
+      <p class="text-slate-400 text-sm mb-4 sm:mb-0">
+        © 2024 laravel-spectrum. All rights reserved.
+      </p>
+      <div class="flex items-center space-x-4 text-sm text-slate-400">
+        <span class="flex items-center">
+          Built with <span class="text-emerald-500 mx-1">💚</span> for Laravel
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+  </main>
+</body>
+</html>
