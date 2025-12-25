@@ -14,8 +14,10 @@ use LaravelSpectrum\Support\HasErrorCollection;
 use LaravelSpectrum\Support\MethodSourceExtractor;
 use PhpParser\Node;
 use ReflectionClass;
+use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionUnionType;
 
 class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 {
@@ -93,7 +95,23 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
         foreach ($methodReflection->getParameters() as $parameter) {
             $type = $parameter->getType();
-            if ($type && ! $type->isBuiltin()) {
+
+            // Union/Intersection types are not yet supported for FormRequest detection
+            if ($type instanceof ReflectionUnionType || $type instanceof ReflectionIntersectionType) {
+                $this->logWarning(
+                    "Union/Intersection type parameters are not supported for FormRequest detection: {$parameter->getName()}",
+                    AnalyzerErrorType::UnsupportedFeature,
+                    [
+                        'parameter' => $parameter->getName(),
+                        'controller' => $controller,
+                        'method' => $method,
+                    ]
+                );
+
+                continue;
+            }
+
+            if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
                 $className = $type->getName();
                 if (class_exists($className) && is_subclass_of($className, FormRequest::class)) {
                     $result['formRequest'] = $className;
@@ -187,6 +205,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * クラス名を解決（use文を考慮）
+     *
+     * @param  \ReflectionClass<object>  $reflection
      */
     protected function resolveClassName(string $shortName, ReflectionClass $reflection): ?string
     {
@@ -222,6 +242,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * メソッドのASTノードを取得
+     *
+     * @param  \ReflectionClass<object>  $reflection
      */
     protected function getMethodNode(ReflectionClass $reflection, string $methodName): ?Node\Stmt\ClassMethod
     {
@@ -260,6 +282,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * Fractal使用を検出
+     *
+     * @param  \ReflectionClass<object>  $reflection
      */
     protected function detectFractalUsage(string $source, array &$result, ReflectionClass $reflection): void
     {

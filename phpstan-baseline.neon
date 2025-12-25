@@ -385,44 +385,14 @@ parameters:
 			path: src/Analyzers/AuthenticationAnalyzer.php
 
 		-
-			message: '#^Call to an undefined method ReflectionType\:\:getName\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Analyzers/ControllerAnalyzer.php
-
-		-
-			message: '#^Call to an undefined method ReflectionType\:\:isBuiltin\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Analyzers/ControllerAnalyzer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:analyzeEnumParameters\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/ControllerAnalyzer.php
 
 		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:detectFractalUsage\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/ControllerAnalyzer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:detectFractalUsage\(\) has parameter \$result with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/ControllerAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:getMethodNode\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/ControllerAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:resolveClassName\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
 			count: 1
 			path: src/Analyzers/ControllerAnalyzer.php
 
@@ -477,6 +447,24 @@ parameters:
 		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\FormRequestAnalyzer\:\:performAnalysisWithDetails\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Parameter \#1 \$reflection of method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyze\(\) expects ReflectionClass\<object\>, ReflectionClass\<Illuminate\\Foundation\\Http\\FormRequest\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Parameter \#1 \$reflection of method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyzeDetails\(\) expects ReflectionClass\<object\>, ReflectionClass\<Illuminate\\Foundation\\Http\\FormRequest\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Parameter \#1 \$reflection of method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyzeWithConditionalRules\(\) expects ReflectionClass\<object\>, ReflectionClass\<Illuminate\\Foundation\\Http\\FormRequest\> given\.$#'
+			identifier: argument.type
 			count: 1
 			path: src/Analyzers/FormRequestAnalyzer.php
 
@@ -601,38 +589,8 @@ parameters:
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:258\:\:extractValue\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:258\:\:getNodeValue\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractAnonymousFormRequestValidation\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
 			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRequestValidation\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRequestVariableValidation\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
@@ -645,24 +603,6 @@ parameters:
 		-
 			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRulesArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractValidation\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractValidatorMake\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Analyzers/InlineValidationAnalyzer.php
-
-		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:getNodeValue\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
@@ -823,12 +763,6 @@ parameters:
 			path: src/Analyzers/ResponseAnalyzer.php
 
 		-
-			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Analyzers/RouteAnalyzer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:analyze\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -857,60 +791,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/RouteAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyze\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyzeDetails\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyzeWithConditionalRules\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:createMockInstance\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:extractAnonymousClassCode\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:extractParametersUsingReflection\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:invokeMethodSafely\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:tryAstBasedAnalysis\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:tryConditionalRulesAstAnalysis\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
 
 		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\FormatInferrer\:\:inferDateFormat\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
@@ -3157,12 +3037,6 @@ parameters:
 			path: src/MockServer/RouteResolver.php
 
 		-
-			message: '#^Call to function is_object\(\) with bool\|float\|int\|string\|null will always evaluate to false\.$#'
-			identifier: function.impossibleType
-			count: 1
-			path: src/MockServer/ValidationSimulator.php
-
-		-
 			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -3387,12 +3261,6 @@ parameters:
 		-
 			message: '#^Method LaravelSpectrum\\Services\\LiveReloadServer\:\:notifyClients\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Services/LiveReloadServer.php
-
-		-
-			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$clients with generic class SplObjectStorage does not specify its types\: TObject, TData$#'
-			identifier: missingType.generics
 			count: 1
 			path: src/Services/LiveReloadServer.php
 

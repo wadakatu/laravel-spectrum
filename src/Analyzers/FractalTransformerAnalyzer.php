@@ -148,7 +148,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             /** @var Node\Expr\Array_|null */
             public ?\PhpParser\Node\Expr\Array_ $returnArray = null;
 
-            public function enterNode(Node $node)
+            public function enterNode(Node $node): null
             {
                 if ($node instanceof Node\Stmt\Return_ && $node->expr instanceof Node\Expr\Array_) {
                     $this->returnArray = $node->expr;
@@ -404,7 +404,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             /** @var array<string, mixed> */
             public array $returnInfo = [];
 
-            public function enterNode(Node $node)
+            public function enterNode(Node $node): null
             {
                 if ($node instanceof Node\Stmt\Return_ && $node->expr instanceof Node\Expr\MethodCall) {
                     $methodName = $node->expr->name instanceof Node\Identifier ?

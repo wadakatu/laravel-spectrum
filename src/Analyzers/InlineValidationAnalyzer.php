@@ -46,7 +46,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                 /** @var array<string, mixed> */
                 public array $validations = [];
 
-                public function enterNode(Node $node)
+                public function enterNode(Node $node): null
                 {
                     // $this->validate() の呼び出しを検出
                     if ($node instanceof Node\Expr\MethodCall &&
@@ -126,7 +126,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                     return null;
                 }
 
-                protected function extractValidation(Node\Expr\MethodCall $node)
+                protected function extractValidation(Node\Expr\MethodCall $node): void
                 {
                     if (count($node->args) < 2) {
                         return;
@@ -153,7 +153,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                     }
                 }
 
-                protected function extractRequestValidation(Node\Expr\MethodCall $node)
+                protected function extractRequestValidation(Node\Expr\MethodCall $node): void
                 {
                     if (count($node->args) < 1) {
                         return;
@@ -180,7 +180,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                     }
                 }
 
-                protected function extractRequestVariableValidation(Node\Expr\MethodCall $node)
+                protected function extractRequestVariableValidation(Node\Expr\MethodCall $node): void
                 {
                     if (count($node->args) < 1) {
                         return;
@@ -210,7 +210,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                 /**
                  * Extract validation from anonymous FormRequest class
                  */
-                protected function extractAnonymousFormRequestValidation(Node\Stmt\Class_ $classNode)
+                protected function extractAnonymousFormRequestValidation(Node\Stmt\Class_ $classNode): void
                 {
                     // Find the rules() method in the anonymous class
                     $rulesMethod = null;
@@ -291,7 +291,8 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                             return $array;
                         }
 
-                        protected function extractValue(Node $node)
+                        /** @return string|array<int, string>|null */
+                        protected function extractValue(Node $node): string|array|null
                         {
                             if ($node instanceof Node\Scalar\String_) {
                                 return $node->value;
@@ -317,7 +318,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                             return null;
                         }
 
-                        protected function getNodeValue(Node $node)
+                        protected function getNodeValue(Node $node): string|int|float|null
                         {
                             if ($node instanceof Node\Scalar\String_) {
                                 return $node->value;
@@ -359,7 +360,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                     return false;
                 }
 
-                protected function extractValidatorMake(Node\Expr\StaticCall $node)
+                protected function extractValidatorMake(Node\Expr\StaticCall $node): void
                 {
                     if (count($node->args) < 2) {
                         return;
@@ -460,7 +461,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                     return $array;
                 }
 
-                protected function getNodeValue(Node $node)
+                protected function getNodeValue(Node $node): string|int|float|null
                 {
                     if ($node instanceof Node\Scalar\String_) {
                         return $node->value;
