@@ -6,10 +6,13 @@ use Illuminate\Routing\RouteCollection;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\SpectrumServiceProvider;
+use LaravelSpectrum\Tests\Support\ValidatesOpenApi;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {
+    use ValidatesOpenApi;
+
     protected function getPackageProviders($app)
     {
         return [
