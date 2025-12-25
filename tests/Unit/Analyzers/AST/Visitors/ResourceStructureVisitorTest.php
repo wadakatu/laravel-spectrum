@@ -458,4 +458,165 @@ class ResourceStructureVisitorTest extends TestCase
         $this->assertTrue($structure['properties']['posts']['conditional']);
         $this->assertTrue($structure['properties']['posts']['hasTransformation']);
     }
+
+    #[Test]
+    public function it_handles_nullsafe_property_fetch_for_enum_values()
+    {
+        $code = <<<'PHP'
+        <?php
+        class PostResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'status' => $this->status?->value,
+                    'category' => $this->category?->value,
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        $this->assertArrayHasKey('status', $structure['properties']);
+        $this->assertEquals('string', $structure['properties']['status']['type']);
+        $this->assertEquals('enum', $structure['properties']['status']['source']);
+        $this->assertTrue($structure['properties']['status']['nullable']);
+
+        $this->assertArrayHasKey('category', $structure['properties']);
+        $this->assertEquals('string', $structure['properties']['category']['type']);
+        $this->assertEquals('enum', $structure['properties']['category']['source']);
+        $this->assertTrue($structure['properties']['category']['nullable']);
+    }
+
+    #[Test]
+    public function it_handles_nullsafe_method_call_for_date_formatting()
+    {
+        $code = <<<'PHP'
+        <?php
+        class PostResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'created_at' => $this->created_at?->toDateTimeString(),
+                    'updated_at' => $this->updated_at?->toIso8601String(),
+                    'published_at' => $this->published_at?->format('Y-m-d'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        $this->assertArrayHasKey('created_at', $structure['properties']);
+        $this->assertEquals('string', $structure['properties']['created_at']['type']);
+        $this->assertEquals('date-time', $structure['properties']['created_at']['format']);
+        $this->assertTrue($structure['properties']['created_at']['nullable']);
+
+        $this->assertArrayHasKey('updated_at', $structure['properties']);
+        $this->assertEquals('string', $structure['properties']['updated_at']['type']);
+        $this->assertEquals('date-time', $structure['properties']['updated_at']['format']);
+        $this->assertTrue($structure['properties']['updated_at']['nullable']);
+
+        $this->assertArrayHasKey('published_at', $structure['properties']);
+        $this->assertEquals('string', $structure['properties']['published_at']['type']);
+        $this->assertTrue($structure['properties']['published_at']['nullable']);
+    }
+
+    #[Test]
+    public function it_handles_nullsafe_property_fetch_for_relation_properties()
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'profile' => [
+                        'bio' => $this->profile?->bio,
+                        'avatar' => $this->profile?->avatar_url,
+                        'website' => $this->profile?->website,
+                    ],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        $this->assertArrayHasKey('profile', $structure['properties']);
+        $this->assertEquals('object', $structure['properties']['profile']['type']);
+        $this->assertArrayHasKey('properties', $structure['properties']['profile']);
+
+        $profileProps = $structure['properties']['profile']['properties'];
+        $this->assertArrayHasKey('bio', $profileProps);
+        $this->assertEquals('string', $profileProps['bio']['type']);
+        $this->assertTrue($profileProps['bio']['nullable']);
+
+        $this->assertArrayHasKey('avatar', $profileProps);
+        $this->assertEquals('string', $profileProps['avatar']['type']);
+        $this->assertTrue($profileProps['avatar']['nullable']);
+
+        $this->assertArrayHasKey('website', $profileProps);
+        $this->assertEquals('string', $profileProps['website']['type']);
+        $this->assertTrue($profileProps['website']['nullable']);
+    }
+
+    #[Test]
+    public function it_handles_nullsafe_boolean_methods()
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'has_profile' => $this->profile?->hasAvatar(),
+                    'is_verified' => $this->account?->isVerified(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        $this->assertArrayHasKey('has_profile', $structure['properties']);
+        $this->assertEquals('boolean', $structure['properties']['has_profile']['type']);
+        $this->assertTrue($structure['properties']['has_profile']['nullable']);
+
+        $this->assertArrayHasKey('is_verified', $structure['properties']);
+        $this->assertEquals('boolean', $structure['properties']['is_verified']['type']);
+        $this->assertTrue($structure['properties']['is_verified']['nullable']);
+    }
 }
