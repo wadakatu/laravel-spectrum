@@ -85,8 +85,8 @@ class OpenApiSpecValidationTest extends TestCase
         $this->assertValidOpenApiSpec($openapi);
         $this->assertValidPath($openapi, '/api/spec-test/users/{user}', ['get']);
         $this->assertValidPath($openapi, '/api/spec-test/posts/{post}', ['get']);
-        // Nested path parameters should also be valid
-        $this->assertArrayHasKey('paths', $openapi);
+        // Verify nested path with multiple parameters is also generated
+        $this->assertValidPath($openapi, '/api/spec-test/posts/{post}/comments/{comment}', ['get']);
     }
 
     #[Test]

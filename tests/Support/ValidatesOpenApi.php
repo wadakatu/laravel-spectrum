@@ -32,7 +32,7 @@ trait ValidatesOpenApi
             $message ?: 'Failed to parse OpenAPI specification'
         );
 
-        // Perform basic validation
+        // Validate against the OpenAPI specification schema
         $isValid = $openapi->validate();
         $errors = $openapi->getErrors();
 
