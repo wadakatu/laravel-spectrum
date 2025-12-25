@@ -81,6 +81,8 @@ class ValidationSimulator
         $errors = [];
 
         // 型チェック
+        // Note: JSON objects are decoded as PHP arrays (json_decode with associative=true),
+        // so 'object' type validation checks for arrays
         if (isset($spec['type'])) {
             $valid = match ($spec['type']) {
                 'string' => is_string($value),

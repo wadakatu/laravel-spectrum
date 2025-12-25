@@ -36,4 +36,5 @@ enum AnalyzerErrorType: string
 
     // General errors
     case UnexpectedError = 'unexpected_error';
+    case UnsupportedFeature = 'unsupported_feature';
 }

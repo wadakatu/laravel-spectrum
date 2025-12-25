@@ -14,8 +14,10 @@ use LaravelSpectrum\Support\HasErrorCollection;
 use LaravelSpectrum\Support\MethodSourceExtractor;
 use PhpParser\Node;
 use ReflectionClass;
+use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionUnionType;
 
 class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 {
@@ -93,6 +95,22 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
         foreach ($methodReflection->getParameters() as $parameter) {
             $type = $parameter->getType();
+
+            // Union/Intersection types are not yet supported for FormRequest detection
+            if ($type instanceof ReflectionUnionType || $type instanceof ReflectionIntersectionType) {
+                $this->logWarning(
+                    "Union/Intersection type parameters are not supported for FormRequest detection: {$parameter->getName()}",
+                    AnalyzerErrorType::UnsupportedFeature,
+                    [
+                        'parameter' => $parameter->getName(),
+                        'controller' => $controller,
+                        'method' => $method,
+                    ]
+                );
+
+                continue;
+            }
+
             if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
                 $className = $type->getName();
                 if (class_exists($className) && is_subclass_of($className, FormRequest::class)) {
