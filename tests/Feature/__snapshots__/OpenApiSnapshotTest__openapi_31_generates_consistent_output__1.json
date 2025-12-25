@@ -1,0 +1,310 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Snapshot Test API",
+        "version": "1.0.0",
+        "description": "API for snapshot testing"
+    },
+    "servers": [
+        {
+            "url": "https://api.example.com/api",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/api/snapshot/users": {
+            "get": {
+                "summary": "List all User",
+                "operationId": "getApiSnapshotUsers",
+                "tags": [
+                    "Snapshot",
+                    "User"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found."
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Not found"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "head": {
+                "summary": "Head User",
+                "operationId": "headApiSnapshotUsers",
+                "tags": [
+                    "Snapshot",
+                    "User"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found."
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Not found"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new User",
+                "operationId": "postApiSnapshotUsers",
+                "tags": [
+                    "Snapshot",
+                    "User"
+                ],
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "John Doe"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "user@example.com"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "example": "{{DATETIME}}"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "example": "{{DATETIME}}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server Error"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "Server Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Validation errors for the name field"
+                                                },
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Validation errors for the email field"
+                                                },
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Validation errors for the password field"
+                                                },
+                                                "age": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Validation errors for the age field"
+                                                }
+                                            },
+                                            "example": {
+                                                "name": [
+                                                    "The Name field is required."
+                                                ],
+                                                "email": [
+                                                    "The Email field is required."
+                                                ],
+                                                "password": [
+                                                    "The Password field is required."
+                                                ],
+                                                "age": [
+                                                    "The Age must be an integer."
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "message": "The given data was invalid.",
+                                    "errors": []
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "ユーザー名",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "description": "メールアドレス",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "パスワード",
+                                        "example": "password123"
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "description": "年齢",
+                                        "example": 25
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": [],
+        "securitySchemes": []
+    },
+    "tags": [
+        {
+            "name": "Snapshot"
+        },
+        {
+            "name": "User"
+        }
+    ],
+    "x-tagGroups": [
+        {
+            "name": "Other",
+            "tags": [
+                "Snapshot",
+                "User"
+            ]
+        }
+    ],
+    "webhooks": {}
+}
