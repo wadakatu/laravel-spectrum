@@ -109,10 +109,11 @@ class OpenApiGenerator
         // Populate components.schemas with registered resource schemas
         $registeredSchemas = $this->schemaRegistry->all();
         if (! empty($registeredSchemas)) {
-            $openapi['components']['schemas'] = array_merge(
-                $openapi['components']['schemas'] ?? [],
-                $registeredSchemas
-            );
+            // Note: buildBaseStructure always initializes schemas to []
+            // so we can safely merge or assign directly
+            foreach ($registeredSchemas as $name => $schema) {
+                $openapi['components']['schemas'][$name] = $schema;
+            }
         }
 
         // Convert to OpenAPI 3.1.0 format if enabled

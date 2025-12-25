@@ -1500,6 +1500,43 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('object', $result['components']['schemas']['UserResource']['type']);
     }
 
+    #[Test]
+    public function it_applies_global_security_when_required_is_true(): void
+    {
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => ['bearer' => []]]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->andReturn(['scheme' => 'bearer', 'required' => true]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+        $this->securitySchemeGenerator->shouldReceive('generateEndpointSecurity')
+            ->once()
+            ->with(['scheme' => 'bearer', 'required' => true])
+            ->andReturn([['bearer' => []]]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayHasKey('security', $result);
+        $this->assertEquals([['bearer' => []]], $result['security']);
+    }
+
+    #[Test]
+    public function it_does_not_apply_global_security_when_required_is_false(): void
+    {
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->andReturn(['scheme' => 'bearer', 'required' => false]);
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+        // generateEndpointSecurity should NOT be called
+        $this->securitySchemeGenerator->shouldNotReceive('generateEndpointSecurity');
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayNotHasKey('security', $result);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
