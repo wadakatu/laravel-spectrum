@@ -247,7 +247,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * プロパティ名から例を生成
      */
-    protected function generateExampleFromNode(string $key, Node $node): mixed
+    protected function generateExampleFromNode(string $key, Node $node): int|bool|array|\stdClass|string
     {
         $type = $this->typeInferenceEngine->inferTypeString($node);
 

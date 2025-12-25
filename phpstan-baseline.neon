@@ -1,6 +1,12 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:evaluateExpression\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
+
+		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -15,6 +21,12 @@ parameters:
 		-
 			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:\$array type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\|int\|string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
 
@@ -50,6 +62,12 @@ parameters:
 
 		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateMethodCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateRuleValue\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
@@ -118,6 +136,12 @@ parameters:
 			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:\$ruleSets type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 2
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\|string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
 			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
 
 		-
@@ -259,6 +283,36 @@ parameters:
 			path: src/Analyzers/AST/Visitors/ReturnStatementVisitor.php
 
 		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateEnumRule\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateMethodCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateNewExpression\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateStaticCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateValue\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:extractArrayMergeRules\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -292,6 +346,12 @@ parameters:
 			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:\$variables type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\|string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
 			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
 
 		-
@@ -470,6 +530,12 @@ parameters:
 
 		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:extractTransformMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:generateExampleFromNode\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/FractalTransformerAnalyzer.php
@@ -2791,6 +2857,12 @@ parameters:
 			path: src/Generators/ValidationMessageGenerator.php
 
 		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateFieldMessages\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
 			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateFieldMessages\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -2810,6 +2882,12 @@ parameters:
 
 		-
 			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateMessages\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateSampleMessage\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Generators/ValidationMessageGenerator.php
@@ -3091,6 +3169,12 @@ parameters:
 			path: src/MockServer/ResponseGenerator.php
 
 		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:processExample\(\) has parameter \$example with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
 			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:processExample\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -3113,6 +3197,12 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/MockServer/RouteResolver.php
+
+		-
+			message: '#^Call to function is_object\(\) with bool\|float\|int\|string\|null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
 
 		-
 			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
@@ -3146,6 +3236,12 @@ parameters:
 
 		-
 			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateField\(\) has parameter \$spec with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateField\(\) has parameter \$value with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/MockServer/ValidationSimulator.php

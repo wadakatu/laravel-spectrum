@@ -43,7 +43,7 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         return $result;
     }
 
-    private function evaluateExpression(Node $expr): mixed
+    private function evaluateExpression(Node $expr): string|int|array
     {
         if ($expr instanceof Node\Scalar\String_) {
             return $expr->value;

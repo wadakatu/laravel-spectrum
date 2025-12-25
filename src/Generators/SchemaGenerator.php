@@ -453,7 +453,7 @@ class SchemaGenerator
     /**
      * Apply rule constraints to property schema
      */
-    private function applyRuleConstraints(array &$property, mixed $rule): void
+    private function applyRuleConstraints(array &$property, string|object $rule): void
     {
         if (! is_string($rule)) {
             return;
