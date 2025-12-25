@@ -1,6 +1,402 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:evaluateExpression\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:getArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ArrayReturnExtractorVisitor\:\:\$array type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ArrayReturnExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\CollectionMapVisitor\:\:beforeTraverse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/CollectionMapVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:analyzeCondition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateArrayAddition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateArrayMerge\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateExpression\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateMethodCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateRuleValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:evaluateTernary\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:extractArrayRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:extractHttpMethodCondition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:extractRequestFieldCondition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:extractRuleWhenCondition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:extractUserCondition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:getRuleSets\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:mergeAllRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:traverseStatements\(\) has parameter \$statements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:\$methodReturns type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ConditionalRulesExtractorVisitor\:\:\$ruleSets type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 2
+			path: src/Analyzers/AST/Visitors/ConditionalRulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\PaginationCallVisitor\:\:beforeTraverse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/PaginationCallVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeArrayStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeCast\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeFunctionCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeMethodChain\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeNewResource\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzePropertyAccess\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeStaticCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeValue\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeWhenLoadedMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:analyzeWhenMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:getStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:\$conditionalFields type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:\$nestedResources type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResourceStructureVisitor\:\:\$structure type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResourceStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:extractArguments\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:extractArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:extractValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:extractValue\(\) has parameter \$node with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:getStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:getVariables\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:\$structure type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ResponseStructureVisitor\:\:\$variables type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ResponseStructureVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\ReturnStatementVisitor\:\:getReturnStatements\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ReturnStatementVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\ReturnStatementVisitor\:\:\$returnStatements type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/ReturnStatementVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateEnumRule\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateMethodCall\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateNewExpression\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateStaticCall\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:evaluateValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:extractArrayMergeRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:extractArrayRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:extractMatchRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:getRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:\$rules type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\RulesExtractorVisitor\:\:\$variables type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/RulesExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AST\\Visitors\\UseStatementExtractorVisitor\:\:getUseStatements\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/UseStatementExtractorVisitor.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\AST\\Visitors\\UseStatementExtractorVisitor\:\:\$useStatements type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AST/Visitors/UseStatementExtractorVisitor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:analyze\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AuthenticationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:analyze\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AuthenticationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:analyzeRoute\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AuthenticationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:analyzeRoute\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AuthenticationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:getGlobalAuthentication\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AuthenticationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:getPatternBasedAuthentication\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/AuthenticationAnalyzer.php
+
+		-
 			message: '#^Call to an undefined method ReflectionType\:\:getName\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -13,7 +409,3637 @@ parameters:
 			path: src/Analyzers/ControllerAnalyzer.php
 
 		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:analyzeEnumParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:detectFractalUsage\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:detectFractalUsage\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:getMethodNode\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ControllerAnalyzer\:\:resolveClassName\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/ControllerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\EnumAnalyzer\:\:analyzeEloquentCasts\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/EnumAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\EnumAnalyzer\:\:analyzeMethodSignature\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/EnumAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\EnumAnalyzer\:\:analyzeValidationRule\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/EnumAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\EnumAnalyzer\:\:analyzeValidationRule\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/EnumAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\EnumAnalyzer\:\:extractEnumInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/EnumAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FormRequestAnalyzer\:\:analyzeWithConditionalRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FormRequestAnalyzer\:\:analyzeWithDetails\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FormRequestAnalyzer\:\:performAnalysis\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FormRequestAnalyzer\:\:performAnalysisWithDetails\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FormRequestAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:analyzeIncludeMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:analyzeIncludeReturnType\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:extractAvailableIncludes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:extractDefaultIncludes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:extractMetaData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:extractTransformMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:generateExampleFromNode\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:getNodeValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\FractalTransformerAnalyzer\:\:parseArrayNode\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/FractalTransformerAnalyzer\.php\:146\:\:\$returnArray has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/FractalTransformerAnalyzer\.php\:401\:\:\$returnInfo has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Analyzers/FractalTransformerAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateDescription\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateDescription\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateDescription\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateFileDescription\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateFileDescription\(\) has parameter \$fileInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateParameters\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateParameters\(\) has parameter \$validation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:generateParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:hasRequiredIf\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:mergeValidations\(\) has parameter \$validations with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\InlineValidationAnalyzer\:\:mergeValidations\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:extractValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:getNodeValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractAnonymousFormRequestValidation\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRequestValidation\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRequestVariableValidation\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractReturnedArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRulesArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractValidation\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractValidatorMake\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:getNodeValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:257\:\:\$returnedArray has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Property PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:\$validations has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Analyzers/InlineValidationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\PaginationAnalyzer\:\:analyzeMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/PaginationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\PaginationAnalyzer\:\:analyzeReturnType\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/PaginationAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:detectEnumValues\(\) has parameter \$param with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:detectEnumValues\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:inferType\(\) has parameter \$param with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:isRequired\(\) has parameter \$param with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:mergeWithValidation\(\) has parameter \$queryParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:mergeWithValidation\(\) has parameter \$validationRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\QueryParameterAnalyzer\:\:mergeWithValidation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/QueryParameterAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:analyzeToArrayMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:analyzeWithMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:generatePropertiesFromArray\(\) has parameter \$array with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:generatePropertiesFromArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:generatePropertySchema\(\) has parameter \$info with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:generatePropertySchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:generateSchema\(\) has parameter \$structure with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:generateSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResourceAnalyzer\:\:performAnalysis\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResourceAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeArrayReturn\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeArrayReturn\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeCollection\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeCollection\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeEloquentModel\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeEloquentModel\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeResponseJson\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeResponseJson\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeReturnStatement\(\) has parameter \$returnStmt with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:analyzeReturnStatement\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:extractArrayStructure\(\) has parameter \$node with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:extractArrayStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:extractResourceClass\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:getNodeValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:getNodeValue\(\) has parameter \$node with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:isArrayReturn\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:isCollection\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:isEloquentModel\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:isResource\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:isResponseJson\(\) has parameter \$expr with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:mergeResponses\(\) has parameter \$responses with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\ResponseAnalyzer\:\:mergeResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/ResponseAnalyzer.php
+
+		-
 			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
 			count: 2
 			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:analyze\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:extractMiddleware\(\) has parameter \$route with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:extractMiddleware\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:extractRouteParameters\(\) has parameter \$route with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:extractRouteParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:isApiRoute\(\) has parameter \$route with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:performAnalysis\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:\$excludedMiddleware type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/RouteAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyze\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyzeDetails\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:analyzeWithConditionalRules\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:createMockInstance\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:extractAnonymousClassCode\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:extractParametersUsingReflection\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:invokeMethodSafely\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:tryAstBasedAnalysis\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\AnonymousClassAnalyzer\:\:tryConditionalRulesAstAnalysis\(\) has parameter \$reflection with generic class ReflectionClass but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Analyzers/Support/AnonymousClassAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\FormatInferrer\:\:inferDateFormat\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/FormatInferrer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\FormatInferrer\:\:inferFormat\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/FormatInferrer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildConditionalParameter\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildConditionalParameter\(\) has parameter \$mergedRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildConditionalParameter\(\) has parameter \$processedField with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildConditionalParameter\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildConditionalParameter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFileParameter\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFileParameter\(\) has parameter \$fileInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFileParameter\(\) has parameter \$ruleArray with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFileParameter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromConditionalRules\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromConditionalRules\(\) has parameter \$conditionalRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromConditionalRules\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromConditionalRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromRules\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromRules\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromRules\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildFromRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildStandardParameter\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildStandardParameter\(\) has parameter \$ruleArray with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildStandardParameter\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:buildStandardParameter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:findEnumInfo\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:findEnumInfo\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ParameterBuilder\:\:findEnumInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ParameterBuilder.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:extractConditionalRuleDetails\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:extractConditionalRuleDetails\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:hasConditionalRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:isRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:isRequiredInAnyCondition\(\) has parameter \$rulesByCondition with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:normalizeRules\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:normalizeRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:buildFileInfoParts\(\) has parameter \$fileInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:generateConditionalDescription\(\) has parameter \$fieldInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:generateDescription\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:generateDescription\(\) has parameter \$useStatements with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:generateFileDescription\(\) has parameter \$fileInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:generateFileDescriptionWithAttribute\(\) has parameter \$fileInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:findResourceDependencies\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:getAllCacheKeys\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:getMetadata\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:getStats\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:isDependenciesChanged\(\) has parameter \$dependencies with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:put\(\) has parameter \$dependencies with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:remember\(\) has parameter \$dependencies with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:rememberFormRequest\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:rememberResource\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\DocumentationCache\:\:rememberRoutes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/DocumentationCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\IncrementalCache\:\:getInvalidatedItems\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/IncrementalCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Cache\\IncrementalCache\:\:getValidEntries\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/IncrementalCache.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Cache\\IncrementalCache\:\:\$changeLog type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Cache/IncrementalCache.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\ExportPostmanCommand\:\:displayImportInstructions\(\) has parameter \$environments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/ExportPostmanCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\MockServerCommand\:\:displayStartupInfo\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/MockServerCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\MockServerCommand\:\:loadOpenApiSpec\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/MockServerCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:analyzeRoutes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:assembleOpenApiSpec\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:assembleOpenApiSpec\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:buildDependencyGraph\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:combinePaths\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:combinePaths\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:filterChangedRoutes\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:filterChangedRoutes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:processInChunks\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:processInChunks\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:processInParallel\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:processInParallel\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\Commands\\OptimizedGenerateCommand\:\:saveOutput\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/Commands/OptimizedGenerateCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\GenerateDocsCommand\:\:arrayToYaml\(\) has parameter \$array with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/GenerateDocsCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\GenerateDocsCommand\:\:formatOutput\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/GenerateDocsCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\WatchCommand\:\:getWatchPaths\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/WatchCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Console\\WatchCommand\:\:runGenerateCommand\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/WatchCommand.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Contracts\\ExampleGenerationStrategy\:\:generate\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/ExampleGenerationStrategy.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Contracts\\ExampleGenerationStrategy\:\:generateByType\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/ExampleGenerationStrategy.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Contracts\\HasExamples\:\:getExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/HasExamples.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Contracts\\HasExamples\:\:getExamples\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/HasExamples.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:export\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/ExportFormatInterface.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:export\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/ExportFormatInterface.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:export\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/ExportFormatInterface.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:exportEnvironment\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/ExportFormatInterface.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:exportEnvironment\(\) has parameter \$servers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/ExportFormatInterface.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:exportEnvironment\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/ExportFormatInterface.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:createEnvironment\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:createEnvironment\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:createRequest\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:createRequest\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:export\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:export\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:export\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:exportEnvironment\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:exportEnvironment\(\) has parameter \$servers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:exportEnvironment\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateAuthentication\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateAuthentication\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateBody\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateBody\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateHeaders\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateParameters\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:generateParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:groupRoutesByTag\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\InsomniaExporter\:\:groupRoutesByTag\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/InsomniaExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:convertRoute\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:convertRoute\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:convertRoute\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:export\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:export\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:export\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:exportEnvironment\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:exportEnvironment\(\) has parameter \$servers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:exportEnvironment\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:extractAuth\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:extractAuth\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:extractQueryParameters\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:extractQueryParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateAuth\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateAuth\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateAuth\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateHeaders\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generatePreRequestScript\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generatePreRequestScript\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generatePreRequestScripts\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generatePreRequestScripts\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateRequestBody\(\) has parameter \$requestBody with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateRequestBody\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateResponseExamples\(\) has parameter \$responses with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateResponseExamples\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateTests\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateTests\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateUrl\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateUrl\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateUrl\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateVariables\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:generateVariables\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:groupRoutesByTag\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Exporters\\PostmanExporter\:\:groupRoutesByTag\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exporters/PostmanExporter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatAuth\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatAuth\(\) has parameter \$securitySchemes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatAuth\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatFormDataParameters\(\) has parameter \$properties with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatFormDataParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatHeaders\(\) has parameter \$headers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatQueryParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:formatQueryParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:generateEnvironmentData\(\) has parameter \$servers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:generateEnvironmentData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:getContentType\(\) has parameter \$requestBody with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:getParameterExample\(\) has parameter \$param with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:groupRoutesByTag\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:groupRoutesByTag\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/InsomniaFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatAuth\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatAuth\(\) has parameter \$securitySchemes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatAuth\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatHeaders\(\) has parameter \$headers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatPathParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatPathParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatQueryParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatQueryParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:generatePreRequestScript\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:generatePreRequestScript\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:getContentType\(\) has parameter \$requestBody with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:getParameterExample\(\) has parameter \$param with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:groupRoutesByTag\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:groupRoutesByTag\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:needsTimestamp\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/PostmanFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateArrayExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateArrayFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateArrayFromSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateFromAllOf\(\) has parameter \$allOf with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateFromAllOf\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateObjectFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generateObjectFromSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Formatters\\RequestExampleFormatter\:\:generatePrimitiveFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Formatters/RequestExampleFormatter.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateArray\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateArray\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateFromSchema\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateInteger\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateNumber\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateObject\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateObject\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateObject\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateString\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\DynamicExampleGenerator\:\:generateString\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/DynamicExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateErrorResponses\(\) has parameter \$formRequestData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateErrorResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateForbiddenResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateInternalServerErrorResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateNotFoundResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateUnauthorizedResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateValidationErrorResponse\(\) has parameter \$customMessages with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateValidationErrorResponse\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:generateValidationErrorResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ErrorResponseGenerator\:\:getDefaultErrorResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ErrorResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateCollectionExample\(\) has parameter \$itemExample with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateCollectionExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateErrorExample\(\) has parameter \$validationRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateErrorExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFieldValue\(\) has parameter \$fieldSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromResource\(\) has parameter \$resourceSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromResource\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromSchema\(\) has parameter \$customMapping with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromTransformer\(\) has parameter \$transformerSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateFromTransformer\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generatePaginatedCollection\(\) has parameter \$itemExample with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generatePaginatedCollection\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateValidationErrorExample\(\) has parameter \$validationRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleGenerator\:\:generateValidationErrorExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleValueFactory\:\:create\(\) has parameter \$fieldSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleValueFactory.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleValueFactory\:\:generateContextualName\(\) has parameter \$fieldSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleValueFactory.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleValueFactory\:\:handleSpecialFields\(\) has parameter \$fieldSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleValueFactory.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ExampleValueFactory\:\:selectEnumValue\(\) has parameter \$enum with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ExampleValueFactory.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:buildBaseStructure\(\) has parameter \$authenticationInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:buildBaseStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:collectUsedTags\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generate\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateBasicModelSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateErrorResponses\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateErrorResponses\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateErrorResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateOperation\(\) has parameter \$authentication with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateOperation\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateOperation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateResponses\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateResponses\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateSuccessResponse\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateSuccessResponse\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generateSuccessResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:requiresAuth\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/OpenApiGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generate\(\) has parameter \$dataSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generateCursorPaginatorSchema\(\) has parameter \$dataSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generateCursorPaginatorSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generateLengthAwarePaginatorSchema\(\) has parameter \$dataSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generateLengthAwarePaginatorSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generateSimplePaginatorSchema\(\) has parameter \$dataSchema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\PaginationSchemaGenerator\:\:generateSimplePaginatorSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/PaginationSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:addEnumParameters\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:addEnumParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:addEnumParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:addQueryParameters\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:addQueryParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:addQueryParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:generate\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 2
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:generate\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ParameterGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ParameterGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generate\(\) has parameter \$controllerInfo with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generate\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateFileUploadDescription\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateFileUploadRequestBody\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateFileUploadRequestBody\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateSchema\(\) has parameter \$conditionalRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateSchema\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:hasFileUploadParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/RequestBodyGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:convertPropertyToOpenApi\(\) has parameter \$property with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:convertPropertyToOpenApi\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:convertToOpenApiSchema\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:convertToOpenApiSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:extractRequiredFields\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:extractRequiredFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:generate\(\) has parameter \$responseData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:generateResourceResponse\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:generateResourceResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:generateUnknownResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ResponseSchemaGenerator\:\:generateVoidResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ResponseSchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:applyRuleConstraints\(\) has parameter \$property with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:applyRuleConstraints\(\) has parameter \$rule with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:convertFractalPropertiesToSchema\(\) has parameter \$properties with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:convertFractalPropertiesToSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:extractHttpMethodFromConditions\(\) has parameter \$conditions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateConditionDescription\(\) has parameter \$conditions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateConditionKey\(\) has parameter \$conditions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateConditionalSchema\(\) has parameter \$conditionalRules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateConditionalSchema\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateConditionalSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateDiscriminatorMapping\(\) has parameter \$ruleSets with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateDiscriminatorMapping\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromConditionalParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromConditionalParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromFractal\(\) has parameter \$fractalData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromFractal\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromResource\(\) has parameter \$resourceStructure with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateFromResource\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateMultipartSchema\(\) has parameter \$fileFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateMultipartSchema\(\) has parameter \$normalFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateMultipartSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateSchemaForRuleSet\(\) has parameter \$ruleSet with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:generateSchemaForRuleSet\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:groupParametersByHttpMethod\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:groupParametersByHttpMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:isFieldRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:isRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SchemaGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateEndpointSecurity\(\) has parameter \$authentication with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateEndpointSecurity\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateMultipleAuthSecurity\(\) has parameter \$authentications with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateMultipleAuthSecurity\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateScheme\(\) has parameter \$scheme with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateScheme\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateSecuritySchemes\(\) has parameter \$authSchemes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:generateSecuritySchemes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:mergeAuthentications\(\) has parameter \$global with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:mergeAuthentications\(\) has parameter \$local with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\SecuritySchemeGenerator\:\:mergeAuthentications\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/SecuritySchemeGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateFieldMessages\(\) has parameter \$customMessages with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateFieldMessages\(\) has parameter \$rules with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateFieldMessages\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateMessages\(\) has parameter \$customMessages with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateMessages\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateMessages\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:generateSampleMessage\(\) has parameter \$rules with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Generators\\ValidationMessageGenerator\:\:replacePlaceholders\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Generators/ValidationMessageGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticate\(\) has parameter \$security with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticateApiKey\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticateBasicAuth\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticateBearerToken\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticateOAuth2\(\) has parameter \$scopes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:authenticateOAuth2\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:setValidApiKeys\(\) has parameter \$keys with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:setValidBasicAuth\(\) has parameter \$credentials with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:setValidTokens\(\) has parameter \$tokens with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:tryAuthenticateWithScheme\(\) has parameter \$scheme with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:tryAuthenticateWithScheme\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Property LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:\$validApiKeys type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Property LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:\$validBasicAuth type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Property LaravelSpectrum\\MockServer\\AuthenticationSimulator\:\:\$validTokens type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/AuthenticationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\MockServer\:\:__construct\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/MockServer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\MockServer\:\:sendResponse\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/MockServer.php
+
+		-
+			message: '#^Property LaravelSpectrum\\MockServer\\MockServer\:\:\$openapi type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/MockServer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:checkAuthentication\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:checkAuthentication\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:determineStatusCode\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:generateSuccessResponse\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:generateSuccessResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:handle\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:handle\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:validateRequest\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RequestHandler\:\:validateRequest\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RequestHandler.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generate\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generate\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateDefaultResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateFromSchema\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateFromSchema\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateFromSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateHeaders\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateHeaders\(\) has parameter \$responseSpec with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateJsonResponse\(\) has parameter \$contentSpec with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateJsonResponse\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generateJsonResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generatePaginatedResponse\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generatePaginatedResponse\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:generatePaginatedResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:hasRateLimiting\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:isPaginatedResponse\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:processExample\(\) has parameter \$example with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:processExample\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ResponseGenerator\:\:processExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ResponseGenerator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RouteResolver\:\:resolve\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RouteResolver.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\RouteResolver\:\:resolve\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/RouteResolver.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) has parameter \$queryParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) has parameter \$requestBody with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validate\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateField\(\) has parameter \$spec with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateField\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateField\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateParameter\(\) has parameter \$parameter with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateParameter\(\) has parameter \$pathParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateParameter\(\) has parameter \$queryParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateParameter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateRequestBody\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateRequestBody\(\) has parameter \$requestBodySpec with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\MockServer\\ValidationSimulator\:\:validateRequestBody\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/MockServer/ValidationSimulator.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ChunkProcessor\:\:processInChunks\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ChunkProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:addNode\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:buildFromRoutes\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:collectAffectedNodes\(\) has parameter \$affected with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:collectAffectedNodes\(\) has parameter \$visited with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:getAffectedNodes\(\) has parameter \$changedNodes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:getAffectedNodes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\DependencyGraph\:\:getRouteId\(\) has parameter \$route with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Performance\\DependencyGraph\:\:\$nodes type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/DependencyGraph.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\MemoryManager\:\:getMemoryStats\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/MemoryManager.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ParallelProcessor\:\:process\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ParallelProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ParallelProcessor\:\:process\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ParallelProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ParallelProcessor\:\:processSequentialWithProgress\(\) has parameter \$items with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ParallelProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ParallelProcessor\:\:processSequentialWithProgress\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ParallelProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ParallelProcessor\:\:processWithProgress\(\) has parameter \$items with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ParallelProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Performance\\ParallelProcessor\:\:processWithProgress\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Performance/ParallelProcessor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Services\\FileWatcher\:\:checkForChanges\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/FileWatcher.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Services\\FileWatcher\:\:getCurrentFileHashes\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/FileWatcher.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Services\\FileWatcher\:\:getCurrentFileHashes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/FileWatcher.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Services\\FileWatcher\:\:initializeFileHashes\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/FileWatcher.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Services\\FileWatcher\:\:watch\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/FileWatcher.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Services\\FileWatcher\:\:\$fileHashes type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/FileWatcher.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Services\\LiveReloadServer\:\:notifyClients\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/LiveReloadServer.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$clients has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Services/LiveReloadServer.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$httpWorker has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Services/LiveReloadServer.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$instance has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Services/LiveReloadServer.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Services\\LiveReloadServer\:\:\$wsWorker has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Services/LiveReloadServer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:convertFieldInferenceToType\(\) has parameter \$inference with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:convertFieldInferenceToType\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromConstFetch\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromFuncCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromMethodCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromOnlyMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromPropertyFetch\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AstTypeInferenceEngine\:\:inferFromTernary\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AstTypeInferenceEngine.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AuthenticationDetector\:\:addCustomScheme\(\) has parameter \$scheme with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AuthenticationDetector\:\:detectFromGuard\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AuthenticationDetector\:\:detectFromMiddleware\(\) has parameter \$middleware with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AuthenticationDetector\:\:detectFromMiddleware\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AuthenticationDetector\:\:detectMultipleSchemes\(\) has parameter \$middleware with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\AuthenticationDetector\:\:detectMultipleSchemes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\AuthenticationDetector\:\:\$apiKeyPatterns type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\AuthenticationDetector\:\:\$authSchemeMap type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/AuthenticationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:analyzeCollectionChain\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyExceptOperation\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyExceptOperation\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyExceptOperation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyMapOperation\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyMapOperation\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyMapOperation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyOnlyOperation\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyOnlyOperation\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyOnlyOperation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyOperation\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyOperation\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyOperation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyPluckOperation\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyPluckOperation\(\) has parameter \$schema with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:applyPluckOperation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractArgumentValue\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractArguments\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractString\(\) has parameter \$arg with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractStringArray\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractStringArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:extractStructureFromNode\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\CollectionAnalyzer\:\:inferBaseType\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/CollectionAnalyzer.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\EnumExtractor\:\:extractValues\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/EnumExtractor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ErrorCollector\:\:addError\(\) has parameter \$metadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ErrorCollector\:\:addWarning\(\) has parameter \$metadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ErrorCollector\:\:generateReport\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ErrorCollector\:\:getErrors\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ErrorCollector\:\:getWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\ErrorCollector\:\:\$errors type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\ErrorCollector\:\:\$warnings type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ErrorCollector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:getAllPatterns\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:getConfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:getFieldPatterns\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:matchPattern\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:matchSuffixPrefixPatterns\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:registerPattern\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\Example\\FieldPatternRegistry\:\:\$customPatterns type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/FieldPatternRegistry.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:executeMethodChain\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generate\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateByType\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateInteger\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateNumber\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateString\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:handleUnknownType\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/FakerValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\StaticValueProvider\:\:generate\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/StaticValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\StaticValueProvider\:\:generateByType\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/StaticValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\StaticValueProvider\:\:generateInteger\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/StaticValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\StaticValueProvider\:\:generateNumber\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/Example/ValueProviders/StaticValueProvider.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ModelSchemaExtractor\:\:extractSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ModelSchemaExtractor.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\PaginationDetector\:\:detectPaginationCalls\(\) has parameter \$ast with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/PaginationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\PaginationDetector\:\:detectPaginationCalls\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/PaginationDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\QueryParameterDetector\:\:consolidateParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\QueryParameterDetector\:\:detectRequestCalls\(\) has parameter \$ast with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\QueryParameterDetector\:\:detectRequestCalls\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\QueryParameterDetector\:\:parseMethod\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\QueryParameterDetector\:\:updateParameterContext\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\QueryParameterDetector\:\:\$detectedParams type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\QueryParameterDetector\:\:\$variableAssignments type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/QueryParameterDetector.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ValidationRules\:\:extractRuleName\(\) has parameter \$rule with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ValidationRules.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ValidationRules\:\:extractRuleParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ValidationRules.php
+
+		-
+			message: '#^Method LaravelSpectrum\\Support\\ValidationRules\:\:inferFieldType\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ValidationRules.php
+
+		-
+			message: '#^Property LaravelSpectrum\\Support\\ValidationRules\:\:\$messageTemplates type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Support/ValidationRules.php
