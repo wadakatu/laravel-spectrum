@@ -17,6 +17,7 @@ use LaravelSpectrum\Generators\ParameterGenerator;
 use LaravelSpectrum\Generators\RequestBodyGenerator;
 use LaravelSpectrum\Generators\ResponseSchemaGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
+use LaravelSpectrum\Generators\SchemaRegistry;
 use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Generators\TagGenerator;
 use LaravelSpectrum\Generators\TagGroupGenerator;
@@ -63,6 +64,8 @@ class OpenApiGeneratorTest extends TestCase
 
     private $openApi31Converter;
 
+    private $schemaRegistry;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -86,6 +89,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->paginationDetector = Mockery::mock(PaginationDetector::class);
         $this->requestAnalyzer = Mockery::mock(FormRequestAnalyzer::class);
         $this->openApi31Converter = Mockery::mock(OpenApi31Converter::class);
+        $this->schemaRegistry = new SchemaRegistry;
 
         $this->generator = new OpenApiGenerator(
             $this->controllerAnalyzer,
@@ -104,7 +108,8 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationSchemaGenerator,
             $this->paginationDetector,
             $this->requestAnalyzer,
-            $this->openApi31Converter
+            $this->openApi31Converter,
+            $this->schemaRegistry
         );
     }
 
@@ -695,7 +700,8 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationSchemaGenerator,
             $this->paginationDetector,
             $this->requestAnalyzer,
-            $realConverter
+            $realConverter,
+            new SchemaRegistry
         );
 
         config(['spectrum.openapi.version' => '3.1.0']);
@@ -725,6 +731,346 @@ class OpenApiGeneratorTest extends TestCase
         // Verify webhooks section was added
         $this->assertArrayHasKey('webhooks', $result);
         $this->assertInstanceOf(\stdClass::class, $result['webhooks']);
+    }
+
+    #[Test]
+    public function it_registers_resource_schemas_in_components(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'action' => 'index',
+                'method' => 'index',
+                'middleware' => [],
+                'name' => 'users.index',
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([
+                'method' => 'index',
+                'responseType' => 'json',
+                'hasValidation' => false,
+                'resource' => 'App\Http\Resources\UserResource',
+                'returnsCollection' => true,
+            ]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users');
+        $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('List all User');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->once()->andReturn('usersIndex');
+
+        $this->tagGenerator->shouldReceive('generate')->once()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->once()->andReturn([]);
+
+        $this->resourceAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->with('App\Http\Resources\UserResource')
+            ->andReturn([
+                'properties' => [
+                    'id' => ['type' => 'integer', 'example' => 1],
+                    'name' => ['type' => 'string'],
+                    'email' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->schemaGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn([
+                'type' => 'object',
+                'properties' => [
+                    'id' => ['type' => 'integer', 'example' => 1],
+                    'name' => ['type' => 'string'],
+                    'email' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn([
+                'id' => 1,
+                'name' => 'John Doe',
+                'email' => 'john@example.com',
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateCollectionExample')
+            ->once()
+            ->andReturn([
+                ['id' => 1, 'name' => 'John Doe', 'email' => 'john@example.com'],
+                ['id' => 2, 'name' => 'Jane Doe', 'email' => 'jane@example.com'],
+            ]);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify that schema is registered in components.schemas
+        $this->assertArrayHasKey('components', $result);
+        $this->assertArrayHasKey('schemas', $result['components']);
+        $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
+
+        // Verify the schema structure
+        $schema = $result['components']['schemas']['UserResource'];
+        $this->assertEquals('object', $schema['type']);
+        $this->assertArrayHasKey('properties', $schema);
+        $this->assertArrayHasKey('id', $schema['properties']);
+        $this->assertArrayHasKey('name', $schema['properties']);
+        $this->assertArrayHasKey('email', $schema['properties']);
+    }
+
+    #[Test]
+    public function it_uses_ref_for_resource_schema_in_response(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users/{user}',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'action' => 'show',
+                'method' => 'show',
+                'middleware' => [],
+                'name' => 'users.show',
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([
+                'method' => 'show',
+                'responseType' => 'json',
+                'hasValidation' => false,
+                'resource' => 'App\Http\Resources\UserResource',
+                'returnsCollection' => false,
+            ]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users/{user}');
+        $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('Get User by ID');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->once()->andReturn('usersShow');
+
+        $this->tagGenerator->shouldReceive('generate')->once()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->once()->andReturn([]);
+
+        $this->resourceAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([
+                'properties' => [
+                    'id' => ['type' => 'integer', 'example' => 1],
+                    'name' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->schemaGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn([
+                'type' => 'object',
+                'properties' => [
+                    'id' => ['type' => 'integer', 'example' => 1],
+                    'name' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn(['id' => 1, 'name' => 'John Doe']);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify that the response uses $ref
+        $responseContent = $result['paths']['/api/users/{user}']['get']['responses']['200']['content']['application/json'];
+        $this->assertArrayHasKey('schema', $responseContent);
+        $this->assertArrayHasKey('$ref', $responseContent['schema']);
+        $this->assertEquals('#/components/schemas/UserResource', $responseContent['schema']['$ref']);
+    }
+
+    #[Test]
+    public function it_uses_ref_for_collection_response(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/posts',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\PostController',
+                'action' => 'index',
+                'method' => 'index',
+                'middleware' => [],
+                'name' => 'posts.index',
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([
+                'method' => 'index',
+                'responseType' => 'json',
+                'hasValidation' => false,
+                'resource' => 'App\Http\Resources\PostResource',
+                'returnsCollection' => true,
+            ]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/posts');
+        $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('List all Post');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->once()->andReturn('postsIndex');
+
+        $this->tagGenerator->shouldReceive('generate')->once()->andReturn(['Post']);
+        $this->parameterGenerator->shouldReceive('generate')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->once()->andReturn([]);
+
+        $this->resourceAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn([
+                'properties' => [
+                    'id' => ['type' => 'integer'],
+                    'title' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->schemaGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn([
+                'type' => 'object',
+                'properties' => [
+                    'id' => ['type' => 'integer'],
+                    'title' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn(['id' => 1, 'title' => 'Hello World']);
+
+        $this->exampleGenerator->shouldReceive('generateCollectionExample')
+            ->once()
+            ->andReturn([
+                ['id' => 1, 'title' => 'Hello World'],
+                ['id' => 2, 'title' => 'Another Post'],
+            ]);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify that the response uses $ref for array items
+        $responseContent = $result['paths']['/api/posts']['get']['responses']['200']['content']['application/json'];
+        $this->assertArrayHasKey('schema', $responseContent);
+        $this->assertEquals('array', $responseContent['schema']['type']);
+        $this->assertArrayHasKey('items', $responseContent['schema']);
+        $this->assertArrayHasKey('$ref', $responseContent['schema']['items']);
+        $this->assertEquals('#/components/schemas/PostResource', $responseContent['schema']['items']['$ref']);
+    }
+
+    #[Test]
+    public function it_reuses_same_schema_for_multiple_endpoints(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'action' => 'index',
+                'method' => 'index',
+                'middleware' => [],
+                'name' => 'users.index',
+                'parameters' => [],
+            ],
+            [
+                'uri' => 'api/users/{user}',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'action' => 'show',
+                'method' => 'show',
+                'middleware' => [],
+                'name' => 'users.show',
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => [], 'routes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')
+            ->twice()
+            ->andReturn([
+                'method' => 'index',
+                'responseType' => 'json',
+                'hasValidation' => false,
+                'resource' => 'App\Http\Resources\UserResource',
+                'returnsCollection' => false,
+            ]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->twice()
+            ->andReturn('/api/users', '/api/users/{user}');
+        $this->metadataGenerator->shouldReceive('generateSummary')->twice()->andReturn('List all User', 'Get User');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->twice()->andReturn('usersIndex', 'usersShow');
+
+        $this->tagGenerator->shouldReceive('generate')->twice()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->twice()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->twice()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->twice()->andReturn([]);
+
+        // Resource analyzer should only be called once per unique resource
+        $this->resourceAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->with('App\Http\Resources\UserResource')
+            ->andReturn([
+                'properties' => [
+                    'id' => ['type' => 'integer'],
+                    'name' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->schemaGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn([
+                'type' => 'object',
+                'properties' => [
+                    'id' => ['type' => 'integer'],
+                    'name' => ['type' => 'string'],
+                ],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateFromResource')
+            ->once()
+            ->andReturn(['id' => 1, 'name' => 'John Doe']);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify only one schema is registered
+        $this->assertCount(1, $result['components']['schemas']);
+        $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
+
+        // Both endpoints should use the same $ref
+        $this->assertEquals(
+            '#/components/schemas/UserResource',
+            $result['paths']['/api/users']['get']['responses']['200']['content']['application/json']['schema']['$ref']
+        );
+        $this->assertEquals(
+            '#/components/schemas/UserResource',
+            $result['paths']['/api/users/{user}']['get']['responses']['200']['content']['application/json']['schema']['$ref']
+        );
     }
 
     protected function tearDown(): void

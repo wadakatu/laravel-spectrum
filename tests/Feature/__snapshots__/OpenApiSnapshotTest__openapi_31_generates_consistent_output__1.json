@@ -131,29 +131,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "name": {
-                                            "type": "string",
-                                            "example": "John Doe"
-                                        },
-                                        "email": {
-                                            "type": "string",
-                                            "example": "user@example.com"
-                                        },
-                                        "created_at": {
-                                            "type": "string",
-                                            "example": "{{DATETIME}}"
-                                        },
-                                        "updated_at": {
-                                            "type": "string",
-                                            "example": "{{DATETIME}}"
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/UserResource"
                                 }
                             }
                         }
@@ -286,7 +264,33 @@
         }
     },
     "components": {
-        "schemas": [],
+        "schemas": {
+            "UserResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "user@example.com"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "example": "{{DATETIME}}"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "example": "{{DATETIME}}"
+                    }
+                }
+            }
+        },
         "securitySchemes": []
     },
     "tags": [
