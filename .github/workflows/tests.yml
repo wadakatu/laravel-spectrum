@@ -33,7 +33,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
           coverage: pcov
-          ini-values: memory_limit=256M
+          ini-values: memory_limit=512M
 
       - name: Setup problem matchers
         run: |
