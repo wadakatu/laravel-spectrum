@@ -39,6 +39,7 @@
     "require-dev": {
         "devizzent/cebe-php-openapi": "^1.1",
         "fakerphp/faker": "^1.23",
+        "infection/infection": "*",
         "laravel/pint": "^1.23",
         "orchestra/testbench": "^9.0|^10.0",
         "phpstan/phpstan": "^2.1",
@@ -62,17 +63,22 @@
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
         "format": "vendor/bin/pint --test",
         "format:fix": "vendor/bin/pint",
-        "analyze": "vendor/bin/phpstan analyse"
+        "analyze": "vendor/bin/phpstan analyse",
+        "infection": "XDEBUG_MODE=coverage vendor/bin/infection --threads=max --show-mutations --only-covered"
     },
     "scripts-descriptions": {
         "test": "Run the tests",
         "test-coverage": "Run the tests with coverage",
         "format": "Check the code style",
         "format:fix": "Format the code using Laravel Pint",
-        "analyze": "Analyse the code using PHPStan"
+        "analyze": "Analyse the code using PHPStan",
+        "infection": "Run mutation testing with Infection"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "infection/extension-installer": true
+        }
     },
     "extra": {
         "laravel": {
