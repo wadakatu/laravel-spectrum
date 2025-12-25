@@ -88,7 +88,7 @@ class ValidationSimulator
                 'number' => is_numeric($value),
                 'boolean' => is_bool($value) || in_array($value, ['true', 'false', '0', '1']),
                 'array' => is_array($value),
-                'object' => is_array($value) || is_object($value),
+                'object' => is_array($value),
                 default => true,
             };
 

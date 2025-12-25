@@ -51,7 +51,7 @@ class AnonymousClassAnalyzer
      * First attempts AST-based parsing of the anonymous class source code.
      * Falls back to reflection-based extraction if AST parsing fails.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @return array<int, array<string, mixed>> The built parameters
      */
     public function analyze(\ReflectionClass $reflection): array
@@ -91,7 +91,7 @@ class AnonymousClassAnalyzer
      * Uses pure reflection to extract rules, attributes, and messages.
      * Returns raw data without building parameters.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @return array{rules: array<string, mixed>, attributes: array<string, string>, messages: array<string, string>} The extracted details
      */
     public function analyzeDetails(\ReflectionClass $reflection): array
@@ -135,7 +135,7 @@ class AnonymousClassAnalyzer
      * First attempts AST-based parsing to extract conditional rules.
      * Falls back to standard analysis if AST parsing fails or no conditional rules found.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @return array{parameters: array<int, array<string, mixed>>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<string, mixed>}} The analysis result
      */
     public function analyzeWithConditionalRules(\ReflectionClass $reflection): array
@@ -196,7 +196,7 @@ class AnonymousClassAnalyzer
     /**
      * Try to analyze the anonymous class using AST parsing.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @param  string  $filePath  Path to the file containing the class
      * @return array<int, array<string, mixed>>|null Returns the parameters if successful, null if AST parsing fails
      */
@@ -263,7 +263,7 @@ class AnonymousClassAnalyzer
     /**
      * Try to analyze conditional rules using AST parsing.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @param  string  $filePath  Path to the file containing the class
      * @return array{parameters: array<int, array<string, mixed>>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<string, mixed>}}|null Returns the result if successful, null if AST parsing fails
      */
@@ -338,7 +338,7 @@ class AnonymousClassAnalyzer
     /**
      * Extract the anonymous class source code from the file.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @param  string  $filePath  Path to the file containing the class
      * @return string|null PHP code wrapped with <?php tag for parsing, or null on failure
      */
@@ -391,7 +391,7 @@ class AnonymousClassAnalyzer
      *
      * Falls back to this approach when AST parsing is not possible.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the anonymous class
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @return array<int, array<string, mixed>> The built parameters or empty array on failure
      *
      * @throws \ReflectionException If instance creation fails
@@ -420,7 +420,7 @@ class AnonymousClassAnalyzer
      * Request object. FormRequest classes that depend on request data in their
      * rules() method may return unexpected results.
      *
-     * @param  \ReflectionClass  $reflection  The reflection of the class to instantiate
+     * @param  \ReflectionClass<object>  $reflection  The reflection of the class to instantiate
      * @return object The created instance with mock Request initialized
      *
      * @throws \ReflectionException If instance creation fails
@@ -442,7 +442,7 @@ class AnonymousClassAnalyzer
     /**
      * Safely invoke a method on an instance using reflection.
      *
-     * @param  \ReflectionClass  $reflection  The reflection class to check for method existence
+     * @param  \ReflectionClass<object>  $reflection  The reflection class to check for method existence
      * @param  object  $instance  The instance to invoke the method on
      * @param  string  $methodName  The name of the method to invoke
      * @param  array<string, mixed>  $default  Default value to return if method doesn't exist or returns falsy value

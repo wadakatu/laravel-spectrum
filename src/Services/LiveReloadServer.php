@@ -9,6 +9,7 @@ use Workerman\Worker;
 
 class LiveReloadServer
 {
+    /** @var \SplObjectStorage<TcpConnection, null>|null */
     protected static ?\SplObjectStorage $clients = null;
 
     protected ?Worker $httpWorker = null;

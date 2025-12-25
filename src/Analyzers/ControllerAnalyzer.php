@@ -93,7 +93,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
         foreach ($methodReflection->getParameters() as $parameter) {
             $type = $parameter->getType();
-            if ($type && ! $type->isBuiltin()) {
+            if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
                 $className = $type->getName();
                 if (class_exists($className) && is_subclass_of($className, FormRequest::class)) {
                     $result['formRequest'] = $className;
@@ -187,6 +187,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * クラス名を解決（use文を考慮）
+     *
+     * @param  \ReflectionClass<object>  $reflection
      */
     protected function resolveClassName(string $shortName, ReflectionClass $reflection): ?string
     {
@@ -222,6 +224,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * メソッドのASTノードを取得
+     *
+     * @param  \ReflectionClass<object>  $reflection
      */
     protected function getMethodNode(ReflectionClass $reflection, string $methodName): ?Node\Stmt\ClassMethod
     {
@@ -260,6 +264,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * Fractal使用を検出
+     *
+     * @param  \ReflectionClass<object>  $reflection
      */
     protected function detectFractalUsage(string $source, array &$result, ReflectionClass $reflection): void
     {

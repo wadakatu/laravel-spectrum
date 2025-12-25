@@ -140,7 +140,7 @@ class RouteAnalyzer implements HasErrors
         // Artisanコマンド実行時にAPIルートファイルが読み込まれていない場合があるため、
         // 必要に応じてルートファイルを明示的に読み込む
         // ただし、テスト環境やすでにルートが存在する場合はスキップ
-        $currentRoutes = RouteFacade::getRoutes();
+        $currentRoutes = RouteFacade::getRoutes()->getRoutes();
         $hasRoutes = false;
         foreach ($currentRoutes as $route) {
             if ($this->isApiRoute($route)) {
@@ -156,7 +156,7 @@ class RouteAnalyzer implements HasErrors
 
         $routes = [];
 
-        foreach (RouteFacade::getRoutes() as $route) {
+        foreach (RouteFacade::getRoutes()->getRoutes() as $route) {
             try {
                 // APIルートのみを対象とする
                 if (! $this->isApiRoute($route)) {
