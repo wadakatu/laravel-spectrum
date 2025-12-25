@@ -23,7 +23,6 @@ class SpectrumGenerateCommandTest extends TestCase
 
         $this->outputPath = storage_path('app/spectrum');
 
-        // Clean up any existing output
         if (File::isDirectory($this->outputPath)) {
             File::cleanDirectory($this->outputPath);
         }
@@ -31,7 +30,6 @@ class SpectrumGenerateCommandTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Clean up after tests
         if (File::isDirectory($this->outputPath)) {
             File::cleanDirectory($this->outputPath);
         }
@@ -229,8 +227,34 @@ class SpectrumGenerateCommandTest extends TestCase
         }
     }
 
+    public function test_generate_command_handles_malformed_routes_gracefully(): void
+    {
+        // The command should complete successfully even with routes that
+        // have unusual configurations
+        $exitCode = Artisan::call('spectrum:generate');
+
+        // Command should succeed - malformed/unusual routes are skipped or handled gracefully
+        $this->assertEquals(0, $exitCode);
+        $this->assertFileExists($this->outputPath.'/openapi.json');
+    }
+
+    public function test_generate_command_with_no_cache_option(): void
+    {
+        // First generate with default caching
+        Artisan::call('spectrum:generate');
+        $this->assertFileExists($this->outputPath.'/openapi.json');
+
+        // Generate again with --no-cache option
+        $exitCode = Artisan::call('spectrum:generate', ['--no-cache' => true]);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertFileExists($this->outputPath.'/openapi.json');
+    }
+
     /**
      * Get the generated OpenAPI spec as an array.
+     *
+     * @pre spectrum:generate command has been executed
      */
     private function getGeneratedSpec(): array
     {

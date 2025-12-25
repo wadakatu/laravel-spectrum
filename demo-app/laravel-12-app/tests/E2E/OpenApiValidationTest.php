@@ -11,8 +11,9 @@ use Tests\TestCase;
 /**
  * E2E tests validating the generated OpenAPI spec against the OpenAPI schema.
  *
- * Uses devizzent/cebe-php-openapi for validation, which supports both
- * OpenAPI 3.0.x and 3.1.x specifications.
+ * Uses cebe-php-openapi (devizzent fork) for validation, which supports both
+ * OpenAPI 3.0.x and 3.1.x specifications. The fork maintains the original
+ * cebe\openapi namespace for compatibility.
  */
 class OpenApiValidationTest extends TestCase
 {
@@ -28,7 +29,7 @@ class OpenApiValidationTest extends TestCase
             File::cleanDirectory($this->outputPath);
         }
 
-        // Generate the spec once for all validation tests
+        // Generate the spec before each validation test
         Artisan::call('spectrum:generate');
     }
 
@@ -228,7 +229,7 @@ class OpenApiValidationTest extends TestCase
     }
 
     /**
-     * Parse the generated OpenAPI spec using cebe/php-openapi.
+     * Parse the generated OpenAPI spec.
      */
     private function parseOpenApiSpec(): OpenApi
     {
