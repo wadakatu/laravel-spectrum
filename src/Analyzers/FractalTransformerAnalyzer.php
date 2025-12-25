@@ -145,7 +145,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         // return文を探す
         $visitor = new class extends NodeVisitorAbstract
         {
-            public $returnArray = null;
+            /** @var Node\Expr\Array_|null */
+            public ?\PhpParser\Node\Expr\Array_ $returnArray = null;
 
             public function enterNode(Node $node)
             {
@@ -400,7 +401,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     {
         $visitor = new class extends NodeVisitorAbstract
         {
-            public $returnInfo = [];
+            /** @var array<string, mixed> */
+            public array $returnInfo = [];
 
             public function enterNode(Node $node)
             {

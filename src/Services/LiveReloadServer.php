@@ -9,13 +9,13 @@ use Workerman\Worker;
 
 class LiveReloadServer
 {
-    protected static $clients;
+    protected static ?\SplObjectStorage $clients = null;
 
-    protected $httpWorker;
+    protected ?Worker $httpWorker = null;
 
-    protected $wsWorker;
+    protected ?Worker $wsWorker = null;
 
-    protected static $instance;
+    protected static ?self $instance = null;
 
     public function __construct()
     {

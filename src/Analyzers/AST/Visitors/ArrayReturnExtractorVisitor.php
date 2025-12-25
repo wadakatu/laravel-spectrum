@@ -32,12 +32,13 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         $result = [];
 
         foreach ($array->items as $item) {
+            if ($item === null || $item->key === null) {
+                continue;
+            }
+
             $key = $this->evaluateExpression($item->key);
             $value = $this->evaluateExpression($item->value);
-
-            if ($key !== null) {
-                $result[$key] = $value;
-            }
+            $result[$key] = $value;
         }
 
         return $result;

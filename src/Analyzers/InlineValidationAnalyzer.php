@@ -43,7 +43,8 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
 
             $visitor = new class extends NodeVisitorAbstract
             {
-                public $validations = [];
+                /** @var array<string, mixed> */
+                public array $validations = [];
 
                 public function enterNode(Node $node)
                 {
@@ -256,7 +257,8 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
 
                     $visitor = new class extends NodeVisitorAbstract
                     {
-                        public $returnedArray = [];
+                        /** @var array<string, mixed> */
+                        public array $returnedArray = [];
 
                         public function enterNode(Node $node): ?int
                         {
