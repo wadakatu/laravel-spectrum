@@ -469,7 +469,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
         $rules = [];
 
         foreach ($array->items as $item) {
-            if (! $item || ! isset($item->key)) {
+            if ($item === null || $item->key === null) {
                 continue;
             }
 
