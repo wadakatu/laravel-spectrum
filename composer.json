@@ -37,11 +37,12 @@
         "workerman/workerman": "^5.1"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0|^10.0",
-        "phpunit/phpunit": "^10.0|^11.0|^12.0",
+        "cebe/php-openapi": "^1.8",
+        "fakerphp/faker": "^1.23",
         "laravel/pint": "^1.23",
+        "orchestra/testbench": "^9.0|^10.0",
         "phpstan/phpstan": "^2.1",
-        "fakerphp/faker": "^1.23"
+        "phpunit/phpunit": "^10.0|^11.0|^12.0"
     },
     "autoload": {
         "psr-4": {
