@@ -197,6 +197,13 @@ class GenerateDocsCommand extends Command
 
             if (is_array($value)) {
                 $yaml .= "\n".$this->arrayToYaml($value, $indent + 1);
+            } elseif (is_object($value)) {
+                // オブジェクトを配列に変換して再帰処理
+                $yaml .= "\n".$this->arrayToYaml((array) $value, $indent + 1);
+            } elseif (is_bool($value)) {
+                $yaml .= ($value ? 'true' : 'false')."\n";
+            } elseif ($value === null) {
+                $yaml .= "null\n";
             } else {
                 $yaml .= $value."\n";
             }
