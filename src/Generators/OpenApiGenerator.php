@@ -18,9 +18,11 @@ use LaravelSpectrum\Support\PaginationDetector;
 class OpenApiGenerator
 {
     /**
-     * Cached example for the last analyzed resource.
+     * Cached examples per resource schema name.
+     *
+     * @var array<string, mixed>
      */
-    private mixed $lastResourceExample = null;
+    private array $resourceExamples = [];
 
     public function __construct(
         protected ControllerAnalyzer $controllerAnalyzer,
@@ -54,8 +56,9 @@ class OpenApiGenerator
      */
     public function generate(array $routes): array
     {
-        // Clear schema registry for fresh generation
+        // Clear schema registry and examples for fresh generation
         $this->schemaRegistry->clear();
+        $this->resourceExamples = [];
 
         // Load custom authentication schemes
         $this->authenticationAnalyzer->loadCustomSchemes();
@@ -311,14 +314,23 @@ class OpenApiGenerator
                         $resourceClass
                     );
 
-                    // Store example for later use
-                    $this->lastResourceExample = $example;
+                    // Store example per schema name
+                    $this->resourceExamples[$schemaName] = $example;
                 }
             }
 
-            // Get $ref for the schema
+            // Only use $ref if schema was actually registered
+            if (! $this->schemaRegistry->has($schemaName)) {
+                // Schema could not be registered, skip resource response
+                return [
+                    'code' => $statusCode,
+                    'response' => $response,
+                ];
+            }
+
+            // Get $ref for the schema and retrieve corresponding example
             $schemaRef = $this->schemaRegistry->getRef($schemaName);
-            $example = $this->lastResourceExample ?? null;
+            $example = $this->resourceExamples[$schemaName] ?? null;
 
             if (! empty($controllerInfo['pagination'])) {
                 $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
