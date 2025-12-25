@@ -129,7 +129,7 @@ class ResponseGenerator
         return $response;
     }
 
-    private function processExample($example, array $pathParams): array
+    private function processExample(mixed $example, array $pathParams): array
     {
         // パスパラメータの置換
         $json = json_encode($example);

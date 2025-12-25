@@ -207,7 +207,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * ノードから値を取得
      */
-    protected function getNodeValue(Node $node)
+    protected function getNodeValue(Node $node): string|int|null
     {
         if ($node instanceof Node\Scalar\String_) {
             return $node->value;
@@ -247,7 +247,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * プロパティ名から例を生成
      */
-    protected function generateExampleFromNode(string $key, Node $node)
+    protected function generateExampleFromNode(string $key, Node $node): mixed
     {
         $type = $this->typeInferenceEngine->inferTypeString($node);
 

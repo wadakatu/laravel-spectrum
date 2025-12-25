@@ -79,7 +79,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         }
     }
 
-    private function analyzeReturnStatement($returnStmt, string $controllerClass): array
+    private function analyzeReturnStatement(Node\Stmt\Return_ $returnStmt, string $controllerClass): array
     {
         $expr = $returnStmt->expr;
 
@@ -115,7 +115,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         return ['type' => 'unknown'];
     }
 
-    private function isResponseJson($expr): bool
+    private function isResponseJson(Node\Expr $expr): bool
     {
         return $expr instanceof Node\Expr\MethodCall
             && $expr->var instanceof Node\Expr\FuncCall
@@ -125,9 +125,13 @@ class ResponseAnalyzer implements MethodAnalyzer
             && $expr->name->toString() === 'json';
     }
 
-    private function analyzeResponseJson($expr): array
+    private function analyzeResponseJson(Node\Expr $expr): array
     {
         // response()->json()の引数を解析
+        if (! $expr instanceof Node\Expr\MethodCall) {
+            return ['type' => 'object', 'properties' => []];
+        }
+
         $args = $expr->args[0] ?? null;
         if (! $args) {
             return ['type' => 'object', 'properties' => []];
@@ -140,12 +144,12 @@ class ResponseAnalyzer implements MethodAnalyzer
         ];
     }
 
-    private function isArrayReturn($expr): bool
+    private function isArrayReturn(Node\Expr $expr): bool
     {
         return $expr instanceof Node\Expr\Array_;
     }
 
-    private function analyzeArrayReturn($expr): array
+    private function analyzeArrayReturn(Node\Expr $expr): array
     {
         return [
             'type' => 'object',
@@ -153,7 +157,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         ];
     }
 
-    private function extractArrayStructure($node): array
+    private function extractArrayStructure(Node $node): array
     {
         $structure = [];
 
@@ -171,7 +175,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         return $structure;
     }
 
-    private function getNodeValue($node)
+    private function getNodeValue(Node $node): ?string
     {
         if ($node instanceof Node\Scalar\String_) {
             return $node->value;
@@ -183,7 +187,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         return null;
     }
 
-    private function isEloquentModel($expr, string $controllerClass): bool
+    private function isEloquentModel(Node\Expr $expr, string $controllerClass): bool
     {
         // User::find(), User::findOrFail()などのパターン
         if ($expr instanceof Node\Expr\StaticCall
@@ -197,7 +201,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         return false;
     }
 
-    private function analyzeEloquentModel($expr, string $controllerClass): array
+    private function analyzeEloquentModel(Node\Expr $expr, string $controllerClass): array
     {
         if ($expr instanceof Node\Expr\StaticCall && $expr->class instanceof Node\Name) {
             $modelClass = $expr->class->toString();
@@ -219,7 +223,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         return ['type' => 'object'];
     }
 
-    private function isCollection($expr): bool
+    private function isCollection(Node\Expr $expr): bool
     {
         // User::all(), User::get()などのパターン
         if ($expr instanceof Node\Expr\StaticCall
@@ -240,12 +244,12 @@ class ResponseAnalyzer implements MethodAnalyzer
         return false;
     }
 
-    private function analyzeCollection($expr, string $controllerClass): array
+    private function analyzeCollection(Node\Expr $expr, string $controllerClass): array
     {
         return $this->collectionAnalyzer->analyzeCollectionChain($expr);
     }
 
-    private function isResource($expr): bool
+    private function isResource(Node\Expr $expr): bool
     {
         // new UserResource(), UserResource::collection()などのパターン
         if ($expr instanceof Node\Expr\New_
@@ -267,7 +271,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         return false;
     }
 
-    private function extractResourceClass($expr): string
+    private function extractResourceClass(Node\Expr $expr): string
     {
         if ($expr instanceof Node\Expr\New_ && $expr->class instanceof Node\Name) {
             return $expr->class->toString();

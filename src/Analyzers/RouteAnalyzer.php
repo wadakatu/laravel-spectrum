@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Analyzers;
 
-use Illuminate\Support\Facades\Route;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Str;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\HasErrors;
@@ -58,8 +59,8 @@ class RouteAnalyzer implements HasErrors
             $this->loadRouteFiles();
 
             // 成功したら新しいルートコレクションを使用
-            Route::getRoutes()->refreshNameLookups();
-            Route::getRoutes()->refreshActionLookups();
+            RouteFacade::getRoutes()->refreshNameLookups();
+            RouteFacade::getRoutes()->refreshActionLookups();
         } catch (\Throwable $e) {
             // エラーが発生した場合は元のルートコレクションに戻す
             $router->setRoutes($oldRoutes);
@@ -81,8 +82,8 @@ class RouteAnalyzer implements HasErrors
     protected function loadRouteFiles(): void
     {
         // ルートファイルを読み込む前に、既存のルート定義をクリア
-        Route::getRoutes()->refreshNameLookups();
-        Route::getRoutes()->refreshActionLookups();
+        RouteFacade::getRoutes()->refreshNameLookups();
+        RouteFacade::getRoutes()->refreshActionLookups();
 
         // ルートファイルのパスを収集
         $routeFiles = [];
@@ -139,7 +140,7 @@ class RouteAnalyzer implements HasErrors
         // Artisanコマンド実行時にAPIルートファイルが読み込まれていない場合があるため、
         // 必要に応じてルートファイルを明示的に読み込む
         // ただし、テスト環境やすでにルートが存在する場合はスキップ
-        $currentRoutes = Route::getRoutes();
+        $currentRoutes = RouteFacade::getRoutes();
         $hasRoutes = false;
         foreach ($currentRoutes as $route) {
             if ($this->isApiRoute($route)) {
@@ -155,7 +156,7 @@ class RouteAnalyzer implements HasErrors
 
         $routes = [];
 
-        foreach (Route::getRoutes() as $route) {
+        foreach (RouteFacade::getRoutes() as $route) {
             try {
                 // APIルートのみを対象とする
                 if (! $this->isApiRoute($route)) {
@@ -206,7 +207,7 @@ class RouteAnalyzer implements HasErrors
     /**
      * APIルートかどうかを判定
      */
-    protected function isApiRoute($route): bool
+    protected function isApiRoute(Route $route): bool
     {
         $uri = $route->uri();
         $configPatterns = config('spectrum.route_patterns', ['api/*']);
@@ -223,7 +224,7 @@ class RouteAnalyzer implements HasErrors
     /**
      * ルートパラメータを抽出
      */
-    protected function extractRouteParameters($route): array
+    protected function extractRouteParameters(Route $route): array
     {
         preg_match_all('/\{([^}]+)\}/', $route->uri(), $matches);
 
@@ -248,7 +249,7 @@ class RouteAnalyzer implements HasErrors
     /**
      * ミドルウェアを抽出
      */
-    protected function extractMiddleware($route): array
+    protected function extractMiddleware(Route $route): array
     {
         return array_values(array_diff(
             $route->gatherMiddleware(),

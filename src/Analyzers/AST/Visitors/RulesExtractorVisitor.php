@@ -149,7 +149,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * 値を評価
      */
-    private function evaluateValue(Node $expr)
+    private function evaluateValue(Node $expr): mixed
     {
         // 文字列リテラル
         if ($expr instanceof Node\Scalar\String_) {
@@ -205,7 +205,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * 静的メソッド呼び出しを評価
      */
-    private function evaluateStaticCall(Node\Expr\StaticCall $call)
+    private function evaluateStaticCall(Node\Expr\StaticCall $call): mixed
     {
         // Ruleクラスのメソッドを解析
         if ($call->class instanceof Node\Name) {
@@ -328,7 +328,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * Rule::enum() を評価
      */
-    private function evaluateEnumRule(Node\Expr\StaticCall $call)
+    private function evaluateEnumRule(Node\Expr\StaticCall $call): mixed
     {
         // Rule::enum(StatusEnum::class) のような呼び出し
         if (isset($call->args[0]) && $call->args[0]->value instanceof Node\Expr\ClassConstFetch) {
@@ -349,7 +349,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * new式を評価
      */
-    private function evaluateNewExpression(Node\Expr\New_ $new)
+    private function evaluateNewExpression(Node\Expr\New_ $new): mixed
     {
         // new Enum(StatusEnum::class) のような呼び出し
         if ($new->class instanceof Node\Name) {
@@ -378,7 +378,7 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * メソッドチェーンを評価 (例: Rule::unique('users')->ignore(1))
      */
-    private function evaluateMethodCall(Node\Expr\MethodCall $call)
+    private function evaluateMethodCall(Node\Expr\MethodCall $call): mixed
     {
         // Rule::unique()->ignore() のようなチェーンを処理
         if ($call->var instanceof Node\Expr\StaticCall) {
