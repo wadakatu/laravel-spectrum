@@ -48,16 +48,16 @@ jobs:
         run: composer show -D
 
       - name: Execute tests (with coverage)
-        if: matrix.php == '8.4' && matrix.laravel == '12.*'
+        if: matrix.php == '8.2' && matrix.laravel == '12.*'
         run: php -d memory_limit=-1 vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Execute tests (without coverage)
-        if: matrix.php != '8.4' || matrix.laravel != '12.*'
+        if: matrix.php != '8.2' || matrix.laravel != '12.*'
         run: vendor/bin/phpunit
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
-        if: matrix.php == '8.4' && matrix.laravel == '12.*'
+        if: matrix.php == '8.2' && matrix.laravel == '12.*'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
