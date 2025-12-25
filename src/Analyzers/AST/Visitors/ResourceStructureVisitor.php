@@ -6,6 +6,15 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter;
 
+/**
+ * Laravel API Resource の toArray() メソッドから構造情報を抽出するASTビジター
+ *
+ * JsonResource クラスの toArray() メソッドの返り値配列を解析し、
+ * OpenAPI スキーマ生成に必要なプロパティ情報、条件付きフィールド、
+ * ネストされたリソースクラスを抽出する。
+ *
+ * @see \LaravelSpectrum\Analyzers\ResourceAnalyzer
+ */
 class ResourceStructureVisitor extends NodeVisitorAbstract
 {
     private array $structure = [];
@@ -374,6 +383,11 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
      */
     private function analyzeNullsafePropertyFetch(Node\Expr\NullsafePropertyFetch $expr): array
     {
+        // 動的プロパティ名（$this->obj?->$dynamicProperty）は静的解析不可
+        if (! ($expr->name instanceof Node\Identifier)) {
+            return ['type' => 'mixed', 'nullable' => true];
+        }
+
         $propertyName = $expr->name->toString();
 
         // $this->property?->value パターン (Enum)
@@ -406,6 +420,11 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
      */
     private function analyzeNullsafeMethodCall(Node\Expr\NullsafeMethodCall $call): array
     {
+        // 動的メソッド名（$this->obj?->$dynamicMethod()）は静的解析不可
+        if (! ($call->name instanceof Node\Identifier)) {
+            return ['type' => 'mixed', 'nullable' => true];
+        }
+
         $methodName = $call->name->toString();
 
         // 日付フォーマットメソッド
@@ -452,12 +471,25 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
      * 日付フォーマットメソッドかどうかを判定
      *
      * Carbon の日付フォーマットメソッドはパターンで判定:
-     * - format() - 汎用フォーマット
+     * - format(), isoFormat(), translatedFormat() - 汎用フォーマット
+     * - diffForHumans(), ago() - 人間可読形式
      * - to*String() - 各種フォーマットへの変換 (toDateTimeString, toIso8601String 等)
      */
     private function isDateFormattingMethod(string $methodName): bool
     {
-        if ($methodName === 'format') {
+        // 明示的な日付フォーマットメソッド
+        $dateFormattingMethods = [
+            'format',
+            'isoFormat',
+            'translatedFormat',
+            'diffForHumans',
+            'ago',
+            'calendar',
+            'longAbsoluteDiffForHumans',
+            'shortAbsoluteDiffForHumans',
+        ];
+
+        if (in_array($methodName, $dateFormattingMethods, true)) {
             return true;
         }
 
@@ -644,6 +676,15 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         return $examples[$property] ?? null;
     }
 
+    /**
+     * 解析結果の構造を取得
+     *
+     * @return array{
+     *     properties: array<string, array<string, mixed>>,
+     *     conditionalFields: list<string>,
+     *     nestedResources: list<string>
+     * }
+     */
     public function getStructure(): array
     {
         return [
