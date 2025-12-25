@@ -24,7 +24,7 @@ class ValidationMessageGenerator
     /**
      * フィールドごとのエラーメッセージを生成
      */
-    protected function generateFieldMessages(string $field, $rules, array $customMessages): array
+    protected function generateFieldMessages(string $field, string|array $rules, array $customMessages): array
     {
         $messages = [];
 
@@ -99,7 +99,7 @@ class ValidationMessageGenerator
     /**
      * フィールドごとのサンプルメッセージを1つ生成（OpenAPIの例として使用）
      */
-    public function generateSampleMessage(string $field, $rules): string
+    public function generateSampleMessage(string $field, string|array $rules): string
     {
         $messages = $this->generateFieldMessages($field, $rules, []);
 

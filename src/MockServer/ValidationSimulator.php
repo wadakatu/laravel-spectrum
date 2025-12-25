@@ -76,7 +76,7 @@ class ValidationSimulator
         return $errors;
     }
 
-    private function validateField(string $field, $value, array $spec): array
+    private function validateField(string $field, string|int|float|bool|array|null $value, array $spec): array
     {
         $errors = [];
 

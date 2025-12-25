@@ -505,7 +505,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * Evaluate rule value with Rule class support
      */
-    private function evaluateRuleValue(Node\Expr $expr)
+    private function evaluateRuleValue(Node\Expr $expr): string|array
     {
         // String rules
         if ($expr instanceof Node\Scalar\String_) {

@@ -79,7 +79,7 @@ class ResponseStructureVisitor extends NodeVisitorAbstract
         $this->structure['array_structures'][] = $arrayStructure;
     }
 
-    private function extractValue($node)
+    private function extractValue(Node $node): string|int|float|null
     {
         if ($node instanceof Node\Scalar\String_) {
             return $node->value;
