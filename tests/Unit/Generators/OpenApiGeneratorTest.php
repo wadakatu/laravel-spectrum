@@ -1073,6 +1073,176 @@ class OpenApiGeneratorTest extends TestCase
         );
     }
 
+    #[Test]
+    public function it_collects_tags_from_multiple_operations_and_deduplicates(): void
+    {
+        // Reset tagGroupGenerator mock for this test
+        $this->tagGroupGenerator = Mockery::mock(TagGroupGenerator::class);
+
+        // Expect generateTagDefinitions to receive sorted unique tags
+        $this->tagGroupGenerator->shouldReceive('generateTagDefinitions')
+            ->once()
+            ->with(['Posts', 'Users'])
+            ->andReturn([
+                ['name' => 'Posts'],
+                ['name' => 'Users'],
+            ]);
+        $this->tagGroupGenerator->shouldReceive('generateTagGroups')->andReturn([]);
+
+        // Recreate generator with updated mock
+        $this->generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $this->openApi31Converter,
+            $this->schemaRegistry
+        );
+
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'index',
+                'middleware' => [],
+            ],
+            [
+                'uri' => 'api/posts',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\PostController',
+                'method' => 'index',
+                'middleware' => [],
+            ],
+            [
+                'uri' => 'api/users/{user}',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'show',
+                'middleware' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->andReturnUsing(fn ($uri) => '/'.$uri);
+        $this->metadataGenerator->shouldReceive('generateSummary')->andReturn('Summary');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->andReturn('operationId');
+
+        // Return different tags including duplicates
+        $this->tagGenerator->shouldReceive('generate')
+            ->andReturnUsing(function ($route) {
+                if (str_contains($route['uri'], 'users')) {
+                    return ['Users'];
+                }
+
+                return ['Posts'];
+            });
+
+        $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify tags section contains sorted unique tags
+        $this->assertArrayHasKey('tags', $result);
+        $this->assertCount(2, $result['tags']);
+        $this->assertEquals('Posts', $result['tags'][0]['name']);
+        $this->assertEquals('Users', $result['tags'][1]['name']);
+    }
+
+    #[Test]
+    public function it_handles_operations_without_tags(): void
+    {
+        // Reset tagGroupGenerator mock for this test
+        $this->tagGroupGenerator = Mockery::mock(TagGroupGenerator::class);
+
+        // Only one tag should be collected
+        $this->tagGroupGenerator->shouldReceive('generateTagDefinitions')
+            ->once()
+            ->with(['Users'])
+            ->andReturn([['name' => 'Users']]);
+        $this->tagGroupGenerator->shouldReceive('generateTagGroups')->andReturn([]);
+
+        // Recreate generator with updated mock
+        $this->generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $this->openApi31Converter,
+            $this->schemaRegistry
+        );
+
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'index',
+                'middleware' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->andReturnUsing(fn ($uri) => '/'.$uri);
+        $this->metadataGenerator->shouldReceive('generateSummary')->andReturn('Summary');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->andReturn('operationId');
+
+        $this->tagGenerator->shouldReceive('generate')->andReturn(['Users']);
+
+        $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
+
+        $result = $this->generator->generate($routes);
+
+        // Verify tags section
+        $this->assertArrayHasKey('tags', $result);
+        $this->assertCount(1, $result['tags']);
+        $this->assertEquals('Users', $result['tags'][0]['name']);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
