@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
  * Tests to ensure generated OpenAPI specifications are valid.
  *
  * These tests validate that the OpenAPI generator produces specs that:
- * - Conform to the OpenAPI 3.0/3.1 specification
+ * - Conform to the OpenAPI 3.0.x/3.1.x specification (via devizzent/cebe-php-openapi)
  * - Have all required elements
  * - Have valid structure for paths, operations, and schemas
  */
@@ -157,9 +157,8 @@ class OpenApiSpecValidationTest extends TestCase
 
         $openapi = $this->generateOpenApi();
 
-        // Note: cebe/php-openapi validate() doesn't support 3.1.0 yet
-        // So we just check the structure is correct
-        $this->assertOpenApiHasRequiredElements($openapi);
+        // devizzent/cebe-php-openapi supports OpenAPI 3.1.x validation
+        $this->assertValidOpenApiSpec($openapi);
         $this->assertEquals('3.1.0', $openapi['openapi']);
     }
 

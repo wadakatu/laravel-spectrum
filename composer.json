@@ -37,7 +37,7 @@
         "workerman/workerman": "^5.1"
     },
     "require-dev": {
-        "cebe/php-openapi": "^1.8",
+        "devizzent/cebe-php-openapi": "^1.1",
         "fakerphp/faker": "^1.23",
         "laravel/pint": "^1.23",
         "orchestra/testbench": "^9.0|^10.0",

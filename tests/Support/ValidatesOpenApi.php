@@ -10,7 +10,8 @@ use PHPUnit\Framework\Assert;
  * Trait for validating OpenAPI specifications in tests.
  *
  * This trait provides methods to validate that generated OpenAPI specs
- * are structurally correct and conform to the OpenAPI 3.0/3.1 specification.
+ * are structurally correct and conform to the OpenAPI 3.0.x/3.1.x specification.
+ * Uses devizzent/cebe-php-openapi for validation.
  */
 trait ValidatesOpenApi
 {
