@@ -217,7 +217,7 @@ class OpenApiValidationTest extends TestCase
     {
         $spec = $this->parseOpenApiSpec();
 
-        // The demo app uses sanctum authentication
+        // Validate security schemes if configured
         if (isset($spec->components) && isset($spec->components->securitySchemes)) {
             foreach ($spec->components->securitySchemes as $name => $scheme) {
                 $this->assertNotEmpty(
@@ -228,8 +228,32 @@ class OpenApiValidationTest extends TestCase
         }
     }
 
+    public function test_public_auth_routes_do_not_require_authentication(): void
+    {
+        $spec = $this->parseOpenApiSpec();
+
+        // Public auth routes should not require authentication
+        $publicPaths = ['/api/auth/login', '/api/auth/register'];
+
+        foreach ($spec->paths as $path => $pathItem) {
+            if (in_array($path, $publicPaths)) {
+                if (isset($pathItem->post)) {
+                    $security = $pathItem->post->security;
+
+                    // Security should be empty array (explicitly no auth) or not set
+                    $this->assertTrue(
+                        $security === null || $security === [],
+                        "Public route {$path} should not require authentication"
+                    );
+                }
+            }
+        }
+    }
+
     /**
      * Parse the generated OpenAPI spec.
+     *
+     * @pre spectrum:generate command has been executed (done in setUp)
      */
     private function parseOpenApiSpec(): OpenApi
     {

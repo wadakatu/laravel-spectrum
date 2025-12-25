@@ -251,6 +251,75 @@ class SpectrumGenerateCommandTest extends TestCase
         $this->assertFileExists($this->outputPath.'/openapi.json');
     }
 
+    public function test_generated_spec_includes_query_parameters(): void
+    {
+        Artisan::call('spectrum:generate');
+
+        $spec = $this->getGeneratedSpec();
+
+        // Find search/filter endpoints that should have query parameters
+        $searchPaths = ['/api/products/search', '/api/products/filter'];
+        $hasQueryParams = false;
+
+        foreach ($spec['paths'] as $path => $operations) {
+            if (in_array($path, $searchPaths) && isset($operations['get'])) {
+                $operation = $operations['get'];
+
+                if (isset($operation['parameters'])) {
+                    $queryParams = array_filter(
+                        $operation['parameters'],
+                        fn ($p) => $p['in'] === 'query'
+                    );
+
+                    if (! empty($queryParams)) {
+                        $hasQueryParams = true;
+
+                        // Verify query parameters have required fields
+                        foreach ($queryParams as $param) {
+                            $this->assertArrayHasKey('name', $param);
+                            $this->assertArrayHasKey('schema', $param);
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->assertTrue($hasQueryParams, 'Search/filter endpoints should have query parameters');
+    }
+
+    public function test_file_upload_routes_use_multipart_form_data(): void
+    {
+        Artisan::call('spectrum:generate');
+
+        $spec = $this->getGeneratedSpec();
+
+        // File upload endpoints that should use multipart/form-data
+        $uploadPaths = [
+            '/api/uploads/profile',
+            '/api/uploads/images',
+            '/api/uploads/gallery',
+            '/api/uploads/documents',
+        ];
+
+        $hasMultipartEndpoint = false;
+
+        foreach ($spec['paths'] as $path => $operations) {
+            if (in_array($path, $uploadPaths) && isset($operations['post'])) {
+                $requestBody = $operations['post']['requestBody'] ?? null;
+
+                if ($requestBody && isset($requestBody['content']['multipart/form-data'])) {
+                    $hasMultipartEndpoint = true;
+                    break;
+                }
+            }
+        }
+
+        $this->assertTrue(
+            $hasMultipartEndpoint,
+            'File upload endpoints should use multipart/form-data content type'
+        );
+    }
+
     /**
      * Get the generated OpenAPI spec as an array.
      *
