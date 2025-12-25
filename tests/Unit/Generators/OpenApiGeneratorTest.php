@@ -1074,6 +1074,141 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_401_response_for_routes_with_auth_middleware(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'index',
+                'middleware' => ['auth:sanctum'],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->andReturnUsing(fn ($uri) => '/'.$uri);
+        $this->metadataGenerator->shouldReceive('generateSummary')->andReturn('Summary');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->andReturn('operationId');
+
+        $this->tagGenerator->shouldReceive('generate')->andReturn(['Users']);
+
+        $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
+        // Verify that getDefaultErrorResponses is called with requiresAuth=true
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')
+            ->once()
+            ->with('get', true, false)
+            ->andReturn([
+                '401' => ['description' => 'Unauthorized'],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateErrorExample')
+            ->with(401)
+            ->andReturn(['message' => 'Unauthenticated']);
+
+        $result = $this->generator->generate($routes);
+
+        $this->assertArrayHasKey('401', $result['paths']['/api/users']['get']['responses']);
+    }
+
+    #[Test]
+    public function it_excludes_401_response_for_routes_without_auth_middleware(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/public',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\PublicController',
+                'method' => 'index',
+                'middleware' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->andReturnUsing(fn ($uri) => '/'.$uri);
+        $this->metadataGenerator->shouldReceive('generateSummary')->andReturn('Summary');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->andReturn('operationId');
+
+        $this->tagGenerator->shouldReceive('generate')->andReturn(['Public']);
+
+        $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
+        // Verify that getDefaultErrorResponses is called with requiresAuth=false
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')
+            ->once()
+            ->with('get', false, false)
+            ->andReturn([]);
+
+        $result = $this->generator->generate($routes);
+
+        $this->assertArrayNotHasKey('401', $result['paths']['/api/public']['get']['responses']);
+    }
+
+    #[Test]
+    public function it_detects_auth_with_guard_colon_prefix(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'index',
+                'middleware' => ['auth:api'],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->andReturnUsing(fn ($uri) => '/'.$uri);
+        $this->metadataGenerator->shouldReceive('generateSummary')->andReturn('Summary');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->andReturn('operationId');
+
+        $this->tagGenerator->shouldReceive('generate')->andReturn(['Users']);
+
+        $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
+        // auth:api should be detected as requiring auth
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')
+            ->once()
+            ->with('get', true, false)
+            ->andReturn([
+                '401' => ['description' => 'Unauthorized'],
+            ]);
+
+        $this->exampleGenerator->shouldReceive('generateErrorExample')
+            ->with(401)
+            ->andReturn(['message' => 'Unauthenticated']);
+
+        $result = $this->generator->generate($routes);
+
+        $this->assertArrayHasKey('401', $result['paths']['/api/users']['get']['responses']);
+    }
+
+    #[Test]
     public function it_collects_tags_from_multiple_operations_and_deduplicates(): void
     {
         // Reset tagGroupGenerator mock for this test
