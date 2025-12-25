@@ -335,4 +335,102 @@ class DependencyResource {
         });
         $this->assertEquals(0, $callCount); // キャッシュから取得
     }
+
+    #[Test]
+    public function it_invalidates_cache_with_different_version()
+    {
+        $cacheDir = config('spectrum.cache.directory', storage_path('app/spectrum/cache'));
+        $cacheFile = $cacheDir.'/'.sha1('version_test_key').'.cache';
+
+        // 古いバージョンのキャッシュを手動で作成（バージョン0）
+        File::ensureDirectoryExists($cacheDir);
+        $oldCacheData = [
+            'version' => 0, // 古いバージョン
+            'metadata' => [
+                'key' => 'version_test_key',
+                'created_at' => now()->toIso8601String(),
+                'dependencies' => [],
+            ],
+            'data' => ['old' => 'data'],
+        ];
+        File::put($cacheFile, serialize($oldCacheData));
+
+        $callCount = 0;
+
+        // 古いバージョンのキャッシュは無視され、コールバックが実行される
+        $result = $this->cache->remember('version_test_key', function () use (&$callCount) {
+            $callCount++;
+
+            return ['new' => 'data'];
+        });
+
+        $this->assertEquals(['new' => 'data'], $result);
+        $this->assertEquals(1, $callCount);
+    }
+
+    #[Test]
+    public function it_invalidates_cache_without_version()
+    {
+        $cacheDir = config('spectrum.cache.directory', storage_path('app/spectrum/cache'));
+        $cacheFile = $cacheDir.'/'.sha1('no_version_key').'.cache';
+
+        // バージョンなしのキャッシュを手動で作成（以前の形式）
+        File::ensureDirectoryExists($cacheDir);
+        $oldCacheData = [
+            // 'version' なし（以前の形式）
+            'metadata' => [
+                'key' => 'no_version_key',
+                'created_at' => now()->toIso8601String(),
+                'dependencies' => [],
+            ],
+            'data' => ['legacy' => 'data'],
+        ];
+        File::put($cacheFile, serialize($oldCacheData));
+
+        $callCount = 0;
+
+        // バージョンなしのキャッシュは無視され、コールバックが実行される
+        $result = $this->cache->remember('no_version_key', function () use (&$callCount) {
+            $callCount++;
+
+            return ['new' => 'data'];
+        });
+
+        $this->assertEquals(['new' => 'data'], $result);
+        $this->assertEquals(1, $callCount);
+
+        // 新しいキャッシュには正しいバージョンが含まれることを確認
+        $newCacheData = unserialize(File::get($cacheFile));
+        $this->assertArrayHasKey('version', $newCacheData);
+        $this->assertGreaterThanOrEqual(1, $newCacheData['version']);
+    }
+
+    #[Test]
+    public function it_includes_cache_version_in_stats()
+    {
+        $stats = $this->cache->getStats();
+
+        $this->assertArrayHasKey('cache_version', $stats);
+        $this->assertIsInt($stats['cache_version']);
+        $this->assertGreaterThanOrEqual(1, $stats['cache_version']);
+    }
+
+    #[Test]
+    public function it_preserves_cache_with_correct_version()
+    {
+        // キャッシュにデータを保存
+        $this->cache->remember('version_correct_key', fn () => ['data' => 'original']);
+
+        $callCount = 0;
+
+        // 同じバージョンのキャッシュは有効
+        $result = $this->cache->remember('version_correct_key', function () use (&$callCount) {
+            $callCount++;
+
+            return ['data' => 'new'];
+        });
+
+        $this->assertEquals(['data' => 'original'], $result);
+        $this->assertEquals(0, $callCount); // コールバックは呼ばれない
+    }
 }

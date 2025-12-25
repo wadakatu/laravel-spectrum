@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Cache;
 
 use Illuminate\Support\Facades\File;
@@ -7,6 +9,12 @@ use Illuminate\Support\Facades\Log;
 
 class DocumentationCache
 {
+    /**
+     * Cache format version.
+     * Increment this when the cache data structure changes.
+     */
+    private const CACHE_VERSION = 1;
+
     private string $cacheDir;
 
     private bool $enabled;
@@ -169,6 +177,7 @@ class DocumentationCache
         }
 
         $cacheData = [
+            'version' => self::CACHE_VERSION,
             'metadata' => $metadata,
             'data' => $data,
         ];
@@ -189,6 +198,13 @@ class DocumentationCache
 
         try {
             $cacheData = unserialize(File::get($cacheFile));
+
+            // バージョンが異なる場合は古いキャッシュとして削除
+            if (($cacheData['version'] ?? 0) !== self::CACHE_VERSION) {
+                File::delete($cacheFile);
+
+                return null;
+            }
 
             return $cacheData['data'] ?? null;
         } catch (\Exception $e) {
@@ -212,6 +228,11 @@ class DocumentationCache
 
         try {
             $cacheData = unserialize(File::get($cacheFile));
+
+            // バージョンが異なる場合はnullを返す
+            if (($cacheData['version'] ?? 0) !== self::CACHE_VERSION) {
+                return null;
+            }
 
             return $cacheData['metadata'] ?? null;
         } catch (\Exception $e) {
@@ -311,6 +332,7 @@ class DocumentationCache
             return [
                 'enabled' => $this->enabled,
                 'cache_directory' => $this->cacheDir,
+                'cache_version' => self::CACHE_VERSION,
                 'total_files' => 0,
                 'total_size' => 0,
                 'total_size_human' => '0 B',
@@ -340,6 +362,7 @@ class DocumentationCache
         return [
             'enabled' => $this->enabled,
             'cache_directory' => $this->cacheDir,
+            'cache_version' => self::CACHE_VERSION,
             'total_files' => count($files),
             'total_size' => $totalSize,
             'total_size_human' => $this->humanFilesize($totalSize),
