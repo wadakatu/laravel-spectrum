@@ -529,4 +529,348 @@ class SchemaGeneratorTest extends TestCase
 
         $this->assertTrue($schema['properties']['optional_field']['nullable']);
     }
+
+    #[Test]
+    public function it_generates_schema_from_conditional_parameters_with_single_condition(): void
+    {
+        $parameters = [
+            [
+                'name' => 'email',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'User email',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        // Single condition should generate regular schema
+        $this->assertEquals('object', $schema['type']);
+        $this->assertArrayHasKey('properties', $schema);
+        $this->assertArrayHasKey('email', $schema['properties']);
+    }
+
+    #[Test]
+    public function it_generates_oneof_schema_from_conditional_parameters_with_multiple_methods(): void
+    {
+        $parameters = [
+            [
+                'name' => 'email',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'User email',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'POST'],
+                        ],
+                        'rules' => ['required', 'email'],
+                    ],
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'PUT'],
+                        ],
+                        'rules' => ['sometimes', 'email'],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'name',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'User name',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'POST'],
+                        ],
+                        'rules' => ['required', 'string'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        // Multiple HTTP methods should generate oneOf schema
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertCount(2, $schema['oneOf']);
+
+        // Each schema should have a title
+        $this->assertArrayHasKey('title', $schema['oneOf'][0]);
+        $this->assertArrayHasKey('title', $schema['oneOf'][1]);
+    }
+
+    #[Test]
+    public function it_generates_conditional_schema_with_default_method(): void
+    {
+        $parameters = [
+            [
+                'name' => 'field',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'A test field',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [
+                            ['type' => 'other_condition', 'value' => 'test'],
+                        ],
+                        'rules' => ['required', 'string'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        // Without http_method condition, should fall back to DEFAULT
+        $this->assertEquals('object', $schema['type']);
+        $this->assertArrayHasKey('properties', $schema);
+    }
+
+    #[Test]
+    public function it_handles_array_field_notation_with_asterisk(): void
+    {
+        $parameters = [
+            [
+                'name' => 'items.*',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Array items',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Array notation is kept as-is in property names
+        $this->assertArrayHasKey('items.*', $schema['properties']);
+        $this->assertEquals('string', $schema['properties']['items.*']['type']);
+    }
+
+    #[Test]
+    public function it_handles_array_field_with_bracket_notation(): void
+    {
+        $parameters = [
+            [
+                'name' => 'tags[]',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Tag list',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Bracket notation is kept as-is
+        $this->assertArrayHasKey('tags[]', $schema['properties']);
+        $this->assertEquals('string', $schema['properties']['tags[]']['type']);
+    }
+
+    #[Test]
+    public function it_handles_nested_array_field(): void
+    {
+        $parameters = [
+            [
+                'name' => 'users.*.email',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'User emails in array',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Nested array notation is kept as-is
+        $this->assertArrayHasKey('users.*.email', $schema['properties']);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_validation_constraints(): void
+    {
+        $parameters = [
+            [
+                'name' => 'username',
+                'type' => 'string',
+                'required' => true,
+                'validation' => ['required', 'string', 'min:3', 'max:50'],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        $this->assertArrayHasKey('username', $schema['properties']);
+        $this->assertEquals('string', $schema['properties']['username']['type']);
+    }
+
+    #[Test]
+    public function it_handles_empty_parameters_array(): void
+    {
+        $schema = $this->generator->generateFromParameters([]);
+
+        $this->assertEquals('object', $schema['type']);
+        $this->assertEmpty($schema['properties']);
+        $this->assertArrayNotHasKey('required', $schema);
+    }
+
+    #[Test]
+    public function it_generates_fractal_schema_without_pagination(): void
+    {
+        $fractalData = [
+            'type' => 'fractal',
+            'properties' => [
+                'id' => ['type' => 'integer', 'example' => 1],
+            ],
+            'availableIncludes' => [],
+            'defaultIncludes' => [],
+        ];
+
+        $schema = $this->generator->generateFromFractal($fractalData, true, false);
+
+        // Collection without pagination should not have meta
+        $this->assertArrayNotHasKey('meta', $schema['properties']);
+    }
+
+    #[Test]
+    public function it_handles_fractal_with_complex_includes(): void
+    {
+        $fractalData = [
+            'type' => 'fractal',
+            'properties' => [
+                'id' => ['type' => 'integer', 'example' => 1],
+            ],
+            'availableIncludes' => [
+                'comments' => [
+                    'type' => 'array',
+                    'collection' => true,
+                    'properties' => [
+                        'id' => ['type' => 'integer'],
+                        'body' => ['type' => 'string'],
+                    ],
+                ],
+            ],
+            'defaultIncludes' => [],
+        ];
+
+        $schema = $this->generator->generateFromFractal($fractalData);
+
+        $this->assertArrayHasKey('comments', $schema['properties']['data']['properties']);
+        $this->assertEquals('array', $schema['properties']['data']['properties']['comments']['type']);
+    }
+
+    #[Test]
+    public function it_handles_resource_with_nested_objects(): void
+    {
+        $resourceStructure = [
+            'properties' => [
+                'user' => [
+                    'type' => 'object',
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromResource($resourceStructure);
+
+        // generateFromResource only extracts type and example
+        $this->assertEquals('object', $schema['properties']['user']['type']);
+    }
+
+    #[Test]
+    public function it_handles_resource_with_array_type(): void
+    {
+        $resourceStructure = [
+            'properties' => [
+                'items' => [
+                    'type' => 'array',
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromResource($resourceStructure);
+
+        // generateFromResource only extracts type
+        $this->assertEquals('array', $schema['properties']['items']['type']);
+    }
+
+    #[Test]
+    public function it_handles_parameters_with_pattern(): void
+    {
+        $parameters = [
+            [
+                'name' => 'phone',
+                'type' => 'string',
+                'required' => true,
+                'pattern' => '^\\d{3}-\\d{4}-\\d{4}$',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        $this->assertArrayHasKey('pattern', $schema['properties']['phone']);
+        $this->assertEquals('^\\d{3}-\\d{4}-\\d{4}$', $schema['properties']['phone']['pattern']);
+    }
+
+    #[Test]
+    public function it_handles_parameters_with_default_value(): void
+    {
+        $parameters = [
+            [
+                'name' => 'page',
+                'type' => 'integer',
+                'required' => false,
+                'default' => 1,
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        $this->assertArrayHasKey('default', $schema['properties']['page']);
+        $this->assertEquals(1, $schema['properties']['page']['default']);
+    }
+
+    #[Test]
+    public function it_handles_multiple_file_uploads(): void
+    {
+        $parameters = [
+            [
+                'name' => 'documents',
+                'type' => 'file',
+                'required' => true,
+                'description' => 'Multiple documents',
+            ],
+            [
+                'name' => 'images',
+                'type' => 'file',
+                'required' => false,
+                'description' => 'Multiple images',
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $this->assertArrayHasKey('content', $result);
+        $this->assertArrayHasKey('multipart/form-data', $result['content']);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        $this->assertArrayHasKey('documents', $schema['properties']);
+        $this->assertArrayHasKey('images', $schema['properties']);
+    }
+
+    #[Test]
+    public function it_handles_conditional_parameters_without_conditions(): void
+    {
+        $parameters = [
+            [
+                'name' => 'field',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'A test field',
+                'conditional_rules' => [],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        // Empty conditional rules should generate regular schema
+        $this->assertEquals('object', $schema['type']);
+    }
 }

@@ -205,6 +205,123 @@ class MethodSourceExtractorTest extends TestCase
         $this->assertStringNotContainsString('public function methodWithTypedParam', $body);
         $this->assertStringContainsString('return $object', $body);
     }
+
+    public function test_extract_source_handles_abstract_method(): void
+    {
+        $method = new ReflectionMethod(AbstractSampleClass::class, 'abstractMethod');
+
+        $source = $this->extractor->extractSource($method);
+
+        // Abstract methods still have source
+        $this->assertStringContainsString('abstract', $source);
+        $this->assertStringContainsString('abstractMethod', $source);
+    }
+
+    public function test_extract_body_handles_abstract_method(): void
+    {
+        $method = new ReflectionMethod(AbstractSampleClass::class, 'abstractMethod');
+
+        $body = $this->extractor->extractBody($method);
+
+        // Abstract methods don't have bodies, so regex might fail - expect full source fallback
+        $this->assertIsString($body);
+    }
+
+    public function test_extract_source_handles_final_method(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'finalMethod');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString('final public function finalMethod()', $source);
+        $this->assertStringContainsString("return 'final';", $source);
+    }
+
+    public function test_extract_body_handles_final_method(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'finalMethod');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringNotContainsString('final public function finalMethod()', $body);
+        $this->assertStringContainsString("return 'final';", $body);
+    }
+
+    public function test_extract_source_handles_method_with_intersection_type(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithIntersectionType');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString('methodWithIntersectionType', $source);
+    }
+
+    public function test_extract_body_handles_method_with_intersection_type(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithIntersectionType');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringNotContainsString('function methodWithIntersectionType', $body);
+        $this->assertStringContainsString('return $param', $body);
+    }
+
+    public function test_extract_source_handles_method_with_variadic_params(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithVariadicParams');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString('...$values', $source);
+    }
+
+    public function test_extract_body_handles_method_with_variadic_params(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithVariadicParams');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringContainsString('return array_sum($values)', $body);
+    }
+
+    public function test_extract_source_handles_method_with_mixed_return_type(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithMixedReturn');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString(': mixed', $source);
+    }
+
+    public function test_extract_body_handles_method_with_void_return_and_body(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'methodWithVoidReturn');
+
+        $body = $this->extractor->extractBody($method);
+
+        $this->assertStringContainsString('$result = 1', $body);
+    }
+
+    public function test_extract_source_handles_closure_like_one_liner(): void
+    {
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'oneLinerMethod');
+
+        $source = $this->extractor->extractSource($method);
+
+        $this->assertStringContainsString('oneLinerMethod', $source);
+        $this->assertStringContainsString('return true', $source);
+    }
+
+    public function test_extract_body_returns_full_source_when_regex_fails(): void
+    {
+        // Test with a method that has a complex signature that might cause regex issues
+        $method = new ReflectionMethod(SampleClassForExtraction::class, 'complexSignatureMethod');
+
+        $body = $this->extractor->extractBody($method);
+
+        // Even if regex fails, we should get something back
+        $this->assertNotEmpty($body);
+    }
 }
 
 /**
@@ -271,4 +388,50 @@ class SampleClassForExtraction
     {
         return $object;
     }
+
+    final public function finalMethod(): string
+    {
+        return 'final';
+    }
+
+    public function methodWithIntersectionType(\Countable&\Traversable $param): mixed
+    {
+        return $param;
+    }
+
+    public function methodWithVariadicParams(int ...$values): int
+    {
+        return array_sum($values);
+    }
+
+    public function methodWithMixedReturn(): mixed
+    {
+        return null;
+    }
+
+    public function methodWithVoidReturn(): void
+    {
+        $result = 1 + 1;
+    }
+
+    public function oneLinerMethod(): bool
+    {
+        return true;
+    }
+
+    public function complexSignatureMethod(
+        string $name,
+        ?int $age = null,
+        array $options = []
+    ): array {
+        return compact('name', 'age', 'options');
+    }
+}
+
+/**
+ * Abstract class for testing abstract method extraction.
+ */
+abstract class AbstractSampleClass
+{
+    abstract public function abstractMethod(): void;
 }
