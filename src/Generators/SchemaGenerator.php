@@ -442,8 +442,14 @@ class SchemaGenerator
                 $parts[] = strtolower($condition['method']);
             } elseif ($condition['type'] === 'else') {
                 $parts[] = 'else';
+            } elseif ($condition['type'] === 'user_check' && isset($condition['method'])) {
+                $parts[] = 'user_'.strtolower($condition['method']);
+            } elseif ($condition['type'] === 'request_field') {
+                $field = $condition['field'] ?? 'field';
+                $check = $condition['check'] ?? 'has';
+                $parts[] = 'request_'.strtolower($check).'_'.strtolower($field);
             } else {
-                $parts[] = substr(md5($condition['expression']), 0, 8);
+                $parts[] = substr(md5($condition['expression'] ?? 'unknown'), 0, 8);
             }
         }
 
@@ -643,6 +649,10 @@ class SchemaGenerator
      */
     private function getArrayBaseName(string $name): string
     {
-        return preg_replace('/[\.\[\]]\*?$/', '', $name);
+        // Remove array notations: .*, [*], []
+        $name = preg_replace('/\.\*$/', '', $name);
+        $name = preg_replace('/\[\*?\]$/', '', $name);
+
+        return $name;
     }
 }

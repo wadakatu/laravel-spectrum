@@ -382,4 +382,214 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertContains('name', $schema['required']);
         $this->assertNotContains('secret', $schema['required']);
     }
+
+    #[Test]
+    public function it_returns_empty_array_for_nonexistent_class(): void
+    {
+        $structure = $this->analyzer->analyze('NonExistentClass');
+
+        $this->assertIsArray($structure);
+        $this->assertEmpty($structure);
+    }
+
+    #[Test]
+    public function it_handles_analyze_exception(): void
+    {
+        // Create a cache that throws exception
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberResource')
+            ->willThrowException(new \Exception('Cache error'));
+
+        $astHelper = $this->app->make(\LaravelSpectrum\Analyzers\Support\AstHelper::class);
+        $analyzer = new ResourceAnalyzer($astHelper, $cache);
+
+        $result = $analyzer->analyze(UserResource::class);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_handles_has_examples_interface(): void
+    {
+        $result = $this->analyzer->analyze(\LaravelSpectrum\Tests\Fixtures\Resources\ResourceWithExamples::class);
+
+        $this->assertArrayHasKey('properties', $result);
+        $this->assertArrayHasKey('hasExamples', $result);
+        $this->assertTrue($result['hasExamples']);
+        $this->assertArrayHasKey('customExample', $result);
+        $this->assertArrayHasKey('customExamples', $result);
+        $this->assertEquals(1, $result['customExample']['id']);
+        $this->assertArrayHasKey('default', $result['customExamples']);
+        $this->assertArrayHasKey('admin', $result['customExamples']);
+    }
+
+    #[Test]
+    public function it_detects_resource_collection_by_parent_class(): void
+    {
+        $result = $this->analyzer->analyze(UserCollection::class);
+
+        $this->assertArrayHasKey('isCollection', $result);
+        $this->assertTrue($result['isCollection']);
+    }
+
+    #[Test]
+    public function it_generates_property_schema_with_nested_object(): void
+    {
+        $structure = [
+            'properties' => [
+                'user' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'integer', 'example' => 1],
+                        'name' => ['type' => 'string', 'example' => 'John'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertArrayHasKey('user', $schema['properties']);
+        $this->assertEquals('object', $schema['properties']['user']['type']);
+        $this->assertArrayHasKey('properties', $schema['properties']['user']);
+        $this->assertArrayHasKey('id', $schema['properties']['user']['properties']);
+        $this->assertArrayHasKey('name', $schema['properties']['user']['properties']);
+    }
+
+    #[Test]
+    public function it_generates_property_schema_with_array_items(): void
+    {
+        $structure = [
+            'properties' => [
+                'tags' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                        'example' => 'tag1',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertArrayHasKey('tags', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['tags']['type']);
+        $this->assertArrayHasKey('items', $schema['properties']['tags']);
+        $this->assertEquals('string', $schema['properties']['tags']['items']['type']);
+    }
+
+    #[Test]
+    public function it_generates_property_schema_with_conditional_and_condition(): void
+    {
+        $structure = [
+            'properties' => [
+                'secret' => [
+                    'type' => 'string',
+                    'conditional' => true,
+                    'condition' => 'when user is admin',
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertArrayHasKey('secret', $schema['properties']);
+        $this->assertTrue($schema['properties']['secret']['nullable']);
+        $this->assertStringContainsString('Conditional field', $schema['properties']['secret']['description']);
+        $this->assertStringContainsString('when user is admin', $schema['properties']['secret']['description']);
+    }
+
+    #[Test]
+    public function it_handles_ast_parse_failure_gracefully(): void
+    {
+        // Create a mock AstHelper that throws a parse error
+        $astHelper = $this->createMock(\LaravelSpectrum\Analyzers\Support\AstHelper::class);
+        $astHelper->method('parseFile')
+            ->willThrowException(new \PhpParser\Error('Parse error'));
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberResource')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new ResourceAnalyzer($astHelper, $cache);
+        $result = $analyzer->analyze(UserResource::class);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_handles_class_not_found_in_ast(): void
+    {
+        // Create a mock AstHelper that returns empty AST
+        $astHelper = $this->createMock(\LaravelSpectrum\Analyzers\Support\AstHelper::class);
+        $astHelper->method('parseFile')->willReturn([]);
+        $astHelper->method('findClassNode')->willReturn(null);
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberResource')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new ResourceAnalyzer($astHelper, $cache);
+        $result = $analyzer->analyze(UserResource::class);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_handles_null_ast_from_parse(): void
+    {
+        $astHelper = $this->createMock(\LaravelSpectrum\Analyzers\Support\AstHelper::class);
+        $astHelper->method('parseFile')->willReturn(null);
+
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberResource')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $analyzer = new ResourceAnalyzer($astHelper, $cache);
+        $result = $analyzer->analyze(UserResource::class);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_generates_properties_from_array_with_nested_values(): void
+    {
+        $structure = [
+            'properties' => [
+                'id' => ['type' => 'integer'],
+            ],
+            'with' => [
+                'meta' => [
+                    'version' => '1.0',
+                    'nested' => [
+                        'key' => 'value',
+                    ],
+                ],
+                'status' => 'ok',
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertArrayHasKey('meta', $schema['properties']);
+        $this->assertEquals('object', $schema['properties']['meta']['type']);
+        $this->assertArrayHasKey('properties', $schema['properties']['meta']);
+        $this->assertArrayHasKey('version', $schema['properties']['meta']['properties']);
+        $this->assertArrayHasKey('nested', $schema['properties']['meta']['properties']);
+
+        $this->assertArrayHasKey('status', $schema['properties']);
+        $this->assertEquals('string', $schema['properties']['status']['type']);
+        $this->assertEquals('ok', $schema['properties']['status']['example']);
+    }
 }
