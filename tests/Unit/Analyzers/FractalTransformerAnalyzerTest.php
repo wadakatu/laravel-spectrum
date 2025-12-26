@@ -6,6 +6,9 @@ use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\ExampleGenerationTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\MinimalTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\MissingIncludeMethodTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer;
 use LaravelSpectrum\Tests\TestCase;
@@ -195,5 +198,158 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertNotEmpty($warnings);
         $this->assertEquals('invalid_parent_class', $warnings[0]['metadata']['error_type']);
         $this->assertStringContainsString('stdClass', $warnings[0]['message']);
+    }
+
+    // ========== Additional coverage tests ==========
+
+    #[Test]
+    public function it_handles_transformer_without_transform_method(): void
+    {
+        $result = $this->analyzer->analyze(MinimalTransformer::class);
+
+        $this->assertEquals('fractal', $result['type']);
+        $this->assertEmpty($result['properties']);
+    }
+
+    #[Test]
+    public function it_handles_missing_include_method(): void
+    {
+        $result = $this->analyzer->analyze(MissingIncludeMethodTransformer::class);
+
+        $this->assertEquals('fractal', $result['type']);
+        $this->assertArrayHasKey('author', $result['availableIncludes']);
+        $this->assertEquals('unknown', $result['availableIncludes']['author']['type']);
+    }
+
+    #[Test]
+    public function it_generates_correct_examples_for_various_property_types(): void
+    {
+        $result = $this->analyzer->analyze(ExampleGenerationTransformer::class);
+
+        // Integer with 'id' pattern
+        $this->assertEquals(1, $result['properties']['id']['example']);
+        $this->assertEquals(1, $result['properties']['user_id']['example']);
+
+        // Integer with 'count' pattern
+        $this->assertEquals(100, $result['properties']['count']['example']);
+        $this->assertEquals(100, $result['properties']['total_count']['example']);
+
+        // Default integer
+        $this->assertEquals(42, $result['properties']['amount']['example']);
+
+        // Boolean
+        $this->assertEquals(true, $result['properties']['is_active']['example']);
+
+        // Array
+        $this->assertEquals([], $result['properties']['tags']['example']);
+
+        // String patterns
+        $this->assertEquals('user@example.com', $result['properties']['email']['example']);
+        $this->assertEquals('John Doe', $result['properties']['name']['example']);
+        $this->assertEquals('Sample Title', $result['properties']['title']['example']);
+        $this->assertEquals('Sample body text', $result['properties']['body']['example']);
+        $this->assertEquals('active', $result['properties']['status']['example']);
+        $this->assertEquals('default', $result['properties']['type']['example']);
+
+        // URL pattern
+        $this->assertEquals('https://example.com', $result['properties']['avatar_url']['example']);
+        $this->assertEquals('https://example.com', $result['properties']['image_url']['example']);
+
+        // _at pattern for dates
+        $this->assertStringContainsString('2024', $result['properties']['created_at']['example']);
+
+        // Default string
+        $this->assertEquals('string', $result['properties']['description']['example']);
+    }
+
+    #[Test]
+    public function it_detects_nullable_with_null_coalescing_operator(): void
+    {
+        $result = $this->analyzer->analyze(ExampleGenerationTransformer::class);
+
+        $this->assertArrayHasKey('nickname', $result['properties']);
+        $this->assertTrue($result['properties']['nickname']['nullable']);
+    }
+
+    #[Test]
+    public function it_handles_ast_parse_returning_null(): void
+    {
+        $mockAstHelper = $this->createMock(AstHelper::class);
+        $mockAstHelper->method('parseFile')->willReturn(null);
+
+        $analyzer = new FractalTransformerAnalyzer($mockAstHelper);
+        $result = $analyzer->analyze(UserTransformer::class);
+
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_handles_class_node_not_found(): void
+    {
+        $mockAstHelper = $this->createMock(AstHelper::class);
+        // Return a non-empty array that's not null, but findClassNode returns null
+        $mockAstHelper->method('parseFile')->willReturn([new \PhpParser\Node\Stmt\Nop]);
+        $mockAstHelper->method('findClassNode')->willReturn(null);
+
+        $errorCollector = new ErrorCollector;
+        $analyzer = new FractalTransformerAnalyzer($mockAstHelper, $errorCollector);
+        $result = $analyzer->analyze(UserTransformer::class);
+
+        $this->assertEmpty($result);
+        $warnings = $errorCollector->getWarnings();
+        $this->assertNotEmpty($warnings, 'Expected warning for class_node_not_found');
+        $this->assertEquals('class_node_not_found', $warnings[0]['metadata']['error_type']);
+    }
+
+    #[Test]
+    public function it_handles_reflection_exception(): void
+    {
+        // Create a mock that will cause ReflectionClass to throw
+        $mockAstHelper = $this->createMock(AstHelper::class);
+
+        $errorCollector = new ErrorCollector;
+        $analyzer = new FractalTransformerAnalyzer($mockAstHelper, $errorCollector);
+
+        // Use an invalid class name that will cause issues
+        $result = $analyzer->analyze('InvalidClassName\That\DoesNotExist');
+
+        $this->assertEmpty($result);
+    }
+
+    #[Test]
+    public function it_returns_meta_data(): void
+    {
+        $result = $this->analyzer->analyze(UserTransformer::class);
+
+        $this->assertArrayHasKey('meta', $result);
+        $this->assertIsArray($result['meta']);
+    }
+
+    #[Test]
+    public function it_handles_transformer_without_available_includes(): void
+    {
+        $result = $this->analyzer->analyze(MinimalTransformer::class);
+
+        $this->assertArrayHasKey('availableIncludes', $result);
+        $this->assertEmpty($result['availableIncludes']);
+    }
+
+    #[Test]
+    public function it_handles_transformer_without_default_includes(): void
+    {
+        $result = $this->analyzer->analyze(MinimalTransformer::class);
+
+        $this->assertArrayHasKey('defaultIncludes', $result);
+        $this->assertEmpty($result['defaultIncludes']);
+    }
+
+    #[Test]
+    public function it_detects_nested_object_properties(): void
+    {
+        $result = $this->analyzer->analyze(ExampleGenerationTransformer::class);
+
+        $this->assertArrayHasKey('metadata', $result['properties']);
+        $this->assertEquals('object', $result['properties']['metadata']['type']);
+        $this->assertArrayHasKey('properties', $result['properties']['metadata']);
     }
 }
