@@ -193,4 +193,89 @@ class ExampleValueFactoryTest extends TestCase
         $result = $this->factory->create('has_children', ['type' => 'boolean']);
         $this->assertIsBool($result);
     }
+
+    public function test_returns_const_when_provided(): void
+    {
+        $result = $this->factory->create('status', [
+            'type' => 'string',
+            'const' => 'fixed_value',
+        ]);
+        $this->assertEquals('fixed_value', $result);
+    }
+
+    public function test_returns_first_example_when_provided(): void
+    {
+        $result = $this->factory->create('status', [
+            'type' => 'string',
+            'examples' => ['first_example', 'second_example'],
+        ]);
+        $this->assertEquals('first_example', $result);
+    }
+
+    public function test_returns_first_enum_value_in_static_mode(): void
+    {
+        $result = $this->factory->create('status', [
+            'type' => 'string',
+            'enum' => ['active', 'inactive', 'pending'],
+        ]);
+        $this->assertEquals('active', $result);
+    }
+
+    public function test_returns_default_when_provided(): void
+    {
+        $result = $this->factory->create('count', [
+            'type' => 'integer',
+            'default' => 42,
+        ]);
+        $this->assertEquals(42, $result);
+    }
+
+    public function test_const_takes_priority_over_examples(): void
+    {
+        $result = $this->factory->create('value', [
+            'type' => 'string',
+            'const' => 'const_value',
+            'examples' => ['example_value'],
+            'default' => 'default_value',
+        ]);
+        $this->assertEquals('const_value', $result);
+    }
+
+    public function test_examples_take_priority_over_enum(): void
+    {
+        $result = $this->factory->create('value', [
+            'type' => 'string',
+            'examples' => ['example_value'],
+            'enum' => ['enum_value'],
+            'default' => 'default_value',
+        ]);
+        $this->assertEquals('example_value', $result);
+    }
+
+    public function test_enum_takes_priority_over_default(): void
+    {
+        $result = $this->factory->create('value', [
+            'type' => 'string',
+            'enum' => ['enum_value'],
+            'default' => 'default_value',
+        ]);
+        $this->assertEquals('enum_value', $result);
+    }
+
+    public function test_generate_by_type_with_format(): void
+    {
+        $result = $this->factory->generateByType('string', 'email');
+        $this->assertEquals('user@example.com', $result);
+
+        $result = $this->factory->generateByType('string', 'date-time');
+        $this->assertEquals('2024-01-15T10:30:00Z', $result);
+
+        $result = $this->factory->generateByType('string', 'uuid');
+        $this->assertEquals('550e8400-e29b-41d4-a716-446655440000', $result);
+    }
+
+    public function test_get_faker_returns_null_in_static_mode(): void
+    {
+        $this->assertNull($this->factory->getFaker());
+    }
 }

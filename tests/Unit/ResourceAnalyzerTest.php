@@ -244,4 +244,142 @@ class ResourceAnalyzerTest extends TestCase
         $this->assertArrayHasKey('with', $result);
         $this->assertArrayHasKey('meta', $result['with']);
     }
+
+    #[Test]
+    public function it_generates_schema_with_empty_properties(): void
+    {
+        $schema = $this->analyzer->generateSchema([]);
+
+        $this->assertEquals(['type' => 'object'], $schema);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_array_items(): void
+    {
+        $structure = [
+            'properties' => [
+                'tags' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertEquals('array', $schema['properties']['tags']['type']);
+        $this->assertEquals('string', $schema['properties']['tags']['items']['type']);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_nested_object(): void
+    {
+        $structure = [
+            'properties' => [
+                'address' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'city' => ['type' => 'string'],
+                        'country' => ['type' => 'string'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertEquals('object', $schema['properties']['address']['type']);
+        $this->assertArrayHasKey('properties', $schema['properties']['address']);
+        $this->assertArrayHasKey('city', $schema['properties']['address']['properties']);
+        $this->assertArrayHasKey('country', $schema['properties']['address']['properties']);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_conditional_field_description(): void
+    {
+        $structure = [
+            'properties' => [
+                'secret' => [
+                    'type' => 'string',
+                    'conditional' => true,
+                    'condition' => 'whenNotNull',
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertTrue($schema['properties']['secret']['nullable']);
+        $this->assertStringContainsString('Conditional field', $schema['properties']['secret']['description']);
+        $this->assertStringContainsString('whenNotNull', $schema['properties']['secret']['description']);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_example_values(): void
+    {
+        $structure = [
+            'properties' => [
+                'status' => [
+                    'type' => 'string',
+                    'example' => 'active',
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertEquals('active', $schema['properties']['status']['example']);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_format(): void
+    {
+        $structure = [
+            'properties' => [
+                'created_at' => [
+                    'type' => 'string',
+                    'format' => 'date-time',
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertEquals('date-time', $schema['properties']['created_at']['format']);
+    }
+
+    #[Test]
+    public function it_generates_schema_with_additional_meta_from_with_method(): void
+    {
+        $result = $this->analyzer->analyze(ResourceWithMeta::class);
+        $schema = $this->analyzer->generateSchema($result);
+
+        // with() メソッドからの追加メタデータがスキーマに含まれる
+        $this->assertArrayHasKey('meta', $schema['properties']);
+        $this->assertEquals('object', $schema['properties']['meta']['type']);
+        $this->assertArrayHasKey('properties', $schema['properties']['meta']);
+    }
+
+    #[Test]
+    public function it_does_not_include_conditional_fields_in_required(): void
+    {
+        $structure = [
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+                'secret' => [
+                    'type' => 'string',
+                    'conditional' => true,
+                ],
+            ],
+        ];
+
+        $schema = $this->analyzer->generateSchema($structure);
+
+        $this->assertContains('id', $schema['required']);
+        $this->assertContains('name', $schema['required']);
+        $this->assertNotContains('secret', $schema['required']);
+    }
 }
