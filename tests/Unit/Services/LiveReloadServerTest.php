@@ -480,11 +480,11 @@ class LiveReloadServerTest extends TestCase
         $startHttpServerMethod = $reflection->getMethod('startHttpServer');
         $startHttpServerMethod->setAccessible(true);
 
-        // テスト用のOpenAPIファイルを作成
-        $testDir = sys_get_temp_dir().'/spectrum_test';
+        // Use the storage path that LiveReloadServer actually looks for
+        $testDir = getcwd().'/storage/spectrum';
         $testFile = $testDir.'/openapi.json';
         @mkdir($testDir, 0777, true);
-        file_put_contents($testFile, '{"openapi": "3.0.0"}');
+        file_put_contents($testFile, '{"openapi": "3.0.0", "test": true}');
 
         // HTTPサーバーを起動
         $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
