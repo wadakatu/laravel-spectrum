@@ -66,11 +66,18 @@ class PaginationIntegrationTest extends TestCase
         $this->assertEquals('object', $responseSchema['type']);
         $this->assertArrayHasKey('data', $responseSchema['properties']);
 
-        // dataにリソースのスキーマが適用されていることを確認
+        // dataにリソースの$ref参照が適用されていることを確認
         $dataItems = $responseSchema['properties']['data']['items'];
-        $this->assertArrayHasKey('properties', $dataItems);
-        $this->assertArrayHasKey('id', $dataItems['properties']);
-        $this->assertArrayHasKey('title', $dataItems['properties']);
+        $this->assertArrayHasKey('$ref', $dataItems);
+        $this->assertStringContainsString('#/components/schemas/', $dataItems['$ref']);
+
+        // components.schemasにスキーマが登録されていることを確認
+        $schemaName = str_replace('#/components/schemas/', '', $dataItems['$ref']);
+        $this->assertArrayHasKey($schemaName, $openapi['components']['schemas']);
+        $schema = $openapi['components']['schemas'][$schemaName];
+        $this->assertArrayHasKey('properties', $schema);
+        $this->assertArrayHasKey('id', $schema['properties']);
+        $this->assertArrayHasKey('title', $schema['properties']);
     }
 
     public function test_detects_simple_pagination(): void

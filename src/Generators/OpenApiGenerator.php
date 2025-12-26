@@ -17,6 +17,13 @@ use LaravelSpectrum\Support\PaginationDetector;
  */
 class OpenApiGenerator
 {
+    /**
+     * Cached examples per resource schema name.
+     *
+     * @var array<string, mixed>
+     */
+    private array $resourceExamples = [];
+
     public function __construct(
         protected ControllerAnalyzer $controllerAnalyzer,
         protected AuthenticationAnalyzer $authenticationAnalyzer,
@@ -34,8 +41,12 @@ class OpenApiGenerator
         protected PaginationSchemaGenerator $paginationSchemaGenerator,
         protected PaginationDetector $paginationDetector,
         protected FormRequestAnalyzer $requestAnalyzer,
-        protected OpenApi31Converter $openApi31Converter
-    ) {}
+        protected OpenApi31Converter $openApi31Converter,
+        protected ?SchemaRegistry $schemaRegistry = null
+    ) {
+        // デフォルトでSchemaRegistryを作成
+        $this->schemaRegistry = $schemaRegistry ?? new SchemaRegistry;
+    }
 
     /**
      * Generate OpenAPI specification from routes.
@@ -45,6 +56,10 @@ class OpenApiGenerator
      */
     public function generate(array $routes): array
     {
+        // Clear schema registry and examples for fresh generation
+        $this->schemaRegistry->clear();
+        $this->resourceExamples = [];
+
         // Load custom authentication schemes
         $this->authenticationAnalyzer->loadCustomSchemes();
 
@@ -89,6 +104,16 @@ class OpenApiGenerator
         $tagGroups = $this->tagGroupGenerator->generateTagGroups($usedTags);
         if (! empty($tagGroups)) {
             $openapi['x-tagGroups'] = $tagGroups;
+        }
+
+        // Populate components.schemas with registered resource schemas
+        $registeredSchemas = $this->schemaRegistry->all();
+        if (! empty($registeredSchemas)) {
+            // Note: buildBaseStructure always initializes schemas to []
+            // so we can safely merge or assign directly
+            foreach ($registeredSchemas as $name => $schema) {
+                $openapi['components']['schemas'][$name] = $schema;
+            }
         }
 
         // Convert to OpenAPI 3.1.0 format if enabled
@@ -274,46 +299,71 @@ class OpenApiGenerator
 
         // Resource class response
         if (! empty($controllerInfo['resource'])) {
-            $resourceStructure = $this->resourceAnalyzer->analyze($controllerInfo['resource']);
+            $resourceClass = $controllerInfo['resource'];
+            $schemaName = $this->schemaRegistry->extractSchemaName($resourceClass);
 
-            if (! empty($resourceStructure)) {
-                $schema = $this->schemaGenerator->generateFromResource($resourceStructure);
+            // Check if schema is already registered
+            if (! $this->schemaRegistry->has($schemaName)) {
+                $resourceStructure = $this->resourceAnalyzer->analyze($resourceClass);
 
-                $example = $this->exampleGenerator->generateFromResource(
-                    $resourceStructure,
-                    $controllerInfo['resource']
-                );
+                if (! empty($resourceStructure)) {
+                    $schema = $this->schemaGenerator->generateFromResource($resourceStructure);
+                    $this->schemaRegistry->register($schemaName, $schema);
 
-                if (! empty($controllerInfo['pagination'])) {
-                    $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
-                    $paginatedSchema = $this->paginationSchemaGenerator->generate($paginationType, $schema);
+                    $example = $this->exampleGenerator->generateFromResource(
+                        $resourceStructure,
+                        $resourceClass
+                    );
 
-                    $response['content'] = [
-                        'application/json' => [
-                            'schema' => $paginatedSchema,
-                            'examples' => [
-                                'default' => [
-                                    'value' => $this->exampleGenerator->generateCollectionExample($example, true),
-                                ],
-                            ],
-                        ],
-                    ];
-                } else {
-                    $response['content'] = [
-                        'application/json' => [
-                            'schema' => $controllerInfo['returnsCollection']
-                                ? ['type' => 'array', 'items' => $schema]
-                                : $schema,
-                            'examples' => [
-                                'default' => [
-                                    'value' => $controllerInfo['returnsCollection']
-                                        ? $this->exampleGenerator->generateCollectionExample($example, false)
-                                        : $example,
-                                ],
-                            ],
-                        ],
-                    ];
+                    // Store example per schema name
+                    $this->resourceExamples[$schemaName] = $example;
                 }
+            }
+
+            // Only use $ref if schema was actually registered
+            if (! $this->schemaRegistry->has($schemaName)) {
+                // Schema could not be registered, skip resource response
+                return [
+                    'code' => $statusCode,
+                    'response' => $response,
+                ];
+            }
+
+            // Get $ref for the schema and retrieve corresponding example
+            $schemaRef = $this->schemaRegistry->getRef($schemaName);
+            $example = $this->resourceExamples[$schemaName] ?? null;
+
+            if (! empty($controllerInfo['pagination'])) {
+                $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
+                $paginatedSchema = $this->paginationSchemaGenerator->generate($paginationType, $schemaRef);
+
+                $response['content'] = [
+                    'application/json' => [
+                        'schema' => $paginatedSchema,
+                        'examples' => [
+                            'default' => [
+                                'value' => $example
+                                    ? $this->exampleGenerator->generateCollectionExample($example, true)
+                                    : null,
+                            ],
+                        ],
+                    ],
+                ];
+            } else {
+                $response['content'] = [
+                    'application/json' => [
+                        'schema' => $controllerInfo['returnsCollection']
+                            ? ['type' => 'array', 'items' => $schemaRef]
+                            : $schemaRef,
+                        'examples' => [
+                            'default' => [
+                                'value' => $controllerInfo['returnsCollection']
+                                    ? ($example ? $this->exampleGenerator->generateCollectionExample($example, false) : null)
+                                    : $example,
+                            ],
+                        ],
+                    ],
+                ];
             }
         }
         // Pagination only (without Resource)
