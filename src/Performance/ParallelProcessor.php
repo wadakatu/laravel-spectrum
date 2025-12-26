@@ -1,8 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Performance;
 
-use Spatie\Fork\Fork;
+use LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface;
+use LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface;
+use LaravelSpectrum\Contracts\Performance\WorkerCountResolverInterface;
+use LaravelSpectrum\Performance\Support\DefaultParallelSupportChecker;
+use LaravelSpectrum\Performance\Support\DefaultWorkerCountResolver;
+use LaravelSpectrum\Performance\Support\ForkParallelExecutor;
 
 class ParallelProcessor
 {
@@ -10,10 +17,25 @@ class ParallelProcessor
 
     private bool $enabled;
 
-    public function __construct(?bool $enabled = null, ?int $workers = null)
-    {
-        $this->workers = $workers ?? $this->determineOptimalWorkers();
-        $this->enabled = $enabled ?? $this->checkParallelProcessingSupport();
+    private ParallelExecutorInterface $executor;
+
+    private WorkerCountResolverInterface $workerCountResolver;
+
+    private ParallelSupportCheckerInterface $supportChecker;
+
+    public function __construct(
+        ?bool $enabled = null,
+        ?int $workers = null,
+        ?ParallelExecutorInterface $executor = null,
+        ?WorkerCountResolverInterface $workerCountResolver = null,
+        ?ParallelSupportCheckerInterface $supportChecker = null
+    ) {
+        $this->workerCountResolver = $workerCountResolver ?? new DefaultWorkerCountResolver;
+        $this->supportChecker = $supportChecker ?? new DefaultParallelSupportChecker;
+        $this->executor = $executor ?? new ForkParallelExecutor;
+
+        $this->workers = $workers ?? $this->workerCountResolver->resolve();
+        $this->enabled = $enabled ?? $this->supportChecker->isSupported();
     }
 
     /**
@@ -26,37 +48,23 @@ class ParallelProcessor
             return array_map($processor, $routes);
         }
 
-        // Fork is only used when parallel processing is enabled
-        if (! class_exists('\Spatie\Fork\Fork')) {
-            // Fork not available, fallback to sequential processing
+        // Check if executor is available
+        if (! $this->executor->isAvailable()) {
+            // Fallback to sequential processing
             return array_map($processor, $routes);
         }
 
         // ルートをワーカー数で分割
         $chunks = array_chunk($routes, (int) ceil(count($routes) / $this->workers));
 
-        $fork = Fork::new()
-            ->concurrent($this->workers)
-            ->before(function () {
-                // 子プロセスの初期化
-                // データベース接続のリセットなど
-                if (class_exists('\Illuminate\Support\Facades\DB')) {
-                    try {
-                        \Illuminate\Support\Facades\DB::reconnect();
-                    } catch (\Exception $e) {
-                        // 接続がない場合は無視
-                    }
-                }
-            });
-
         $tasks = [];
-        foreach ($chunks as $index => $chunk) {
+        foreach ($chunks as $chunk) {
             $tasks[] = function () use ($chunk, $processor) {
                 return array_map($processor, $chunk);
             };
         }
 
-        $results = $fork->run(...$tasks);
+        $results = $this->executor->execute($tasks, $this->workers);
 
         // 結果をマージ
         return collect($results)->flatten(1)->toArray();
@@ -67,7 +75,7 @@ class ParallelProcessor
      */
     public function processWithProgress(array $items, callable $processor, callable $onProgress): array
     {
-        if (! $this->enabled || ! class_exists('\Spatie\Fork\Fork')) {
+        if (! $this->enabled || ! $this->executor->isAvailable()) {
             return $this->processSequentialWithProgress($items, $processor, $onProgress);
         }
 
@@ -78,10 +86,8 @@ class ParallelProcessor
         $progressFile = tempnam(sys_get_temp_dir(), 'spectrum_progress_');
         file_put_contents($progressFile, '0');
 
-        $fork = Fork::new()->concurrent($this->workers);
-
         $tasks = [];
-        foreach ($chunks as $index => $chunk) {
+        foreach ($chunks as $chunk) {
             $tasks[] = function () use ($chunk, $processor, $progressFile, $onProgress, $totalItems) {
                 $results = [];
                 foreach ($chunk as $item) {
@@ -116,10 +122,12 @@ class ParallelProcessor
             };
         }
 
-        $chunkResults = $fork->run(...$tasks);
+        $chunkResults = $this->executor->execute($tasks, $this->workers);
 
         // Clean up
-        unlink($progressFile);
+        if (file_exists($progressFile)) {
+            unlink($progressFile);
+        }
 
         return collect($chunkResults)->flatten(1)->toArray();
     }
@@ -148,42 +156,19 @@ class ParallelProcessor
         $this->workers = max(1, min(32, $workers));
     }
 
-    private function determineOptimalWorkers(): int
+    /**
+     * Check if parallel processing is enabled.
+     */
+    public function isEnabled(): bool
     {
-        // CPU コア数を取得
-        $cores = 1;
-
-        if (function_exists('swoole_cpu_num')) {
-            $cores = swoole_cpu_num();
-        } elseif (is_file('/proc/cpuinfo')) {
-            $cores = substr_count(file_get_contents('/proc/cpuinfo'), 'processor');
-        } elseif (PHP_OS_FAMILY === 'Darwin') {
-            $cores = (int) shell_exec('sysctl -n hw.ncpu');
-        } elseif (PHP_OS_FAMILY === 'Windows') {
-            $cores = (int) getenv('NUMBER_OF_PROCESSORS');
-        }
-
-        // 最大でCPUコア数の2倍、最小2、最大16
-        return max(2, min(16, $cores * 2));
+        return $this->enabled;
     }
 
-    private function checkParallelProcessingSupport(): bool
+    /**
+     * Get the number of workers.
+     */
+    public function getWorkers(): int
     {
-        // PCNTL拡張が必要
-        if (! extension_loaded('pcntl')) {
-            return false;
-        }
-
-        // Windows環境では無効
-        if (PHP_OS_FAMILY === 'Windows') {
-            return false;
-        }
-
-        // 設定で無効化されている場合
-        if (function_exists('config') && config('spectrum.performance.parallel_processing', true) === false) {
-            return false;
-        }
-
-        return true;
+        return $this->workers;
     }
 }

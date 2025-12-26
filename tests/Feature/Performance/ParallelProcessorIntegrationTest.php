@@ -54,11 +54,7 @@ class ParallelProcessorIntegrationTest extends TestCase
 
         $processor = new ParallelProcessor;
 
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('checkParallelProcessingSupport');
-        $method->setAccessible(true);
-
-        $supported = $method->invoke($processor);
+        $supported = $processor->isEnabled();
 
         // Windows環境やPCNTL拡張の有無により結果が異なる
         if (PHP_OS_FAMILY === 'Windows') {
