@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Tests\Fixtures\Transformers;
 
 use League\Fractal\TransformerAbstract;
@@ -11,9 +13,9 @@ class MinimalTransformer extends TransformerAbstract
 {
     // No availableIncludes or defaultIncludes
 
-    public function transform($item)
+    public function transform($item): array
     {
-        // Return non-array to test edge case
+        // Returns empty array - no properties to extract
         return [];
     }
 }
