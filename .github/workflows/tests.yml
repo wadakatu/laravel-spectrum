@@ -33,6 +33,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
           coverage: pcov
+          ini-values: memory_limit=-1
 
       - name: Setup problem matchers
         run: |
@@ -47,21 +48,9 @@ jobs:
       - name: List Installed Dependencies
         run: composer show -D
 
-      - name: Debug PHP memory settings
-        if: matrix.php == '8.3' && matrix.laravel == '12.*'
-        run: |
-          echo "=== PHP CLI memory_limit ==="
-          php -r "echo ini_get('memory_limit') . PHP_EOL;"
-          echo "=== With -d flag ==="
-          php -d memory_limit=-1 -r "echo ini_get('memory_limit') . PHP_EOL;"
-          echo "=== PHP version ==="
-          php -v
-          echo "=== Loaded php.ini ==="
-          php -i | grep "Loaded Configuration File"
-
       - name: Execute tests (with coverage)
         if: matrix.php == '8.3' && matrix.laravel == '12.*'
-        run: php -d memory_limit=-1 vendor/bin/phpunit --coverage-clover coverage.xml
+        run: vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Execute tests (without coverage)
         if: matrix.php != '8.3' || matrix.laravel != '12.*'
