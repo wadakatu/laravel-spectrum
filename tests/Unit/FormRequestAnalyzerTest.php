@@ -653,6 +653,338 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertEmpty($result);
     }
 
+    #[Test]
+    public function it_handles_conditional_rules_with_non_empty_rules_sets(): void
+    {
+        // Arrange - Use the ConditionalFormRequest fixture which has if/elseif conditions
+        $class = \LaravelSpectrum\Tests\Fixtures\Requests\ConditionalFormRequest::class;
+
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules($class);
+
+        // Assert - Verify the structure
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+
+        // Verify parameters are extracted
+        $this->assertNotEmpty($result['parameters']);
+
+        // Conditional rules should contain rules_sets
+        $conditionalRules = $result['conditional_rules'];
+        $this->assertIsArray($conditionalRules);
+        $this->assertArrayHasKey('rules_sets', $conditionalRules);
+    }
+
+    #[Test]
+    public function it_falls_back_to_regular_analysis_when_no_conditional_rules(): void
+    {
+        // Arrange - Use a FormRequest without conditional rules (StoreUserRequest)
+        // which should trigger the fallback path
+        $class = StoreUserRequest::class;
+
+        // Act
+        $result = $this->analyzer->analyzeWithConditionalRules($class);
+
+        // Assert - Verify the structure
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertArrayHasKey('attributes', $result);
+        $this->assertArrayHasKey('messages', $result);
+
+        // Verify parameters are extracted
+        $this->assertNotEmpty($result['parameters']);
+
+        // Verify conditional_rules structure (may or may not have merged_rules depending on analysis)
+        $this->assertIsArray($result['conditional_rules']['rules_sets']);
+        $this->assertIsArray($result['conditional_rules']['merged_rules']);
+    }
+
+    #[Test]
+    public function it_uses_fallback_path_when_conditional_rules_returns_empty_rules_sets(): void
+    {
+        // Arrange - Create mocks to force the fallback path
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $classNode = $this->createMock(\PhpParser\Node\Stmt\Class_::class);
+
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn([new \PhpParser\Node\Stmt\Namespace_]);
+        $mockAstExtractor->method('findClassNode')->willReturn($classNode);
+        $mockAstExtractor->method('extractUseStatements')->willReturn([]);
+        // Return empty rules_sets to trigger fallback path
+        $mockAstExtractor->method('extractConditionalRules')->willReturn([
+            'rules_sets' => [],
+            'merged_rules' => [],
+        ]);
+        $mockAstExtractor->method('extractAttributes')->willReturn(['name' => 'Name']);
+        $mockAstExtractor->method('extractMessages')->willReturn(['name.required' => 'Required']);
+        $mockAstExtractor->method('extractRules')->willReturn(['name' => 'required|string']);
+
+        $mockParameterBuilder = $this->createMock(ParameterBuilder::class);
+        $mockParameterBuilder->method('buildFromRules')->willReturn([
+            ['name' => 'name', 'type' => 'string', 'required' => true, 'validation' => ['required', 'string']],
+        ]);
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $mockParameterBuilder,
+            $mockAstExtractor,
+            $this->app->make(AnonymousClassAnalyzer::class)
+        );
+
+        // Act
+        $result = $analyzer->analyzeWithConditionalRules(StoreUserRequest::class);
+
+        // Assert - Verify the fallback path was taken
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertArrayHasKey('attributes', $result);
+        $this->assertArrayHasKey('messages', $result);
+
+        // Verify empty rules_sets (fallback path)
+        $this->assertEmpty($result['conditional_rules']['rules_sets']);
+        $this->assertEmpty($result['conditional_rules']['merged_rules']);
+
+        // Verify parameters were built
+        $this->assertNotEmpty($result['parameters']);
+    }
+
+    #[Test]
+    public function it_analyzes_anonymous_form_request_with_details(): void
+    {
+        // Arrange - Create mocks for anonymous class analysis
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $mockAnonymousAnalyzer = $this->createMock(AnonymousClassAnalyzer::class);
+        $mockAnonymousAnalyzer->method('analyzeDetails')
+            ->willReturn([
+                'rules' => ['name' => 'required|string'],
+                'attributes' => ['name' => 'Name'],
+                'messages' => [],
+            ]);
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $this->app->make(ParameterBuilder::class),
+            $this->app->make(FormRequestAstExtractor::class),
+            $mockAnonymousAnalyzer
+        );
+
+        // Create an anonymous FormRequest
+        $anonymousClass = new class extends FormRequest
+        {
+            public function rules(): array
+            {
+                return ['name' => 'required|string'];
+            }
+        };
+
+        // Act
+        $result = $analyzer->analyzeWithDetails(get_class($anonymousClass));
+
+        // Assert - Verify the mocked result is returned
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('rules', $result);
+        $this->assertArrayHasKey('attributes', $result);
+        $this->assertArrayHasKey('messages', $result);
+    }
+
+    #[Test]
+    public function it_analyzes_anonymous_form_request_with_conditional_rules(): void
+    {
+        // Arrange - Create mocks for anonymous class analysis
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $mockAnonymousAnalyzer = $this->createMock(AnonymousClassAnalyzer::class);
+        $mockAnonymousAnalyzer->method('analyzeWithConditionalRules')
+            ->willReturn([
+                'parameters' => [['name' => 'name', 'type' => 'string', 'required' => true]],
+                'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+            ]);
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $this->app->make(ParameterBuilder::class),
+            $this->app->make(FormRequestAstExtractor::class),
+            $mockAnonymousAnalyzer
+        );
+
+        // Create an anonymous FormRequest
+        $anonymousClass = new class extends FormRequest
+        {
+            public function rules(): array
+            {
+                return [
+                    'name' => 'required|string',
+                    'type' => 'required|in:a,b',
+                ];
+            }
+        };
+
+        // Act
+        $result = $analyzer->analyzeWithConditionalRules(get_class($anonymousClass));
+
+        // Assert - Verify the structure
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+    }
+
+    #[Test]
+    public function it_handles_exception_in_analyze_method(): void
+    {
+        // Arrange - Create a mock cache that throws an exception
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willThrowException(new \RuntimeException('Cache error'));
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $this->app->make(ParameterBuilder::class),
+            $this->app->make(FormRequestAstExtractor::class),
+            $this->app->make(AnonymousClassAnalyzer::class)
+        );
+
+        // Act
+        $result = $analyzer->analyze(StoreUserRequest::class);
+
+        // Assert - Should return empty array and log the exception
+        $this->assertEmpty($result);
+        $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
+    }
+
+    #[Test]
+    public function it_handles_exception_in_perform_analysis(): void
+    {
+        // Arrange - Create mocks that will cause an exception during analysis
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn([new \PhpParser\Node\Stmt\Namespace_]);
+        $mockAstExtractor->method('findClassNode')->willReturn($this->createMock(\PhpParser\Node\Stmt\Class_::class));
+        $mockAstExtractor->method('extractRules')->willThrowException(new \RuntimeException('Extraction error'));
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $this->app->make(ParameterBuilder::class),
+            $mockAstExtractor,
+            $this->app->make(AnonymousClassAnalyzer::class)
+        );
+
+        // Act
+        $result = $analyzer->analyze(StoreUserRequest::class);
+
+        // Assert - Should return empty array and log the exception
+        $this->assertEmpty($result);
+        $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
+    }
+
+    #[Test]
+    public function it_handles_exception_in_analyze_with_conditional_rules(): void
+    {
+        // Arrange - Create mocks that will cause an exception during conditional analysis
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn([new \PhpParser\Node\Stmt\Namespace_]);
+        $mockAstExtractor->method('findClassNode')->willReturn($this->createMock(\PhpParser\Node\Stmt\Class_::class));
+        $mockAstExtractor->method('extractConditionalRules')->willThrowException(new \RuntimeException('Conditional extraction error'));
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $this->app->make(ParameterBuilder::class),
+            $mockAstExtractor,
+            $this->app->make(AnonymousClassAnalyzer::class)
+        );
+
+        // Act
+        $result = $analyzer->analyzeWithConditionalRules(StoreUserRequest::class);
+
+        // Assert - Should return empty conditional result and log the exception
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertArrayHasKey('conditional_rules', $result);
+        $this->assertEmpty($result['parameters']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+        $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
+    }
+
+    #[Test]
+    public function it_handles_exception_in_perform_analysis_with_details(): void
+    {
+        // Arrange - Create mocks that will cause an exception during details analysis
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberFormRequest')
+            ->willReturnCallback(function ($class, $callback) {
+                return $callback();
+            });
+
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn([new \PhpParser\Node\Stmt\Namespace_]);
+        $mockAstExtractor->method('findClassNode')->willReturn($this->createMock(\PhpParser\Node\Stmt\Class_::class));
+        $mockAstExtractor->method('extractRules')->willThrowException(new \RuntimeException('Details extraction error'));
+
+        $analyzer = new FormRequestAnalyzer(
+            $cache,
+            $this->app->make(ParameterBuilder::class),
+            $mockAstExtractor,
+            $this->app->make(AnonymousClassAnalyzer::class)
+        );
+
+        // Act
+        $result = $analyzer->analyzeWithDetails(StoreUserRequest::class);
+
+        // Assert - Should return empty array and log the exception
+        $this->assertEmpty($result);
+        $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
+    }
+
+    #[Test]
+    public function it_logs_warning_when_class_node_not_found_in_ast(): void
+    {
+        // Arrange - Create a mock AST extractor that returns valid AST but no class node
+        $mockAstExtractor = $this->createMock(FormRequestAstExtractor::class);
+        $mockAstExtractor->method('parseFile')->willReturn([new \PhpParser\Node\Stmt\Namespace_]);
+        $mockAstExtractor->method('findClassNode')->willReturn(null);
+
+        $analyzer = $this->createAnalyzerWithMockedAstExtractor($mockAstExtractor);
+
+        // Act
+        $result = $analyzer->analyze(StoreUserRequest::class);
+
+        // Assert - Should return empty array and have warnings
+        $this->assertEmpty($result);
+        $this->assertNotEmpty($analyzer->getErrorCollector()->getWarnings());
+
+        // Check that the warning was logged with correct type
+        $warnings = $analyzer->getErrorCollector()->getWarnings();
+        $this->assertTrue(
+            collect($warnings)->contains(fn ($warning) => str_contains($warning['message'], 'Class node not found'))
+        );
+    }
+
     private function findParameterByName(array $parameters, string $name): ?array
     {
         foreach ($parameters as $parameter) {
