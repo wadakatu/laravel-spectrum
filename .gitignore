@@ -19,6 +19,8 @@ composer.lock
 /build/
 /dist/
 /coverage/
+/coverage-*/
+coverage*.xml
 .php-cs-fixer.cache
 .php_cs.cache
 phpunit.xml.dist.bak

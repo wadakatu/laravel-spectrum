@@ -873,4 +873,1049 @@ class SchemaGeneratorTest extends TestCase
         // Empty conditional rules should generate regular schema
         $this->assertEquals('object', $schema['type']);
     }
+
+    #[Test]
+    public function it_generates_conditional_schema_with_single_rule_set(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'POST'],
+                    ],
+                    'rules' => [
+                        'name' => 'required|string',
+                        'email' => 'required|email',
+                    ],
+                ],
+            ],
+        ];
+
+        $parameters = [
+            ['name' => 'name', 'type' => 'string', 'required' => true],
+            ['name' => 'email', 'type' => 'string', 'required' => true],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, $parameters);
+
+        // Single rule set should generate regular schema
+        $this->assertEquals('object', $schema['type']);
+        $this->assertArrayNotHasKey('oneOf', $schema);
+    }
+
+    #[Test]
+    public function it_generates_conditional_schema_with_multiple_rule_sets(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'POST'],
+                    ],
+                    'rules' => [
+                        'name' => 'required|string|min:3',
+                        'email' => 'required|email',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'PUT'],
+                    ],
+                    'rules' => [
+                        'name' => 'string|max:100',
+                        'email' => 'email',
+                    ],
+                ],
+            ],
+        ];
+
+        $parameters = [];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, $parameters);
+
+        // Multiple rule sets should generate oneOf schema
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertCount(2, $schema['oneOf']);
+        $this->assertArrayHasKey('discriminator', $schema);
+        $this->assertEquals('_condition', $schema['discriminator']['propertyName']);
+    }
+
+    #[Test]
+    public function it_generates_condition_description_for_http_method(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'POST'],
+                    ],
+                    'rules' => [
+                        'name' => 'required',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'PUT'],
+                    ],
+                    'rules' => [
+                        'name' => 'string',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertStringContainsString('HTTP method is POST', $schema['oneOf'][0]['description']);
+        $this->assertStringContainsString('HTTP method is PUT', $schema['oneOf'][1]['description']);
+    }
+
+    #[Test]
+    public function it_generates_condition_description_for_user_check(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                    ],
+                    'rules' => [
+                        'level' => 'required|integer',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'user_check', 'method' => 'isGuest'],
+                    ],
+                    'rules' => [
+                        'level' => 'integer',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertStringContainsString('user isAdmin()', $schema['oneOf'][0]['description']);
+        $this->assertStringContainsString('user isGuest()', $schema['oneOf'][1]['description']);
+    }
+
+    #[Test]
+    public function it_generates_condition_description_for_request_field(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'request_field', 'check' => 'has', 'field' => 'type'],
+                    ],
+                    'rules' => [
+                        'data' => 'required',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'request_field', 'check' => 'filled', 'field' => 'value'],
+                    ],
+                    'rules' => [
+                        'data' => 'string',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertStringContainsString("request has 'type'", $schema['oneOf'][0]['description']);
+        $this->assertStringContainsString("request filled 'value'", $schema['oneOf'][1]['description']);
+    }
+
+    #[Test]
+    public function it_generates_condition_description_for_else_type(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'POST'],
+                    ],
+                    'rules' => [
+                        'name' => 'required',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'else'],
+                    ],
+                    'rules' => [
+                        'name' => 'string',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertStringContainsString('Otherwise', $schema['oneOf'][1]['description']);
+    }
+
+    #[Test]
+    public function it_generates_condition_description_for_default_expression(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'custom', 'expression' => 'count > 10'],
+                    ],
+                    'rules' => [
+                        'items' => 'required|array',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'custom', 'expression' => 'count <= 10'],
+                    ],
+                    'rules' => [
+                        'items' => 'array',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertStringContainsString('count > 10', $schema['oneOf'][0]['description']);
+        $this->assertStringContainsString('count <= 10', $schema['oneOf'][1]['description']);
+    }
+
+    #[Test]
+    public function it_generates_condition_description_for_empty_conditions(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [],
+                    'rules' => [
+                        'name' => 'required',
+                    ],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'PUT'],
+                    ],
+                    'rules' => [
+                        'name' => 'string',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertEquals('Default validation rules', $schema['oneOf'][0]['description']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_min_for_string(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'string|min:3'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string|min:5'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('minLength', $schema['oneOf'][0]['properties']['name']);
+        $this->assertEquals(3, $schema['oneOf'][0]['properties']['name']['minLength']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_max_for_string(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'string|max:50'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string|max:100'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('maxLength', $schema['oneOf'][0]['properties']['name']);
+        $this->assertEquals(50, $schema['oneOf'][0]['properties']['name']['maxLength']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_min_max_for_numeric(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['age' => 'integer|min:18|max:120'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['age' => 'integer|min:0'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('minimum', $schema['oneOf'][0]['properties']['age']);
+        $this->assertEquals(18, $schema['oneOf'][0]['properties']['age']['minimum']);
+        $this->assertArrayHasKey('maximum', $schema['oneOf'][0]['properties']['age']);
+        $this->assertEquals(120, $schema['oneOf'][0]['properties']['age']['maximum']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_email_format(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['contact' => 'email'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['contact' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('format', $schema['oneOf'][0]['properties']['contact']);
+        $this->assertEquals('email', $schema['oneOf'][0]['properties']['contact']['format']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_url_format(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['website' => 'url'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['website' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('format', $schema['oneOf'][0]['properties']['website']);
+        $this->assertEquals('uri', $schema['oneOf'][0]['properties']['website']['format']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_date_format(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['birth_date' => 'date'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['birth_date' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('format', $schema['oneOf'][0]['properties']['birth_date']);
+        $this->assertEquals('date', $schema['oneOf'][0]['properties']['birth_date']['format']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_datetime_format(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['created_at' => 'datetime'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['created_at' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('format', $schema['oneOf'][0]['properties']['created_at']);
+        $this->assertEquals('date-time', $schema['oneOf'][0]['properties']['created_at']['format']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_in_enum(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['status' => 'in:active,inactive,pending'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['status' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('enum', $schema['oneOf'][0]['properties']['status']);
+        $this->assertEquals(['active', 'inactive', 'pending'], $schema['oneOf'][0]['properties']['status']['enum']);
+    }
+
+    #[Test]
+    public function it_applies_rule_constraints_regex_pattern(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['phone' => 'regex:^\\d{3}-\\d{4}$'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['phone' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('pattern', $schema['oneOf'][0]['properties']['phone']);
+        $this->assertEquals('^\\d{3}-\\d{4}$', $schema['oneOf'][0]['properties']['phone']['pattern']);
+    }
+
+    #[Test]
+    public function it_generates_discriminator_mapping(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'required'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string'],
+                ],
+                [
+                    'conditions' => [['type' => 'else']],
+                    'rules' => ['name' => 'nullable'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('discriminator', $schema);
+        $this->assertArrayHasKey('mapping', $schema['discriminator']);
+        $this->assertArrayHasKey('post', $schema['discriminator']['mapping']);
+        $this->assertArrayHasKey('put', $schema['discriminator']['mapping']);
+        $this->assertArrayHasKey('else', $schema['discriminator']['mapping']);
+    }
+
+    #[Test]
+    public function it_generates_condition_key_for_default(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [],
+                    'rules' => ['name' => 'required'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayHasKey('default', $schema['discriminator']['mapping']);
+    }
+
+    #[Test]
+    public function it_handles_object_rules_in_apply_rule_constraints(): void
+    {
+        // Use an object rule (like Rule::in()) to test the object handling path
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => [
+                        'status' => ['required', new \stdClass],
+                    ],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['status' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Should not throw exception, object rules are skipped
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertArrayHasKey('status', $schema['oneOf'][0]['properties']);
+    }
+
+    #[Test]
+    public function it_handles_required_if_rule(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'required_if:type,admin'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertContains('name', $schema['oneOf'][0]['required']);
+    }
+
+    #[Test]
+    public function it_handles_required_unless_rule(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'required_unless:type,guest'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertContains('name', $schema['oneOf'][0]['required']);
+    }
+
+    #[Test]
+    public function it_handles_required_with_rule(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'required_with:email'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertContains('name', $schema['oneOf'][0]['required']);
+    }
+
+    #[Test]
+    public function it_handles_required_without_rule(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'rules' => ['name' => 'required_without:nickname'],
+                ],
+                [
+                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertContains('name', $schema['oneOf'][0]['required']);
+    }
+
+    #[Test]
+    public function it_handles_file_upload_with_description_and_constraints(): void
+    {
+        $parameters = [
+            [
+                'name' => 'avatar',
+                'type' => 'file',
+                'required' => true,
+                'description' => 'Profile picture',
+                'file_info' => [
+                    'max_size' => 5242880,
+                    'mime_types' => ['image/jpeg', 'image/png'],
+                ],
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        $this->assertEquals('Profile picture', $schema['properties']['avatar']['description']);
+        $this->assertEquals(5242880, $schema['properties']['avatar']['maxSize']);
+        $this->assertEquals('image/jpeg, image/png', $schema['properties']['avatar']['contentMediaType']);
+    }
+
+    #[Test]
+    public function it_handles_array_file_upload_with_constraints(): void
+    {
+        $parameters = [
+            [
+                'name' => 'photos.*',
+                'type' => 'file',
+                'required' => true,
+                'description' => 'Multiple photos',
+                'file_info' => [
+                    'max_size' => 10485760,
+                    'mime_types' => ['image/jpeg', 'image/png', 'image/gif'],
+                ],
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        $this->assertArrayHasKey('photos', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['photos']['type']);
+        $this->assertEquals('binary', $schema['properties']['photos']['items']['format']);
+        $this->assertEquals(10485760, $schema['properties']['photos']['items']['maxSize']);
+        $this->assertEquals('Multiple photos', $schema['properties']['photos']['description']);
+    }
+
+    #[Test]
+    public function it_handles_file_upload_without_name(): void
+    {
+        $parameters = [
+            [
+                'type' => 'file',
+                'required' => true,
+            ],
+            [
+                'name' => 'document',
+                'type' => 'file',
+                'required' => true,
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        // File without name should be skipped
+        $this->assertArrayHasKey('document', $schema['properties']);
+        $this->assertCount(1, $schema['properties']);
+    }
+
+    #[Test]
+    public function it_handles_mixed_file_and_normal_fields(): void
+    {
+        $parameters = [
+            [
+                'name' => 'title',
+                'type' => 'string',
+                'required' => true,
+            ],
+            [
+                'name' => 'attachment',
+                'type' => 'file',
+                'required' => true,
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        $this->assertArrayHasKey('title', $schema['properties']);
+        $this->assertArrayHasKey('attachment', $schema['properties']);
+        $this->assertEquals('string', $schema['properties']['title']['type']);
+        $this->assertEquals('binary', $schema['properties']['attachment']['format']);
+    }
+
+    #[Test]
+    public function it_handles_fractal_nested_properties(): void
+    {
+        $fractalData = [
+            'properties' => [
+                'user' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'integer', 'example' => 1],
+                        'name' => ['type' => 'string', 'example' => 'John'],
+                    ],
+                ],
+            ],
+            'availableIncludes' => [],
+            'defaultIncludes' => [],
+        ];
+
+        $schema = $this->generator->generateFromFractal($fractalData);
+
+        $this->assertArrayHasKey('user', $schema['properties']['data']['properties']);
+        $this->assertEquals('object', $schema['properties']['data']['properties']['user']['type']);
+        $this->assertArrayHasKey('properties', $schema['properties']['data']['properties']['user']);
+        $this->assertArrayHasKey('id', $schema['properties']['data']['properties']['user']['properties']);
+    }
+
+    #[Test]
+    public function it_handles_normal_field_without_name_in_multipart(): void
+    {
+        $parameters = [
+            [
+                'type' => 'string',
+                'required' => true,
+            ],
+            [
+                'name' => 'file',
+                'type' => 'file',
+                'required' => true,
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        // Normal field without name should be skipped
+        $this->assertArrayHasKey('file', $schema['properties']);
+        $this->assertCount(1, $schema['properties']);
+    }
+
+    #[Test]
+    public function it_handles_conditional_parameters_grouping_by_method(): void
+    {
+        $parameters = [
+            [
+                'name' => 'title',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Title field',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'POST'],
+                        ],
+                        'rules' => ['required', 'string', 'min:3'],
+                    ],
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'PUT'],
+                        ],
+                        'rules' => ['string', 'max:100'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertCount(2, $schema['oneOf']);
+        $this->assertEquals('POST Request', $schema['oneOf'][0]['title']);
+        $this->assertEquals('PUT Request', $schema['oneOf'][1]['title']);
+    }
+
+    #[Test]
+    public function it_handles_conditional_parameters_with_default_method(): void
+    {
+        $parameters = [
+            [
+                'name' => 'field',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Test field',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [],
+                        'rules' => ['required'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        // Single condition group should generate regular schema
+        $this->assertEquals('object', $schema['type']);
+    }
+
+    #[Test]
+    public function it_handles_conditional_parameters_deduplication(): void
+    {
+        $parameters = [
+            [
+                'name' => 'title',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Title field',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'POST'],
+                        ],
+                        'rules' => ['required'],
+                    ],
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'POST'],
+                        ],
+                        'rules' => ['string'],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'body',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Body field',
+                'conditional_rules' => [
+                    [
+                        'conditions' => [
+                            ['type' => 'http_method', 'method' => 'PUT'],
+                        ],
+                        'rules' => ['string'],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateFromConditionalParameters($parameters);
+
+        $this->assertArrayHasKey('oneOf', $schema);
+        // POST should have only title (deduplicated)
+        // PUT should have only body
+    }
+
+    #[Test]
+    public function it_handles_array_file_upload_with_bracket_notation(): void
+    {
+        $parameters = [
+            [
+                'name' => 'documents[*]',
+                'type' => 'file',
+                'required' => true,
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        $this->assertArrayHasKey('documents', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['documents']['type']);
+    }
+
+    #[Test]
+    public function it_handles_array_file_upload_with_empty_bracket_notation(): void
+    {
+        $parameters = [
+            [
+                'name' => 'files[]',
+                'type' => 'file',
+                'required' => true,
+            ],
+        ];
+
+        $result = $this->generator->generateFromParameters($parameters);
+
+        $schema = $result['content']['multipart/form-data']['schema'];
+        $this->assertArrayHasKey('files', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['files']['type']);
+    }
+
+    #[Test]
+    public function it_handles_combined_conditions_in_description(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'POST'],
+                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                    ],
+                    'rules' => ['level' => 'required|integer'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'PUT'],
+                    ],
+                    'rules' => ['level' => 'integer'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Combined conditions should be joined with AND
+        $this->assertStringContainsString('HTTP method is POST', $schema['oneOf'][0]['description']);
+        $this->assertStringContainsString('AND', $schema['oneOf'][0]['description']);
+        $this->assertStringContainsString('user isAdmin()', $schema['oneOf'][0]['description']);
+    }
+
+    #[Test]
+    public function it_generates_condition_key_for_request_field_with_field_value(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'request_field', 'check' => 'has', 'field' => 'type'],
+                    ],
+                    'rules' => ['data' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'request_field', 'check' => 'filled', 'field' => 'value'],
+                    ],
+                    'rules' => ['data' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Verify discriminator mapping keys include both check and field values
+        $this->assertArrayHasKey('request_has_type', $schema['discriminator']['mapping']);
+        $this->assertArrayHasKey('request_filled_value', $schema['discriminator']['mapping']);
+    }
+
+    #[Test]
+    public function it_generates_condition_key_for_custom_expression(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'custom', 'expression' => 'count > 10'],
+                    ],
+                    'rules' => ['items' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'custom', 'expression' => 'count <= 10'],
+                    ],
+                    'rules' => ['items' => 'array'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Custom expressions should generate md5-based keys
+        $mapping = $schema['discriminator']['mapping'];
+        $keys = array_keys($mapping);
+
+        // Keys should be 8-character md5 substrings
+        $this->assertCount(2, $keys);
+        $this->assertEquals(8, strlen($keys[0]));
+        $this->assertEquals(8, strlen($keys[1]));
+
+        // Different expressions should generate different keys
+        $this->assertNotEquals($keys[0], $keys[1]);
+    }
+
+    #[Test]
+    public function it_generates_condition_key_for_user_check(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                    ],
+                    'rules' => ['level' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'user_check', 'method' => 'isGuest'],
+                    ],
+                    'rules' => ['level' => 'integer'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Verify user_check generates specific keys
+        $this->assertArrayHasKey('user_isadmin', $schema['discriminator']['mapping']);
+        $this->assertArrayHasKey('user_isguest', $schema['discriminator']['mapping']);
+    }
+
+    #[Test]
+    public function it_handles_condition_without_expression_key(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'unknown_type'],
+                    ],
+                    'rules' => ['data' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'PUT'],
+                    ],
+                    'rules' => ['data' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Unknown type without expression should use 'unknown' as fallback
+        $mapping = $schema['discriminator']['mapping'];
+        $keys = array_keys($mapping);
+
+        // First key should be md5 of 'unknown' (8 chars)
+        $expectedKey = substr(md5('unknown'), 0, 8);
+        $this->assertArrayHasKey($expectedKey, $mapping);
+        $this->assertArrayHasKey('put', $mapping);
+    }
 }
