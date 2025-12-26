@@ -407,4 +407,241 @@ class CollectionAnalyzerTest extends TestCase
         // When map returns a variable, items may be empty or generic
         $this->assertEquals('array', $result['type']);
     }
+
+    #[Test]
+    public function it_handles_method_call_without_identifier_name(): void
+    {
+        // Test dynamic method call where method name is a variable
+        $code = '$users->$methodName()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return default array schema
+        $this->assertEquals('array', $result['type']);
+        $this->assertEquals('object', $result['items']['type']);
+    }
+
+    #[Test]
+    public function it_handles_static_call_with_non_name_class(): void
+    {
+        // Test static call where class is a variable
+        $code = '$className::all()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return default array schema
+        $this->assertEquals('array', $result['type']);
+        $this->assertEquals('object', $result['items']['type']);
+    }
+
+    #[Test]
+    public function it_handles_static_call_with_non_identifier_method(): void
+    {
+        // Test static call where method is a variable
+        $code = 'User::$method()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return default array schema
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_static_call_with_non_collection_method(): void
+    {
+        // Test static call with method other than all/get
+        $code = 'User::find(1)';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return default array schema
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_argument_with_integer_value(): void
+    {
+        // Test argument extraction with integer (unknown type)
+        $code = '$users->take(5)';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // take is unknown operation, returns schema as-is
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_map_without_closure(): void
+    {
+        // Test map with a callback string instead of closure
+        $code = '$users->map("strtoupper")';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return original schema when no closure is provided
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_pluck_with_non_string_field(): void
+    {
+        // Test pluck with integer index
+        $code = '$data->pluck(0)';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return default string array
+        $this->assertEquals('array', $result['type']);
+        $this->assertEquals('string', $result['items']['type']);
+    }
+
+    #[Test]
+    public function it_handles_only_with_empty_args(): void
+    {
+        $code = '$data->only()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_except_with_empty_args(): void
+    {
+        $code = '$data->except()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_key_by_with_non_array_schema(): void
+    {
+        // first() returns object, then keyBy should not change it
+        $code = '$users->first()->keyBy("id")';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // first() returns object, keyBy on object returns as-is
+        $this->assertEquals('object', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_pluck_without_args(): void
+    {
+        $code = '$data->pluck()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should return default string array
+        $this->assertEquals('array', $result['type']);
+        $this->assertEquals('string', $result['items']['type']);
+    }
+
+    #[Test]
+    public function it_handles_array_item_without_string_value(): void
+    {
+        // Test array with integer values
+        $code = '$data->only([1, 2, 3])';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Should still work but with empty fields
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_map_closure_without_return_statement(): void
+    {
+        $code = '$users->map(function($user) { echo $user->name; })';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // No return statement means original schema is preserved
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_map_returning_non_array(): void
+    {
+        $code = '$users->map(function($user) { return $user->name; })';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        // Returning property fetch, not an array
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_extracts_structure_from_nested_array(): void
+    {
+        $code = '$users->map(function($user) {
+            return [
+                "data" => [
+                    "id" => 1,
+                    "name" => "test"
+                ]
+            ];
+        })';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        $this->assertEquals('array', $result['type']);
+        $this->assertEquals('object', $result['items']['type']);
+        $this->assertArrayHasKey('data', $result['items']['properties']);
+    }
+
+    #[Test]
+    public function it_handles_collect_function_call(): void
+    {
+        // Test with collect() function instead of method chain
+        $code = 'collect($data)->toArray()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_new_collection_instantiation(): void
+    {
+        $code = '(new Collection($data))->toArray()';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        $this->assertEquals('array', $result['type']);
+    }
+
+    #[Test]
+    public function it_handles_array_item_with_null_key(): void
+    {
+        // Test array with numeric keys (no string key)
+        $code = '$data->map(function($item) { return ["value1", "value2"]; })';
+        $ast = $this->parser->parse("<?php $code;")[0]->expr;
+
+        $result = $this->analyzer->analyzeCollectionChain($ast);
+
+        $this->assertEquals('array', $result['type']);
+        $this->assertEquals('object', $result['items']['type']);
+        // No properties because keys are not strings
+        $this->assertEmpty($result['items']['properties'] ?? []);
+    }
 }
