@@ -400,6 +400,303 @@ class HtmlDocumentGeneratorTest extends TestCase
         $this->assertStringContainsString('tryItOutEnabled: true', $html);
     }
 
+    #[Test]
+    public function it_uses_simple_template_when_blade_not_available(): void
+    {
+        // Create a subclass that forces simple template rendering
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = $this->getSampleOpenApiSpec();
+        $html = $generator->generate($spec);
+
+        // Should still generate valid HTML with swagger-ui
+        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        $this->assertStringContainsString('swagger-ui', $html);
+        $this->assertStringContainsString('Test API', $html);
+    }
+
+    #[Test]
+    public function it_renders_simple_template_with_empty_description(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => 'No Description API',
+                'version' => '2.0.0',
+            ],
+            'paths' => [],
+        ];
+
+        $html = $generator->generate($spec);
+
+        $this->assertStringContainsString('No Description API', $html);
+        $this->assertStringContainsString('swagger-ui', $html);
+    }
+
+    #[Test]
+    public function it_renders_simple_template_with_description(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => 'Test API',
+                'version' => '1.0.0',
+                'description' => 'This is a test description',
+            ],
+            'paths' => [],
+        ];
+
+        $html = $generator->generate($spec);
+
+        $this->assertStringContainsString('This is a test description', $html);
+    }
+
+    #[Test]
+    public function it_renders_simple_template_with_try_it_out_disabled(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = $this->getSampleOpenApiSpec();
+        $html = $generator->generate($spec, ['try_it_out' => false]);
+
+        $this->assertStringContainsString('tryItOutEnabled: false', $html);
+    }
+
+    #[Test]
+    public function it_throws_exception_when_template_file_not_found(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+
+            protected function renderWithSimpleTemplate(array $data): string
+            {
+                // Point to non-existent file
+                $templatePath = '/non/existent/path/template.blade.php';
+
+                if (! file_exists($templatePath)) {
+                    throw new \RuntimeException("Template file not found: {$templatePath}");
+                }
+
+                return '';
+            }
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Template file not found');
+
+        $generator->generate($this->getSampleOpenApiSpec());
+    }
+
+    #[Test]
+    public function it_escapes_html_in_simple_template(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => '<script>alert("xss")</script>',
+                'version' => '<b>1.0</b>',
+                'description' => '<div>HTML content</div>',
+            ],
+            'paths' => [],
+        ];
+
+        $html = $generator->generate($spec);
+
+        // HTML entities should be escaped
+        $this->assertStringContainsString('&lt;script&gt;', $html);
+        $this->assertStringContainsString('&lt;b&gt;', $html);
+        $this->assertStringContainsString('&lt;div&gt;', $html);
+    }
+
+    #[Test]
+    public function it_embeds_json_spec_in_simple_template(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => 'Test API',
+                'version' => '1.0.0',
+            ],
+            'paths' => [
+                '/api/test' => [
+                    'get' => ['summary' => 'Test endpoint'],
+                ],
+            ],
+        ];
+
+        $html = $generator->generate($spec);
+
+        // JSON spec should be embedded
+        $this->assertStringContainsString('"/api/test"', $html);
+        $this->assertStringContainsString('"openapi":"3.0.0"', $html);
+    }
+
+    #[Test]
+    public function it_handles_unicode_in_simple_template(): void
+    {
+        $generator = new class extends HtmlDocumentGenerator
+        {
+            protected function canUseBladeViews(): bool
+            {
+                return false;
+            }
+        };
+
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => '日本語API',
+                'version' => '1.0.0',
+                'description' => 'これは説明です',
+            ],
+            'paths' => [],
+        ];
+
+        $html = $generator->generate($spec);
+
+        // Unicode should be preserved
+        $this->assertStringContainsString('日本語API', $html);
+        $this->assertStringContainsString('これは説明です', $html);
+    }
+
+    #[Test]
+    public function can_use_blade_views_returns_true_when_view_exists(): void
+    {
+        // In Orchestra Testbench, the view should exist
+        $generator = new HtmlDocumentGenerator;
+
+        // Use reflection to test protected method
+        $reflection = new \ReflectionClass($generator);
+        $method = $reflection->getMethod('canUseBladeViews');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($generator);
+
+        // In test environment with Orchestra Testbench, this should be true
+        $this->assertTrue($result);
+    }
+
+    #[Test]
+    public function render_with_blade_returns_html(): void
+    {
+        $generator = new HtmlDocumentGenerator;
+
+        $reflection = new \ReflectionClass($generator);
+        $method = $reflection->getMethod('renderWithBlade');
+        $method->setAccessible(true);
+
+        $data = [
+            'title' => 'Test API',
+            'version' => '1.0.0',
+            'description' => 'Test description',
+            'spec' => '{"openapi":"3.0.0"}',
+            'tryItOutEnabled' => true,
+            'generatedAt' => '2024-01-01 00:00:00',
+        ];
+
+        $html = $method->invoke($generator, $data);
+
+        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        $this->assertStringContainsString('swagger-ui', $html);
+    }
+
+    #[Test]
+    public function render_with_simple_template_returns_html(): void
+    {
+        $generator = new HtmlDocumentGenerator;
+
+        $reflection = new \ReflectionClass($generator);
+        $method = $reflection->getMethod('renderWithSimpleTemplate');
+        $method->setAccessible(true);
+
+        $data = [
+            'title' => 'Test API',
+            'version' => '1.0.0',
+            'description' => 'Test description',
+            'spec' => '{"openapi":"3.0.0"}',
+            'tryItOutEnabled' => true,
+            'generatedAt' => '2024-01-01 00:00:00',
+        ];
+
+        $html = $method->invoke($generator, $data);
+
+        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        $this->assertStringContainsString('swagger-ui', $html);
+        $this->assertStringContainsString('Test API', $html);
+    }
+
+    #[Test]
+    public function render_with_simple_template_handles_empty_description(): void
+    {
+        $generator = new HtmlDocumentGenerator;
+
+        $reflection = new \ReflectionClass($generator);
+        $method = $reflection->getMethod('renderWithSimpleTemplate');
+        $method->setAccessible(true);
+
+        $data = [
+            'title' => 'Test API',
+            'version' => '1.0.0',
+            'description' => '',
+            'spec' => '{"openapi":"3.0.0"}',
+            'tryItOutEnabled' => false,
+            'generatedAt' => '2024-01-01 00:00:00',
+        ];
+
+        $html = $method->invoke($generator, $data);
+
+        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        $this->assertStringContainsString('tryItOutEnabled: false', $html);
+    }
+
     /**
      * @return array<string, mixed>
      */

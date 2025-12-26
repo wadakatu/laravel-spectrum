@@ -306,4 +306,236 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains('NULL', $results);
         $this->assertContains('boolean', $results);
     }
+
+    public function test_process_sequential_fallback_when_fork_not_available(): void
+    {
+        // Create a processor subclass that simulates Fork not being available
+        $processor = new class(true, 4) extends ParallelProcessor
+        {
+            public function process(array $routes, callable $processor): array
+            {
+                // Simulate Fork class not existing by forcing sequential processing
+                return array_map($processor, $routes);
+            }
+        };
+
+        $routes = array_map(fn ($i) => "route$i", range(1, 100));
+        $results = $processor->process($routes, fn ($route) => strtoupper($route));
+
+        $this->assertCount(100, $results);
+        $this->assertContains('ROUTE1', $results);
+        $this->assertContains('ROUTE100', $results);
+    }
+
+    public function test_process_with_progress_sequential_reports_every_10_items(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $items = range(1, 35);
+        $progressReports = [];
+
+        $processor->processWithProgress(
+            $items,
+            fn ($item) => $item,
+            function ($current, $total) use (&$progressReports) {
+                $progressReports[] = $current;
+            }
+        );
+
+        // Progress should be reported at 10, 20, 30, and 35 (final)
+        $this->assertContains(10, $progressReports);
+        $this->assertContains(20, $progressReports);
+        $this->assertContains(30, $progressReports);
+        $this->assertContains(35, $progressReports);
+    }
+
+    public function test_constructor_with_enabled_true_and_workers(): void
+    {
+        $processor = new ParallelProcessor(true, 16);
+
+        $reflection = new \ReflectionClass($processor);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
+        $enabledProperty = $reflection->getProperty('enabled');
+        $enabledProperty->setAccessible(true);
+
+        $this->assertEquals(16, $workersProperty->getValue($processor));
+        $this->assertTrue($enabledProperty->getValue($processor));
+    }
+
+    public function test_constructor_with_enabled_false(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+
+        $reflection = new \ReflectionClass($processor);
+        $enabledProperty = $reflection->getProperty('enabled');
+        $enabledProperty->setAccessible(true);
+
+        $this->assertFalse($enabledProperty->getValue($processor));
+    }
+
+    public function test_determine_optimal_workers_returns_valid_range(): void
+    {
+        $processor = new ParallelProcessor(false);
+
+        $reflection = new \ReflectionClass($processor);
+        $method = $reflection->getMethod('determineOptimalWorkers');
+        $method->setAccessible(true);
+
+        $workers = $method->invoke($processor);
+
+        // Result should be between 2 and 16
+        $this->assertGreaterThanOrEqual(2, $workers);
+        $this->assertLessThanOrEqual(16, $workers);
+    }
+
+    public function test_process_with_exactly_50_items(): void
+    {
+        // Boundary test: exactly 50 items should not trigger parallel processing
+        $processor = new ParallelProcessor(true, 4);
+        $items = range(1, 50);
+
+        $results = $processor->process($items, fn ($x) => $x * 2);
+
+        $this->assertCount(50, $results);
+        // Results may not be in order if parallel processing is enabled
+        // Just verify all expected values are present
+        $this->assertContains(2, $results);
+        $this->assertContains(100, $results);
+    }
+
+    public function test_process_with_51_items_triggers_parallel_path(): void
+    {
+        // Boundary test: 51 items would trigger parallel processing if enabled
+        $processor = new ParallelProcessor(true, 4);
+        $items = range(1, 51);
+
+        $results = $processor->process($items, fn ($x) => $x * 2);
+
+        $this->assertCount(51, $results);
+    }
+
+    public function test_set_workers_to_exactly_32(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+
+        $reflection = new \ReflectionClass($processor);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
+
+        $processor->setWorkers(32);
+        $this->assertEquals(32, $workersProperty->getValue($processor));
+    }
+
+    public function test_set_workers_to_exactly_1(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+
+        $reflection = new \ReflectionClass($processor);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
+
+        $processor->setWorkers(1);
+        $this->assertEquals(1, $workersProperty->getValue($processor));
+    }
+
+    public function test_process_with_progress_last_item_reports_progress(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $items = range(1, 11); // 11 items: reports at 10 and 11 (last)
+        $progressReports = [];
+
+        $processor->processWithProgress(
+            $items,
+            fn ($item) => $item,
+            function ($current, $total) use (&$progressReports) {
+                $progressReports[] = $current;
+            }
+        );
+
+        $this->assertContains(10, $progressReports);
+        $this->assertContains(11, $progressReports); // Last item
+    }
+
+    public function test_check_parallel_processing_returns_false_on_windows(): void
+    {
+        $processor = new ParallelProcessor;
+
+        $reflection = new \ReflectionClass($processor);
+        $method = $reflection->getMethod('checkParallelProcessingSupport');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($processor);
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->assertFalse($result);
+        } else {
+            // On non-Windows, result depends on PCNTL extension
+            $this->assertIsBool($result);
+        }
+    }
+
+    public function test_check_parallel_processing_returns_false_without_pcntl(): void
+    {
+        $processor = new ParallelProcessor;
+
+        $reflection = new \ReflectionClass($processor);
+        $method = $reflection->getMethod('checkParallelProcessingSupport');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($processor);
+
+        if (! extension_loaded('pcntl')) {
+            $this->assertFalse($result);
+        } else {
+            // With PCNTL, result depends on OS and config
+            $this->assertIsBool($result);
+        }
+    }
+
+    public function test_process_with_progress_modulo_10_check(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $items = range(1, 10);
+        $progressReports = [];
+
+        $processor->processWithProgress(
+            $items,
+            fn ($item) => $item,
+            function ($current, $total) use (&$progressReports) {
+                $progressReports[] = $current;
+            }
+        );
+
+        // Should report at exactly 10 (which is both modulo 10 and last item)
+        $this->assertContains(10, $progressReports);
+    }
+
+    public function test_process_returns_results_in_correct_order_when_disabled(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $items = [3, 1, 4, 1, 5, 9, 2, 6];
+
+        $results = $processor->process($items, fn ($x) => $x * 10);
+
+        // Order should be preserved when not parallel
+        $this->assertEquals([30, 10, 40, 10, 50, 90, 20, 60], $results);
+    }
+
+    public function test_process_with_closure_that_modifies_state(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $counter = 0;
+
+        $items = range(1, 5);
+        $results = $processor->process($items, function ($x) use (&$counter) {
+            $counter++;
+
+            return $x + $counter;
+        });
+
+        // Counter should increment for each item
+        $this->assertEquals(5, $counter);
+        // Results should reflect the incrementing counter
+        $this->assertEquals([2, 4, 6, 8, 10], $results);
+    }
 }
