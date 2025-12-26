@@ -170,4 +170,140 @@ class ParallelProcessorAdvancedTest extends TestCase
         // 処理後に一時ファイルが削除されていることを確認
         $this->assertEquals(count($filesBefore), count($filesAfter));
     }
+
+    public function test_constructor_uses_defaults_when_null_passed(): void
+    {
+        $processor = new ParallelProcessor(null, null);
+
+        $reflection = new \ReflectionClass($processor);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
+        $enabledProperty = $reflection->getProperty('enabled');
+        $enabledProperty->setAccessible(true);
+
+        // Workers should be determined by the optimal workers method
+        $workers = $workersProperty->getValue($processor);
+        $this->assertGreaterThanOrEqual(2, $workers);
+        $this->assertLessThanOrEqual(16, $workers);
+
+        // Enabled should be determined by checkParallelProcessingSupport
+        $enabled = $enabledProperty->getValue($processor);
+        $this->assertIsBool($enabled);
+    }
+
+    public function test_process_with_large_dataset_enabled_but_no_fork(): void
+    {
+        // Test that large datasets still work when Fork is not available
+        $processor = new ParallelProcessor(true, 4);
+
+        // 50+ items to trigger parallel processing path
+        $routes = array_map(fn ($i) => "route$i", range(1, 60));
+
+        $results = $processor->process($routes, fn ($route) => strtoupper($route));
+
+        $this->assertCount(60, $results);
+        $this->assertContains('ROUTE1', $results);
+        $this->assertContains('ROUTE60', $results);
+    }
+
+    public function test_set_workers_with_negative_value(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+
+        $reflection = new \ReflectionClass($processor);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
+
+        // Negative values should be clamped to 1
+        $processor->setWorkers(-5);
+        $this->assertEquals(1, $workersProperty->getValue($processor));
+    }
+
+    public function test_process_with_single_item(): void
+    {
+        $processor = new ParallelProcessor(true, 4);
+
+        $results = $processor->process(['single'], fn ($x) => strtoupper($x));
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('SINGLE', $results[0]);
+    }
+
+    public function test_process_with_progress_single_item(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+        $progressCalls = [];
+
+        $results = $processor->processWithProgress(
+            ['single'],
+            fn ($x) => strtoupper($x),
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = ['current' => $current, 'total' => $total];
+            }
+        );
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('SINGLE', $results[0]);
+
+        // Single item should trigger final progress call
+        $this->assertCount(1, $progressCalls);
+        $this->assertEquals(1, $progressCalls[0]['current']);
+        $this->assertEquals(1, $progressCalls[0]['total']);
+    }
+
+    public function test_process_with_null_results(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+
+        $items = [1, 2, 3];
+        $results = $processor->process($items, fn ($x) => null);
+
+        $this->assertCount(3, $results);
+        $this->assertNull($results[0]);
+        $this->assertNull($results[1]);
+        $this->assertNull($results[2]);
+    }
+
+    public function test_check_parallel_processing_support_with_config_enabled(): void
+    {
+        $this->app['config']->set('spectrum.performance.parallel_processing', true);
+
+        $processor = new ParallelProcessor;
+
+        $reflection = new \ReflectionClass($processor);
+        $method = $reflection->getMethod('checkParallelProcessingSupport');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($processor);
+
+        // Result depends on environment (PCNTL extension, OS)
+        $this->assertIsBool($result);
+
+        // On Windows it should always be false
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->assertFalse($result);
+        }
+
+        // Without PCNTL extension it should be false
+        if (! extension_loaded('pcntl')) {
+            $this->assertFalse($result);
+        }
+    }
+
+    public function test_process_with_mixed_data_types(): void
+    {
+        $processor = new ParallelProcessor(false, 4);
+
+        $items = [1, 'string', ['array'], (object) ['key' => 'value'], null, true];
+
+        $results = $processor->process($items, fn ($x) => gettype($x));
+
+        $this->assertCount(6, $results);
+        $this->assertContains('integer', $results);
+        $this->assertContains('string', $results);
+        $this->assertContains('array', $results);
+        $this->assertContains('object', $results);
+        $this->assertContains('NULL', $results);
+        $this->assertContains('boolean', $results);
+    }
 }

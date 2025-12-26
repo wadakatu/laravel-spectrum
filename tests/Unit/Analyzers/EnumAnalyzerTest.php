@@ -141,4 +141,169 @@ class EnumAnalyzerTest extends TestCase
         $this->assertNotNull($result);
         $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
     }
+
+    public function test_handles_array_format_from_ast_extraction(): void
+    {
+        $rule = [
+            'type' => 'enum',
+            'class' => StatusEnum::class,
+        ];
+        $result = $this->analyzer->analyzeValidationRule($rule);
+
+        $this->assertNotNull($result);
+        $this->assertEquals(StatusEnum::class, $result['class']);
+        $this->assertEquals(['active', 'inactive', 'pending'], $result['values']);
+    }
+
+    public function test_handles_array_format_with_use_statements(): void
+    {
+        $rule = [
+            'type' => 'enum',
+            'class' => 'StatusEnum',
+        ];
+        $useStatements = [
+            'StatusEnum' => StatusEnum::class,
+        ];
+        $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
+
+        $this->assertNotNull($result);
+        $this->assertEquals(StatusEnum::class, $result['class']);
+    }
+
+    public function test_handles_array_format_with_namespace(): void
+    {
+        $rule = [
+            'type' => 'enum',
+            'class' => 'StatusEnum',
+        ];
+        $namespace = 'LaravelSpectrum\\Tests\\Fixtures\\Enums';
+        $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
+
+        $this->assertNotNull($result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+    }
+
+    public function test_handles_ast_string_rule_enum_format(): void
+    {
+        $rule = 'Rule::enum(StatusEnum::class)';
+        $useStatements = [
+            'StatusEnum' => StatusEnum::class,
+        ];
+        $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
+
+        $this->assertNotNull($result);
+        $this->assertEquals(StatusEnum::class, $result['class']);
+    }
+
+    public function test_handles_ast_string_rule_enum_with_namespace(): void
+    {
+        $rule = 'Rule::enum(StatusEnum::class)';
+        $namespace = 'LaravelSpectrum\\Tests\\Fixtures\\Enums';
+        $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
+
+        $this->assertNotNull($result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+    }
+
+    public function test_handles_ast_new_enum_format(): void
+    {
+        $rule = 'new \\Illuminate\\Validation\\Rules\\Enum(StatusEnum::class)';
+        $useStatements = [
+            'StatusEnum' => StatusEnum::class,
+        ];
+        $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
+
+        $this->assertNotNull($result);
+        $this->assertEquals(StatusEnum::class, $result['class']);
+    }
+
+    public function test_handles_ast_new_enum_with_namespace(): void
+    {
+        $rule = 'new Enum(StatusEnum::class)';
+        $namespace = 'LaravelSpectrum\\Tests\\Fixtures\\Enums';
+        $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
+
+        $this->assertNotNull($result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+    }
+
+    public function test_handles_concatenated_enum_string(): void
+    {
+        $rule = "'required|enum:' . UserTypeEnum::class";
+        $useStatements = [
+            'UserTypeEnum' => UserTypeEnum::class,
+        ];
+        $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
+
+        $this->assertNotNull($result);
+        $this->assertEquals(UserTypeEnum::class, $result['class']);
+    }
+
+    public function test_returns_empty_array_for_nonexistent_model_class(): void
+    {
+        $result = $this->analyzer->analyzeEloquentCasts('NonExistentModelClass');
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function test_analyzes_method_with_mixed_parameter_types(): void
+    {
+        // The update method has string $id (builtin) and ?StatusEnum $status (nullable enum)
+        $method = new ReflectionMethod(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController::class,
+            'update'
+        );
+        $result = $this->analyzer->analyzeMethodSignature($method);
+
+        $this->assertArrayHasKey('parameters', $result);
+        // Should only contain the enum parameter, not the string
+        $this->assertArrayHasKey('status', $result['parameters']);
+        $this->assertArrayNotHasKey('id', $result['parameters']);
+    }
+
+    public function test_extract_enum_info_returns_null_for_non_enum_class(): void
+    {
+        $result = $this->analyzer->extractEnumInfo(\stdClass::class);
+
+        $this->assertNull($result);
+    }
+
+    public function test_extract_enum_info_returns_null_for_nonexistent_class(): void
+    {
+        $result = $this->analyzer->extractEnumInfo('NonExistentEnumClass');
+
+        $this->assertNull($result);
+    }
+
+    public function test_handles_array_rule_without_enum_type(): void
+    {
+        $rule = [
+            'type' => 'string',
+            'class' => StatusEnum::class,
+        ];
+        $result = $this->analyzer->analyzeValidationRule($rule);
+
+        // Should return null because type is not 'enum'
+        $this->assertNull($result);
+    }
+
+    public function test_handles_integer_backed_enum(): void
+    {
+        $rule = Rule::enum(PriorityEnum::class);
+        $result = $this->analyzer->analyzeValidationRule($rule);
+
+        $this->assertNotNull($result);
+        $this->assertEquals('integer', $result['type']);
+        $this->assertEquals([1, 2, 3], $result['values']);
+    }
+
+    public function test_handles_object_rule_that_is_not_enum(): void
+    {
+        // Create a mock object that is not an Enum rule
+        $rule = new \stdClass;
+        $result = $this->analyzer->analyzeValidationRule($rule);
+
+        $this->assertNull($result);
+    }
 }
