@@ -48,15 +48,12 @@ jobs:
       - name: Run mutation testing (changed files only)
         if: github.event_name == 'pull_request'
         run: |
-          # Note: Using file-level diff (--git-diff-filter=AM), not line-level.
-          # This means ALL mutations in modified files are tested, including
-          # pre-existing mutations. The threshold is set lower to accommodate this.
           vendor/bin/infection \
             --threads=max \
             --git-diff-filter=AM \
             --git-diff-base=origin/${{ github.base_ref }} \
             --min-msi=50 \
-            --min-covered-msi=60 \
+            --min-covered-msi=65 \
             --ignore-msi-with-no-mutations \
             --logger-github
         env:
