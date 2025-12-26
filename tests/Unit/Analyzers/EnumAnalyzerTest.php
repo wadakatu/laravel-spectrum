@@ -306,4 +306,59 @@ class EnumAnalyzerTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function test_analyzes_eloquent_casts_with_format_type(): void
+    {
+        $modelClass = \LaravelSpectrum\Tests\Fixtures\Models\EnumCastFormatModel::class;
+        $result = $this->analyzer->analyzeEloquentCasts($modelClass);
+
+        // Should handle the EnumClass:type format
+        $this->assertIsArray($result);
+    }
+
+    public function test_extract_enum_info_handles_exception(): void
+    {
+        // Create a mock EnumExtractor that throws an exception
+        $mockExtractor = $this->createMock(\LaravelSpectrum\Support\EnumExtractor::class);
+        $mockExtractor->method('extractValues')
+            ->willThrowException(new \Exception('Extraction failed'));
+
+        $analyzer = new EnumAnalyzer($mockExtractor);
+        $result = $analyzer->extractEnumInfo(StatusEnum::class);
+
+        $this->assertNull($result);
+    }
+
+    public function test_analyzes_method_with_void_return_type(): void
+    {
+        // update has void return type (builtin), not an enum
+        $method = new ReflectionMethod(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController::class,
+            'update'
+        );
+        $result = $this->analyzer->analyzeMethodSignature($method);
+
+        $this->assertArrayHasKey('return', $result);
+        $this->assertNull($result['return']);
+    }
+
+    public function test_analyzes_method_with_builtin_return_type(): void
+    {
+        // A method with builtin return type (not enum)
+        $method = new ReflectionMethod(\DateTime::class, 'getTimestamp');
+        $result = $this->analyzer->analyzeMethodSignature($method);
+
+        $this->assertArrayHasKey('return', $result);
+        $this->assertNull($result['return']);
+    }
+
+    public function test_analyzes_method_with_builtin_parameter_types(): void
+    {
+        // A method with only builtin parameter types
+        $method = new ReflectionMethod(\DateTime::class, 'setTimestamp');
+        $result = $this->analyzer->analyzeMethodSignature($method);
+
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertEmpty($result['parameters']);
+    }
 }
