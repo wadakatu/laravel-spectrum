@@ -405,7 +405,8 @@ class SchemaGenerator
                     $parts[] = 'Otherwise';
                     break;
                 default:
-                    $parts[] = "When {$condition['expression']}";
+                    $expression = $condition['expression'] ?? 'custom condition';
+                    $parts[] = "When {$expression}";
             }
         }
 

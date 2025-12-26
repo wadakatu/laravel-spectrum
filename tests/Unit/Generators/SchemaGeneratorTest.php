@@ -1797,4 +1797,125 @@ class SchemaGeneratorTest extends TestCase
         $this->assertStringContainsString('AND', $schema['oneOf'][0]['description']);
         $this->assertStringContainsString('user isAdmin()', $schema['oneOf'][0]['description']);
     }
+
+    #[Test]
+    public function it_generates_condition_key_for_request_field_with_field_value(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'request_field', 'check' => 'has', 'field' => 'type'],
+                    ],
+                    'rules' => ['data' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'request_field', 'check' => 'filled', 'field' => 'value'],
+                    ],
+                    'rules' => ['data' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Verify discriminator mapping keys include both check and field values
+        $this->assertArrayHasKey('request_has_type', $schema['discriminator']['mapping']);
+        $this->assertArrayHasKey('request_filled_value', $schema['discriminator']['mapping']);
+    }
+
+    #[Test]
+    public function it_generates_condition_key_for_custom_expression(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'custom', 'expression' => 'count > 10'],
+                    ],
+                    'rules' => ['items' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'custom', 'expression' => 'count <= 10'],
+                    ],
+                    'rules' => ['items' => 'array'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Custom expressions should generate md5-based keys
+        $mapping = $schema['discriminator']['mapping'];
+        $keys = array_keys($mapping);
+
+        // Keys should be 8-character md5 substrings
+        $this->assertCount(2, $keys);
+        $this->assertEquals(8, strlen($keys[0]));
+        $this->assertEquals(8, strlen($keys[1]));
+
+        // Different expressions should generate different keys
+        $this->assertNotEquals($keys[0], $keys[1]);
+    }
+
+    #[Test]
+    public function it_generates_condition_key_for_user_check(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                    ],
+                    'rules' => ['level' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'user_check', 'method' => 'isGuest'],
+                    ],
+                    'rules' => ['level' => 'integer'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Verify user_check generates specific keys
+        $this->assertArrayHasKey('user_isadmin', $schema['discriminator']['mapping']);
+        $this->assertArrayHasKey('user_isguest', $schema['discriminator']['mapping']);
+    }
+
+    #[Test]
+    public function it_handles_condition_without_expression_key(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [
+                        ['type' => 'unknown_type'],
+                    ],
+                    'rules' => ['data' => 'required'],
+                ],
+                [
+                    'conditions' => [
+                        ['type' => 'http_method', 'method' => 'PUT'],
+                    ],
+                    'rules' => ['data' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Unknown type without expression should use 'unknown' as fallback
+        $mapping = $schema['discriminator']['mapping'];
+        $keys = array_keys($mapping);
+
+        // First key should be md5 of 'unknown' (8 chars)
+        $expectedKey = substr(md5('unknown'), 0, 8);
+        $this->assertArrayHasKey($expectedKey, $mapping);
+        $this->assertArrayHasKey('put', $mapping);
+    }
 }
