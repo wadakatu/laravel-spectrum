@@ -411,4 +411,290 @@ class LiveReloadServerTest extends TestCase
         $this->assertInstanceOf(\SplObjectStorage::class, $clients);
         $this->assertEquals(0, $clients->count());
     }
+
+    public function test_websocket_server_has_error_handler(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        // WebSocketサーバーを起動
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // onErrorコールバックが設定されていることを確認
+        $this->assertNotNull($wsWorker->onError);
+
+        // エラーハンドラをテスト（エコー出力があることを確認）
+        $onError = $wsWorker->onError;
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        // エラーメッセージがエコーされることを期待
+        ob_start();
+        $onError($mockConnection, 500, 'Test error message');
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Test error message', $output);
+    }
+
+    public function test_reset_clients_creates_new_storage(): void
+    {
+        $reflection = new \ReflectionClass(LiveReloadServer::class);
+        $clientsProperty = $reflection->getProperty('clients');
+        $clientsProperty->setAccessible(true);
+
+        // Get initial clients storage
+        $clientsBefore = $clientsProperty->getValue(null);
+
+        // Reset clients
+        LiveReloadServer::resetClients();
+
+        // Get new clients storage
+        $clientsAfter = $clientsProperty->getValue(null);
+
+        // Should be a new instance
+        $this->assertNotSame($clientsBefore, $clientsAfter);
+        $this->assertInstanceOf(\SplObjectStorage::class, $clientsAfter);
+    }
+
+    public function test_constructor_sets_instance(): void
+    {
+        $reflection = new \ReflectionClass(LiveReloadServer::class);
+        $instanceProperty = $reflection->getProperty('instance');
+        $instanceProperty->setAccessible(true);
+
+        // Create new server instance
+        $newServer = new LiveReloadServer;
+
+        // Verify instance is set
+        $instance = $instanceProperty->getValue(null);
+        $this->assertSame($newServer, $instance);
+    }
+
+    public function test_http_server_returns_etag_and_last_modified_headers(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        // テスト用のOpenAPIファイルを作成
+        $testDir = sys_get_temp_dir().'/spectrum_test';
+        $testFile = $testDir.'/openapi.json';
+        @mkdir($testDir, 0777, true);
+        file_put_contents($testFile, '{"openapi": "3.0.0"}');
+
+        // HTTPサーバーを起動
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        // モックのリクエストとコネクションを作成
+        $mockRequest = $this->createRequestStub([
+            'path' => '/openapi.json',
+        ]);
+
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        $capturedResponse = null;
+        $mockConnection->expects($this->once())
+            ->method('send')
+            ->willReturnCallback(function ($response) use (&$capturedResponse) {
+                $capturedResponse = $response;
+            });
+
+        // onMessageコールバックを実行
+        $callback = $httpWorker->onMessage;
+        $callback($mockConnection, $mockRequest);
+
+        // レスポンスのヘッダーを検証
+        $this->assertInstanceOf(Response::class, $capturedResponse);
+        $responseReflection = new \ReflectionClass($capturedResponse);
+        $headersProperty = $responseReflection->getProperty('headers');
+        $headersProperty->setAccessible(true);
+        $headers = $headersProperty->getValue($capturedResponse);
+
+        // ETagとLast-Modifiedが含まれていることを確認
+        $this->assertArrayHasKey('ETag', $headers);
+        $this->assertArrayHasKey('Last-Modified', $headers);
+
+        // クリーンアップ
+        @unlink($testFile);
+        @rmdir($testDir);
+    }
+
+    public function test_http_server_returns_json_response_for_openapi_request(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        // HTTPサーバーを起動
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        // モックのリクエストとコネクションを作成
+        $mockRequest = $this->createRequestStub([
+            'path' => '/openapi.json',
+        ]);
+
+        $mockConnection = $this->createMock(TcpConnection::class);
+
+        $capturedResponse = null;
+        $mockConnection->expects($this->once())
+            ->method('send')
+            ->willReturnCallback(function ($response) use (&$capturedResponse) {
+                $capturedResponse = $response;
+            });
+
+        // onMessageコールバックを実行
+        $callback = $httpWorker->onMessage;
+        $callback($mockConnection, $mockRequest);
+
+        // レスポンスのボディを検証
+        $this->assertInstanceOf(Response::class, $capturedResponse);
+        $responseReflection = new \ReflectionClass($capturedResponse);
+        $bodyProperty = $responseReflection->getProperty('body');
+        $bodyProperty->setAccessible(true);
+        $body = $bodyProperty->getValue($capturedResponse);
+
+        // レスポンスは有効なJSON
+        $decoded = json_decode($body, true);
+        $this->assertIsArray($decoded);
+    }
+
+    public function test_notify_clients_appends_to_existing_file(): void
+    {
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+
+        // Clean up any existing file
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+
+        // First notification
+        $this->server->notifyClients([
+            'event' => 'first-event',
+        ]);
+
+        // Second notification
+        $this->server->notifyClients([
+            'event' => 'second-event',
+        ]);
+
+        // Verify both messages are in file
+        $this->assertFileExists($tempFile);
+        $content = file_get_contents($tempFile);
+        $messages = explode("\n", trim($content));
+
+        $this->assertCount(2, $messages);
+
+        $decoded1 = json_decode($messages[0], true);
+        $decoded2 = json_decode($messages[1], true);
+
+        $this->assertEquals('first-event', $decoded1['event']);
+        $this->assertEquals('second-event', $decoded2['event']);
+
+        // Clean up
+        unlink($tempFile);
+    }
+
+    public function test_websocket_connection_uses_static_clients(): void
+    {
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        $clientsProperty = $reflection->getProperty('clients');
+        $clientsProperty->setAccessible(true);
+
+        // WebSocketサーバーを起動
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // モックのコネクションを作成
+        $mockConnection = $this->createMock(TcpConnection::class);
+        $mockConnection->id = 789;
+
+        // onConnectコールバックを実行
+        $onConnect = $wsWorker->onConnect;
+        $onConnect($mockConnection);
+
+        // クライアントが static $clients にも追加されたことを確認
+        $staticClients = $clientsProperty->getValue(null);
+        $this->assertTrue($staticClients->contains($mockConnection));
+
+        // onCloseコールバックを実行
+        $onClose = $wsWorker->onClose;
+        $onClose($mockConnection);
+
+        // クライアントが static $clients からも削除されたことを確認
+        $this->assertFalse($staticClients->contains($mockConnection));
+    }
+
+    public function test_http_worker_sets_correct_count(): void
+    {
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        $this->assertEquals(1, $httpWorker->count);
+    }
+
+    public function test_websocket_server_stores_clients_reference(): void
+    {
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // wsClientsプロパティが設定されていることを確認
+        $this->assertTrue(isset($wsWorker->wsClients));
+    }
+
+    public function test_constructor_reuses_existing_clients_storage(): void
+    {
+        $reflection = new \ReflectionClass(LiveReloadServer::class);
+        $clientsProperty = $reflection->getProperty('clients');
+        $clientsProperty->setAccessible(true);
+
+        // Get initial clients storage
+        $clientsBefore = $clientsProperty->getValue(null);
+
+        // Create a new server - should reuse existing storage
+        $newServer = new LiveReloadServer;
+
+        // Get clients storage after
+        $clientsAfter = $clientsProperty->getValue(null);
+
+        // Should be the same instance (not reset)
+        $this->assertSame($clientsBefore, $clientsAfter);
+    }
 }
