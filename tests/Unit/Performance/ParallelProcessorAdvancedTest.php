@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Performance;
 
 use LaravelSpectrum\Performance\ParallelProcessor;
 use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ParallelProcessorAdvancedTest extends TestCase
 {
-    public function test_constructor_with_custom_parameters(): void
+    #[Test]
+    public function constructor_with_custom_parameters(): void
     {
         $processor = new ParallelProcessor(true, 8);
 
@@ -21,7 +25,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertTrue($enabledProperty->getValue($processor));
     }
 
-    public function test_worker_count_resolver_integration(): void
+    #[Test]
+    public function worker_count_resolver_integration(): void
     {
         // Use a custom resolver to verify it's being used
         $customResolver = new class implements \LaravelSpectrum\Contracts\Performance\WorkerCountResolverInterface
@@ -43,7 +48,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(10, $processor->getWorkers());
     }
 
-    public function test_parallel_support_checker_integration(): void
+    #[Test]
+    public function parallel_support_checker_integration(): void
     {
         // Use a custom checker to verify it's being used
         $customChecker = new class implements \LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface
@@ -84,7 +90,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertFalse($processor2->isEnabled());
     }
 
-    public function test_parallel_processing_disabled_by_config(): void
+    #[Test]
+    public function parallel_processing_disabled_by_config(): void
     {
         $this->app['config']->set('spectrum.performance.parallel_processing', false);
 
@@ -97,7 +104,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertFalse($enabledProperty->getValue($processor));
     }
 
-    public function test_process_with_fork_fallback(): void
+    #[Test]
+    public function process_with_fork_fallback(): void
     {
         // 並列処理を有効にするが、Forkクラスが利用できない環境をシミュレート
         $processor = new ParallelProcessor(true, 4);
@@ -119,7 +127,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains('ROUTE10', $results);
     }
 
-    public function test_process_with_database_in_before_callback(): void
+    #[Test]
+    public function process_with_database_in_before_callback(): void
     {
         if (! class_exists('\Illuminate\Support\Facades\DB')) {
             $this->markTestSkipped('Laravel DB facade not available');
@@ -144,7 +153,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals($expected, $results);
     }
 
-    public function test_process_with_progress_parallel_mode(): void
+    #[Test]
+    public function process_with_progress_parallel_mode(): void
     {
         // Create a processor with parallel mode enabled
         $processor = new ParallelProcessor(true, 4);
@@ -175,7 +185,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         }
     }
 
-    public function test_process_with_progress_file_handling(): void
+    #[Test]
+    public function process_with_progress_file_handling(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -196,7 +207,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(count($filesBefore), count($filesAfter));
     }
 
-    public function test_constructor_uses_defaults_when_null_passed(): void
+    #[Test]
+    public function constructor_uses_defaults_when_null_passed(): void
     {
         $processor = new ParallelProcessor(null, null);
 
@@ -216,7 +228,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertIsBool($enabled);
     }
 
-    public function test_process_with_large_dataset_enabled_but_no_fork(): void
+    #[Test]
+    public function process_with_large_dataset_enabled_but_no_fork(): void
     {
         // Test that large datasets still work when Fork is not available
         $processor = new ParallelProcessor(true, 4);
@@ -231,7 +244,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains('ROUTE60', $results);
     }
 
-    public function test_set_workers_with_negative_value(): void
+    #[Test]
+    public function set_workers_with_negative_value(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -244,7 +258,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(1, $workersProperty->getValue($processor));
     }
 
-    public function test_process_with_single_item(): void
+    #[Test]
+    public function process_with_single_item(): void
     {
         $processor = new ParallelProcessor(true, 4);
 
@@ -254,7 +269,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals('SINGLE', $results[0]);
     }
 
-    public function test_process_with_progress_single_item(): void
+    #[Test]
+    public function process_with_progress_single_item(): void
     {
         $processor = new ParallelProcessor(false, 4);
         $progressCalls = [];
@@ -276,7 +292,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(1, $progressCalls[0]['total']);
     }
 
-    public function test_process_with_null_results(): void
+    #[Test]
+    public function process_with_null_results(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -289,7 +306,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertNull($results[2]);
     }
 
-    public function test_config_enabled_with_default_checker(): void
+    #[Test]
+    public function config_enabled_with_default_checker(): void
     {
         $this->app['config']->set('spectrum.performance.parallel_processing', true);
 
@@ -310,7 +328,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         }
     }
 
-    public function test_process_with_mixed_data_types(): void
+    #[Test]
+    public function process_with_mixed_data_types(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -327,7 +346,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains('boolean', $results);
     }
 
-    public function test_process_sequential_fallback_when_fork_not_available(): void
+    #[Test]
+    public function process_sequential_fallback_when_fork_not_available(): void
     {
         // Create a processor subclass that simulates Fork not being available
         $processor = new class(true, 4) extends ParallelProcessor
@@ -347,7 +367,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains('ROUTE100', $results);
     }
 
-    public function test_process_with_progress_sequential_reports_every_10_items(): void
+    #[Test]
+    public function process_with_progress_sequential_reports_every_10_items(): void
     {
         $processor = new ParallelProcessor(false, 4);
         $items = range(1, 35);
@@ -368,7 +389,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains(35, $progressReports);
     }
 
-    public function test_constructor_with_enabled_true_and_workers(): void
+    #[Test]
+    public function constructor_with_enabled_true_and_workers(): void
     {
         $processor = new ParallelProcessor(true, 16);
 
@@ -382,7 +404,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertTrue($enabledProperty->getValue($processor));
     }
 
-    public function test_constructor_with_enabled_false(): void
+    #[Test]
+    public function constructor_with_enabled_false(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -393,7 +416,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertFalse($enabledProperty->getValue($processor));
     }
 
-    public function test_default_worker_count_resolver_returns_valid_range(): void
+    #[Test]
+    public function default_worker_count_resolver_returns_valid_range(): void
     {
         // Create a processor with default resolver
         $processor = new ParallelProcessor(false);
@@ -405,7 +429,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertLessThanOrEqual(16, $workers);
     }
 
-    public function test_process_with_exactly_50_items(): void
+    #[Test]
+    public function process_with_exactly_50_items(): void
     {
         // Boundary test: exactly 50 items should not trigger parallel processing
         $processor = new ParallelProcessor(true, 4);
@@ -420,7 +445,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains(100, $results);
     }
 
-    public function test_process_with_51_items_triggers_parallel_path(): void
+    #[Test]
+    public function process_with_51_items_triggers_parallel_path(): void
     {
         // Boundary test: 51 items would trigger parallel processing if enabled
         $processor = new ParallelProcessor(true, 4);
@@ -431,7 +457,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertCount(51, $results);
     }
 
-    public function test_set_workers_to_exactly_32(): void
+    #[Test]
+    public function set_workers_to_exactly_32(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -443,7 +470,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(32, $workersProperty->getValue($processor));
     }
 
-    public function test_set_workers_to_exactly_1(): void
+    #[Test]
+    public function set_workers_to_exactly_1(): void
     {
         $processor = new ParallelProcessor(false, 4);
 
@@ -455,7 +483,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(1, $workersProperty->getValue($processor));
     }
 
-    public function test_process_with_progress_last_item_reports_progress(): void
+    #[Test]
+    public function process_with_progress_last_item_reports_progress(): void
     {
         $processor = new ParallelProcessor(false, 4);
         $items = range(1, 11); // 11 items: reports at 10 and 11 (last)
@@ -473,7 +502,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains(11, $progressReports); // Last item
     }
 
-    public function test_default_checker_returns_false_on_windows(): void
+    #[Test]
+    public function default_checker_returns_false_on_windows(): void
     {
         // Test with a mock checker that simulates Windows environment
         $windowsChecker = new class extends \LaravelSpectrum\Performance\Support\DefaultParallelSupportChecker
@@ -495,7 +525,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertFalse($processor->isEnabled());
     }
 
-    public function test_default_checker_returns_false_without_pcntl(): void
+    #[Test]
+    public function default_checker_returns_false_without_pcntl(): void
     {
         // Test with a mock checker that simulates missing PCNTL
         $noPcntlChecker = new class extends \LaravelSpectrum\Performance\Support\DefaultParallelSupportChecker
@@ -517,7 +548,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertFalse($processor->isEnabled());
     }
 
-    public function test_process_with_progress_modulo_10_check(): void
+    #[Test]
+    public function process_with_progress_modulo_10_check(): void
     {
         $processor = new ParallelProcessor(false, 4);
         $items = range(1, 10);
@@ -535,7 +567,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains(10, $progressReports);
     }
 
-    public function test_process_returns_results_in_correct_order_when_disabled(): void
+    #[Test]
+    public function process_returns_results_in_correct_order_when_disabled(): void
     {
         $processor = new ParallelProcessor(false, 4);
         $items = [3, 1, 4, 1, 5, 9, 2, 6];
@@ -546,7 +579,8 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals([30, 10, 40, 10, 50, 90, 20, 60], $results);
     }
 
-    public function test_process_with_closure_that_modifies_state(): void
+    #[Test]
+    public function process_with_closure_that_modifies_state(): void
     {
         $processor = new ParallelProcessor(false, 4);
         $counter = 0;
@@ -562,5 +596,282 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertEquals(5, $counter);
         // Results should reflect the incrementing counter
         $this->assertEquals([2, 4, 6, 8, 10], $results);
+    }
+
+    #[Test]
+    public function process_with_progress_uses_parallel_executor(): void
+    {
+        $executorCalled = false;
+        $mockExecutor = new class($executorCalled) implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            private bool $called;
+
+            public function __construct(bool &$called)
+            {
+                $this->called = &$called;
+            }
+
+            public function execute(array $tasks, int $workers): array
+            {
+                $this->called = true;
+
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $progressCalls = [];
+        $items = range(1, 25);
+        $results = $processor->processWithProgress(
+            $items,
+            fn ($x) => $x * 2,
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = $current;
+            }
+        );
+
+        $this->assertTrue($executorCalled);
+        $this->assertCount(25, $results);
+    }
+
+    #[Test]
+    public function process_chunks_routes_by_worker_count(): void
+    {
+        $taskCount = 0;
+        $mockExecutor = new class($taskCount) implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            private int $count;
+
+            public function __construct(int &$count)
+            {
+                $this->count = &$count;
+            }
+
+            public function execute(array $tasks, int $workers): array
+            {
+                $this->count = count($tasks);
+
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 4,
+            executor: $mockExecutor
+        );
+
+        // Process 60 items with 4 workers = ceil(60/4) = 15 items per chunk = 4 chunks
+        $items = range(1, 60);
+        $processor->process($items, fn ($x) => $x);
+
+        $this->assertEquals(4, $taskCount);
+    }
+
+    #[Test]
+    public function process_with_progress_parallel_file_locking(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                // Execute tasks in order to simulate parallel execution
+                $results = [];
+                foreach ($tasks as $task) {
+                    $results[] = $task();
+                }
+
+                return $results;
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $progressCalls = [];
+        $items = range(1, 20);
+        $results = $processor->processWithProgress(
+            $items,
+            fn ($x) => $x * 3,
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = ['current' => $current, 'total' => $total];
+            }
+        );
+
+        $this->assertCount(20, $results);
+        // Progress callbacks should have been called with total = 20
+        if (! empty($progressCalls)) {
+            foreach ($progressCalls as $call) {
+                $this->assertEquals(20, $call['total']);
+            }
+        }
+    }
+
+    #[Test]
+    public function process_merges_chunked_results_correctly(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 3,
+            executor: $mockExecutor
+        );
+
+        // 60 items / 3 workers = 20 items per chunk
+        $items = range(1, 60);
+        $results = $processor->process($items, fn ($x) => $x * 10);
+
+        $this->assertCount(60, $results);
+        // Verify that results are correctly merged and contain expected values
+        $this->assertContains(10, $results);
+        $this->assertContains(600, $results);
+    }
+
+    #[Test]
+    public function process_with_progress_cleans_up_temp_file(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $tempDir = sys_get_temp_dir();
+        $filesBefore = glob($tempDir.'/spectrum_progress_*') ?: [];
+
+        $items = range(1, 25);
+        $processor->processWithProgress(
+            $items,
+            fn ($x) => $x,
+            fn ($current, $total) => null
+        );
+
+        $filesAfter = glob($tempDir.'/spectrum_progress_*') ?: [];
+
+        // Temp files should be cleaned up
+        $this->assertCount(count($filesBefore), $filesAfter);
+    }
+
+    #[Test]
+    public function process_with_large_dataset_and_many_workers(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 16,
+            executor: $mockExecutor
+        );
+
+        // 160 items / 16 workers = 10 items per chunk = 16 chunks
+        $items = range(1, 160);
+        $results = $processor->process($items, fn ($x) => $x * 2);
+
+        $this->assertCount(160, $results);
+        $this->assertContains(2, $results);
+        $this->assertContains(320, $results);
+    }
+
+    #[Test]
+    public function constructor_with_all_custom_dependencies(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return [];
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $mockResolver = new class implements \LaravelSpectrum\Contracts\Performance\WorkerCountResolverInterface
+        {
+            public function resolve(): int
+            {
+                return 12;
+            }
+        };
+
+        $mockChecker = new class implements \LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface
+        {
+            public function isSupported(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: null,
+            workers: null,
+            executor: $mockExecutor,
+            workerCountResolver: $mockResolver,
+            supportChecker: $mockChecker
+        );
+
+        $this->assertTrue($processor->isEnabled());
+        $this->assertEquals(12, $processor->getWorkers());
     }
 }
