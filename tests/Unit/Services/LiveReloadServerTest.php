@@ -1051,11 +1051,9 @@ class LiveReloadServerTest extends TestCase
         $this->assertIsCallable($onWorkerStart);
     }
 
-    public function test_notify_clients_handles_file_write_failure(): void
+    public function test_notify_clients_writes_message_to_temp_file(): void
     {
-        // This test verifies error handling when file write fails
-        // We can't easily simulate file write failure in unit tests,
-        // but we verify the normal flow works correctly
+        // Verify the notification is correctly written to temp file
         $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
 
         // Clean up any existing file
@@ -1074,27 +1072,24 @@ class LiveReloadServerTest extends TestCase
         @unlink($tempFile);
     }
 
-    public function test_notify_clients_handles_unencodable_data(): void
+    public function test_notify_clients_does_not_write_file_when_json_encode_fails(): void
     {
         // Create data with invalid UTF-8 that will cause json_encode to fail
         $invalidUtf8 = "\xB1\x31"; // Invalid UTF-8 sequence
 
         // Clean up any existing file
         $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
-        if (file_exists($tempFile)) {
-            unlink($tempFile);
-        }
+        @unlink($tempFile);
 
-        // Try to notify with invalid data
+        // Get the initial state - file should not exist
+        $this->assertFileDoesNotExist($tempFile);
+
+        // Try to notify with invalid data - json_encode will fail
         $this->server->notifyClients(['event' => $invalidUtf8]);
 
-        // The file should not be created when json_encode fails
-        // However, if json_encode doesn't fail with this data, we should still pass
-        // The important thing is that no exception is thrown
-        $this->assertTrue(true);
-
-        // Clean up
-        @unlink($tempFile);
+        // When json_encode fails, the file should NOT be created
+        // because the method returns early
+        $this->assertFileDoesNotExist($tempFile);
     }
 
     public function test_get_swagger_ui_html_with_laravel_view(): void
@@ -1176,45 +1171,5 @@ class LiveReloadServerTest extends TestCase
 
         // Clean up
         @rmdir($tempDir);
-    }
-
-    public function test_process_message_queue_handles_file_clear_failure(): void
-    {
-        // Skip on Windows where chmod behavior differs
-        if (DIRECTORY_SEPARATOR === '\\') {
-            $this->markTestSkipped('File permission tests are not reliable on Windows');
-        }
-
-        $wsClients = new \SplObjectStorage;
-
-        // Create a temp directory with a file that has write permissions issue
-        $tempDir = sys_get_temp_dir().'/spectrum_test_'.uniqid();
-        @mkdir($tempDir, 0777, true);
-
-        // Create the message file in the temp dir
-        $tempFile = $tempDir.'/spectrum_ws_message.json';
-        file_put_contents($tempFile, json_encode(['event' => 'test'])."\n");
-
-        // Since we can't easily simulate file_put_contents failure,
-        // we verify that the method continues processing even when file operations
-        // might have issues. This tests the normal path.
-        $reflection = new \ReflectionClass($this->server);
-        $method = $reflection->getMethod('processMessageQueue');
-        $method->setAccessible(true);
-
-        // Create a patched version that reads from our custom path
-        // For now, just verify the normal path works
-        ob_start();
-        // Note: This test can't easily simulate the clear failure,
-        // but verifies the method handles it gracefully
-        $method->invoke($this->server, $wsClients);
-        $output = ob_get_clean();
-
-        // Clean up
-        @unlink($tempFile);
-        @rmdir($tempDir);
-
-        // Should have processed messages (from the regular temp file if exists)
-        $this->assertTrue(true);
     }
 }
