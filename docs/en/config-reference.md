@@ -81,6 +81,28 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 ],
 ```
 
+### OpenAPI Specification Version
+
+```php
+/*
+|--------------------------------------------------------------------------
+| OpenAPI Specification Version
+|--------------------------------------------------------------------------
+|
+| The OpenAPI specification version to use for generating documentation.
+| Supported versions: '3.0.0', '3.1.0'
+|
+| OpenAPI 3.1.0 includes:
+| - Full JSON Schema Draft 2020-12 compatibility
+| - Type arrays instead of nullable keyword (e.g., ["string", "null"])
+| - Webhooks support
+|
+*/
+'openapi' => [
+    'version' => env('SPECTRUM_OPENAPI_VERSION', '3.0.0'),
+],
+```
+
 ### Server Configuration
 
 ```php
@@ -127,35 +149,17 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 
 /*
 |--------------------------------------------------------------------------
-| Excluded Routes
+| Custom Route Files
 |--------------------------------------------------------------------------
 |
-| Specific routes to exclude from documentation.
+| Additional route files to analyze beyond the standard Laravel route files.
 |
 */
-'excluded_routes' => [
-    'api/health',
-    'api/ping',
-    'api/debug/*',
-    '_debugbar/*',
-    'telescope/*',
-    'horizon/*',
+'route_files' => [
+    // base_path('routes/custom.php'),
+    // base_path('routes/admin.php'),
 ],
 
-/*
-|--------------------------------------------------------------------------
-| Route Metadata
-|--------------------------------------------------------------------------
-|
-| Add additional metadata to routes.
-|
-*/
-'route_metadata' => [
-    'api/admin/*' => [
-        'deprecated' => true,
-        'x-internal' => true,
-    ],
-],
 ```
 
 ## 🏷️ Tag Configuration
@@ -171,16 +175,27 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 |
 */
 'tags' => [
-    // Exact matches
-    'api/v1/auth/login' => 'Authentication',
-    'api/v1/auth/logout' => 'Authentication',
-    'api/v1/auth/refresh' => 'Authentication',
-    
-    // Wildcards
-    'api/v1/users/*' => 'User Management',
-    'api/v1/posts/*' => 'Blog Posts',
-    'api/v1/admin/*' => 'Administration',
-    'api/v1/reports/*' => 'Reports',
+    // Exact match
+    // 'api/v1/auth/login' => 'Authentication',
+
+    // Wildcard
+    // 'api/v1/auth/*' => 'Authentication',
+    // 'api/v1/admin/*' => 'Administration',
+],
+
+/*
+|--------------------------------------------------------------------------
+| Tag Groups (x-tagGroups)
+|--------------------------------------------------------------------------
+|
+| Group tags for better organization in documentation viewers
+| that support x-tagGroups extension (e.g., Redoc).
+|
+*/
+'tag_groups' => [
+    // 'User Management' => ['User', 'Profile', 'Auth'],
+    // 'Content' => ['Post', 'Comment', 'Media'],
+    // 'Administration' => ['Admin', 'Settings'],
 ],
 
 /*
@@ -188,30 +203,24 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 | Tag Descriptions
 |--------------------------------------------------------------------------
 |
-| Description for each tag.
+| Descriptions for each tag, reflected in the OpenAPI tags section.
 |
 */
 'tag_descriptions' => [
-    'Authentication' => 'Authentication and authorization endpoints',
-    'User Management' => 'Create, read, update, and delete users',
-    'Blog Posts' => 'Manage blog posts',
-    'Administration' => 'Admin-only endpoints',
+    // 'User' => 'User management and authentication endpoints',
+    // 'Post' => 'Blog post CRUD operations',
 ],
 
 /*
 |--------------------------------------------------------------------------
-| Tag Order
+| Ungrouped Tags Group Name
 |--------------------------------------------------------------------------
 |
-| Display order for tags. Tags not in the list are displayed alphabetically.
+| Name of the group for tags not assigned to any group.
+| Set to null to hide ungrouped tags from x-tagGroups.
 |
 */
-'tag_order' => [
-    'Authentication',
-    'User Management',
-    'Blog Posts',
-    'Administration',
-],
+'ungrouped_tags_group' => 'Other',
 ```
 
 ## 🔐 Authentication Configuration
@@ -228,102 +237,79 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 'authentication' => [
     /*
     |--------------------------------------------------------------------------
-    | Default Authentication
+    | Global Authentication
     |--------------------------------------------------------------------------
     |
-    | The default authentication method.
+    | Global authentication settings applied to all endpoints.
+    | Set 'enabled' to true to apply this security scheme to all endpoints.
     |
     */
-    'default' => 'bearer',
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Authentication Flows
-    |--------------------------------------------------------------------------
-    |
-    | Definition of available authentication flows.
-    |
-    */
-    'flows' => [
-        'bearer' => [
+    'global' => [
+        'enabled' => false,
+        'scheme' => [
             'type' => 'http',
             'scheme' => 'bearer',
             'bearerFormat' => 'JWT',
-            'description' => 'JWT Bearer Token authentication',
+            'description' => 'Global JWT authentication',
+            'name' => 'globalAuth',
         ],
-        
-        'apiKey' => [
-            'type' => 'apiKey',
-            'in' => 'header',
-            'name' => 'X-API-Key',
-            'description' => 'API Key authentication',
-        ],
-        
-        'basic' => [
-            'type' => 'http',
-            'scheme' => 'basic',
-            'description' => 'Basic authentication',
-        ],
-        
-        'oauth2' => [
-            'type' => 'oauth2',
-            'flows' => [
-                'authorizationCode' => [
-                    'authorizationUrl' => '/oauth/authorize',
-                    'tokenUrl' => '/oauth/token',
-                    'refreshUrl' => '/oauth/token/refresh',
-                    'scopes' => [
-                        'read' => 'Read permission',
-                        'write' => 'Write permission',
-                        'delete' => 'Delete permission',
-                    ],
+        'required' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Authentication Schemes
+    |--------------------------------------------------------------------------
+    |
+    | Define custom authentication schemes for use in the generated documentation.
+    | Map middleware names to OpenAPI security schemes.
+    |
+    */
+    'custom_schemes' => [
+        // 'custom-auth' => [
+        //     'type' => 'apiKey',
+        //     'in' => 'header',
+        //     'name' => 'X-Custom-Token',
+        //     'description' => 'Custom API token',
+        // ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Patterns
+    |--------------------------------------------------------------------------
+    |
+    | Route patterns that require specific authentication.
+    | Use wildcards (*) for pattern matching.
+    |
+    */
+    'patterns' => [
+        // 'api/admin/*' => 'adminAuth',
+        // 'api/v1/*' => 'bearerAuth',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | OAuth2 Configuration
+    |--------------------------------------------------------------------------
+    |
+    | OAuth2-specific configuration.
+    |
+    */
+    'oauth2' => [
+        'flows' => [
+            'authorizationCode' => [
+                'authorizationUrl' => '/oauth/authorize',
+                'tokenUrl' => '/oauth/token',
+                'refreshUrl' => '/oauth/token/refresh',
+                'scopes' => [
+                    'read' => 'Read permission',
+                    'write' => 'Write permission',
+                    'delete' => 'Delete permission',
                 ],
             ],
         ],
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Middleware Mapping
-    |--------------------------------------------------------------------------
-    |
-    | Mapping between Laravel middleware and authentication flows.
-    |
-    */
-    'middleware_map' => [
-        'auth' => 'bearer',
-        'auth:api' => 'bearer',
-        'auth:sanctum' => 'bearer',
-        'auth:passport' => 'oauth2',
-        'auth.basic' => 'basic',
-        'api-key' => 'apiKey',
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Exclude Patterns
-    |--------------------------------------------------------------------------
-    |
-    | Route patterns that don't require authentication.
-    |
-    */
-    'exclude_patterns' => [
-        'api/health',
-        'api/status',
-        'api/auth/login',
-        'api/auth/register',
-        'api/password/forgot',
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Global Security
-    |--------------------------------------------------------------------------
-    |
-    | Whether to apply global security to all endpoints.
-    |
-    */
-    'global_security' => false,
 ],
 ```
 
@@ -419,56 +405,35 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 'performance' => [
     /*
     |--------------------------------------------------------------------------
-    | Enable Optimization
-    |--------------------------------------------------------------------------
-    |
-    | Whether to enable performance optimization.
-    |
-    */
-    'enabled' => true,
-    
-    /*
-    |--------------------------------------------------------------------------
     | Parallel Processing
     |--------------------------------------------------------------------------
     |
-    | Parallel processing configuration.
+    | Enable parallel processing for large codebases.
+    | Requires spatie/fork package.
     |
     */
-    'parallel_processing' => true,
-    'workers' => env('SPECTRUM_WORKERS', 'auto'), // 'auto' for CPU cores
-    'chunk_size' => env('SPECTRUM_CHUNK_SIZE', 100),
+    'parallel' => env('SPECTRUM_PARALLEL', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Worker Count
+    |--------------------------------------------------------------------------
+    |
+    | Number of workers for parallel processing.
+    | 'auto' uses the number of CPU cores.
+    |
+    */
+    'workers' => env('SPECTRUM_WORKERS', 'auto'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Memory Limit
+    |--------------------------------------------------------------------------
+    |
+    | Memory limit for each worker.
+    |
+    */
     'memory_limit' => env('SPECTRUM_MEMORY_LIMIT', '512M'),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Analysis Optimization
-    |--------------------------------------------------------------------------
-    |
-    | Analysis optimization settings.
-    |
-    */
-    'analysis' => [
-        'max_depth' => 3,
-        'skip_vendor' => true,
-        'lazy_loading' => true,
-        'use_cache' => true,
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Resource Limits
-    |--------------------------------------------------------------------------
-    |
-    | Resource limits.
-    |
-    */
-    'limits' => [
-        'max_routes' => 10000,
-        'max_file_size' => '50M',
-        'timeout' => 300,
-        'max_schema_depth' => 10,
-    ],
 ],
 ```
 
@@ -480,7 +445,7 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 | Cache Configuration
 |--------------------------------------------------------------------------
 |
-| Cache settings.
+| Cache settings for analysis results.
 |
 */
 'cache' => [
@@ -489,31 +454,21 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
     | Enable Cache
     |--------------------------------------------------------------------------
     |
-    | Whether to enable caching.
+    | Whether to enable caching of analysis results.
     |
     */
     'enabled' => env('SPECTRUM_CACHE_ENABLED', true),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Cache Store
-    |--------------------------------------------------------------------------
-    |
-    | The cache store to use.
-    |
-    */
-    'store' => env('SPECTRUM_CACHE_STORE', 'file'),
-    
+
     /*
     |--------------------------------------------------------------------------
     | Cache Directory
     |--------------------------------------------------------------------------
     |
-    | Directory for file cache.
+    | Directory for storing cache files.
     |
     */
     'directory' => storage_path('app/spectrum/cache'),
-    
+
     /*
     |--------------------------------------------------------------------------
     | Cache TTL
@@ -523,45 +478,6 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
     |
     */
     'ttl' => env('SPECTRUM_CACHE_TTL', null),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Cache Segments
-    |--------------------------------------------------------------------------
-    |
-    | Cache configuration by segment.
-    |
-    */
-    'segments' => [
-        'routes' => ['ttl' => 86400], // 24 hours
-        'schemas' => ['ttl' => 3600], // 1 hour
-        'examples' => ['ttl' => 7200], // 2 hours
-        'analysis' => ['ttl' => 3600], // 1 hour
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Watch Files
-    |--------------------------------------------------------------------------
-    |
-    | Files to watch for changes to invalidate cache.
-    |
-    */
-    'watch_files' => [
-        base_path('composer.json'),
-        base_path('composer.lock'),
-        config_path('spectrum.php'),
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Smart Invalidation
-    |--------------------------------------------------------------------------
-    |
-    | Whether to enable smart cache invalidation.
-    |
-    */
-    'smart_invalidation' => true,
 ],
 ```
 
@@ -573,7 +489,7 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 | Watch Configuration
 |--------------------------------------------------------------------------
 |
-| File watching configuration.
+| File watching configuration for spectrum:watch command.
 |
 */
 'watch' => [
@@ -582,7 +498,7 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
     | Watch Paths
     |--------------------------------------------------------------------------
     |
-    | Directories and files to watch.
+    | Directories and files to watch for changes.
     |
     */
     'paths' => [
@@ -592,13 +508,13 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
         base_path('routes'),
         config_path(),
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     | Ignore Patterns
     |--------------------------------------------------------------------------
     |
-    | File patterns to ignore.
+    | File patterns to ignore during file watching.
     |
     */
     'ignore_patterns' => [
@@ -607,90 +523,217 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
         '.DS_Store',
         'Thumbs.db',
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Polling
-    |--------------------------------------------------------------------------
-    |
-    | Polling configuration (for Docker environments, etc.).
-    |
-    */
-    'polling' => [
-        'enabled' => env('SPECTRUM_WATCH_POLL', false),
-        'interval' => 1000, // milliseconds
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Server Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Preview server configuration.
-    |
-    */
-    'server' => [
-        'host' => 'localhost',
-        'port' => 8080,
-        'auto_open' => true,
-    ],
 ],
 ```
 
-## 📤 Output Configuration
+## ✅ Validation Configuration
 
 ```php
 /*
 |--------------------------------------------------------------------------
-| Output Configuration
+| Validation Configuration
 |--------------------------------------------------------------------------
 |
-| Output file configuration.
+| Configuration for validation rule analysis.
 |
 */
-'output' => [
+'validation' => [
     /*
     |--------------------------------------------------------------------------
-    | OpenAPI Output
+    | Strict Mode
     |--------------------------------------------------------------------------
     |
-    | OpenAPI document output location.
+    | In strict mode, unrecognized validation rules cause warnings.
     |
     */
-    'openapi' => [
-        'path' => storage_path('app/spectrum/openapi.json'),
-        'format' => 'json', // 'json' or 'yaml'
-        'pretty_print' => true,
-        'version' => '3.0.0',
-    ],
-    
+    'strict_mode' => false,
+],
+```
+
+## 🔄 Transformers Configuration
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Transformers Configuration
+|--------------------------------------------------------------------------
+|
+| Custom type transformers for schema generation.
+|
+*/
+'transformers' => [
+    // \App\Spectrum\Transformers\CustomTransformer::class,
+],
+```
+
+## 📡 Response Detection Configuration
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Response Detection Configuration
+|--------------------------------------------------------------------------
+|
+| Configuration for automatic response detection.
+|
+*/
+'response_detection' => [
     /*
     |--------------------------------------------------------------------------
-    | Export Paths
+    | Enable Response Detection
     |--------------------------------------------------------------------------
     |
-    | Export file output locations.
+    | Whether to enable automatic response type detection.
     |
     */
-    'exports' => [
-        'postman' => storage_path('app/spectrum/postman/'),
-        'insomnia' => storage_path('app/spectrum/insomnia/'),
-    ],
-    
+    'enabled' => true,
+
     /*
     |--------------------------------------------------------------------------
-    | Include Options
+    | Analyze Method Body
     |--------------------------------------------------------------------------
     |
-    | Elements to include in output.
+    | Whether to analyze method bodies for return statements.
     |
     */
-    'include' => [
-        'examples' => true,
-        'descriptions' => true,
-        'deprecated' => true,
-        'x-properties' => true,
+    'analyze_method_body' => true,
+],
+```
+
+## 🌐 HTML Output Configuration
+
+```php
+/*
+|--------------------------------------------------------------------------
+| HTML Output Configuration
+|--------------------------------------------------------------------------
+|
+| Configuration for HTML output with Swagger UI.
+|
+*/
+'html' => [
+    /*
+    |--------------------------------------------------------------------------
+    | Theme
+    |--------------------------------------------------------------------------
+    |
+    | Swagger UI theme. Options: 'default', 'dark'
+    |
+    */
+    'theme' => 'default',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Try It Out
+    |--------------------------------------------------------------------------
+    |
+    | Whether to enable the "Try It Out" feature.
+    |
+    */
+    'try_it_out' => true,
+],
+```
+
+## 📤 Export Configuration
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Export Configuration
+|--------------------------------------------------------------------------
+|
+| Configuration for Postman and Insomnia exports.
+|
+*/
+'export' => [
+    /*
+    |--------------------------------------------------------------------------
+    | Postman Export
+    |--------------------------------------------------------------------------
+    |
+    | Postman export configuration.
+    |
+    */
+    'postman' => [
+        'output_path' => storage_path('app/spectrum/postman'),
+        'environments' => [
+            'local' => [
+                'base_url' => env('APP_URL', 'http://localhost'),
+            ],
+            'staging' => [
+                'base_url' => 'https://staging.example.com',
+            ],
+            'production' => [
+                'base_url' => 'https://api.example.com',
+            ],
+        ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Insomnia Export
+    |--------------------------------------------------------------------------
+    |
+    | Insomnia export configuration.
+    |
+    */
+    'insomnia' => [
+        'output_path' => storage_path('app/spectrum/insomnia/insomnia_collection.json'),
+    ],
+],
+```
+
+## 🎭 Mock Server Configuration
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Mock Server Configuration
+|--------------------------------------------------------------------------
+|
+| Configuration for the mock API server.
+|
+*/
+'mock_server' => [
+    /*
+    |--------------------------------------------------------------------------
+    | Default Host
+    |--------------------------------------------------------------------------
+    |
+    | Default host address to bind the server.
+    |
+    */
+    'host' => env('SPECTRUM_MOCK_HOST', '127.0.0.1'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Port
+    |--------------------------------------------------------------------------
+    |
+    | Default port number for the server.
+    |
+    */
+    'port' => env('SPECTRUM_MOCK_PORT', 8081),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response Delay
+    |--------------------------------------------------------------------------
+    |
+    | Default response delay in milliseconds.
+    |
+    */
+    'delay' => env('SPECTRUM_MOCK_DELAY', 0),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Scenario
+    |--------------------------------------------------------------------------
+    |
+    | Default response scenario ('success' or 'error').
+    |
+    */
+    'scenario' => 'success',
 ],
 ```
 
@@ -699,7 +742,7 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 ```php
 /*
 |--------------------------------------------------------------------------
-| Error Handling
+| Error Handling Configuration
 |--------------------------------------------------------------------------
 |
 | Error handling configuration.
@@ -711,106 +754,20 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
     | Fail on Error
     |--------------------------------------------------------------------------
     |
-    | Whether to stop processing on error.
+    | Whether to stop processing when an error is encountered.
     |
     */
     'fail_on_error' => false,
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Error Reporting
-    |--------------------------------------------------------------------------
-    |
-    | Error reporting level.
-    |
-    */
-    'reporting' => [
-        'level' => 'warning', // 'error', 'warning', 'notice'
-        'log_channel' => 'spectrum',
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Error Recovery
-    |--------------------------------------------------------------------------
-    |
-    | Error recovery settings.
-    |
-    */
-    'recovery' => [
-        'continue_on_parse_error' => true,
-        'use_fallback_types' => true,
-        'skip_invalid_routes' => true,
-    ],
-],
-```
 
-## 🎯 Advanced Configuration
-
-```php
-/*
-|--------------------------------------------------------------------------
-| Advanced Configuration
-|--------------------------------------------------------------------------
-|
-| Advanced configuration options.
-|
-*/
-'advanced' => [
     /*
     |--------------------------------------------------------------------------
-    | Custom Analyzers
+    | Ignore Errors
     |--------------------------------------------------------------------------
     |
-    | Register custom analyzers.
+    | Whether to ignore errors and continue processing.
     |
     */
-    'analyzers' => [
-        // 'custom' => \App\Spectrum\Analyzers\CustomAnalyzer::class,
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Custom Generators
-    |--------------------------------------------------------------------------
-    |
-    | Register custom generators.
-    |
-    */
-    'generators' => [
-        // 'custom' => \App\Spectrum\Generators\CustomGenerator::class,
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Hooks
-    |--------------------------------------------------------------------------
-    |
-    | Hook point configuration.
-    |
-    */
-    'hooks' => [
-        'before_analysis' => [],
-        'after_analysis' => [],
-        'before_generation' => [],
-        'after_generation' => [],
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Extensions
-    |--------------------------------------------------------------------------
-    |
-    | OpenAPI extension configuration.
-    |
-    */
-    'extensions' => [
-        'x-logo' => [
-            'url' => '/logo.png',
-            'altText' => 'API Logo',
-        ],
-        'x-documentation' => 'https://docs.example.com',
-    ],
+    'ignore_errors' => false,
 ],
 ```
 
@@ -819,23 +776,27 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 Key settings can be overridden with environment variables:
 
 ```env
-# Basic settings
+# OpenAPI
+SPECTRUM_OPENAPI_VERSION=3.0.0    # or 3.1.0
+
+# Example Generation
 SPECTRUM_USE_FAKER=true
 SPECTRUM_FAKER_LOCALE=en_US
 SPECTRUM_FAKER_SEED=12345
 
 # Performance
+SPECTRUM_PARALLEL=true
 SPECTRUM_WORKERS=8
-SPECTRUM_CHUNK_SIZE=100
 SPECTRUM_MEMORY_LIMIT=1G
 
 # Cache
 SPECTRUM_CACHE_ENABLED=true
-SPECTRUM_CACHE_STORE=redis
 SPECTRUM_CACHE_TTL=3600
 
-# Watch
-SPECTRUM_WATCH_POLL=true
+# Mock Server
+SPECTRUM_MOCK_HOST=127.0.0.1
+SPECTRUM_MOCK_PORT=8081
+SPECTRUM_MOCK_DELAY=0
 ```
 
 ## 📚 Related Documentation

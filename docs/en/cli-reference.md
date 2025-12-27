@@ -26,16 +26,16 @@ php artisan spectrum:generate [options]
 
 ### Options
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--output` | `-o` | storage/app/spectrum/openapi.json | Output file path |
-| `--format` | `-f` | json | Output format (json/yaml) |
-| `--pattern` | | config value | Route patterns to include |
-| `--exclude` | | config value | Route patterns to exclude |
-| `--no-cache` | | false | Don't use cache |
-| `--force` | | false | Overwrite existing files |
-| `--dry-run` | | false | Run without generating files |
-| `--incremental` | `-i` | false | Process only changed files |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output` | storage/app/spectrum/openapi.json | Output file path |
+| `--format` | json | Output format (json/yaml/html) |
+| `--no-cache` | false | Don't use cache |
+| `--clear-cache` | false | Clear cache before generation |
+| `--fail-on-error` | false | Stop execution on first error |
+| `--ignore-errors` | false | Continue generation ignoring errors |
+| `--error-report` | none | Save error report to file |
+| `--no-try-it-out` | false | Disable "Try It Out" feature in HTML output |
 
 ### Examples
 
@@ -43,23 +43,29 @@ php artisan spectrum:generate [options]
 # Basic generation
 php artisan spectrum:generate
 
-# Generate only specific patterns
-php artisan spectrum:generate --pattern="api/v2/*"
-
-# Multiple patterns
-php artisan spectrum:generate --pattern="api/users/*" --pattern="api/posts/*"
-
-# Exclude patterns
-php artisan spectrum:generate --exclude="api/admin/*" --exclude="api/debug/*"
-
 # Output in YAML format
 php artisan spectrum:generate --format=yaml --output=docs/api.yaml
 
-# Force regeneration without cache
-php artisan spectrum:generate --no-cache --force
+# Output in HTML format (with Swagger UI)
+php artisan spectrum:generate --format=html --output=docs/api.html
 
-# Dry run (doesn't actually generate)
-php artisan spectrum:generate --dry-run -vvv
+# Clear cache and regenerate
+php artisan spectrum:generate --clear-cache
+
+# Generate without using cache
+php artisan spectrum:generate --no-cache
+
+# Stop on error
+php artisan spectrum:generate --fail-on-error
+
+# Ignore errors and continue
+php artisan spectrum:generate --ignore-errors
+
+# Save error report
+php artisan spectrum:generate --error-report=storage/spectrum-errors.json
+
+# Generate with verbose output
+php artisan spectrum:generate -vvv
 ```
 
 ## ⚡ spectrum:generate:optimized
@@ -76,12 +82,13 @@ php artisan spectrum:generate:optimized [options]
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `--format` | json | Output format (json/yaml) |
+| `--output` | storage/app/spectrum/openapi.json | Output file path |
+| `--parallel` | false | Enable parallel processing |
 | `--workers` | auto | Number of parallel workers (auto for CPU cores) |
-| `--chunk-size` | 100 | Number of routes processed by each worker |
+| `--chunk-size` | auto | Number of routes processed by each worker |
 | `--memory-limit` | 512M | Memory limit for each worker |
 | `--incremental` | false | Process only changed files |
-| `--progress` | true | Show progress bar |
-| `--stats` | true | Show performance statistics |
 
 ### Examples
 
@@ -89,8 +96,11 @@ php artisan spectrum:generate:optimized [options]
 # Generate with automatic optimization
 php artisan spectrum:generate:optimized
 
+# Enable parallel processing
+php artisan spectrum:generate:optimized --parallel
+
 # Parallel processing with 8 workers
-php artisan spectrum:generate:optimized --workers=8
+php artisan spectrum:generate:optimized --parallel --workers=8
 
 # Adjust memory and chunk size
 php artisan spectrum:generate:optimized --memory-limit=1G --chunk-size=50
@@ -98,8 +108,11 @@ php artisan spectrum:generate:optimized --memory-limit=1G --chunk-size=50
 # Incremental generation
 php artisan spectrum:generate:optimized --incremental
 
-# Run quietly without statistics
-php artisan spectrum:generate:optimized --no-stats --no-progress
+# Output in YAML format
+php artisan spectrum:generate:optimized --format=yaml
+
+# Generate with verbose output
+php artisan spectrum:generate:optimized -v
 ```
 
 ## 👁️ spectrum:watch
@@ -117,10 +130,8 @@ php artisan spectrum:watch [options]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--port` | 8080 | Preview server port |
-| `--host` | localhost | Preview server host |
+| `--host` | 127.0.0.1 | Preview server host |
 | `--no-open` | false | Don't open browser automatically |
-| `--poll` | false | Use polling mode |
-| `--interval` | 1000 | Polling interval (milliseconds) |
 
 ### Examples
 
@@ -136,9 +147,6 @@ php artisan spectrum:watch --no-open
 
 # Make externally accessible
 php artisan spectrum:watch --host=0.0.0.0
-
-# Polling mode (Docker environments, etc.)
-php artisan spectrum:watch --poll --interval=2000
 ```
 
 ## 🎭 spectrum:mock
@@ -194,11 +202,9 @@ php artisan spectrum:export:postman [options]
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--output` | storage/app/spectrum/postman/collection.json | Output file path |
-| `--include-examples` | true | Include request/response examples |
-| `--include-tests` | false | Generate test scripts |
-| `--environment` | false | Also generate environment variables file |
-| `--base-url` | APP_URL | Base URL |
+| `--output` | storage/app/spectrum/postman | Output directory |
+| `--environments` | local | Environments to export (comma-separated) |
+| `--single-file` | false | Export as a single file with embedded environments |
 
 ### Examples
 
@@ -206,20 +212,14 @@ php artisan spectrum:export:postman [options]
 # Basic export
 php artisan spectrum:export:postman
 
-# Export with test scripts
-php artisan spectrum:export:postman --include-tests
-
-# Also generate environment variables file
-php artisan spectrum:export:postman --environment
-
 # Custom output location
-php artisan spectrum:export:postman --output=postman/my-api.json
+php artisan spectrum:export:postman --output=postman/
 
-# Complete export
-php artisan spectrum:export:postman \
-    --include-tests \
-    --environment \
-    --base-url=https://api.example.com
+# Export multiple environments
+php artisan spectrum:export:postman --environments=local,staging,production
+
+# Export as single file
+php artisan spectrum:export:postman --single-file
 ```
 
 ## 🦊 spectrum:export:insomnia
@@ -236,10 +236,7 @@ php artisan spectrum:export:insomnia [options]
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--output` | storage/app/spectrum/insomnia/workspace.json | Output file path |
-| `--workspace-name` | APP_NAME API | Workspace name |
-| `--include-environments` | true | Include environment settings |
-| `--folder-structure` | true | Organize with folder structure |
+| `--output` | storage/app/spectrum/insomnia/insomnia_collection.json | Output file path |
 
 ### Examples
 
@@ -247,14 +244,11 @@ php artisan spectrum:export:insomnia [options]
 # Basic export
 php artisan spectrum:export:insomnia
 
-# Custom workspace name
-php artisan spectrum:export:insomnia --workspace-name="My Cool API"
-
-# Flat structure without folders
-php artisan spectrum:export:insomnia --no-folder-structure
-
-# Custom output location
+# Custom output location (file path)
 php artisan spectrum:export:insomnia --output=insomnia/api.json
+
+# Custom output location (directory)
+php artisan spectrum:export:insomnia --output=insomnia/
 ```
 
 ## 🗑️ spectrum:cache

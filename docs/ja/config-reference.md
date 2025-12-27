@@ -87,6 +87,28 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 ],
 ```
 
+### OpenAPI仕様バージョン
+
+```php
+/*
+|--------------------------------------------------------------------------
+| OpenAPI Specification Version
+|--------------------------------------------------------------------------
+|
+| 生成するOpenAPI仕様のバージョン。
+| 対応バージョン: '3.0.0', '3.1.0'
+|
+| OpenAPI 3.1.0の特徴:
+| - JSON Schema Draft 2020-12との完全互換
+| - nullable キーワードの代わりに型配列を使用（例: ["string", "null"]）
+| - Webhooksサポート
+|
+*/
+'openapi' => [
+    'version' => env('SPECTRUM_OPENAPI_VERSION', '3.0.0'),
+],
+```
+
 ### サーバー設定
 
 ```php
@@ -133,35 +155,17 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 
 /*
 |--------------------------------------------------------------------------
-| Excluded Routes
+| Custom Route Files
 |--------------------------------------------------------------------------
 |
-| ドキュメントから除外する特定のルート。
+| 標準のLaravelルートファイル以外に解析対象とする追加のルートファイル。
 |
 */
-'excluded_routes' => [
-    'api/health',
-    'api/ping',
-    'api/debug/*',
-    '_debugbar/*',
-    'telescope/*',
-    'horizon/*',
+'route_files' => [
+    // base_path('routes/custom.php'),
+    // base_path('routes/admin.php'),
 ],
 
-/*
-|--------------------------------------------------------------------------
-| Route Metadata
-|--------------------------------------------------------------------------
-|
-| ルートに追加のメタデータを設定。
-|
-*/
-'route_metadata' => [
-    'api/admin/*' => [
-        'deprecated' => true,
-        'x-internal' => true,
-    ],
-],
 ```
 
 ## 🏷️ タグ設定
@@ -178,15 +182,26 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 */
 'tags' => [
     // 完全一致
-    'api/v1/auth/login' => 'Authentication',
-    'api/v1/auth/logout' => 'Authentication',
-    'api/v1/auth/refresh' => 'Authentication',
-    
+    // 'api/v1/auth/login' => 'Authentication',
+
     // ワイルドカード
-    'api/v1/users/*' => 'User Management',
-    'api/v1/posts/*' => 'Blog Posts',
-    'api/v1/admin/*' => 'Administration',
-    'api/v1/reports/*' => 'Reports',
+    // 'api/v1/auth/*' => 'Authentication',
+    // 'api/v1/admin/*' => 'Administration',
+],
+
+/*
+|--------------------------------------------------------------------------
+| Tag Groups (x-tagGroups)
+|--------------------------------------------------------------------------
+|
+| タグをグループ化してドキュメントビューアー（Redoc等）で
+| より整理された表示にします。
+|
+*/
+'tag_groups' => [
+    // 'User Management' => ['User', 'Profile', 'Auth'],
+    // 'Content' => ['Post', 'Comment', 'Media'],
+    // 'Administration' => ['Admin', 'Settings'],
 ],
 
 /*
@@ -194,30 +209,24 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 | Tag Descriptions
 |--------------------------------------------------------------------------
 |
-| 各タグの説明。
+| 各タグの説明。OpenAPIのtagsセクションに反映されます。
 |
 */
 'tag_descriptions' => [
-    'Authentication' => 'エンドポイントの認証と認可',
-    'User Management' => 'ユーザーの作成、読み取り、更新、削除',
-    'Blog Posts' => 'ブログ投稿の管理',
-    'Administration' => '管理者専用エンドポイント',
+    // 'User' => 'ユーザー管理と認証エンドポイント',
+    // 'Post' => 'ブログ投稿のCRUD操作',
 ],
 
 /*
 |--------------------------------------------------------------------------
-| Tag Order
+| Ungrouped Tags Group Name
 |--------------------------------------------------------------------------
 |
-| タグの表示順序。リストに含まれないタグはアルファベット順に表示。
+| グループに割り当てられていないタグを配置するグループ名。
+| nullに設定すると、未グループのタグはx-tagGroupsに表示されません。
 |
 */
-'tag_order' => [
-    'Authentication',
-    'User Management',
-    'Blog Posts',
-    'Administration',
-],
+'ungrouped_tags_group' => 'Other',
 ```
 
 ## 🔐 認証設定
@@ -234,102 +243,73 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 'authentication' => [
     /*
     |--------------------------------------------------------------------------
-    | Default Authentication
+    | Global Authentication
     |--------------------------------------------------------------------------
     |
-    | デフォルトの認証方式。
+    | すべてのエンドポイントに適用するグローバル認証設定。
     |
     */
-    'default' => 'bearer',
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Authentication Flows
-    |--------------------------------------------------------------------------
-    |
-    | 利用可能な認証フローの定義。
-    |
-    */
-    'flows' => [
-        'bearer' => [
+    'global' => [
+        'enabled' => false,
+        'scheme' => [
             'type' => 'http',
             'scheme' => 'bearer',
             'bearerFormat' => 'JWT',
-            'description' => 'JWT Bearer Token認証',
+            'description' => 'グローバルJWT認証',
+            'name' => 'globalAuth',
         ],
-        
-        'apiKey' => [
-            'type' => 'apiKey',
-            'in' => 'header',
-            'name' => 'X-API-Key',
-            'description' => 'APIキー認証',
-        ],
-        
-        'basic' => [
-            'type' => 'http',
-            'scheme' => 'basic',
-            'description' => 'Basic認証',
-        ],
-        
-        'oauth2' => [
-            'type' => 'oauth2',
-            'flows' => [
-                'authorizationCode' => [
-                    'authorizationUrl' => '/oauth/authorize',
-                    'tokenUrl' => '/oauth/token',
-                    'refreshUrl' => '/oauth/token/refresh',
-                    'scopes' => [
-                        'read' => '読み取り権限',
-                        'write' => '書き込み権限',
-                        'delete' => '削除権限',
-                    ],
-                ],
-            ],
-        ],
+        'required' => false,
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
-    | Middleware Mapping
+    | Custom Authentication Schemes
     |--------------------------------------------------------------------------
     |
-    | Laravelミドルウェアと認証フローのマッピング。
+    | ミドルウェア名をOpenAPIセキュリティスキームにマッピング。
     |
     */
-    'middleware_map' => [
-        'auth' => 'bearer',
-        'auth:api' => 'bearer',
-        'auth:sanctum' => 'bearer',
-        'auth:passport' => 'oauth2',
-        'auth.basic' => 'basic',
-        'api-key' => 'apiKey',
+    'custom_schemes' => [
+        // 'custom-auth' => [
+        //     'type' => 'apiKey',
+        //     'in' => 'header',
+        //     'name' => 'X-Custom-Token',
+        //     'description' => 'カスタムAPIトークン',
+        // ],
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
-    | Exclude Patterns
+    | Pattern-based Authentication
     |--------------------------------------------------------------------------
     |
-    | 認証が不要なルートパターン。
+    | パターンマッチングによるルートへの認証適用。
     |
     */
-    'exclude_patterns' => [
-        'api/health',
-        'api/status',
-        'api/auth/login',
-        'api/auth/register',
-        'api/password/forgot',
+    'patterns' => [
+        // 'api/admin/*' => [
+        //     'scheme' => [...],
+        //     'required' => true,
+        // ],
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
-    | Global Security
+    | OAuth2 Configuration (for Passport)
     |--------------------------------------------------------------------------
     |
-    | すべてのエンドポイントにグローバルセキュリティを適用するか。
+    | Laravel Passport用のOAuth2設定。
     |
     */
-    'global_security' => false,
+    'oauth2' => [
+        'authorization_url' => env('APP_URL') . '/oauth/authorize',
+        'token_url' => env('APP_URL') . '/oauth/token',
+        'refresh_url' => env('APP_URL') . '/oauth/token',
+        'scopes' => [
+            // 'read' => '読み取りアクセス',
+            // 'write' => '書き込みアクセス',
+        ],
+    ],
 ],
 ```
 
@@ -423,57 +403,33 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 |
 */
 'performance' => [
-    /*
-    |--------------------------------------------------------------------------
-    | Enable Optimization
-    |--------------------------------------------------------------------------
-    |
-    | パフォーマンス最適化を有効にするか。
-    |
-    */
-    'enabled' => true,
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Parallel Processing
-    |--------------------------------------------------------------------------
-    |
-    | 並列処理の設定。
-    |
-    */
-    'parallel_processing' => true,
-    'workers' => env('SPECTRUM_WORKERS', 'auto'), // 'auto'でCPUコア数
+    'enabled' => env('SPECTRUM_PERFORMANCE_ENABLED', true),
+
+    // 並列処理
+    'parallel_processing' => env('SPECTRUM_PARALLEL_PROCESSING', true),
+    'max_workers' => env('SPECTRUM_MAX_WORKERS', null), // null = 自動検出
+
+    // チャンク処理
     'chunk_size' => env('SPECTRUM_CHUNK_SIZE', 100),
+    'auto_chunk_size' => true, // 最適なチャンクサイズを自動計算
+
+    // メモリ管理
     'memory_limit' => env('SPECTRUM_MEMORY_LIMIT', '512M'),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Analysis Optimization
-    |--------------------------------------------------------------------------
-    |
-    | 解析の最適化設定。
-    |
-    */
-    'analysis' => [
-        'max_depth' => 3,
-        'skip_vendor' => true,
-        'lazy_loading' => true,
-        'use_cache' => true,
+    'memory_warning_threshold' => 0.8, // 80%
+    'memory_critical_threshold' => 0.9, // 90%
+
+    // インクリメンタル生成
+    'incremental' => [
+        'enabled' => env('SPECTRUM_INCREMENTAL_ENABLED', true),
+        'track_dependencies' => true,
+        'cache_dependencies' => true,
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Resource Limits
-    |--------------------------------------------------------------------------
-    |
-    | リソース制限。
-    |
-    */
-    'limits' => [
-        'max_routes' => 10000,
-        'max_file_size' => '50M',
-        'timeout' => 300,
-        'max_schema_depth' => 10,
+
+    // プロファイリング
+    'profiling' => [
+        'enabled' => env('SPECTRUM_PROFILING_ENABLED', false),
+        'save_reports' => true,
+        'report_path' => storage_path('spectrum/profiling'),
     ],
 ],
 ```
@@ -490,84 +446,20 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 |
 */
 'cache' => [
-    /*
-    |--------------------------------------------------------------------------
-    | Enable Cache
-    |--------------------------------------------------------------------------
-    |
-    | キャッシュを有効にするか。
-    |
-    */
+    // キャッシュを有効にするか
     'enabled' => env('SPECTRUM_CACHE_ENABLED', true),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Cache Store
-    |--------------------------------------------------------------------------
-    |
-    | 使用するキャッシュストア。
-    |
-    */
-    'store' => env('SPECTRUM_CACHE_STORE', 'file'),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Cache Directory
-    |--------------------------------------------------------------------------
-    |
-    | ファイルキャッシュのディレクトリ。
-    |
-    */
+
+    // キャッシュディレクトリ
     'directory' => storage_path('app/spectrum/cache'),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Cache TTL
-    |--------------------------------------------------------------------------
-    |
-    | キャッシュの有効期限（秒）。nullで無期限。
-    |
-    */
+
+    // キャッシュの有効期限（秒）。nullで無期限
     'ttl' => env('SPECTRUM_CACHE_TTL', null),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Cache Segments
-    |--------------------------------------------------------------------------
-    |
-    | セグメント別のキャッシュ設定。
-    |
-    */
-    'segments' => [
-        'routes' => ['ttl' => 86400], // 24時間
-        'schemas' => ['ttl' => 3600], // 1時間
-        'examples' => ['ttl' => 7200], // 2時間
-        'analysis' => ['ttl' => 3600], // 1時間
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Watch Files
-    |--------------------------------------------------------------------------
-    |
-    | 変更を監視してキャッシュを無効化するファイル。
-    |
-    */
+
+    // 変更を監視してキャッシュを無効化するファイル
     'watch_files' => [
         base_path('composer.json'),
         base_path('composer.lock'),
-        config_path('spectrum.php'),
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Smart Invalidation
-    |--------------------------------------------------------------------------
-    |
-    | スマートキャッシュ無効化を有効にするか。
-    |
-    */
-    'smart_invalidation' => true,
 ],
 ```
 
@@ -583,119 +475,198 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 |
 */
 'watch' => [
-    /*
-    |--------------------------------------------------------------------------
-    | Watch Paths
-    |--------------------------------------------------------------------------
-    |
-    | 監視するディレクトリとファイル。
-    |
-    */
+    // 監視するディレクトリ
     'paths' => [
         app_path('Http/Controllers'),
         app_path('Http/Requests'),
         app_path('Http/Resources'),
         base_path('routes'),
-        config_path(),
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Ignore Patterns
-    |--------------------------------------------------------------------------
-    |
-    | 無視するファイルパターン。
-    |
-    */
-    'ignore_patterns' => [
+
+    // 無視するパターン
+    'ignore' => [
         '*.log',
         '*.cache',
-        '.DS_Store',
-        'Thumbs.db',
+        '.git',
+        'vendor',
+        'node_modules',
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Polling
-    |--------------------------------------------------------------------------
-    |
-    | ポーリングの設定（Docker環境など）。
-    |
-    */
-    'polling' => [
-        'enabled' => env('SPECTRUM_WATCH_POLL', false),
-        'interval' => 1000, // ミリ秒
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Server Configuration
-    |--------------------------------------------------------------------------
-    |
-    | プレビューサーバーの設定。
-    |
-    */
-    'server' => [
-        'host' => 'localhost',
-        'port' => 8080,
-        'auto_open' => true,
-    ],
+
+    // 複数ファイル保存時の待機時間（ミリ秒）
+    'debounce' => 300,
 ],
 ```
 
-## 📤 出力設定
+## ✅ バリデーション設定
 
 ```php
 /*
 |--------------------------------------------------------------------------
-| Output Configuration
+| Validation Analysis
 |--------------------------------------------------------------------------
 |
-| 出力ファイルの設定。
+| バリデーションルールの検出と解析設定。
 |
 */
-'output' => [
-    /*
-    |--------------------------------------------------------------------------
-    | OpenAPI Output
-    |--------------------------------------------------------------------------
-    |
-    | OpenAPIドキュメントの出力先。
-    |
-    */
-    'openapi' => [
-        'path' => storage_path('app/spectrum/openapi.json'),
-        'format' => 'json', // 'json' または 'yaml'
-        'pretty_print' => true,
-        'version' => '3.0.0',
+'validation' => [
+    'analyze_inline' => true,       // インラインバリデーションを解析
+    'analyze_form_requests' => true, // FormRequestを解析
+],
+```
+
+## 🔄 トランスフォーマー設定
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Response Transformer Support
+|--------------------------------------------------------------------------
+|
+| 各種レスポンス変換ライブラリのサポート設定。
+|
+*/
+'transformers' => [
+    'enabled' => [
+        'laravel-resource' => true,
+        'fractal' => true,
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Export Paths
-    |--------------------------------------------------------------------------
-    |
-    | エクスポートファイルの出力先。
-    |
-    */
-    'exports' => [
-        'postman' => storage_path('app/spectrum/postman/'),
-        'insomnia' => storage_path('app/spectrum/insomnia/'),
+
+    'fractal' => [
+        'default_serializer' => 'array', // array, data_array, json_api
+        'include_handling' => 'optional_properties',
+        'pagination_schema' => [...], // ページネーションスキーマ
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Include Options
-    |--------------------------------------------------------------------------
-    |
-    | 出力に含める要素。
-    |
-    */
-    'include' => [
-        'examples' => true,
-        'descriptions' => true,
-        'deprecated' => true,
-        'x-properties' => true,
+],
+```
+
+## 🔍 レスポンス検出設定
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Response Detection Configuration
+|--------------------------------------------------------------------------
+|
+| コントローラーメソッドからのレスポンスボディ自動検出設定。
+|
+*/
+'response_detection' => [
+    'enabled' => env('SPECTRUM_RESPONSE_DETECTION', true),
+    'include_model_attributes' => true,
+    'max_depth' => 3,
+    'type_inference' => [
+        'strict' => false,
+        'fallback_type' => 'string',
+    ],
+    'cache_model_schemas' => true,
+],
+```
+
+## 🌐 HTML出力設定
+
+```php
+/*
+|--------------------------------------------------------------------------
+| HTML Output Settings
+|--------------------------------------------------------------------------
+|
+| Swagger UIを使用したHTML出力設定。
+|
+*/
+'html' => [
+    'try_it_out' => env('SPECTRUM_HTML_TRY_IT_OUT', true),
+    'persist_authorization' => true,
+    'deep_linking' => true,
+    'doc_expansion' => 'list', // list, full, none
+    'filter' => true,
+],
+```
+
+## 📤 エクスポート設定
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Export Settings
+|--------------------------------------------------------------------------
+|
+| PostmanやInsomniaへのエクスポート設定。
+|
+*/
+'export' => [
+    'postman' => [
+        'include_examples' => true,
+        'include_tests' => true,
+        'include_pre_request_scripts' => true,
+        'group_by_tags' => true,
+    ],
+
+    'insomnia' => [
+        'include_examples' => true,
+        'include_environments' => true,
+        'default_timeout' => 30000,
+    ],
+
+    'environment_variables' => [
+        // 'custom_header' => 'X-Custom-Header',
+    ],
+
+    'auth_presets' => [
+        'bearer' => [
+            'type' => 'bearer',
+            'token_placeholder' => '{{bearer_token}}',
+        ],
+        'api_key' => [
+            'type' => 'apikey',
+            'key_placeholder' => '{{api_key}}',
+            'header' => 'X-API-Key',
+        ],
+    ],
+],
+```
+
+## 🎭 モックサーバー設定
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Mock Server Settings
+|--------------------------------------------------------------------------
+|
+| モックAPIサーバーの設定。
+|
+*/
+'mock_server' => [
+    'default_host' => '127.0.0.1',
+    'default_port' => 8081,
+
+    'response' => [
+        'delay' => env('SPECTRUM_MOCK_DELAY', 0),
+        'scenarios' => [
+            'success' => 'Successful response',
+            'error' => 'Server error (500)',
+            'not_found' => 'Resource not found (404)',
+            'forbidden' => 'Access forbidden (403)',
+            'validation_error' => 'Validation failed (422)',
+        ],
+        'random_error_rate' => env('SPECTRUM_MOCK_ERROR_RATE', 0),
+    ],
+
+    'auth' => [
+        'valid_tokens' => [
+            'test-token-123',
+            'Bearer test-jwt-token',
+        ],
+        'public_paths' => [
+            'POST /api/auth/login',
+            'POST /api/auth/register',
+            'GET /api/health',
+        ],
+    ],
+
+    'faker' => [
+        'locale' => config('app.faker_locale', 'en_US'),
+        'seed' => env('SPECTRUM_MOCK_SEED', null),
     ],
 ],
 ```
@@ -712,110 +683,14 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 |
 */
 'error_handling' => [
-    /*
-    |--------------------------------------------------------------------------
-    | Fail on Error
-    |--------------------------------------------------------------------------
-    |
-    | エラー時に処理を中断するか。
-    |
-    */
-    'fail_on_error' => false,
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Error Reporting
-    |--------------------------------------------------------------------------
-    |
-    | エラーレポートのレベル。
-    |
-    */
-    'reporting' => [
-        'level' => 'warning', // 'error', 'warning', 'notice'
-        'log_channel' => 'spectrum',
+    'fail_on_error' => env('SPECTRUM_FAIL_ON_ERROR', false),
+    'error_report_path' => storage_path('app/spectrum/error-report.json'),
+    'ignore_patterns' => [
+        // '/vendor/' // vendorディレクトリのエラーを無視
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Error Recovery
-    |--------------------------------------------------------------------------
-    |
-    | エラーからの回復設定。
-    |
-    */
-    'recovery' => [
-        'continue_on_parse_error' => true,
-        'use_fallback_types' => true,
-        'skip_invalid_routes' => true,
-    ],
-],
-```
-
-## 🎯 高度な設定
-
-```php
-/*
-|--------------------------------------------------------------------------
-| Advanced Configuration
-|--------------------------------------------------------------------------
-|
-| 高度な設定オプション。
-|
-*/
-'advanced' => [
-    /*
-    |--------------------------------------------------------------------------
-    | Custom Analyzers
-    |--------------------------------------------------------------------------
-    |
-    | カスタムアナライザーの登録。
-    |
-    */
-    'analyzers' => [
-        // 'custom' => \App\Spectrum\Analyzers\CustomAnalyzer::class,
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Custom Generators
-    |--------------------------------------------------------------------------
-    |
-    | カスタムジェネレーターの登録。
-    |
-    */
-    'generators' => [
-        // 'custom' => \App\Spectrum\Generators\CustomGenerator::class,
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Hooks
-    |--------------------------------------------------------------------------
-    |
-    | フックポイントの設定。
-    |
-    */
-    'hooks' => [
-        'before_analysis' => [],
-        'after_analysis' => [],
-        'before_generation' => [],
-        'after_generation' => [],
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Extensions
-    |--------------------------------------------------------------------------
-    |
-    | OpenAPI拡張の設定。
-    |
-    */
-    'extensions' => [
-        'x-logo' => [
-            'url' => '/logo.png',
-            'altText' => 'API Logo',
-        ],
-        'x-documentation' => 'https://docs.example.com',
+    'notifications' => [
+        'enabled' => false,
+        'channels' => ['log'],
     ],
 ],
 ```
@@ -825,23 +700,39 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 主要な設定は環境変数でオーバーライドできます：
 
 ```env
-# 基本設定
+# OpenAPI
+SPECTRUM_OPENAPI_VERSION=3.0.0
+
+# 例データ生成
 SPECTRUM_USE_FAKER=true
 SPECTRUM_FAKER_LOCALE=ja_JP
 SPECTRUM_FAKER_SEED=12345
 
 # パフォーマンス
-SPECTRUM_WORKERS=8
+SPECTRUM_PERFORMANCE_ENABLED=true
+SPECTRUM_PARALLEL_PROCESSING=true
+SPECTRUM_MAX_WORKERS=8
 SPECTRUM_CHUNK_SIZE=100
 SPECTRUM_MEMORY_LIMIT=1G
+SPECTRUM_INCREMENTAL_ENABLED=true
 
 # キャッシュ
 SPECTRUM_CACHE_ENABLED=true
-SPECTRUM_CACHE_STORE=redis
 SPECTRUM_CACHE_TTL=3600
 
-# Watch
-SPECTRUM_WATCH_POLL=true
+# レスポンス検出
+SPECTRUM_RESPONSE_DETECTION=true
+
+# HTML出力
+SPECTRUM_HTML_TRY_IT_OUT=true
+
+# エラーハンドリング
+SPECTRUM_FAIL_ON_ERROR=false
+
+# モックサーバー
+SPECTRUM_MOCK_DELAY=0
+SPECTRUM_MOCK_ERROR_RATE=0
+SPECTRUM_MOCK_SEED=12345
 ```
 
 ## 📚 関連ドキュメント
