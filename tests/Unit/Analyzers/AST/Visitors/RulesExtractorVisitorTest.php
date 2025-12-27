@@ -464,7 +464,7 @@ class RulesExtractorVisitorTest extends TestCase
             {
                 $baseRules = ['name' => 'required|string'];
                 $additionalRules = ['email' => 'required|email'];
-                
+
                 return array_merge($baseRules, $additionalRules, [
                     'password' => 'required|min:8',
                 ]);
@@ -485,5 +485,579 @@ class RulesExtractorVisitorTest extends TestCase
         $this->assertEquals('required|string', $rules['name']);
         $this->assertEquals('required|email', $rules['email']);
         $this->assertEquals('required|min:8', $rules['password']);
+    }
+
+    #[Test]
+    public function it_handles_integer_keys_in_rules()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    0 => 'required|string',
+                    1 => 'required|integer',
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('required|string', $rules['0']);
+        $this->assertEquals('required|integer', $rules['1']);
+    }
+
+    #[Test]
+    public function it_handles_empty_rule_in()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => Rule::in([]),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('in:', $rules['status']);
+    }
+
+    #[Test]
+    public function it_handles_rule_in_with_integers()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'priority' => Rule::in([1, 2, 3]),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('in:1,2,3', $rules['priority']);
+    }
+
+    #[Test]
+    public function it_handles_unknown_rule_static_methods()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'dimensions' => Rule::dimensions(),
+                    'password' => Rule::password(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Unknown Rule methods return method name
+        $this->assertEquals('dimensions', $rules['dimensions']);
+        $this->assertEquals('password', $rules['password']);
+    }
+
+    #[Test]
+    public function it_handles_return_from_unknown_variable()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return $unknownVar;
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertArrayHasKey('_notice', $rules);
+        $this->assertStringContainsString('Dynamic rules detected', $rules['_notice']);
+    }
+
+    #[Test]
+    public function it_handles_method_call_in_variable_assignment()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                $additionalRules = $this->additionalRules();
+
+                return array_merge(['name' => 'required'], $additionalRules);
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Method call result is marked as dynamic
+        $this->assertArrayHasKey('name', $rules);
+        $this->assertArrayHasKey('_dynamic', $rules);
+    }
+
+    #[Test]
+    public function it_handles_nested_method_chains()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'email' => Rule::unique('users')->ignore(1)->where('active', true),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Nested chains still extract base rule
+        $this->assertEquals('unique:users', $rules['email']);
+    }
+
+    #[Test]
+    public function it_handles_complex_return_expressions()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return $this->getRulesFromService();
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertArrayHasKey('_notice', $rules);
+        $this->assertStringContainsString('Complex rules detected', $rules['_notice']);
+    }
+
+    #[Test]
+    public function it_handles_match_expression_with_non_array_body()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return match($this->input('type')) {
+                    'email' => $this->getEmailRules(),
+                    default => $this->getDefaultRules(),
+                };
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertArrayHasKey('_notice', $rules);
+        $this->assertStringContainsString('Match expression detected', $rules['_notice']);
+    }
+
+    #[Test]
+    public function it_handles_non_string_static_class_call()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => SomeClass::someMethod(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Non-Rule static calls are stringified
+        $this->assertStringContainsString('SomeClass::someMethod()', $rules['status']);
+    }
+
+    #[Test]
+    public function it_handles_new_expression_for_non_enum_class()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'custom' => new CustomRule(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Non-Enum new expressions are stringified
+        $this->assertStringContainsString('new CustomRule()', $rules['custom']);
+    }
+
+    #[Test]
+    public function it_handles_enum_rule_without_class_argument()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => Rule::enum($statusClass),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('__enum__', $rules['status']);
+    }
+
+    #[Test]
+    public function it_handles_new_enum_without_class_argument()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rules\Enum;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => new Enum($statusClass),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('__enum__', $rules['status']);
+    }
+
+    #[Test]
+    public function it_handles_required_if_with_integer_value()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'extra_field' => Rule::requiredIf('type', 1),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('required_if:type:1', $rules['extra_field']);
+    }
+
+    #[Test]
+    public function it_handles_array_with_null_items()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'name' => ['required', 'string'],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['name']);
+        $this->assertContains('required', $rules['name']);
+        $this->assertContains('string', $rules['name']);
+    }
+
+    #[Test]
+    public function it_handles_empty_array_merge()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return array_merge($this->dynamicRules(), $this->otherDynamicRules());
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertArrayHasKey('_notice', $rules);
+        $this->assertStringContainsString('Dynamic array_merge', $rules['_notice']);
+    }
+
+    #[Test]
+    public function it_handles_expression_key_in_rules()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    $this->getFieldName() => 'required|string',
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Expression keys are stringified
+        $keys = array_keys($rules);
+        $this->assertNotEmpty($keys);
+        $this->assertStringContainsString('getFieldName', $keys[0]);
+    }
+
+    #[Test]
+    public function it_handles_rule_in_without_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => Rule::in(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertEquals('in:', $rules['status']);
+    }
+
+    #[Test]
+    public function it_handles_concat_with_mixed_values()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'name' => 'required|string|' . ['array_value'],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Concat with non-strings falls back to expression
+        $this->assertArrayHasKey('name', $rules);
+    }
+
+    #[Test]
+    public function it_handles_method_chain_with_other_methods()
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rule;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'email' => Rule::unique('users')->customMethod(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Custom methods are stringified
+        $this->assertArrayHasKey('email', $rules);
     }
 }

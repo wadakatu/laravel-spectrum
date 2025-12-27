@@ -869,4 +869,612 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $ruleSets = $visitor->getRuleSets();
         $this->assertNotEmpty($ruleSets['rules_sets']);
     }
+
+    #[Test]
+    public function it_handles_ternary_with_null_if_branch()
+    {
+        // Elvis operator: $expr ?: $default
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return $this->customRules() ?: ['name' => 'required|string'];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('name', $mergedRules);
+    }
+
+    #[Test]
+    public function it_handles_numeric_keys_in_array()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    0 => 'required|string',
+                    1 => 'required|integer',
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('0', $mergedRules);
+        $this->assertArrayHasKey('1', $mergedRules);
+    }
+
+    #[Test]
+    public function it_handles_concatenated_rules()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'name' => ['required', 'string' . '|max:255'],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('name', $mergedRules);
+    }
+
+    #[Test]
+    public function it_handles_new_expression_as_rule()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => ['required', new Enum(StatusEnum::class)],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('status', $mergedRules);
+        $this->assertContains('required', $mergedRules['status']);
+    }
+
+    #[Test]
+    public function it_handles_rule_in_without_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => Rule::in(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('status', $mergedRules);
+        // The rule is stored as-is (could be string or array based on context)
+        $statusRules = $mergedRules['status'];
+        $this->assertContains('in:', is_array($statusRules) ? $statusRules : [$statusRules]);
+    }
+
+    #[Test]
+    public function it_handles_rule_in_with_variable_argument()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => Rule::in($this->getAllowedStatuses()),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('status', $mergedRules);
+        // The rule is stored as-is (could be string or array based on context)
+        $statusRules = $mergedRules['status'];
+        $this->assertContains('in:...', is_array($statusRules) ? $statusRules : [$statusRules]);
+    }
+
+    #[Test]
+    public function it_handles_rule_when_static_call()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'phone' => Rule::when(true, 'required'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('phone', $mergedRules);
+        $phoneRules = $mergedRules['phone'];
+        $this->assertContains('sometimes', is_array($phoneRules) ? $phoneRules : [$phoneRules]);
+    }
+
+    #[Test]
+    public function it_handles_expression_key()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    $this->getFieldName() => 'required|string',
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        // The key is converted to a string representation
+        $this->assertNotEmpty($ruleSets['merged_rules']);
+    }
+
+    #[Test]
+    public function it_handles_rule_exists_without_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'user_id' => Rule::exists($this->getTable()),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('user_id', $mergedRules);
+        $userIdRules = $mergedRules['user_id'];
+        $this->assertContains('exists:...', is_array($userIdRules) ? $userIdRules : [$userIdRules]);
+    }
+
+    #[Test]
+    public function it_handles_rule_unique_without_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'email' => Rule::unique($this->getTable()),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('email', $mergedRules);
+        $emailRules = $mergedRules['email'];
+        $this->assertContains('unique:...', is_array($emailRules) ? $emailRules : [$emailRules]);
+    }
+
+    #[Test]
+    public function it_handles_rule_required_if_with_string_args()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'company_name' => Rule::requiredIf('is_company', 'true'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('company_name', $mergedRules);
+        $companyNameRules = $mergedRules['company_name'];
+        // Check that the rule contains required_if
+        if (is_array($companyNameRules)) {
+            $found = false;
+            foreach ($companyNameRules as $rule) {
+                if (str_starts_with($rule, 'required_if:')) {
+                    $found = true;
+                    break;
+                }
+            }
+            $this->assertTrue($found, 'Should contain required_if rule');
+        } else {
+            $this->assertStringStartsWith('required_if:', $companyNameRules);
+        }
+    }
+
+    #[Test]
+    public function it_handles_unknown_rule_static_method()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'file' => Rule::dimensions(['min_width' => 100]),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('file', $mergedRules);
+    }
+
+    #[Test]
+    public function it_handles_assignment_to_array_element()
+    {
+        // Assignment to array elements ($rules['name'] = ...) is not captured by handleAssignment
+        // because the $node->var is ArrayDimFetch, not Variable.
+        // This tests the early return behavior in handleAssignment.
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                $rules = [];
+                $rules['name'] = 'required|string';
+                $rules['email'] = 'required|email';
+                return $rules;
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        // The initial empty array is captured, but element assignments are not
+        // This is expected behavior - the visitor captures variable assignments
+        $this->assertNotNull($ruleSets['merged_rules']);
+    }
+
+    #[Test]
+    public function it_handles_method_call_assignment()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                $baseRules = $this->getBaseRules();
+                return $baseRules;
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        // Method call result is evaluated
+        $this->assertEmpty($ruleSets['merged_rules']);
+    }
+
+    #[Test]
+    public function it_handles_method_without_identifier_name()
+    {
+        // When isMethod('POST') is used, the method name is checked
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                if ($this->{$methodName}()) {
+                    return ['name' => 'required'];
+                }
+                return [];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        // Should handle gracefully
+        $this->assertNotEmpty($ruleSets['rules_sets']);
+    }
+
+    #[Test]
+    public function it_handles_missing_method_check()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                if ($this->missing('optional_field')) {
+                    return ['default_field' => 'required'];
+                }
+                return [];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $this->assertNotEmpty($ruleSets['rules_sets']);
+        $firstCondition = $ruleSets['rules_sets'][0]['conditions'][0] ?? null;
+        $this->assertEquals('request_field', $firstCondition['type']);
+        $this->assertEquals('missing', $firstCondition['check']);
+    }
+
+    #[Test]
+    public function it_returns_default_for_unknown_method_call()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return $this->unknownMethod();
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        // Unknown methods return null, so merged_rules is empty
+        $this->assertEmpty($ruleSets['merged_rules']);
+    }
+
+    #[Test]
+    public function it_handles_rule_method_chain()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'email' => ['required', Rule::unique('users')->ignore($this->user())],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('email', $mergedRules);
+        // The method chain is evaluated to extract the base rule
+        $this->assertContains('required', $mergedRules['email']);
+    }
+
+    #[Test]
+    public function it_handles_rule_exists_method_chain()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'user_id' => ['required', Rule::exists('users')->where('active', true)],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('user_id', $mergedRules);
+        $this->assertContains('required', $mergedRules['user_id']);
+        // The exists rule is extracted from the chain
+        $this->assertContains('exists:users', $mergedRules['user_id']);
+    }
+
+    #[Test]
+    public function it_handles_non_rule_method_call_in_single_rule()
+    {
+        // This tests the else branch in evaluateSingleRule for MethodCall that's not a Rule chain
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'name' => ['required', $this->getCustomRule()],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+        $this->assertArrayHasKey('name', $mergedRules);
+        $this->assertContains('required', $mergedRules['name']);
+    }
+
+    #[Test]
+    public function it_handles_function_call_assignment()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                $rules = collect(['name' => 'required'])->toArray();
+                return $rules;
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        // Function call result is stored in variable scope
+        $this->assertNotNull($ruleSets['merged_rules']);
+    }
 }
