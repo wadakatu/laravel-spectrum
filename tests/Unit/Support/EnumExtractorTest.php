@@ -90,4 +90,30 @@ class EnumExtractorTest extends TestCase
         $this->assertSame([1, 2, 3], $values);
         $this->assertNotSame([3, 2, 1], $values);
     }
+
+    public function test_get_enum_type_throws_exception_for_non_enum(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('is not a valid enum');
+        $this->extractor->getEnumType(\stdClass::class);
+    }
+
+    public function test_is_backed_enum_throws_exception_for_non_enum(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('is not a valid enum');
+        $this->extractor->isBackedEnum(\stdClass::class);
+    }
+
+    public function test_get_enum_type_throws_for_non_existent_class(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->extractor->getEnumType('NonExistentEnumClass');
+    }
+
+    public function test_is_backed_enum_throws_for_non_existent_class(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->extractor->isBackedEnum('NonExistentEnumClass');
+    }
 }

@@ -256,4 +256,163 @@ class DynamicExampleGeneratorTest extends TestCase
 
         $this->assertEquals('test@example.com', $result);
     }
+
+    public function test_set_faker_replaces_faker_instance(): void
+    {
+        $customFaker = \Faker\Factory::create();
+        $customFaker->seed(12345);
+
+        $this->generator->setFaker($customFaker);
+
+        // Generate a value - should use the new faker
+        $schema = ['type' => 'string'];
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertIsString($result);
+    }
+
+    public function test_generates_string_with_pattern(): void
+    {
+        $schema = [
+            'type' => 'string',
+            'pattern' => '^[A-Z]{3}$',
+            'minLength' => 3,
+            'maxLength' => 3,
+        ];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertIsString($result);
+        $this->assertEquals(3, strlen($result));
+    }
+
+    public function test_generates_object_with_additional_properties(): void
+    {
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'name' => ['type' => 'string'],
+            ],
+            'additionalProperties' => true,
+        ];
+
+        $result = $this->generator->generateFromSchema($schema, [
+            'include_all_properties' => true,
+        ]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('name', $result);
+        // Additional properties may or may not be present (random)
+    }
+
+    public function test_generates_array_without_items_schema(): void
+    {
+        $schema = [
+            'type' => 'array',
+        ];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertIsArray($result);
+        // Without items schema, should still generate something
+        $this->assertNotEmpty($result);
+    }
+
+    public function test_generates_integer_with_enum(): void
+    {
+        $schema = [
+            'type' => 'integer',
+            'enum' => [1, 2, 3, 5, 8],
+        ];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertContains($result, [1, 2, 3, 5, 8]);
+    }
+
+    public function test_generates_number_with_enum(): void
+    {
+        $schema = [
+            'type' => 'number',
+            'enum' => [1.5, 2.5, 3.5],
+        ];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertContains($result, [1.5, 2.5, 3.5]);
+    }
+
+    public function test_generates_array_with_min_max_items(): void
+    {
+        $schema = [
+            'type' => 'array',
+            'items' => ['type' => 'integer'],
+            'minItems' => 2,
+            'maxItems' => 4,
+        ];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertIsArray($result);
+        $this->assertGreaterThanOrEqual(2, count($result));
+        $this->assertLessThanOrEqual(4, count($result));
+    }
+
+    public function test_generates_default_type_as_string(): void
+    {
+        // Schema without type defaults to string
+        $schema = [];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertIsString($result);
+    }
+
+    public function test_generates_unknown_type_as_string(): void
+    {
+        $schema = ['type' => 'unknown_type'];
+
+        $result = $this->generator->generateFromSchema($schema);
+
+        $this->assertIsString($result);
+    }
+
+    public function test_constructor_accepts_custom_registry_and_faker(): void
+    {
+        $registry = new \LaravelSpectrum\Support\Example\FieldPatternRegistry;
+        $faker = \Faker\Factory::create();
+
+        $generator = new DynamicExampleGenerator($registry, $faker);
+
+        $schema = ['type' => 'string', 'format' => 'email'];
+        $result = $generator->generateFromSchema($schema);
+
+        $this->assertMatchesRegularExpression('/^.+@.+\..+$/', $result);
+    }
+
+    public function test_generates_realistic_string_without_field_name(): void
+    {
+        $schema = ['type' => 'string'];
+
+        $result = $this->generator->generateFromSchema($schema, [
+            'use_realistic_data' => true,
+            'field_name' => '',
+        ]);
+
+        $this->assertIsString($result);
+    }
+
+    public function test_generates_realistic_string_with_known_field_name(): void
+    {
+        $schema = ['type' => 'string'];
+
+        $result = $this->generator->generateFromSchema($schema, [
+            'use_realistic_data' => true,
+            'field_name' => 'email',
+        ]);
+
+        $this->assertIsString($result);
+        // Should generate an email-like string
+        $this->assertMatchesRegularExpression('/^.+@.+\..+$/', $result);
+    }
 }

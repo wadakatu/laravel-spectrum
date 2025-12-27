@@ -261,4 +261,180 @@ class ExampleGeneratorTest extends TestCase
         $this->assertArrayNotHasKey('user', $example); // Includes should not be in default example
         $this->assertArrayNotHasKey('comments', $example);
     }
+
+    public function test_generates_error_example_for_forbidden(): void
+    {
+        $result = $this->generator->generateErrorExample(403);
+
+        $this->assertArrayHasKey('message', $result);
+        $this->assertEquals('Forbidden.', $result['message']);
+    }
+
+    public function test_generates_error_example_for_server_error(): void
+    {
+        $result = $this->generator->generateErrorExample(500);
+
+        $this->assertArrayHasKey('message', $result);
+        $this->assertEquals('Server Error', $result['message']);
+    }
+
+    public function test_handles_validation_error_with_array_rules(): void
+    {
+        $validationRules = [
+            'name' => ['required', 'string', 'max:255'],
+            'age' => ['required', 'numeric', 'min:18'],
+        ];
+
+        $result = $this->generator->generateErrorExample(422, $validationRules);
+
+        $this->assertArrayHasKey('errors', $result);
+        $this->assertArrayHasKey('name', $result['errors']);
+        $this->assertArrayHasKey('age', $result['errors']);
+    }
+
+    public function test_handles_validation_error_with_various_rules(): void
+    {
+        $validationRules = [
+            'email' => 'required|email|unique:users',
+            'password' => 'required|confirmed|min:8',
+            'url' => 'required|url',
+            'birthday' => 'required|date',
+        ];
+
+        $result = $this->generator->generateErrorExample(422, $validationRules);
+
+        $this->assertArrayHasKey('errors', $result);
+        $this->assertArrayHasKey('email', $result['errors']);
+        $this->assertArrayHasKey('password', $result['errors']);
+        $this->assertArrayHasKey('url', $result['errors']);
+        $this->assertArrayHasKey('birthday', $result['errors']);
+
+        // Check that error messages are limited to 2 per field
+        $this->assertLessThanOrEqual(2, count($result['errors']['email']));
+    }
+
+    public function test_handles_array_of_primitive_types(): void
+    {
+        $schema = [
+            'properties' => [
+                'tags' => [
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                ],
+            ],
+        ];
+
+        $example = $this->generator->generateFromResource($schema, PostResource::class);
+
+        $this->assertArrayHasKey('tags', $example);
+        $this->assertIsArray($example['tags']);
+    }
+
+    public function test_generates_example_without_properties(): void
+    {
+        $schema = [];
+
+        $example = $this->generator->generateFromResource($schema, PostResource::class);
+
+        $this->assertIsArray($example);
+        $this->assertEmpty($example);
+    }
+
+    public function test_generates_from_transformer_without_default(): void
+    {
+        $transformerSchema = [
+            'includes' => [
+                'user' => [
+                    'properties' => [
+                        'id' => ['type' => 'integer'],
+                    ],
+                ],
+            ],
+        ];
+
+        $example = $this->generator->generateFromTransformer($transformerSchema);
+
+        $this->assertIsArray($example);
+        $this->assertEmpty($example);
+    }
+
+    public function test_generates_integer_field_value(): void
+    {
+        $schema = [
+            'properties' => [
+                'count' => ['type' => 'integer'],
+            ],
+        ];
+
+        $example = $this->generator->generateFromResource($schema, PostResource::class);
+
+        $this->assertArrayHasKey('count', $example);
+        $this->assertIsInt($example['count']);
+    }
+
+    public function test_generates_number_field_value(): void
+    {
+        $schema = [
+            'properties' => [
+                'price' => ['type' => 'number'],
+            ],
+        ];
+
+        $example = $this->generator->generateFromResource($schema, PostResource::class);
+
+        $this->assertArrayHasKey('price', $example);
+        $this->assertIsNumeric($example['price']);
+    }
+
+    public function test_generates_boolean_field_value(): void
+    {
+        $schema = [
+            'properties' => [
+                'active' => ['type' => 'boolean'],
+            ],
+        ];
+
+        $example = $this->generator->generateFromResource($schema, PostResource::class);
+
+        $this->assertArrayHasKey('active', $example);
+        $this->assertIsBool($example['active']);
+    }
+
+    public function test_uses_custom_example_mapping(): void
+    {
+        // Custom generators require Faker to be enabled
+        config(['spectrum.example_generation.use_faker' => true]);
+        $valueFactory = new ExampleValueFactory;
+        $generator = new ExampleGenerator($valueFactory);
+
+        $schema = [
+            'properties' => [
+                'status' => ['type' => 'string'],
+                'name' => ['type' => 'string'],
+            ],
+        ];
+
+        // Create a resource that implements HasCustomExamples
+        $resource = new class implements \LaravelSpectrum\Contracts\HasCustomExamples
+        {
+            public static function getExampleMapping(): array
+            {
+                return [
+                    'status' => fn ($faker) => 'custom_status_value',
+                ];
+            }
+        };
+
+        $example = $generator->generateFromResource($schema, get_class($resource));
+
+        $this->assertEquals('custom_status_value', $example['status']);
+    }
+
+    public function test_generates_error_example_default(): void
+    {
+        $result = $this->generator->generateErrorExample(418);
+
+        $this->assertArrayHasKey('message', $result);
+        $this->assertEquals('Error occurred', $result['message']);
+    }
 }
