@@ -70,6 +70,14 @@ class OptimizedGenerateCommandTest extends TestCase
         $dependencyGraphProp = $reflection->getProperty('dependencyGraph');
         $dependencyGraphProp->setAccessible(true);
         $this->assertSame($dependencyGraph, $dependencyGraphProp->getValue($command));
+
+        $routeAnalyzerProp = $reflection->getProperty('routeAnalyzer');
+        $routeAnalyzerProp->setAccessible(true);
+        $this->assertSame($routeAnalyzer, $routeAnalyzerProp->getValue($command));
+
+        $openApiGeneratorProp = $reflection->getProperty('openApiGenerator');
+        $openApiGeneratorProp->setAccessible(true);
+        $this->assertSame($openApiGenerator, $openApiGeneratorProp->getValue($command));
     }
 
     #[Test]
