@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -33,27 +35,35 @@ class OptimizedGenerateCommand extends Command
 
     private MemoryManager $memoryManager;
 
-    private RouteAnalyzer $routeAnalyzer;
+    private ?RouteAnalyzer $routeAnalyzer = null;
 
-    private OpenApiGenerator $openApiGenerator;
+    private ?OpenApiGenerator $openApiGenerator = null;
 
-    public function __construct()
-    {
+    public function __construct(
+        ?MemoryManager $memoryManager = null,
+        ?ChunkProcessor $chunkProcessor = null,
+        ?ParallelProcessor $parallelProcessor = null,
+        ?DependencyGraph $dependencyGraph = null,
+        ?RouteAnalyzer $routeAnalyzer = null,
+        ?OpenApiGenerator $openApiGenerator = null
+    ) {
         parent::__construct();
 
-        $this->memoryManager = new MemoryManager;
-        $this->chunkProcessor = new ChunkProcessor(100, $this->memoryManager);
-        $this->parallelProcessor = new ParallelProcessor;
-        $this->dependencyGraph = new DependencyGraph;
+        $this->memoryManager = $memoryManager ?? new MemoryManager;
+        $this->chunkProcessor = $chunkProcessor ?? new ChunkProcessor(100, $this->memoryManager);
+        $this->parallelProcessor = $parallelProcessor ?? new ParallelProcessor;
+        $this->dependencyGraph = $dependencyGraph ?? new DependencyGraph;
+        $this->routeAnalyzer = $routeAnalyzer;
+        $this->openApiGenerator = $openApiGenerator;
     }
 
     public function handle(): int
     {
         $this->info('🚀 Generating API documentation with optimizations...');
 
-        // Initialize analyzers and generators
-        $this->routeAnalyzer = app(RouteAnalyzer::class);
-        $this->openApiGenerator = app(OpenApiGenerator::class);
+        // Initialize analyzers and generators if not already injected
+        $this->routeAnalyzer = $this->routeAnalyzer ?? app(RouteAnalyzer::class);
+        $this->openApiGenerator = $this->openApiGenerator ?? app(OpenApiGenerator::class);
 
         // メモリ制限の設定
         if ($memoryLimit = $this->option('memory-limit')) {
