@@ -222,7 +222,7 @@ class GenerateDocsCommand extends Command
                 $this->error("Found {$report['summary']['total_errors']} errors:");
                 foreach ($report['errors'] as $error) {
                     $this->error("  - [{$error['context']}] {$error['message']}");
-                    if ($this->option('vvv')) {
+                    if ($this->output->isDebug()) {
                         if (isset($error['metadata']['file'])) {
                             $this->line("    File: {$error['metadata']['file']}");
                         }

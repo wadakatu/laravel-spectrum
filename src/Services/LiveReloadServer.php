@@ -130,31 +130,7 @@ class LiveReloadServer
         $this->wsWorker->onWorkerStart = function ($worker) use (&$wsClients) {
             // Check for messages every 100ms
             \Workerman\Timer::add(0.1, function () use (&$wsClients) {
-                $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
-
-                if (file_exists($tempFile)) {
-                    $messages = file($tempFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-                    if (! empty($messages)) {
-                        // Clear the file
-                        file_put_contents($tempFile, '');
-
-                        foreach ($messages as $message) {
-                            echo "[WebSocket Worker] Broadcasting message: {$message}\n";
-                            $clientCount = count($wsClients);
-                            echo "[WebSocket Worker] Sending to {$clientCount} clients\n";
-
-                            foreach ($wsClients as $client) {
-                                try {
-                                    $client->send($message);
-                                    echo "[WebSocket Worker] Message sent to client\n";
-                                } catch (\Exception $e) {
-                                    echo "[WebSocket Worker] Failed to send: {$e->getMessage()}\n";
-                                }
-                            }
-                        }
-                    }
-                }
+                $this->processMessageQueue($wsClients);
             });
         };
 
@@ -181,6 +157,40 @@ class LiveReloadServer
         $this->wsWorker->onError = function (TcpConnection $connection, $code, $msg) {
             echo "Error: {$msg}\n";
         };
+    }
+
+    /**
+     * Process messages from the message queue file and broadcast to clients
+     *
+     * @param  \SplObjectStorage<TcpConnection, null>  $wsClients
+     */
+    protected function processMessageQueue(\SplObjectStorage $wsClients): void
+    {
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+
+        if (file_exists($tempFile)) {
+            $messages = file($tempFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+            if (! empty($messages)) {
+                // Clear the file
+                file_put_contents($tempFile, '');
+
+                foreach ($messages as $message) {
+                    echo "[WebSocket Worker] Broadcasting message: {$message}\n";
+                    $clientCount = count($wsClients);
+                    echo "[WebSocket Worker] Sending to {$clientCount} clients\n";
+
+                    foreach ($wsClients as $client) {
+                        try {
+                            $client->send($message);
+                            echo "[WebSocket Worker] Message sent to client\n";
+                        } catch (\Exception $e) {
+                            echo "[WebSocket Worker] Failed to send: {$e->getMessage()}\n";
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function notifyClients(array $data): void
