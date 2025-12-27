@@ -52,6 +52,60 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Parameter Serialization
+    |--------------------------------------------------------------------------
+    |
+    | Configure how array and object parameters are serialized in the OpenAPI
+    | specification. These settings follow the OpenAPI 3.0 specification for
+    | parameter serialization.
+    |
+    | See: https://swagger.io/docs/specification/serialization/
+    |
+    */
+    'parameters' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Include Style and Explode
+        |--------------------------------------------------------------------------
+        |
+        | When enabled, style and explode properties will be added to array
+        | and object type parameters for explicit serialization control.
+        |
+        */
+        'include_style' => env('SPECTRUM_PARAMETERS_INCLUDE_STYLE', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Array Style
+        |--------------------------------------------------------------------------
+        |
+        | The default serialization style for array parameters.
+        | Options: 'form' (default), 'spaceDelimited', 'pipeDelimited', 'deepObject'
+        |
+        | Examples with ids=[1,2,3]:
+        | - form:           ids=1&ids=2&ids=3 (with explode=true)
+        | - form:           ids=1,2,3 (with explode=false)
+        | - spaceDelimited: ids=1%202%203
+        | - pipeDelimited:  ids=1|2|3
+        |
+        */
+        'array_style' => env('SPECTRUM_PARAMETERS_ARRAY_STYLE', 'form'),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Array Explode
+        |--------------------------------------------------------------------------
+        |
+        | Whether array items should be exploded into separate parameters.
+        | When true:  ids=1&ids=2&ids=3
+        | When false: ids=1,2,3
+        |
+        */
+        'array_explode' => env('SPECTRUM_PARAMETERS_ARRAY_EXPLODE', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route Patterns
     |--------------------------------------------------------------------------
     |
