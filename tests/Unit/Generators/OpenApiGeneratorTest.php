@@ -145,6 +145,90 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_contact_in_info_when_configured(): void
+    {
+        config([
+            'spectrum.contact' => [
+                'name' => 'API Support',
+                'email' => 'api@example.com',
+                'url' => 'https://example.com/support',
+            ],
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayHasKey('contact', $result['info']);
+        $this->assertEquals('API Support', $result['info']['contact']['name']);
+        $this->assertEquals('api@example.com', $result['info']['contact']['email']);
+        $this->assertEquals('https://example.com/support', $result['info']['contact']['url']);
+    }
+
+    #[Test]
+    public function it_includes_license_in_info_when_configured(): void
+    {
+        config([
+            'spectrum.license' => [
+                'name' => 'MIT',
+                'url' => 'https://opensource.org/licenses/MIT',
+            ],
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayHasKey('license', $result['info']);
+        $this->assertEquals('MIT', $result['info']['license']['name']);
+        $this->assertEquals('https://opensource.org/licenses/MIT', $result['info']['license']['url']);
+    }
+
+    #[Test]
+    public function it_includes_terms_of_service_in_info_when_configured(): void
+    {
+        config(['spectrum.terms_of_service' => 'https://example.com/terms']);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayHasKey('termsOfService', $result['info']);
+        $this->assertEquals('https://example.com/terms', $result['info']['termsOfService']);
+    }
+
+    #[Test]
+    public function it_omits_empty_info_fields(): void
+    {
+        // Ensure no contact/license/terms configured
+        config([
+            'spectrum.contact' => null,
+            'spectrum.license' => null,
+            'spectrum.terms_of_service' => null,
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayNotHasKey('contact', $result['info']);
+        $this->assertArrayNotHasKey('license', $result['info']);
+        $this->assertArrayNotHasKey('termsOfService', $result['info']);
+    }
+
+    #[Test]
     public function it_generates_operation_for_get_route()
     {
         Route::get('/api/users', 'UserController@index')->name('users.index');

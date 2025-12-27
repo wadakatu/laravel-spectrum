@@ -129,13 +129,30 @@ class OpenApiGenerator
      */
     protected function buildBaseStructure(array $authenticationInfo): array
     {
+        $info = [
+            'title' => config('spectrum.title', config('app.name').' API'),
+            'version' => config('spectrum.version', '1.0.0'),
+            'description' => config('spectrum.description', ''),
+        ];
+
+        // Add optional info fields if configured
+        if ($termsOfService = config('spectrum.terms_of_service')) {
+            $info['termsOfService'] = $termsOfService;
+        }
+
+        $contact = config('spectrum.contact');
+        if (! empty($contact)) {
+            $info['contact'] = $contact;
+        }
+
+        $license = config('spectrum.license');
+        if (! empty($license)) {
+            $info['license'] = $license;
+        }
+
         return [
             'openapi' => $this->getOpenApiVersion(),
-            'info' => [
-                'title' => config('spectrum.title', config('app.name').' API'),
-                'version' => config('spectrum.version', '1.0.0'),
-                'description' => config('spectrum.description', ''),
-            ],
+            'info' => $info,
             'servers' => [
                 [
                     'url' => rtrim(config('app.url'), '/').'/api',
