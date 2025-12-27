@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Performance;
 
 use LaravelSpectrum\Performance\MemoryManager;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -26,13 +29,15 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $this->originalMemoryLimit);
     }
 
-    public function test_check_memory_usage_normal_conditions(): void
+    #[Test]
+    public function check_memory_usage_normal_conditions(): void
     {
         // 通常の条件下では例外がスローされない
         $this->assertNull($this->memoryManager->checkMemoryUsage());
     }
 
-    public function test_check_memory_usage_throws_exception_when_critical(): void
+    #[Test]
+    public function check_memory_usage_throws_exception_when_critical(): void
     {
         // メモリ制限を現在の使用量より少し多い値に設定
         $currentUsage = memory_get_usage(true);
@@ -47,7 +52,8 @@ class MemoryManagerTest extends TestCase
         $memoryManager->checkMemoryUsage();
     }
 
-    public function test_get_available_memory(): void
+    #[Test]
+    public function get_available_memory(): void
     {
         $available = $this->memoryManager->getAvailableMemory();
 
@@ -61,13 +67,15 @@ class MemoryManagerTest extends TestCase
         }
     }
 
-    public function test_run_garbage_collection(): void
+    #[Test]
+    public function run_garbage_collection(): void
     {
         // ガベージコレクションが例外なく実行される
         $this->assertNull($this->memoryManager->runGarbageCollection());
     }
 
-    public function test_get_memory_stats(): void
+    #[Test]
+    public function get_memory_stats(): void
     {
         $stats = $this->memoryManager->getMemoryStats();
 
@@ -91,7 +99,8 @@ class MemoryManagerTest extends TestCase
         $this->assertLessThanOrEqual(100, $stats['percentage']);
     }
 
-    public function test_memory_stats_reflect_current_state(): void
+    #[Test]
+    public function memory_stats_reflect_current_state(): void
     {
         $statsBefore = $this->memoryManager->getMemoryStats();
 
@@ -107,7 +116,8 @@ class MemoryManagerTest extends TestCase
         $this->assertGreaterThanOrEqual($beforeBytes, $afterBytes);
     }
 
-    public function test_check_memory_usage_with_warning_threshold(): void
+    #[Test]
+    public function check_memory_usage_with_warning_threshold(): void
     {
         // メモリ制限を現在の使用量の約115%に設定（80%警告閾値を超える）
         $currentUsage = memory_get_usage(true);
@@ -120,7 +130,8 @@ class MemoryManagerTest extends TestCase
         $this->assertNull($memoryManager->checkMemoryUsage());
     }
 
-    public function test_memory_limit_parsing(): void
+    #[Test]
+    public function memory_limit_parsing(): void
     {
         // 現在のメモリ制限を保存
         $originalLimit = ini_get('memory_limit');
@@ -190,7 +201,8 @@ class MemoryManagerTest extends TestCase
         }
     }
 
-    public function test_memory_limit_parsing_with_gigabytes(): void
+    #[Test]
+    public function memory_limit_parsing_with_gigabytes(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -203,7 +215,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_memory_limit_parsing_with_kilobytes(): void
+    #[Test]
+    public function memory_limit_parsing_with_kilobytes(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -226,7 +239,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_memory_limit_parsing_with_bytes(): void
+    #[Test]
+    public function memory_limit_parsing_with_bytes(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -240,7 +254,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_memory_limit_parsing_unlimited(): void
+    #[Test]
+    public function memory_limit_parsing_unlimited(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -255,7 +270,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_format_bytes_small_values(): void
+    #[Test]
+    public function format_bytes_small_values(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -271,7 +287,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_get_available_memory_with_unlimited(): void
+    #[Test]
+    public function get_available_memory_with_unlimited(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -286,7 +303,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_memory_stats_percentage_calculation(): void
+    #[Test]
+    public function memory_stats_percentage_calculation(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -305,7 +323,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_constructor_initializes_memory_limit(): void
+    #[Test]
+    public function constructor_initializes_memory_limit(): void
     {
         $memoryManager = new MemoryManager;
 
@@ -317,7 +336,8 @@ class MemoryManagerTest extends TestCase
         $this->assertIsArray($stats);
     }
 
-    public function test_check_memory_usage_below_warning_threshold(): void
+    #[Test]
+    public function check_memory_usage_below_warning_threshold(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -335,7 +355,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_run_garbage_collection_completes_successfully(): void
+    #[Test]
+    public function run_garbage_collection_completes_successfully(): void
     {
         $memoryManager = new MemoryManager;
 
@@ -353,7 +374,8 @@ class MemoryManagerTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_memory_limit_parsing_lowercase_suffix(): void
+    #[Test]
+    public function memory_limit_parsing_lowercase_suffix(): void
     {
         $originalLimit = ini_get('memory_limit');
 
@@ -367,7 +389,8 @@ class MemoryManagerTest extends TestCase
         ini_set('memory_limit', $originalLimit);
     }
 
-    public function test_get_memory_stats_returns_consistent_structure(): void
+    #[Test]
+    public function get_memory_stats_returns_consistent_structure(): void
     {
         $memoryManager = new MemoryManager;
 
