@@ -54,7 +54,6 @@ const sidebars: SidebarsConfig = {
       label: 'Advanced',
       items: [
         'advanced-features',
-        'plugin-development',
         'performance',
         'ci-cd-integration',
       ],
