@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Console;
+namespace LaravelSpectrum\Tests\Unit\Console;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
-use Mockery;
-use Orchestra\Testbench\TestCase;
+use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 class GenerateDocsCommandTest extends TestCase
@@ -34,7 +33,6 @@ class GenerateDocsCommandTest extends TestCase
         }
 
         app(DocumentationCache::class)->clear();
-        Mockery::close();
         parent::tearDown();
     }
 
@@ -307,19 +305,5 @@ class GenerateDocsCommandTest extends TestCase
         $this->artisan('spectrum:generate')
             ->expectsOutputToContain('Cache:')
             ->assertSuccessful();
-    }
-
-    protected function getPackageProviders($app): array
-    {
-        return [
-            \LaravelSpectrum\SpectrumServiceProvider::class,
-        ];
-    }
-
-    protected function defineEnvironment($app): void
-    {
-        $app['config']->set('spectrum.routes.include', ['api/*']);
-        $app['config']->set('spectrum.routes.exclude', []);
-        $app['config']->set('spectrum.cache.enabled', true);
     }
 }
