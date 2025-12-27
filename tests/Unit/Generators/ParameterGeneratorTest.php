@@ -23,6 +23,13 @@ class ParameterGeneratorTest extends TestCase
 
     protected function tearDown(): void
     {
+        // Reset config values modified by tests
+        config([
+            'spectrum.parameters.include_style' => true,
+            'spectrum.parameters.array_style' => 'form',
+            'spectrum.parameters.array_explode' => true,
+        ]);
+
         Mockery::close();
         parent::tearDown();
     }

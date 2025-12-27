@@ -160,15 +160,13 @@ class ParameterGenerator
     {
         $type = $queryParam['type'] ?? 'string';
 
-        // Only apply to array and object types
-        if (! in_array($type, ['array', 'object'], true)) {
+        // Only apply to array types
+        if ($type !== 'array') {
             return $parameter;
         }
 
         // Add items schema for array types
-        if ($type === 'array') {
-            $parameter['schema']['items'] = ['type' => 'string'];
-        }
+        $parameter['schema']['items'] = ['type' => 'string'];
 
         // Check if style/explode should be included based on config
         $includeStyle = config('spectrum.parameters.include_style', true);
