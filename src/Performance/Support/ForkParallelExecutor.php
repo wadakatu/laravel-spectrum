@@ -18,6 +18,14 @@ class ForkParallelExecutor implements ParallelExecutorInterface
             throw new \RuntimeException('Fork is not available');
         }
 
+        if ($workers < 1) {
+            throw new \InvalidArgumentException('Workers must be at least 1');
+        }
+
+        if (empty($tasks)) {
+            return [];
+        }
+
         $fork = Fork::new()
             ->concurrent($workers)
             ->before(function () {
@@ -41,7 +49,17 @@ class ForkParallelExecutor implements ParallelExecutorInterface
             try {
                 \Illuminate\Support\Facades\DB::reconnect();
             } catch (\Exception $e) {
-                // Ignore connection errors
+                // Log the error for debugging - DB operations may fail in child process
+                if (class_exists('\Illuminate\Support\Facades\Log')) {
+                    try {
+                        \Illuminate\Support\Facades\Log::warning(
+                            'Spectrum: Failed to reconnect database in child process',
+                            ['exception' => $e->getMessage()]
+                        );
+                    } catch (\Throwable $logError) {
+                        // Log facade not available, continue without logging
+                    }
+                }
             }
         }
     }

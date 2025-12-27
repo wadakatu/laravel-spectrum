@@ -22,6 +22,16 @@ class DefaultWorkerCountResolver implements WorkerCountResolverInterface
         int $maxWorkers = 16,
         int $multiplier = 2
     ) {
+        if ($minWorkers < 1) {
+            throw new \InvalidArgumentException('minWorkers must be at least 1');
+        }
+        if ($maxWorkers < $minWorkers) {
+            throw new \InvalidArgumentException('maxWorkers must be >= minWorkers');
+        }
+        if ($multiplier < 1) {
+            throw new \InvalidArgumentException('multiplier must be at least 1');
+        }
+
         $this->minWorkers = $minWorkers;
         $this->maxWorkers = $maxWorkers;
         $this->multiplier = $multiplier;

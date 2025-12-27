@@ -84,7 +84,16 @@ class ParallelProcessor
 
         // Create temporary file for progress tracking
         $progressFile = tempnam(sys_get_temp_dir(), 'spectrum_progress_');
-        file_put_contents($progressFile, '0');
+        if ($progressFile === false) {
+            // Cannot create temp file, fall back to sequential processing
+            return $this->processSequentialWithProgress($items, $processor, $onProgress);
+        }
+
+        if (file_put_contents($progressFile, '0') === false) {
+            @unlink($progressFile);
+
+            return $this->processSequentialWithProgress($items, $processor, $onProgress);
+        }
 
         $tasks = [];
         foreach ($chunks as $chunk) {
@@ -99,7 +108,7 @@ class ParallelProcessor
                     if ($fp && flock($fp, LOCK_EX)) {
                         $fileSize = filesize($progressFile);
                         $current = 0;
-                        if ($fileSize > 0) {
+                        if ($fileSize !== false && $fileSize > 0) {
                             $current = (int) fread($fp, $fileSize);
                         }
                         $current++;
@@ -126,7 +135,7 @@ class ParallelProcessor
 
         // Clean up
         if (file_exists($progressFile)) {
-            unlink($progressFile);
+            @unlink($progressFile);
         }
 
         return collect($chunkResults)->flatten(1)->toArray();
