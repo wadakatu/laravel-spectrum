@@ -34,6 +34,43 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Terms of Service
+    |--------------------------------------------------------------------------
+    |
+    | A URL to the Terms of Service for the API.
+    |
+    */
+    'terms_of_service' => env('SPECTRUM_TERMS_OF_SERVICE'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Contact Information
+    |--------------------------------------------------------------------------
+    |
+    | Contact information for the exposed API.
+    |
+    */
+    'contact' => [
+        // 'name' => 'API Support',
+        // 'email' => 'api@example.com',
+        // 'url' => 'https://example.com/support',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | License Information
+    |--------------------------------------------------------------------------
+    |
+    | License information for the exposed API.
+    |
+    */
+    'license' => [
+        // 'name' => 'MIT',
+        // 'url' => 'https://opensource.org/licenses/MIT',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | OpenAPI Specification Version
     |--------------------------------------------------------------------------
     |
