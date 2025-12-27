@@ -130,31 +130,7 @@ class LiveReloadServer
         $this->wsWorker->onWorkerStart = function ($worker) use (&$wsClients) {
             // Check for messages every 100ms
             \Workerman\Timer::add(0.1, function () use (&$wsClients) {
-                $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
-
-                if (file_exists($tempFile)) {
-                    $messages = file($tempFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-                    if (! empty($messages)) {
-                        // Clear the file
-                        file_put_contents($tempFile, '');
-
-                        foreach ($messages as $message) {
-                            echo "[WebSocket Worker] Broadcasting message: {$message}\n";
-                            $clientCount = count($wsClients);
-                            echo "[WebSocket Worker] Sending to {$clientCount} clients\n";
-
-                            foreach ($wsClients as $client) {
-                                try {
-                                    $client->send($message);
-                                    echo "[WebSocket Worker] Message sent to client\n";
-                                } catch (\Exception $e) {
-                                    echo "[WebSocket Worker] Failed to send: {$e->getMessage()}\n";
-                                }
-                            }
-                        }
-                    }
-                }
+                $this->processMessageQueue($wsClients);
             });
         };
 
@@ -183,14 +159,79 @@ class LiveReloadServer
         };
     }
 
+    /**
+     * Process messages from the message queue file and broadcast to clients
+     *
+     * @param  \SplObjectStorage<TcpConnection, null>  $wsClients
+     */
+    protected function processMessageQueue(\SplObjectStorage $wsClients): void
+    {
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+
+        if (! file_exists($tempFile)) {
+            return;
+        }
+
+        $messages = @file($tempFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($messages === false) {
+            error_log("[WebSocket Worker] Failed to read message queue file: {$tempFile}");
+
+            return;
+        }
+
+        if (empty($messages)) {
+            return;
+        }
+
+        // Clear the file
+        $clearResult = @file_put_contents($tempFile, '');
+        if ($clearResult === false) {
+            error_log("[WebSocket Worker] Failed to clear message queue file: {$tempFile}");
+            // Continue anyway - messages may be reprocessed but shouldn't be lost
+        }
+
+        foreach ($messages as $message) {
+            echo "[WebSocket Worker] Broadcasting message: {$message}\n";
+            $clientCount = count($wsClients);
+            echo "[WebSocket Worker] Sending to {$clientCount} clients\n";
+
+            foreach ($wsClients as $client) {
+                try {
+                    $client->send($message);
+                    echo "[WebSocket Worker] Message sent to client\n";
+                } catch (\Exception $e) {
+                    // Log full details for debugging
+                    error_log(sprintf(
+                        "[WebSocket Worker] Failed to send message: %s\nStack trace: %s",
+                        $e->getMessage(),
+                        $e->getTraceAsString()
+                    ));
+                    echo "[WebSocket Worker] Failed to send: {$e->getMessage()}\n";
+                }
+            }
+        }
+    }
+
     public function notifyClients(array $data): void
     {
         $message = json_encode($data);
+        if ($message === false) {
+            error_log('[LiveReloadServer] Failed to encode notification: '.json_last_error_msg());
+
+            return;
+        }
+
         echo "[LiveReloadServer] Writing notification to file: {$message}\n";
 
         // Write message to a temporary file for WebSocket worker to read
         $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
-        file_put_contents($tempFile, $message."\n", FILE_APPEND | LOCK_EX);
+        $result = file_put_contents($tempFile, $message."\n", FILE_APPEND | LOCK_EX);
+
+        if ($result === false) {
+            error_log("[LiveReloadServer] Failed to write notification to {$tempFile}");
+
+            return;
+        }
 
         echo "[LiveReloadServer] Notification written to {$tempFile}\n";
     }
