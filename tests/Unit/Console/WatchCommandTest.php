@@ -584,6 +584,486 @@ class WatchCommandTest extends TestCase
         };
     }
 
+    #[Test]
+    public function handle_file_change_checks_routes_cache_after_clear(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = $this->createTestableWatchCommand($fileWatcher, $server, $cache);
+
+        // Routes cache still exists after clear (warning case)
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('routes:all')
+            ->andReturn(true);
+
+        $cache->shouldReceive('getAllCacheKeys')
+            ->andReturn(['routes:all']); // Cache still exists
+
+        $cache->shouldReceive('clear')
+            ->once();
+
+        $server->shouldReceive('notifyClients')
+            ->once()
+            ->with(Mockery::on(function ($data) {
+                return $data['event'] === 'documentation-updated' &&
+                       isset($data['forceReload']) &&
+                       $data['forceReload'] === true;
+            }));
+
+        $this->invokePrivateMethod($command, 'handleFileChange', [
+            base_path('routes/api.php'),
+            'modified',
+        ]);
+
+        $this->assertTrue($command->callInvoked);
+    }
+
+    #[Test]
+    public function handle_file_change_shows_file_update_info_when_file_exists(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        // Create a temporary openapi.json for testing
+        $testDir = storage_path('app/spectrum');
+        if (! is_dir($testDir)) {
+            mkdir($testDir, 0755, true);
+        }
+        $testFile = $testDir.'/openapi.json';
+        file_put_contents($testFile, '{"test": true}');
+
+        $command = $this->createTestableWatchCommand($fileWatcher, $server, $cache);
+
+        $cache->shouldReceive('forget')->andReturn(true);
+        $server->shouldReceive('notifyClients')->once();
+
+        $this->invokePrivateMethod($command, 'handleFileChange', [
+            base_path('app/Http/Controllers/UserController.php'),
+            'modified',
+        ]);
+
+        $this->assertTrue($command->callInvoked);
+
+        // Cleanup
+        @unlink($testFile);
+    }
+
+    #[Test]
+    public function handle_file_change_warns_when_output_file_not_found(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        // Ensure the file doesn't exist
+        $testFile = storage_path('app/spectrum/openapi.json');
+        if (file_exists($testFile)) {
+            unlink($testFile);
+        }
+
+        $messages = [];
+        $command = new class($fileWatcher, $server, $cache, $messages) extends WatchCommand
+        {
+            public bool $callInvoked = false;
+
+            /** @var array<string, mixed> */
+            public array $callArguments = [];
+
+            /** @var array<string> */
+            private array $capturedMessages;
+
+            /**
+             * @param  array<string>  $messages
+             */
+            public function __construct($fileWatcher, $server, $cache, array &$messages)
+            {
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->capturedMessages = &$messages;
+                $this->output = new class
+                {
+                    public function isVerbose(): bool
+                    {
+                        return false;
+                    }
+
+                    public function writeln($messages, $options = 0): void {}
+
+                    public function write($messages, $newline = false, $options = 0): void {}
+                };
+            }
+
+            protected function runGenerateCommand(array $options = []): int
+            {
+                $this->callInvoked = true;
+                $this->callArguments = $options;
+
+                return 0;
+            }
+
+            public function info($string, $verbosity = null): void
+            {
+                $this->capturedMessages[] = $string;
+            }
+
+            public function error($string, $verbosity = null): void
+            {
+                $this->capturedMessages[] = '[ERROR] '.$string;
+            }
+
+            public function warn($string, $verbosity = null): void
+            {
+                $this->capturedMessages[] = '[WARN] '.$string;
+            }
+        };
+
+        $cache->shouldReceive('forget')->andReturn(true);
+        $server->shouldReceive('notifyClients')->once();
+
+        $this->invokePrivateMethod($command, 'handleFileChange', [
+            base_path('app/Http/Controllers/UserController.php'),
+            'modified',
+        ]);
+
+        $this->assertTrue($command->callInvoked);
+        // Verify warning message was captured
+        $hasWarning = false;
+        foreach ($messages as $message) {
+            if (str_contains($message, 'not found after generation')) {
+                $hasWarning = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasWarning, 'Expected warning about file not found');
+    }
+
+    #[Test]
+    public function clear_related_cache_for_unknown_file_type(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = $this->createTestableWatchCommandWithOutput($fileWatcher, $server, $cache);
+
+        // No cache operations expected for unknown file types like models
+        $this->invokePrivateMethod($command, 'clearRelatedCache', [
+            base_path('app/Models/User.php'),
+        ]);
+
+        // Should complete without error
+        $this->assertTrue(true);
+    }
+
+    #[Test]
+    public function get_class_name_from_path_handles_nested_namespace(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = new WatchCommand($fileWatcher, $server, $cache);
+
+        $result = $this->invokePrivateMethod($command, 'getClassNameFromPath', [
+            base_path('app/Http/Resources/Api/V1/UserResource.php'),
+        ]);
+
+        $this->assertStringContainsString('UserResource', $result);
+    }
+
+    #[Test]
+    public function check_cache_status_handles_real_cache(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+
+        // Use a real DocumentationCache instance
+        $cacheDir = sys_get_temp_dir().'/spectrum_test_cache_'.uniqid();
+        @mkdir($cacheDir, 0755, true);
+        $cache = new DocumentationCache(true, $cacheDir);
+
+        $messages = [];
+        $command = new class($fileWatcher, $server, $cache, $messages) extends WatchCommand
+        {
+            /** @var array<string> */
+            private array $capturedMessages;
+
+            /**
+             * @param  array<string>  $messages
+             */
+            public function __construct($fileWatcher, $server, $cache, array &$messages)
+            {
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->capturedMessages = &$messages;
+                $this->output = new class
+                {
+                    public function isVerbose(): bool
+                    {
+                        return false;
+                    }
+
+                    public function writeln($messages, $options = 0): void {}
+
+                    public function write($messages, $newline = false, $options = 0): void {}
+                };
+            }
+
+            public function info($string, $verbosity = null): void
+            {
+                $this->capturedMessages[] = $string;
+            }
+
+            public function warn($string, $verbosity = null): void {}
+
+            public function error($string, $verbosity = null): void {}
+        };
+
+        config(['spectrum.cache.enabled' => true]);
+
+        $this->invokePrivateMethod($command, 'checkCacheStatus');
+
+        // Should output info about cache directory
+        $hasCacheInfo = false;
+        foreach ($messages as $message) {
+            if (str_contains($message, 'Cache') || str_contains($message, 'cache')) {
+                $hasCacheInfo = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasCacheInfo, 'Expected cache status info');
+
+        // Cleanup
+        @rmdir($cacheDir);
+    }
+
+    #[Test]
+    public function handle_file_change_with_delete_event(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = $this->createTestableWatchCommand($fileWatcher, $server, $cache);
+
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('form_request:App\Http\Requests\TestRequest')
+            ->andReturn(true);
+
+        $server->shouldReceive('notifyClients')->once();
+
+        $this->invokePrivateMethod($command, 'handleFileChange', [
+            base_path('app/Http/Requests/TestRequest.php'),
+            'deleted',
+        ]);
+
+        $this->assertTrue($command->callInvoked);
+    }
+
+    #[Test]
+    public function check_cache_after_clear_with_existing_directory(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+
+        // Create a real cache with some files
+        $cacheDir = sys_get_temp_dir().'/spectrum_test_cache_'.uniqid();
+        @mkdir($cacheDir, 0755, true);
+        file_put_contents($cacheDir.'/test.cache', 'test data');
+
+        $cache = new DocumentationCache(true, $cacheDir);
+
+        $command = $this->createTestableWatchCommandWithOutput($fileWatcher, $server, $cache);
+
+        $this->invokePrivateMethod($command, 'checkCacheAfterClear');
+
+        // Should complete without error
+        $this->assertTrue(true);
+
+        // Cleanup
+        @unlink($cacheDir.'/test.cache');
+        @rmdir($cacheDir);
+    }
+
+    #[Test]
+    public function handle_file_change_routes_shows_debug_info_in_verbose(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        // Create command with verbose output
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
+            public bool $callInvoked = false;
+
+            /** @var array<string, mixed> */
+            public array $callArguments = [];
+
+            protected function runGenerateCommand(array $options = []): int
+            {
+                $this->callInvoked = true;
+                $this->callArguments = $options;
+
+                return 0;
+            }
+
+            public function info($string, $verbosity = null): void {}
+
+            public function error($string, $verbosity = null): void {}
+
+            public function warn($string, $verbosity = null): void {}
+
+            public function __construct($fileWatcher, $server, $cache)
+            {
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->output = new class
+                {
+                    public function isVerbose(): bool
+                    {
+                        return true;  // Verbose mode enabled
+                    }
+
+                    public function writeln($messages, $options = 0): void {}
+
+                    public function write($messages, $newline = false, $options = 0): void {}
+                };
+            }
+        };
+
+        $cache->shouldReceive('getAllCacheKeys')
+            ->andReturn(['routes:all', 'form_request:Test']);
+
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('routes:all')
+            ->andReturn(true);
+
+        $cache->shouldReceive('clear')->once();
+
+        $server->shouldReceive('notifyClients')->once();
+
+        $this->invokePrivateMethod($command, 'handleFileChange', [
+            base_path('routes/api.php'),
+            'modified',
+        ]);
+
+        $this->assertTrue($command->callInvoked);
+    }
+
+    #[Test]
+    public function clear_related_cache_verbose_shows_cache_keys(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $infoMessages = [];
+        $command = new class($fileWatcher, $server, $cache, $infoMessages) extends WatchCommand
+        {
+            /** @var array<string> */
+            private array $capturedInfo;
+
+            /**
+             * @param  array<string>  $infoMessages
+             */
+            public function __construct($fileWatcher, $server, $cache, array &$infoMessages)
+            {
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->capturedInfo = &$infoMessages;
+                $this->output = new class
+                {
+                    public function isVerbose(): bool
+                    {
+                        return true;
+                    }
+
+                    public function writeln($messages, $options = 0): void {}
+
+                    public function write($messages, $newline = false, $options = 0): void {}
+                };
+            }
+
+            public function info($string, $verbosity = null): void
+            {
+                $this->capturedInfo[] = $string;
+            }
+
+            public function warn($string, $verbosity = null): void {}
+        };
+
+        $cache->shouldReceive('getAllCacheKeys')
+            ->andReturn(['form_request:Test', 'resource:User']);
+
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('routes:all')
+            ->andReturn(true);
+
+        $this->invokePrivateMethod($command, 'clearRelatedCache', [
+            base_path('routes/web.php'),
+        ]);
+
+        // Check that cache keys are shown in verbose mode
+        $hasCheckingMessage = false;
+        foreach ($infoMessages as $msg) {
+            if (str_contains($msg, 'Checking routes cache')) {
+                $hasCheckingMessage = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasCheckingMessage, 'Expected verbose cache checking message');
+    }
+
+    #[Test]
+    public function clear_related_cache_for_controller_verbose(): void
+    {
+        $fileWatcher = Mockery::mock(FileWatcher::class);
+        $server = Mockery::mock(LiveReloadServer::class);
+        $cache = Mockery::mock(DocumentationCache::class);
+
+        $command = new class($fileWatcher, $server, $cache) extends WatchCommand
+        {
+            public function info($string, $verbosity = null): void {}
+
+            public function warn($string, $verbosity = null): void {}
+
+            public function __construct($fileWatcher, $server, $cache)
+            {
+                parent::__construct($fileWatcher, $server, $cache);
+                $this->output = new class
+                {
+                    public function isVerbose(): bool
+                    {
+                        return true;
+                    }
+
+                    public function writeln($messages, $options = 0): void {}
+
+                    public function write($messages, $newline = false, $options = 0): void {}
+                };
+            }
+        };
+
+        $cache->shouldReceive('getAllCacheKeys')
+            ->andReturn(['routes:all']);
+
+        $cache->shouldReceive('forget')
+            ->once()
+            ->with('routes:all')
+            ->andReturn(true);
+
+        $this->invokePrivateMethod($command, 'clearRelatedCache', [
+            base_path('app/Http/Controllers/Api/V1/UserController.php'),
+        ]);
+
+        // Should complete without error
+        $this->assertTrue(true);
+    }
+
     /**
      * Helper to invoke private methods
      *

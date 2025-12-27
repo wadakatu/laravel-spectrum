@@ -206,4 +206,175 @@ class RouteResolverTest extends TestCase
         $this->assertNotNull($route);
         $this->assertEquals('/api/users/123', $route['params']['_path']);
     }
+
+    public function test_handles_empty_paths(): void
+    {
+        $openapi = [
+            'paths' => [],
+        ];
+
+        $route = $this->resolver->resolve('/api/users', 'get', $openapi);
+
+        $this->assertNull($route);
+    }
+
+    public function test_handles_missing_paths_key(): void
+    {
+        $openapi = [];
+
+        $route = $this->resolver->resolve('/api/users', 'get', $openapi);
+
+        $this->assertNull($route);
+    }
+
+    public function test_handles_root_path(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/' => [
+                    'get' => ['summary' => 'Root endpoint'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/', 'get', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('/', $route['path']);
+    }
+
+    public function test_handles_case_insensitive_method(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/users' => [
+                    'post' => ['summary' => 'Create user'],
+                ],
+            ],
+        ];
+
+        $routeUpper = $this->resolver->resolve('/api/users', 'POST', $openapi);
+        $routeLower = $this->resolver->resolve('/api/users', 'post', $openapi);
+
+        $this->assertNotNull($routeUpper);
+        $this->assertNotNull($routeLower);
+        $this->assertEquals('post', $routeUpper['method']);
+        $this->assertEquals('post', $routeLower['method']);
+    }
+
+    public function test_resolves_delete_method(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/users/{id}' => [
+                    'delete' => ['summary' => 'Delete user'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/users/123', 'delete', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('delete', $route['method']);
+    }
+
+    public function test_resolves_put_method(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/users/{id}' => [
+                    'put' => ['summary' => 'Update user'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/users/123', 'put', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('put', $route['method']);
+    }
+
+    public function test_resolves_patch_method(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/users/{id}' => [
+                    'patch' => ['summary' => 'Patch user'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/users/123', 'patch', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('patch', $route['method']);
+    }
+
+    public function test_prioritizes_more_static_segments(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/{resource}/list' => [
+                    'get' => ['summary' => 'List resource'],
+                ],
+                '/api/users/list' => [
+                    'get' => ['summary' => 'List users'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/users/list', 'get', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('/api/users/list', $route['path']);
+        $this->assertEquals('List users', $route['operation']['summary']);
+    }
+
+    public function test_handles_uuid_parameters(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/users/{uuid}' => [
+                    'get' => ['summary' => 'Get user by UUID'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/users/550e8400-e29b-41d4-a716-446655440000', 'get', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('550e8400-e29b-41d4-a716-446655440000', $route['params']['uuid']);
+    }
+
+    public function test_handles_numeric_parameters(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/users/{id}' => [
+                    'get' => ['summary' => 'Get user'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/users/12345', 'get', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('12345', $route['params']['id']);
+    }
+
+    public function test_handles_slug_parameters(): void
+    {
+        $openapi = [
+            'paths' => [
+                '/api/posts/{slug}' => [
+                    'get' => ['summary' => 'Get post by slug'],
+                ],
+            ],
+        ];
+
+        $route = $this->resolver->resolve('/api/posts/my-awesome-post-title', 'get', $openapi);
+
+        $this->assertNotNull($route);
+        $this->assertEquals('my-awesome-post-title', $route['params']['slug']);
+    }
 }
