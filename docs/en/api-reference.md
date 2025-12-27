@@ -603,5 +603,4 @@ $stats = $monitor->getStatistics();
 ## 📚 Related Documentation
 
 - [Customization](./customization.md) - Detailed extension methods
-- [Plugin Development](./plugin-development.md) - Creating plugins
 - [Contributing Guide](./contributing.md) - Contributing to the project
