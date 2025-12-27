@@ -213,7 +213,7 @@ class WatchCommandTest extends TestCase
         // Create a command that simulates generate failure
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
-            public $callInvoked = false;
+            public bool $callInvoked = false;
 
             protected function runGenerateCommand(array $options = []): int
             {
@@ -392,7 +392,6 @@ class WatchCommandTest extends TestCase
         $server = Mockery::mock(LiveReloadServer::class);
         $cache = Mockery::mock(DocumentationCache::class);
 
-        $warned = false;
         $command = new class($fileWatcher, $server, $cache) extends WatchCommand
         {
             public bool $wasWarned = false;
@@ -504,6 +503,10 @@ class WatchCommandTest extends TestCase
 
     /**
      * Create a testable WatchCommand with stubbed methods
+     *
+     * @param  \Mockery\MockInterface&FileWatcher  $fileWatcher
+     * @param  \Mockery\MockInterface&LiveReloadServer  $server
+     * @param  \Mockery\MockInterface&DocumentationCache  $cache
      */
     private function createTestableWatchCommand($fileWatcher, $server, $cache): WatchCommand
     {
@@ -548,6 +551,10 @@ class WatchCommandTest extends TestCase
 
     /**
      * Create a testable WatchCommand with output capturing
+     *
+     * @param  \Mockery\MockInterface&FileWatcher  $fileWatcher
+     * @param  \Mockery\MockInterface&LiveReloadServer  $server
+     * @param  \Mockery\MockInterface&DocumentationCache  $cache
      */
     private function createTestableWatchCommandWithOutput($fileWatcher, $server, $cache): WatchCommand
     {
