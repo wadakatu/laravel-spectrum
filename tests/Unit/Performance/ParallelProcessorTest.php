@@ -234,18 +234,31 @@ class ParallelProcessorTest extends TestCase
         $this->assertEquals('v1', $results[0]['version']);
     }
 
-    public function test_determine_optimal_workers_on_different_systems(): void
+    public function test_processor_uses_injected_worker_count_resolver(): void
     {
-        $processor = new ParallelProcessor(false, 4);
+        // Create a mock for WorkerCountResolverInterface
+        $mockResolver = new class implements \LaravelSpectrum\Contracts\Performance\WorkerCountResolverInterface
+        {
+            public function resolve(): int
+            {
+                return 8;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: false,
+            workers: null,
+            executor: null,
+            workerCountResolver: $mockResolver
+        );
+
+        // Access the workers property via reflection
         $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('determineOptimalWorkers');
-        $method->setAccessible(true);
+        $workersProperty = $reflection->getProperty('workers');
+        $workersProperty->setAccessible(true);
 
-        $workers = $method->invoke($processor);
-
-        // ワーカー数が適切な範囲内にあることを確認
-        $this->assertGreaterThanOrEqual(2, $workers);
-        $this->assertLessThanOrEqual(16, $workers);
+        // Worker count should be 8 from the mock resolver
+        $this->assertEquals(8, $workersProperty->getValue($processor));
     }
 
     public function test_process_without_fork_class(): void
@@ -355,5 +368,151 @@ class ParallelProcessorTest extends TestCase
         $this->assertCount(30, $results);
         $this->assertEquals(2, $results[0]);
         $this->assertEquals(60, $results[29]);
+    }
+
+    public function test_is_enabled_returns_correct_value(): void
+    {
+        $enabledProcessor = new ParallelProcessor(true, 4);
+        $disabledProcessor = new ParallelProcessor(false, 4);
+
+        $this->assertTrue($enabledProcessor->isEnabled());
+        $this->assertFalse($disabledProcessor->isEnabled());
+    }
+
+    public function test_get_workers_returns_correct_value(): void
+    {
+        $processor = new ParallelProcessor(false, 8);
+        $this->assertEquals(8, $processor->getWorkers());
+
+        $processor->setWorkers(16);
+        $this->assertEquals(16, $processor->getWorkers());
+    }
+
+    public function test_processor_uses_injected_support_checker(): void
+    {
+        // Create a mock that always returns false
+        $mockChecker = new class implements \LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface
+        {
+            public function isSupported(): bool
+            {
+                return false;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: null,  // Use the checker instead
+            workers: 4,
+            executor: null,
+            workerCountResolver: null,
+            supportChecker: $mockChecker
+        );
+
+        $this->assertFalse($processor->isEnabled());
+    }
+
+    public function test_processor_uses_injected_executor(): void
+    {
+        $executorCalled = false;
+        $mockExecutor = new class($executorCalled) implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            private bool $called;
+
+            public function __construct(bool &$called)
+            {
+                $this->called = &$called;
+            }
+
+            public function execute(array $tasks, int $workers): array
+            {
+                $this->called = true;
+
+                // Execute tasks sequentially for testing
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        // Process large dataset to trigger parallel processing
+        $data = range(1, 60);
+        $results = $processor->process($data, fn ($x) => $x * 2);
+
+        $this->assertTrue($executorCalled);
+        $this->assertCount(60, $results);
+    }
+
+    public function test_fallback_to_sequential_when_executor_unavailable(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                throw new \RuntimeException('Should not be called');
+            }
+
+            public function isAvailable(): bool
+            {
+                return false;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        // Process large dataset
+        $data = range(1, 60);
+        $results = $processor->process($data, fn ($x) => $x * 2);
+
+        // Should fallback to sequential processing
+        $this->assertCount(60, $results);
+        $this->assertEquals(2, $results[0]);
+        $this->assertEquals(120, $results[59]);
+    }
+
+    public function test_progress_fallback_when_executor_unavailable(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                throw new \RuntimeException('Should not be called');
+            }
+
+            public function isAvailable(): bool
+            {
+                return false;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $progressCalls = [];
+        $results = $processor->processWithProgress(
+            range(1, 15),
+            fn ($x) => $x * 2,
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = $current;
+            }
+        );
+
+        $this->assertCount(15, $results);
+        $this->assertContains(10, $progressCalls);
+        $this->assertContains(15, $progressCalls);
     }
 }

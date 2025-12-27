@@ -21,42 +21,67 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertTrue($enabledProperty->getValue($processor));
     }
 
-    public function test_determine_optimal_workers_method(): void
+    public function test_worker_count_resolver_integration(): void
     {
-        $processor = new ParallelProcessor(false, 4);
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('determineOptimalWorkers');
-        $method->setAccessible(true);
+        // Use a custom resolver to verify it's being used
+        $customResolver = new class implements \LaravelSpectrum\Contracts\Performance\WorkerCountResolverInterface
+        {
+            public function resolve(): int
+            {
+                return 10;
+            }
+        };
 
-        $workers = $method->invoke($processor);
+        $processor = new ParallelProcessor(
+            enabled: false,
+            workers: null,
+            executor: null,
+            workerCountResolver: $customResolver
+        );
 
-        // ワーカー数が適切な範囲内にあることを確認
-        $this->assertGreaterThanOrEqual(2, $workers);
-        $this->assertLessThanOrEqual(16, $workers);
+        // Workers should be set from the custom resolver
+        $this->assertEquals(10, $processor->getWorkers());
     }
 
-    public function test_check_parallel_processing_support_method(): void
+    public function test_parallel_support_checker_integration(): void
     {
-        $processor = new ParallelProcessor(false, 4);
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('checkParallelProcessingSupport');
-        $method->setAccessible(true);
+        // Use a custom checker to verify it's being used
+        $customChecker = new class implements \LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface
+        {
+            public function isSupported(): bool
+            {
+                return true;
+            }
+        };
 
-        // Mock the config function
-        $this->app['config']->set('spectrum.performance.parallel_processing', true);
+        $processor = new ParallelProcessor(
+            enabled: null,  // Use the checker
+            workers: 4,
+            executor: null,
+            workerCountResolver: null,
+            supportChecker: $customChecker
+        );
 
-        $supported = $method->invoke($processor);
+        $this->assertTrue($processor->isEnabled());
 
-        // Windows環境やPCNTL拡張の有無により結果が異なる
-        $this->assertIsBool($supported);
+        // Also test with false
+        $falseChecker = new class implements \LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface
+        {
+            public function isSupported(): bool
+            {
+                return false;
+            }
+        };
 
-        if (PHP_OS_FAMILY === 'Windows') {
-            $this->assertFalse($supported);
-        }
+        $processor2 = new ParallelProcessor(
+            enabled: null,
+            workers: 4,
+            executor: null,
+            workerCountResolver: null,
+            supportChecker: $falseChecker
+        );
 
-        if (! extension_loaded('pcntl')) {
-            $this->assertFalse($supported);
-        }
+        $this->assertFalse($processor2->isEnabled());
     }
 
     public function test_parallel_processing_disabled_by_config(): void
@@ -264,19 +289,14 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertNull($results[2]);
     }
 
-    public function test_check_parallel_processing_support_with_config_enabled(): void
+    public function test_config_enabled_with_default_checker(): void
     {
         $this->app['config']->set('spectrum.performance.parallel_processing', true);
 
         $processor = new ParallelProcessor;
 
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('checkParallelProcessingSupport');
-        $method->setAccessible(true);
-
-        $result = $method->invoke($processor);
-
         // Result depends on environment (PCNTL extension, OS)
+        $result = $processor->isEnabled();
         $this->assertIsBool($result);
 
         // On Windows it should always be false
@@ -373,17 +393,14 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertFalse($enabledProperty->getValue($processor));
     }
 
-    public function test_determine_optimal_workers_returns_valid_range(): void
+    public function test_default_worker_count_resolver_returns_valid_range(): void
     {
+        // Create a processor with default resolver
         $processor = new ParallelProcessor(false);
 
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('determineOptimalWorkers');
-        $method->setAccessible(true);
+        $workers = $processor->getWorkers();
 
-        $workers = $method->invoke($processor);
-
-        // Result should be between 2 and 16
+        // Result should be between 2 and 16 (default resolver limits)
         $this->assertGreaterThanOrEqual(2, $workers);
         $this->assertLessThanOrEqual(16, $workers);
     }
@@ -456,40 +473,48 @@ class ParallelProcessorAdvancedTest extends TestCase
         $this->assertContains(11, $progressReports); // Last item
     }
 
-    public function test_check_parallel_processing_returns_false_on_windows(): void
+    public function test_default_checker_returns_false_on_windows(): void
     {
-        $processor = new ParallelProcessor;
+        // Test with a mock checker that simulates Windows environment
+        $windowsChecker = new class extends \LaravelSpectrum\Performance\Support\DefaultParallelSupportChecker
+        {
+            protected function isWindows(): bool
+            {
+                return true;
+            }
+        };
 
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('checkParallelProcessingSupport');
-        $method->setAccessible(true);
+        $processor = new ParallelProcessor(
+            enabled: null,
+            workers: 4,
+            executor: null,
+            workerCountResolver: null,
+            supportChecker: $windowsChecker
+        );
 
-        $result = $method->invoke($processor);
-
-        if (PHP_OS_FAMILY === 'Windows') {
-            $this->assertFalse($result);
-        } else {
-            // On non-Windows, result depends on PCNTL extension
-            $this->assertIsBool($result);
-        }
+        $this->assertFalse($processor->isEnabled());
     }
 
-    public function test_check_parallel_processing_returns_false_without_pcntl(): void
+    public function test_default_checker_returns_false_without_pcntl(): void
     {
-        $processor = new ParallelProcessor;
+        // Test with a mock checker that simulates missing PCNTL
+        $noPcntlChecker = new class extends \LaravelSpectrum\Performance\Support\DefaultParallelSupportChecker
+        {
+            protected function isPcntlLoaded(): bool
+            {
+                return false;
+            }
+        };
 
-        $reflection = new \ReflectionClass($processor);
-        $method = $reflection->getMethod('checkParallelProcessingSupport');
-        $method->setAccessible(true);
+        $processor = new ParallelProcessor(
+            enabled: null,
+            workers: 4,
+            executor: null,
+            workerCountResolver: null,
+            supportChecker: $noPcntlChecker
+        );
 
-        $result = $method->invoke($processor);
-
-        if (! extension_loaded('pcntl')) {
-            $this->assertFalse($result);
-        } else {
-            // With PCNTL, result depends on OS and config
-            $this->assertIsBool($result);
-        }
+        $this->assertFalse($processor->isEnabled());
     }
 
     public function test_process_with_progress_modulo_10_check(): void
