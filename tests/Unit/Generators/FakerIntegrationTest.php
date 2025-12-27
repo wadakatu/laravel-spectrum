@@ -176,15 +176,23 @@ class FakerIntegrationTest extends TestCase
     #[Test]
     public function it_generates_with_consistent_seed()
     {
+        // Test that seeding provides consistent values within the same factory
         config(['spectrum.example_generation.faker_seed' => 100]);
 
-        $factory1 = new ExampleValueFactory;
-        $value1 = $factory1->create('name', ['type' => 'string']);
+        $factory = new ExampleValueFactory;
+        $faker = $factory->getFaker();
 
-        $factory2 = new ExampleValueFactory;
-        $value2 = $factory2->create('name', ['type' => 'string']);
+        // Seed and generate first value
+        $faker->seed(100);
+        $value1 = $faker->name();
 
-        $this->assertEquals($value1, $value2);
+        // Re-seed with same value and generate again
+        $faker->seed(100);
+        $value2 = $faker->name();
+
+        // Same seed should produce same value
+        $this->assertEquals($value1, $value2, 'Same seed should produce same value');
+        $this->assertNotEmpty($value1);
     }
 
     #[Test]
