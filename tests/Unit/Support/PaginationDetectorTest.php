@@ -169,4 +169,94 @@ class PaginationDetectorTest extends TestCase
 
         $this->assertEquals('users', $model);
     }
+
+    public function test_extracts_model_from_nested_method_chain(): void
+    {
+        $code = '<?php User::where("active", true)->orderBy("name")->limit(10)->paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertEquals('User', $model);
+    }
+
+    public function test_extracts_relation_name_from_variable_call(): void
+    {
+        $code = '<?php $user->comments()->paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertEquals('comments', $model);
+    }
+
+    public function test_returns_null_for_unknown_node_type(): void
+    {
+        $code = '<?php paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertNull($model);
+    }
+
+    public function test_extracts_table_from_deeply_nested_db_query(): void
+    {
+        $code = '<?php DB::table("posts")->where("user_id", 1)->orderBy("created_at")->paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertEquals('posts', $model);
+    }
+
+    public function test_extracts_model_ignoring_db_static_call_in_chain(): void
+    {
+        // When the root static call is on DB, we should return the table name
+        $code = '<?php DB::table("orders")->paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertEquals('orders', $model);
+    }
+
+    public function test_detects_no_pagination_in_non_paginated_code(): void
+    {
+        $code = '<?php User::all();';
+        $ast = $this->parser->parse($code);
+
+        $result = $this->detector->detectPaginationCalls($ast);
+
+        $this->assertEmpty($result);
+    }
+
+    public function test_extracts_model_from_simple_static_call(): void
+    {
+        // Direct static call: User::paginate()
+        $code = '<?php User::paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertEquals('User', $model);
+    }
+
+    public function test_extracts_model_from_single_method_chain(): void
+    {
+        // Single method chain: User::where()->paginate()
+        $code = '<?php User::where("active", true)->paginate();';
+        $ast = $this->parser->parse($code);
+        $node = $ast[0]->expr;
+
+        $model = $this->detector->extractModelFromMethodCall($node);
+
+        $this->assertEquals('User', $model);
+    }
 }

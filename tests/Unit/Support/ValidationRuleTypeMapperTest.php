@@ -258,4 +258,150 @@ class ValidationRuleTypeMapperTest extends TestCase
         $this->assertEquals(1, $constraints['minimum']);
         $this->assertEquals(100, $constraints['maximum']);
     }
+
+    #[Test]
+    public function it_normalizes_string_rules(): void
+    {
+        $result = $this->mapper->normalizeRules('required|string|max:255');
+
+        $this->assertEquals(['required', 'string', 'max:255'], $result);
+    }
+
+    #[Test]
+    public function it_normalizes_empty_string_rules(): void
+    {
+        $result = $this->mapper->normalizeRules('');
+
+        $this->assertEquals([], $result);
+    }
+
+    #[Test]
+    public function it_normalizes_null_rules(): void
+    {
+        $result = $this->mapper->normalizeRules(null);
+
+        $this->assertEquals([], $result);
+    }
+
+    #[Test]
+    public function it_normalizes_array_rules_unchanged(): void
+    {
+        $rules = ['required', 'string'];
+        $result = $this->mapper->normalizeRules($rules);
+
+        $this->assertEquals(['required', 'string'], $result);
+    }
+
+    #[Test]
+    public function it_infers_string_type_from_file_rules(): void
+    {
+        $this->assertEquals('string', $this->mapper->inferType(['file']));
+        $this->assertEquals('string', $this->mapper->inferType(['image']));
+    }
+
+    #[Test]
+    public function it_infers_string_type_from_timezone_rule(): void
+    {
+        $this->assertEquals('string', $this->mapper->inferType(['timezone']));
+    }
+
+    #[Test]
+    public function it_infers_string_type_from_explicit_string_rule(): void
+    {
+        $this->assertEquals('string', $this->mapper->inferType(['string']));
+    }
+
+    #[Test]
+    public function it_detects_enum_rule_with_in_object(): void
+    {
+        // Test with Illuminate's In rule class
+        $inRule = \Illuminate\Validation\Rule::in(['active', 'inactive']);
+        $this->assertTrue($this->mapper->hasEnumRule([$inRule]));
+
+        // Test with anonymous class (should not match)
+        $anonymousRule = new class {};
+        $this->assertFalse($this->mapper->hasEnumRule([$anonymousRule]));
+    }
+
+    #[Test]
+    public function it_detects_enum_rule_with_enum_object(): void
+    {
+        // Test with Illuminate's Enum rule class (requires Laravel 9+)
+        if (class_exists(\Illuminate\Validation\Rules\Enum::class)) {
+            // Create an enum mock or use a real enum if available
+            $enumRule = new \Illuminate\Validation\Rules\Enum(\LaravelSpectrum\Tests\Fixtures\Enums\StatusEnum::class);
+            $this->assertTrue($this->mapper->hasEnumRule([$enumRule]));
+        } else {
+            $this->markTestSkipped('Enum rule class not available');
+        }
+    }
+
+    #[Test]
+    public function it_infers_boolean_type_from_accepted_if(): void
+    {
+        $this->assertEquals('boolean', $this->mapper->inferType(['accepted_if:field,value']));
+        $this->assertEquals('boolean', $this->mapper->inferType(['declined_if:field,value']));
+    }
+
+    #[Test]
+    public function it_infers_format_from_before_or_equal_rule(): void
+    {
+        $this->assertEquals('date-time', $this->mapper->inferFormat(['before_or_equal:2024-12-31']));
+        $this->assertEquals('date-time', $this->mapper->inferFormat(['after_or_equal:2024-01-01']));
+        $this->assertEquals('date-time', $this->mapper->inferFormat(['date_equals:2024-06-15']));
+    }
+
+    #[Test]
+    public function it_extracts_constraints_with_explicit_type(): void
+    {
+        // When type is explicitly provided, use it
+        $constraints = $this->mapper->extractConstraints(['min:5'], 'integer');
+        $this->assertEquals(5, $constraints['minimum']);
+
+        // Without explicit type, infer from rules
+        $constraints = $this->mapper->extractConstraints(['min:5'], 'string');
+        $this->assertEquals(5, $constraints['minLength']);
+    }
+
+    #[Test]
+    public function it_infers_mac_format(): void
+    {
+        $this->assertEquals('mac', $this->mapper->inferFormat(['mac_address']));
+    }
+
+    #[Test]
+    public function it_infers_datetime_format(): void
+    {
+        $this->assertEquals('date-time', $this->mapper->inferFormat(['datetime']));
+    }
+
+    #[Test]
+    public function it_skips_non_string_rules_in_infer_format(): void
+    {
+        $this->assertNull($this->mapper->inferFormat([new \stdClass, 'required']));
+        $this->assertEquals('email', $this->mapper->inferFormat([new \stdClass, 'email']));
+    }
+
+    #[Test]
+    public function it_skips_non_string_rules_in_has_enum_rule(): void
+    {
+        // Should check string 'in:' rules
+        $this->assertTrue($this->mapper->hasEnumRule([new \stdClass, 'in:a,b']));
+        $this->assertFalse($this->mapper->hasEnumRule([new \stdClass, 'required']));
+    }
+
+    #[Test]
+    public function it_skips_non_string_rules_in_extract_enum_values(): void
+    {
+        $this->assertEquals(['a', 'b'], $this->mapper->extractEnumValues([new \stdClass, 'in:a,b']));
+        $this->assertNull($this->mapper->extractEnumValues([new \stdClass, 'required']));
+    }
+
+    #[Test]
+    public function it_skips_non_string_rules_in_extract_constraints(): void
+    {
+        // Non-string rules should be skipped
+        $constraints = $this->mapper->extractConstraints([new \stdClass, 'min:5']);
+        $this->assertEquals(5, $constraints['minLength']);
+    }
 }

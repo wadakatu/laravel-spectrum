@@ -266,11 +266,15 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     {
         // HTTP method checks
         if ($this->isHttpMethodCheck($condition)) {
+            assert($condition instanceof Node\Expr\MethodCall);
+
             return $this->extractHttpMethodCondition($condition);
         }
 
         // User role/permission checks
         if ($this->isUserCheck($condition)) {
+            assert($condition instanceof Node\Expr\MethodCall);
+
             return $this->extractUserCondition($condition);
         }
 
@@ -281,6 +285,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
         // Rule::when() pattern
         if ($this->isRuleWhenPattern($condition)) {
+            assert($condition instanceof Node\Expr\StaticCall);
+
             return $this->extractRuleWhenCondition($condition);
         }
 
@@ -307,17 +313,11 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Extract HTTP method from condition
+     *
+     * @param  Node\Expr\MethodCall  $call  Pre-validated by isHttpMethodCheck
      */
-    private function extractHttpMethodCondition(Node\Expr $call): array
+    private function extractHttpMethodCondition(Node\Expr\MethodCall $call): array
     {
-        if (! $call instanceof Node\Expr\MethodCall) {
-            return [
-                'type' => 'http_method',
-                'method' => null,
-                'expression' => '',
-            ];
-        }
-
         $method = null;
 
         if (isset($call->args[0]) &&
@@ -355,17 +355,11 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Extract user condition details
+     *
+     * @param  Node\Expr\MethodCall  $call  Pre-validated by isUserCheck
      */
-    private function extractUserCondition(Node\Expr $call): array
+    private function extractUserCondition(Node\Expr\MethodCall $call): array
     {
-        if (! $call instanceof Node\Expr\MethodCall) {
-            return [
-                'type' => 'user_check',
-                'method' => 'unknown',
-                'expression' => '',
-            ];
-        }
-
         $method = $call->name instanceof Node\Identifier ? $call->name->toString() : 'unknown';
 
         return [
@@ -438,16 +432,11 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Extract Rule::when condition
+     *
+     * @param  Node\Expr\StaticCall  $call  Pre-validated by isRuleWhenPattern
      */
-    private function extractRuleWhenCondition(Node\Expr $call): array
+    private function extractRuleWhenCondition(Node\Expr\StaticCall $call): array
     {
-        if (! $call instanceof Node\Expr\StaticCall) {
-            return [
-                'type' => 'rule_when',
-                'expression' => '',
-            ];
-        }
-
         return [
             'type' => 'rule_when',
             'expression' => $this->printer->prettyPrintExpr($call),
@@ -667,8 +656,20 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
      */
     private function isRuleMethodChain(Node\Expr $expr): bool
     {
-        // TODO: Implement method chain detection
-        return false;
+        if (! $expr instanceof Node\Expr\MethodCall) {
+            return false;
+        }
+
+        // Check if the chain starts with a Rule:: static call
+        $current = $expr;
+        while ($current instanceof Node\Expr\MethodCall) {
+            $current = $current->var;
+        }
+
+        // The root should be a Rule:: static call
+        return $current instanceof Node\Expr\StaticCall &&
+               $current->class instanceof Node\Name &&
+               $current->class->toString() === 'Rule';
     }
 
     /**
@@ -676,7 +677,18 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
      */
     private function evaluateRuleMethodChain(Node\Expr\MethodCall $call): string
     {
-        // TODO: Implement method chain evaluation
+        // Find the root static call (Rule::unique, Rule::exists, etc.)
+        $current = $call;
+        while ($current instanceof Node\Expr\MethodCall) {
+            $current = $current->var;
+        }
+
+        // Evaluate the root static call
+        if ($current instanceof Node\Expr\StaticCall) {
+            return $this->evaluateRuleStaticCall($current);
+        }
+
+        // Fallback: pretty print the entire expression
         return $this->printer->prettyPrintExpr($call);
     }
 
