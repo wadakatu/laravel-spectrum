@@ -189,4 +189,200 @@ class MemoryManagerTest extends TestCase
                 return (int) $value;
         }
     }
+
+    public function test_memory_limit_parsing_with_gigabytes(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        ini_set('memory_limit', '2G');
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        $this->assertEquals('2 GB', $stats['limit']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_memory_limit_parsing_with_kilobytes(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        // Use a large KB value to ensure it exceeds current memory usage
+        ini_set('memory_limit', '256000K');  // 250MB in KB
+
+        // Check if the limit was actually set (some environments may ignore it)
+        $newLimit = ini_get('memory_limit');
+        if ($newLimit === '-1' || $newLimit === $originalLimit) {
+            ini_set('memory_limit', $originalLimit);
+            $this->markTestSkipped('Unable to set memory limit in this environment');
+        }
+
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        // The limit should be set to around 250 MB
+        $this->assertMatchesRegularExpression('/^\d+(\.\d+)? MB$/', $stats['limit']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_memory_limit_parsing_with_bytes(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        // Set memory limit to just bytes (no suffix)
+        ini_set('memory_limit', '1073741824');  // 1GB in bytes
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        $this->assertEquals('1 GB', $stats['limit']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_memory_limit_parsing_unlimited(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        ini_set('memory_limit', '-1');
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        $this->assertEquals('unlimited', $stats['limit']);
+        // Percentage should be 0 when memory is unlimited
+        $this->assertEquals(0.0, $stats['percentage']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_format_bytes_small_values(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        // Set a reasonable limit first
+        ini_set('memory_limit', '1G');
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        // Current and peak memory should be formatted correctly
+        $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['current']);
+        $this->assertMatchesRegularExpression('/^\d+(\.\d+)? (B|KB|MB|GB)$/', $stats['peak']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_get_available_memory_with_unlimited(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        ini_set('memory_limit', '-1');
+        $memoryManager = new MemoryManager;
+
+        $available = $memoryManager->getAvailableMemory();
+
+        // Available memory should be very large when unlimited
+        $this->assertGreaterThan(1073741824, $available);  // > 1GB
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_memory_stats_percentage_calculation(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        // Set a memory limit that gives a reasonable percentage
+        $currentUsage = memory_get_usage(true);
+        $newLimit = $currentUsage * 2;  // 50% usage
+        ini_set('memory_limit', (string) $newLimit);
+
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        // Percentage should be around 50% (between 40-60% due to memory overhead)
+        $this->assertGreaterThan(40, $stats['percentage']);
+        $this->assertLessThan(60, $stats['percentage']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_constructor_initializes_memory_limit(): void
+    {
+        $memoryManager = new MemoryManager;
+
+        // Just verify the object was created without errors
+        $this->assertInstanceOf(MemoryManager::class, $memoryManager);
+
+        // And that we can get stats from it
+        $stats = $memoryManager->getMemoryStats();
+        $this->assertIsArray($stats);
+    }
+
+    public function test_check_memory_usage_below_warning_threshold(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        // Set memory limit high enough that we're well below warning threshold
+        $currentUsage = memory_get_usage(true);
+        $newLimit = $currentUsage * 10;  // 10% usage - well below 80% warning
+        ini_set('memory_limit', (string) $newLimit);
+
+        $memoryManager = new MemoryManager;
+
+        // Should not throw exception and return null
+        $result = $memoryManager->checkMemoryUsage();
+        $this->assertNull($result);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_run_garbage_collection_completes_successfully(): void
+    {
+        $memoryManager = new MemoryManager;
+
+        // Create some garbage
+        for ($i = 0; $i < 100; $i++) {
+            $obj = new \stdClass;
+            $obj->data = str_repeat('x', 1000);
+            unset($obj);
+        }
+
+        // Run garbage collection
+        $memoryManager->runGarbageCollection();
+
+        // If we get here without exception, the test passes
+        $this->assertTrue(true);
+    }
+
+    public function test_memory_limit_parsing_lowercase_suffix(): void
+    {
+        $originalLimit = ini_get('memory_limit');
+
+        // PHP accepts lowercase suffixes too
+        ini_set('memory_limit', '256m');
+        $memoryManager = new MemoryManager;
+        $stats = $memoryManager->getMemoryStats();
+
+        $this->assertEquals('256 MB', $stats['limit']);
+
+        ini_set('memory_limit', $originalLimit);
+    }
+
+    public function test_get_memory_stats_returns_consistent_structure(): void
+    {
+        $memoryManager = new MemoryManager;
+
+        // Call getMemoryStats multiple times
+        $stats1 = $memoryManager->getMemoryStats();
+        $stats2 = $memoryManager->getMemoryStats();
+
+        // Both should have the same keys
+        $this->assertEquals(array_keys($stats1), array_keys($stats2));
+
+        // Expected keys
+        $expectedKeys = ['current', 'peak', 'limit', 'percentage'];
+        foreach ($expectedKeys as $key) {
+            $this->assertArrayHasKey($key, $stats1);
+            $this->assertArrayHasKey($key, $stats2);
+        }
+    }
 }

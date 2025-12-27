@@ -563,4 +563,274 @@ class ParallelProcessorAdvancedTest extends TestCase
         // Results should reflect the incrementing counter
         $this->assertEquals([2, 4, 6, 8, 10], $results);
     }
+
+    public function test_process_with_progress_uses_parallel_executor(): void
+    {
+        $executorCalled = false;
+        $mockExecutor = new class($executorCalled) implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            private bool $called;
+
+            public function __construct(bool &$called)
+            {
+                $this->called = &$called;
+            }
+
+            public function execute(array $tasks, int $workers): array
+            {
+                $this->called = true;
+
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $progressCalls = [];
+        $items = range(1, 25);
+        $results = $processor->processWithProgress(
+            $items,
+            fn ($x) => $x * 2,
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = $current;
+            }
+        );
+
+        $this->assertTrue($executorCalled);
+        $this->assertCount(25, $results);
+    }
+
+    public function test_process_chunks_routes_by_worker_count(): void
+    {
+        $taskCount = 0;
+        $mockExecutor = new class($taskCount) implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            private int $count;
+
+            public function __construct(int &$count)
+            {
+                $this->count = &$count;
+            }
+
+            public function execute(array $tasks, int $workers): array
+            {
+                $this->count = count($tasks);
+
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 4,
+            executor: $mockExecutor
+        );
+
+        // Process 60 items with 4 workers = ceil(60/4) = 15 items per chunk = 4 chunks
+        $items = range(1, 60);
+        $processor->process($items, fn ($x) => $x);
+
+        $this->assertEquals(4, $taskCount);
+    }
+
+    public function test_process_with_progress_parallel_file_locking(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                // Execute tasks in order to simulate parallel execution
+                $results = [];
+                foreach ($tasks as $task) {
+                    $results[] = $task();
+                }
+
+                return $results;
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $progressCalls = [];
+        $items = range(1, 20);
+        $results = $processor->processWithProgress(
+            $items,
+            fn ($x) => $x * 3,
+            function ($current, $total) use (&$progressCalls) {
+                $progressCalls[] = ['current' => $current, 'total' => $total];
+            }
+        );
+
+        $this->assertCount(20, $results);
+        // Progress callbacks should have been called with total = 20
+        if (! empty($progressCalls)) {
+            foreach ($progressCalls as $call) {
+                $this->assertEquals(20, $call['total']);
+            }
+        }
+    }
+
+    public function test_process_merges_chunked_results_correctly(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 3,
+            executor: $mockExecutor
+        );
+
+        // 60 items / 3 workers = 20 items per chunk
+        $items = range(1, 60);
+        $results = $processor->process($items, fn ($x) => $x * 10);
+
+        $this->assertCount(60, $results);
+        // Verify that results are correctly merged and contain expected values
+        $this->assertContains(10, $results);
+        $this->assertContains(600, $results);
+    }
+
+    public function test_process_with_progress_cleans_up_temp_file(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 2,
+            executor: $mockExecutor
+        );
+
+        $tempDir = sys_get_temp_dir();
+        $filesBefore = glob($tempDir.'/spectrum_progress_*') ?: [];
+
+        $items = range(1, 25);
+        $processor->processWithProgress(
+            $items,
+            fn ($x) => $x,
+            fn ($current, $total) => null
+        );
+
+        $filesAfter = glob($tempDir.'/spectrum_progress_*') ?: [];
+
+        // Temp files should be cleaned up
+        $this->assertCount(count($filesBefore), $filesAfter);
+    }
+
+    public function test_process_with_large_dataset_and_many_workers(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return array_map(fn ($task) => $task(), $tasks);
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: true,
+            workers: 16,
+            executor: $mockExecutor
+        );
+
+        // 160 items / 16 workers = 10 items per chunk = 16 chunks
+        $items = range(1, 160);
+        $results = $processor->process($items, fn ($x) => $x * 2);
+
+        $this->assertCount(160, $results);
+        $this->assertContains(2, $results);
+        $this->assertContains(320, $results);
+    }
+
+    public function test_constructor_with_all_custom_dependencies(): void
+    {
+        $mockExecutor = new class implements \LaravelSpectrum\Contracts\Performance\ParallelExecutorInterface
+        {
+            public function execute(array $tasks, int $workers): array
+            {
+                return [];
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+
+        $mockResolver = new class implements \LaravelSpectrum\Contracts\Performance\WorkerCountResolverInterface
+        {
+            public function resolve(): int
+            {
+                return 12;
+            }
+        };
+
+        $mockChecker = new class implements \LaravelSpectrum\Contracts\Performance\ParallelSupportCheckerInterface
+        {
+            public function isSupported(): bool
+            {
+                return true;
+            }
+        };
+
+        $processor = new ParallelProcessor(
+            enabled: null,
+            workers: null,
+            executor: $mockExecutor,
+            workerCountResolver: $mockResolver,
+            supportChecker: $mockChecker
+        );
+
+        $this->assertTrue($processor->isEnabled());
+        $this->assertEquals(12, $processor->getWorkers());
+    }
 }
