@@ -117,6 +117,9 @@ class ParameterGenerator
                 ],
             ];
 
+            // Add style and explode for array types
+            $parameter = $this->applyStyleAndExplode($parameter, $queryParam);
+
             // Add default value
             if (isset($queryParam['default'])) {
                 $parameter['schema']['default'] = $queryParam['default'];
@@ -144,5 +147,39 @@ class ParameterGenerator
         }
 
         return $parameters;
+    }
+
+    /**
+     * Apply style and explode properties for array/object type parameters.
+     *
+     * @param  array<string, mixed>  $parameter  The parameter definition
+     * @param  array<string, mixed>  $queryParam  The query parameter info
+     * @return array<string, mixed> Updated parameter with style/explode if applicable
+     */
+    protected function applyStyleAndExplode(array $parameter, array $queryParam): array
+    {
+        $type = $queryParam['type'] ?? 'string';
+
+        // Only apply to array and object types
+        if (! in_array($type, ['array', 'object'], true)) {
+            return $parameter;
+        }
+
+        // Add items schema for array types
+        if ($type === 'array') {
+            $parameter['schema']['items'] = ['type' => 'string'];
+        }
+
+        // Check if style/explode should be included based on config
+        $includeStyle = config('spectrum.parameters.include_style', true);
+        if (! $includeStyle) {
+            return $parameter;
+        }
+
+        // Apply style and explode from config
+        $parameter['style'] = config('spectrum.parameters.array_style', 'form');
+        $parameter['explode'] = config('spectrum.parameters.array_explode', true);
+
+        return $parameter;
     }
 }

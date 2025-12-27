@@ -308,4 +308,135 @@ class ParameterGeneratorTest extends TestCase
 
         $this->assertTrue($parameters[0]['required']);
     }
+
+    #[Test]
+    public function it_adds_style_and_explode_to_array_query_parameters(): void
+    {
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'ids',
+                    'type' => 'array',
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertCount(1, $parameters);
+        $this->assertEquals('ids', $parameters[0]['name']);
+        $this->assertEquals('form', $parameters[0]['style']);
+        $this->assertTrue($parameters[0]['explode']);
+    }
+
+    #[Test]
+    public function it_adds_items_schema_to_array_parameters(): void
+    {
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'tags',
+                    'type' => 'array',
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertCount(1, $parameters);
+        $this->assertEquals('array', $parameters[0]['schema']['type']);
+        $this->assertArrayHasKey('items', $parameters[0]['schema']);
+        $this->assertEquals('string', $parameters[0]['schema']['items']['type']);
+    }
+
+    #[Test]
+    public function it_does_not_add_style_for_simple_types(): void
+    {
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'page',
+                    'type' => 'integer',
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertCount(1, $parameters);
+        $this->assertArrayNotHasKey('style', $parameters[0]);
+        $this->assertArrayNotHasKey('explode', $parameters[0]);
+    }
+
+    #[Test]
+    public function it_respects_include_style_config_when_disabled(): void
+    {
+        config(['spectrum.parameters.include_style' => false]);
+
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'ids',
+                    'type' => 'array',
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertArrayNotHasKey('style', $parameters[0]);
+        $this->assertArrayNotHasKey('explode', $parameters[0]);
+        // items should still be added for arrays
+        $this->assertArrayHasKey('items', $parameters[0]['schema']);
+    }
+
+    #[Test]
+    public function it_uses_config_for_array_style(): void
+    {
+        config(['spectrum.parameters.array_style' => 'spaceDelimited']);
+
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'ids',
+                    'type' => 'array',
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertEquals('spaceDelimited', $parameters[0]['style']);
+    }
+
+    #[Test]
+    public function it_uses_config_for_array_explode(): void
+    {
+        config(['spectrum.parameters.array_explode' => false]);
+
+        $route = ['parameters' => []];
+        $controllerInfo = [
+            'queryParameters' => [
+                [
+                    'name' => 'ids',
+                    'type' => 'array',
+                    'required' => false,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        $this->assertFalse($parameters[0]['explode']);
+    }
 }
