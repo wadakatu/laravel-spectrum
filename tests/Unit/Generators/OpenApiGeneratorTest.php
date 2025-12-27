@@ -1621,6 +1621,47 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayNotHasKey('security', $result);
     }
 
+    #[Test]
+    public function it_includes_title_in_info_object(): void
+    {
+        config(['spectrum.title' => 'My Custom API']);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayHasKey('title', $result['info']);
+        $this->assertEquals('My Custom API', $result['info']['title']);
+    }
+
+    #[Test]
+    public function it_uses_app_name_in_default_title_when_spectrum_title_not_configured(): void
+    {
+        // Set app.name to a known value
+        config(['app.name' => 'TestApp']);
+
+        // Set spectrum.title to null to trigger fallback
+        // Note: The fallback in OpenApiGenerator.php uses config('app.name').' API'
+        // When spectrum.title is null, config() returns null, not the fallback
+        // So we need to set the entire spectrum config without title
+        $spectrumConfig = config('spectrum');
+        unset($spectrumConfig['title']);
+        config(['spectrum' => $spectrumConfig]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $this->generator->generate([]);
+
+        $this->assertArrayHasKey('title', $result['info']);
+        $this->assertEquals('TestApp API', $result['info']['title']);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
