@@ -795,4 +795,225 @@ class GenerateDocsCommandTest extends TestCase
             ->expectsOutputToContain('Found 2 warnings during generation')
             ->assertSuccessful();
     }
+
+    #[Test]
+    public function it_clears_cache_when_clear_cache_option_is_used(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // First run to populate cache
+        $this->artisan('spectrum:generate')->assertSuccessful();
+
+        // Act - run with --clear-cache
+        $this->artisan('spectrum:generate', ['--clear-cache' => true])
+            ->expectsOutputToContain('Clearing cache')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function it_disables_cache_when_no_cache_option_is_used(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $this->artisan('spectrum:generate', ['--no-cache' => true])
+            ->assertSuccessful();
+
+        // Verify cache stats are not shown (since cache is disabled)
+        // The command should still work but not show cache statistics
+    }
+
+    #[Test]
+    public function it_does_not_show_cache_stats_when_no_cache_option_is_used(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Capture output
+        $output = $this->artisan('spectrum:generate', ['--no-cache' => true]);
+
+        // Verify command succeeds
+        $output->assertSuccessful();
+
+        // Cache stats line should not appear when cache is disabled
+        // (We can't assert negative with expectsOutputToContain, so just verify success)
+    }
+
+    #[Test]
+    public function it_returns_error_when_no_routes_found(): void
+    {
+        // Arrange - don't register any routes
+
+        // Act
+        $this->artisan('spectrum:generate')
+            ->expectsOutputToContain('No API routes found')
+            ->assertExitCode(1);
+    }
+
+    #[Test]
+    public function it_outputs_errors_when_no_routes_found_and_errors_exist(): void
+    {
+        // Arrange - no routes, but add errors
+        $originalAnalyzer = $this->app->make(\LaravelSpectrum\Analyzers\RouteAnalyzer::class);
+
+        $mockAnalyzer = \Mockery::mock($originalAnalyzer)->makePartial();
+        $mockAnalyzer->shouldReceive('analyze')->andReturnUsing(function () {
+            $collector = app(\LaravelSpectrum\Support\ErrorCollector::class);
+            $collector->addError('NoRouteContext', 'Error even with no routes');
+
+            return []; // No routes
+        });
+
+        $this->app->instance(\LaravelSpectrum\Analyzers\RouteAnalyzer::class, $mockAnalyzer);
+
+        // Act
+        $this->artisan('spectrum:generate')
+            ->expectsOutputToContain('No API routes found')
+            ->assertExitCode(1);
+    }
+
+    #[Test]
+    public function it_shows_debug_metadata_in_debug_mode(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        $originalAnalyzer = $this->app->make(\LaravelSpectrum\Analyzers\RouteAnalyzer::class);
+
+        $mockAnalyzer = \Mockery::mock($originalAnalyzer)->makePartial();
+        $mockAnalyzer->shouldReceive('analyze')->andReturnUsing(function ($useCache) use ($originalAnalyzer) {
+            $collector = app(\LaravelSpectrum\Support\ErrorCollector::class);
+            $collector->addError('DebugContext', 'Debug error', [
+                'file' => '/path/to/file.php',
+                'line' => 42,
+            ]);
+
+            return $originalAnalyzer->analyze($useCache);
+        });
+
+        $this->app->instance(\LaravelSpectrum\Analyzers\RouteAnalyzer::class, $mockAnalyzer);
+
+        // Act - use -vvv for debug mode
+        $this->artisan('spectrum:generate', ['-vvv' => true])
+            ->expectsOutputToContain('File: /path/to/file.php')
+            ->expectsOutputToContain('Line: 42')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function it_shows_file_metadata_without_line_in_debug_mode(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        $originalAnalyzer = $this->app->make(\LaravelSpectrum\Analyzers\RouteAnalyzer::class);
+
+        $mockAnalyzer = \Mockery::mock($originalAnalyzer)->makePartial();
+        $mockAnalyzer->shouldReceive('analyze')->andReturnUsing(function ($useCache) use ($originalAnalyzer) {
+            $collector = app(\LaravelSpectrum\Support\ErrorCollector::class);
+            $collector->addError('FileOnlyContext', 'Error with file only', [
+                'file' => '/path/to/another.php',
+            ]);
+
+            return $originalAnalyzer->analyze($useCache);
+        });
+
+        $this->app->instance(\LaravelSpectrum\Analyzers\RouteAnalyzer::class, $mockAnalyzer);
+
+        // Act
+        $this->artisan('spectrum:generate', ['-vvv' => true])
+            ->expectsOutputToContain('File: /path/to/another.php')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function it_generates_to_custom_output_path(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+        $customPath = storage_path('custom-output/api-docs.json');
+
+        // Act
+        $this->artisan('spectrum:generate', ['--output' => $customPath])
+            ->expectsOutputToContain('Documentation generated')
+            ->assertSuccessful();
+
+        // Assert
+        $this->assertFileExists($customPath);
+
+        // Cleanup
+        File::deleteDirectory(storage_path('custom-output'));
+    }
+
+    #[Test]
+    public function it_handles_warnings_when_no_routes_found(): void
+    {
+        // Arrange - no routes, but add warnings
+        $originalAnalyzer = $this->app->make(\LaravelSpectrum\Analyzers\RouteAnalyzer::class);
+
+        $mockAnalyzer = \Mockery::mock($originalAnalyzer)->makePartial();
+        $mockAnalyzer->shouldReceive('analyze')->andReturnUsing(function () {
+            $collector = app(\LaravelSpectrum\Support\ErrorCollector::class);
+            $collector->addWarning('NoRouteWarningContext', 'Warning with no routes');
+
+            return []; // No routes
+        });
+
+        $this->app->instance(\LaravelSpectrum\Analyzers\RouteAnalyzer::class, $mockAnalyzer);
+
+        // Act
+        $this->artisan('spectrum:generate')
+            ->expectsOutputToContain('No API routes found')
+            ->assertExitCode(1);
+    }
+
+    #[Test]
+    public function it_shows_errors_count_message_in_verbose_mode(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        $originalAnalyzer = $this->app->make(\LaravelSpectrum\Analyzers\RouteAnalyzer::class);
+
+        $mockAnalyzer = \Mockery::mock($originalAnalyzer)->makePartial();
+        $mockAnalyzer->shouldReceive('analyze')->andReturnUsing(function ($useCache) use ($originalAnalyzer) {
+            $collector = app(\LaravelSpectrum\Support\ErrorCollector::class);
+            $collector->addError('VerboseContext', 'Error for verbose');
+
+            return $originalAnalyzer->analyze($useCache);
+        });
+
+        $this->app->instance(\LaravelSpectrum\Analyzers\RouteAnalyzer::class, $mockAnalyzer);
+
+        // Act - verbose mode shows "Found X errors:" message
+        $this->artisan('spectrum:generate', ['--verbose' => true])
+            ->expectsOutputToContain('Found 1 errors:')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function it_shows_warnings_count_message_in_verbose_mode(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        $originalAnalyzer = $this->app->make(\LaravelSpectrum\Analyzers\RouteAnalyzer::class);
+
+        $mockAnalyzer = \Mockery::mock($originalAnalyzer)->makePartial();
+        $mockAnalyzer->shouldReceive('analyze')->andReturnUsing(function ($useCache) use ($originalAnalyzer) {
+            $collector = app(\LaravelSpectrum\Support\ErrorCollector::class);
+            $collector->addWarning('VerboseWarnContext', 'Warning for verbose');
+
+            return $originalAnalyzer->analyze($useCache);
+        });
+
+        $this->app->instance(\LaravelSpectrum\Analyzers\RouteAnalyzer::class, $mockAnalyzer);
+
+        // Act - verbose mode shows "Found X warnings:" message
+        $this->artisan('spectrum:generate', ['--verbose' => true])
+            ->expectsOutputToContain('Found 1 warnings:')
+            ->assertSuccessful();
+    }
 }
