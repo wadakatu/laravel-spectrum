@@ -32,16 +32,16 @@ php artisan spectrum:generate [options]
 
 ### オプション
 
-| オプション | 短縮形 | デフォルト | 説明 |
-|-----------|--------|-----------|------|
-| `--output` | `-o` | storage/app/spectrum/openapi.json | 出力ファイルパス |
-| `--format` | `-f` | json | 出力形式（json/yaml） |
-| `--pattern` | | config値 | 含めるルートパターン |
-| `--exclude` | | config値 | 除外するルートパターン |
-| `--no-cache` | | false | キャッシュを使用しない |
-| `--force` | | false | 既存ファイルを上書き |
-| `--dry-run` | | false | ファイル生成なしで実行 |
-| `--incremental` | `-i` | false | 変更されたファイルのみ処理 |
+| オプション | デフォルト | 説明 |
+|-----------|-----------|------|
+| `--output` | storage/app/spectrum/openapi.json | 出力ファイルパス |
+| `--format` | json | 出力形式（json/yaml/html） |
+| `--no-cache` | false | キャッシュを使用しない |
+| `--clear-cache` | false | 生成前にキャッシュをクリア |
+| `--fail-on-error` | false | 最初のエラーで実行を停止 |
+| `--ignore-errors` | false | エラーを無視して生成を続行 |
+| `--error-report` | なし | エラーレポートをファイルに保存 |
+| `--no-try-it-out` | false | HTML出力の"Try It Out"機能を無効化 |
 
 ### 使用例
 
@@ -49,23 +49,29 @@ php artisan spectrum:generate [options]
 # 基本的な生成
 php artisan spectrum:generate
 
-# 特定のパターンのみ生成
-php artisan spectrum:generate --pattern="api/v2/*"
-
-# 複数パターンの指定
-php artisan spectrum:generate --pattern="api/users/*" --pattern="api/posts/*"
-
-# 除外パターンの指定
-php artisan spectrum:generate --exclude="api/admin/*" --exclude="api/debug/*"
-
 # YAML形式で出力
 php artisan spectrum:generate --format=yaml --output=docs/api.yaml
 
-# キャッシュなしで強制再生成
-php artisan spectrum:generate --no-cache --force
+# HTML形式で出力（Swagger UI付き）
+php artisan spectrum:generate --format=html --output=docs/api.html
 
-# ドライラン（実際には生成しない）
-php artisan spectrum:generate --dry-run -vvv
+# キャッシュをクリアして再生成
+php artisan spectrum:generate --clear-cache
+
+# キャッシュを使用せず生成
+php artisan spectrum:generate --no-cache
+
+# エラー時に停止
+php artisan spectrum:generate --fail-on-error
+
+# エラーを無視して続行
+php artisan spectrum:generate --ignore-errors
+
+# エラーレポートを保存
+php artisan spectrum:generate --error-report=storage/spectrum-errors.json
+
+# 詳細な出力で生成
+php artisan spectrum:generate -vvv
 ```
 
 ## ⚡ spectrum:generate:optimized
@@ -82,12 +88,13 @@ php artisan spectrum:generate:optimized [options]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
+| `--format` | json | 出力形式（json/yaml） |
+| `--output` | storage/app/spectrum/openapi.json | 出力ファイルパス |
+| `--parallel` | false | 並列処理を有効化 |
 | `--workers` | auto | 並列ワーカー数（autoでCPUコア数） |
-| `--chunk-size` | 100 | 各ワーカーが処理するルート数 |
+| `--chunk-size` | auto | 各ワーカーが処理するルート数 |
 | `--memory-limit` | 512M | 各ワーカーのメモリ制限 |
 | `--incremental` | false | 変更されたファイルのみ処理 |
-| `--progress` | true | 進捗バーを表示 |
-| `--stats` | true | パフォーマンス統計を表示 |
 
 ### 使用例
 
@@ -95,8 +102,11 @@ php artisan spectrum:generate:optimized [options]
 # 自動最適化で生成
 php artisan spectrum:generate:optimized
 
+# 並列処理を有効化
+php artisan spectrum:generate:optimized --parallel
+
 # 8ワーカーで並列処理
-php artisan spectrum:generate:optimized --workers=8
+php artisan spectrum:generate:optimized --parallel --workers=8
 
 # メモリとチャンクサイズの調整
 php artisan spectrum:generate:optimized --memory-limit=1G --chunk-size=50
@@ -104,8 +114,11 @@ php artisan spectrum:generate:optimized --memory-limit=1G --chunk-size=50
 # インクリメンタル生成
 php artisan spectrum:generate:optimized --incremental
 
-# 統計なしで静かに実行
-php artisan spectrum:generate:optimized --no-stats --no-progress
+# YAML形式で出力
+php artisan spectrum:generate:optimized --format=yaml
+
+# 詳細な出力で生成
+php artisan spectrum:generate:optimized -v
 ```
 
 ## 👁️ spectrum:watch
@@ -123,10 +136,8 @@ php artisan spectrum:watch [options]
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--port` | 8080 | プレビューサーバーのポート |
-| `--host` | localhost | プレビューサーバーのホスト |
+| `--host` | 127.0.0.1 | プレビューサーバーのホスト |
 | `--no-open` | false | ブラウザを自動で開かない |
-| `--poll` | false | ポーリングモードを使用 |
-| `--interval` | 1000 | ポーリング間隔（ミリ秒） |
 
 ### 使用例
 
@@ -142,9 +153,6 @@ php artisan spectrum:watch --no-open
 
 # 外部アクセス可能にする
 php artisan spectrum:watch --host=0.0.0.0
-
-# ポーリングモード（Docker環境など）
-php artisan spectrum:watch --poll --interval=2000
 ```
 
 ## 🎭 spectrum:mock
@@ -200,11 +208,9 @@ php artisan spectrum:export:postman [options]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
-| `--output` | storage/app/spectrum/postman/collection.json | 出力ファイルパス |
-| `--include-examples` | true | リクエスト/レスポンス例を含める |
-| `--include-tests` | false | テストスクリプトを生成 |
-| `--environment` | false | 環境変数ファイルも生成 |
-| `--base-url` | APP_URL | ベースURL |
+| `--output` | storage/app/spectrum/postman | 出力ディレクトリ |
+| `--environments` | local | エクスポートする環境（カンマ区切り） |
+| `--single-file` | false | 環境を埋め込んだ単一ファイルでエクスポート |
 
 ### 使用例
 
@@ -212,20 +218,14 @@ php artisan spectrum:export:postman [options]
 # 基本的なエクスポート
 php artisan spectrum:export:postman
 
-# テストスクリプト付きでエクスポート
-php artisan spectrum:export:postman --include-tests
-
-# 環境変数ファイルも生成
-php artisan spectrum:export:postman --environment
-
 # カスタム出力先
-php artisan spectrum:export:postman --output=postman/my-api.json
+php artisan spectrum:export:postman --output=postman/
 
-# 完全なエクスポート
-php artisan spectrum:export:postman \
-    --include-tests \
-    --environment \
-    --base-url=https://api.example.com
+# 複数環境をエクスポート
+php artisan spectrum:export:postman --environments=local,staging,production
+
+# 単一ファイルでエクスポート
+php artisan spectrum:export:postman --single-file
 ```
 
 ## 🦊 spectrum:export:insomnia
@@ -242,10 +242,7 @@ php artisan spectrum:export:insomnia [options]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
-| `--output` | storage/app/spectrum/insomnia/workspace.json | 出力ファイルパス |
-| `--workspace-name` | APP_NAME API | ワークスペース名 |
-| `--include-environments` | true | 環境設定を含める |
-| `--folder-structure` | true | フォルダ構造で整理 |
+| `--output` | storage/app/spectrum/insomnia/insomnia_collection.json | 出力ファイルパス |
 
 ### 使用例
 
@@ -253,14 +250,11 @@ php artisan spectrum:export:insomnia [options]
 # 基本的なエクスポート
 php artisan spectrum:export:insomnia
 
-# カスタムワークスペース名
-php artisan spectrum:export:insomnia --workspace-name="My Cool API"
-
-# フォルダ構造なしでフラット
-php artisan spectrum:export:insomnia --no-folder-structure
-
-# カスタム出力先
+# カスタム出力先（ファイルパス）
 php artisan spectrum:export:insomnia --output=insomnia/api.json
+
+# カスタム出力先（ディレクトリ）
+php artisan spectrum:export:insomnia --output=insomnia/
 ```
 
 ## 🗑️ spectrum:cache
