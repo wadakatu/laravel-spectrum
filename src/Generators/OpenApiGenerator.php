@@ -130,7 +130,7 @@ class OpenApiGenerator
     protected function buildBaseStructure(array $authenticationInfo): array
     {
         return [
-            'openapi' => '3.0.0',
+            'openapi' => $this->getOpenApiVersion(),
             'info' => [
                 'title' => config('spectrum.title', config('app.name').' API'),
                 'version' => config('spectrum.version', '1.0.0'),
@@ -150,6 +150,19 @@ class OpenApiGenerator
                 ),
             ],
         ];
+    }
+
+    /**
+     * Get the validated OpenAPI version from configuration.
+     *
+     * Only accepts valid OpenAPI versions (3.0.0 or 3.1.0).
+     * Falls back to 3.0.0 for invalid or missing values.
+     */
+    protected function getOpenApiVersion(): string
+    {
+        $version = config('spectrum.openapi.version', '3.0.0');
+
+        return in_array($version, ['3.0.0', '3.1.0'], true) ? $version : '3.0.0';
     }
 
     /**
