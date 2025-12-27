@@ -609,5 +609,4 @@ $stats = $monitor->getStatistics();
 ## 📚 関連ドキュメント
 
 - [カスタマイズ](./customization.md) - 拡張方法の詳細
-- [プラグイン開発](./plugin-development.md) - プラグインの作成
 - [貢献ガイド](./contributing.md) - 本体への貢献方法

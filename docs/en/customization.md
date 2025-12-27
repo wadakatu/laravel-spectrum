@@ -606,5 +606,4 @@ class TestableAnalyzer
 ## 📚 Related Documentation
 
 - [API Reference](./api-reference.md) - Available APIs
-- [Plugin Development](./plugin-development.md) - Plugin details
 - [Contributing Guide](./contributing.md) - How to contribute
