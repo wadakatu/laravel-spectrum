@@ -2,6 +2,8 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\OpenApiResponse;
+
 class ErrorResponseGenerator
 {
     protected ValidationMessageGenerator $messageGenerator;
@@ -13,19 +15,17 @@ class ErrorResponseGenerator
 
     /**
      * エラーレスポンスのスキーマを生成
+     *
+     * @return array<int|string, OpenApiResponse>
      */
     public function generateErrorResponses(?array $formRequestData = null): array
     {
-        $responses = [];
-
-        // 401 Unauthorized
-        $responses['401'] = $this->generateUnauthorizedResponse();
-
-        // 403 Forbidden
-        $responses['403'] = $this->generateForbiddenResponse();
-
-        // 404 Not Found
-        $responses['404'] = $this->generateNotFoundResponse();
+        $responses = [
+            '401' => $this->generateUnauthorizedResponse(),
+            '403' => $this->generateForbiddenResponse(),
+            '404' => $this->generateNotFoundResponse(),
+            '500' => $this->generateInternalServerErrorResponse(),
+        ];
 
         // 422 Validation Error（FormRequestがある場合のみ）
         if ($formRequestData && isset($formRequestData['rules'])) {
@@ -35,20 +35,18 @@ class ErrorResponseGenerator
             );
         }
 
-        // 500 Internal Server Error
-        $responses['500'] = $this->generateInternalServerErrorResponse();
-
         return $responses;
     }
 
     /**
      * 401 Unauthorized レスポンス
      */
-    protected function generateUnauthorizedResponse(): array
+    protected function generateUnauthorizedResponse(): OpenApiResponse
     {
-        return [
-            'description' => 'Unauthorized',
-            'content' => [
+        return new OpenApiResponse(
+            statusCode: 401,
+            description: 'Unauthorized',
+            content: [
                 'application/json' => [
                     'schema' => [
                         'type' => 'object',
@@ -61,17 +59,18 @@ class ErrorResponseGenerator
                     ],
                 ],
             ],
-        ];
+        );
     }
 
     /**
      * 403 Forbidden レスポンス
      */
-    protected function generateForbiddenResponse(): array
+    protected function generateForbiddenResponse(): OpenApiResponse
     {
-        return [
-            'description' => 'Forbidden',
-            'content' => [
+        return new OpenApiResponse(
+            statusCode: 403,
+            description: 'Forbidden',
+            content: [
                 'application/json' => [
                     'schema' => [
                         'type' => 'object',
@@ -84,17 +83,18 @@ class ErrorResponseGenerator
                     ],
                 ],
             ],
-        ];
+        );
     }
 
     /**
      * 404 Not Found レスポンス
      */
-    protected function generateNotFoundResponse(): array
+    protected function generateNotFoundResponse(): OpenApiResponse
     {
-        return [
-            'description' => 'Not Found',
-            'content' => [
+        return new OpenApiResponse(
+            statusCode: 404,
+            description: 'Not Found',
+            content: [
                 'application/json' => [
                     'schema' => [
                         'type' => 'object',
@@ -107,13 +107,13 @@ class ErrorResponseGenerator
                     ],
                 ],
             ],
-        ];
+        );
     }
 
     /**
      * 422 Validation Error レスポンス
      */
-    protected function generateValidationErrorResponse(array $rules, array $customMessages = []): array
+    protected function generateValidationErrorResponse(array $rules, array $customMessages = []): OpenApiResponse
     {
         // 各フィールドのエラーメッセージを生成
         $fieldErrors = [];
@@ -138,9 +138,10 @@ class ErrorResponseGenerator
             $errorExamples[$field] = [$sampleMessage];
         }
 
-        return [
-            'description' => 'Validation Error',
-            'content' => [
+        return new OpenApiResponse(
+            statusCode: 422,
+            description: 'Validation Error',
+            content: [
                 'application/json' => [
                     'schema' => [
                         'type' => 'object',
@@ -158,17 +159,18 @@ class ErrorResponseGenerator
                     ],
                 ],
             ],
-        ];
+        );
     }
 
     /**
      * 500 Internal Server Error レスポンス
      */
-    protected function generateInternalServerErrorResponse(): array
+    protected function generateInternalServerErrorResponse(): OpenApiResponse
     {
-        return [
-            'description' => 'Internal Server Error',
-            'content' => [
+        return new OpenApiResponse(
+            statusCode: 500,
+            description: 'Internal Server Error',
+            content: [
                 'application/json' => [
                     'schema' => [
                         'type' => 'object',
@@ -181,14 +183,17 @@ class ErrorResponseGenerator
                     ],
                 ],
             ],
-        ];
+        );
     }
 
     /**
      * 特定のHTTPメソッドに基づいてデフォルトのエラーレスポンスを選択
+     *
+     * @return array<int|string, OpenApiResponse>
      */
     public function getDefaultErrorResponses(string $method, bool $requiresAuth = false, bool $hasValidation = false): array
     {
+        /** @var array<int|string, OpenApiResponse> $responses */
         $responses = [];
 
         // 認証が必要な場合

@@ -9,6 +9,7 @@ use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
+use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -394,14 +395,15 @@ class OpenApiGeneratorTest extends TestCase
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')
             ->once()
             ->andReturn([
-                '422' => [
-                    'description' => 'Validation Error',
-                    'content' => [
+                '422' => new OpenApiResponse(
+                    statusCode: 422,
+                    description: 'Validation Error',
+                    content: [
                         'application/json' => [
                             'schema' => ['type' => 'object'],
                         ],
                     ],
-                ],
+                ),
             ]);
 
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')
@@ -516,14 +518,15 @@ class OpenApiGeneratorTest extends TestCase
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')
             ->once()
             ->andReturn([
-                '401' => [
-                    'description' => 'Unauthorized',
-                    'content' => [
+                '401' => new OpenApiResponse(
+                    statusCode: 401,
+                    description: 'Unauthorized',
+                    content: [
                         'application/json' => [
                             'schema' => ['type' => 'object'],
                         ],
                     ],
-                ],
+                ),
             ]);
 
         $this->exampleGenerator->shouldReceive('generateErrorExample')
@@ -1193,7 +1196,15 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->with('get', true, false)
             ->andReturn([
-                '401' => ['description' => 'Unauthorized'],
+                '401' => new OpenApiResponse(
+                    statusCode: 401,
+                    description: 'Unauthorized',
+                    content: [
+                        'application/json' => [
+                            'schema' => ['type' => 'object'],
+                        ],
+                    ],
+                ),
             ]);
 
         $this->exampleGenerator->shouldReceive('generateErrorExample')
@@ -1281,7 +1292,15 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->with('get', true, false)
             ->andReturn([
-                '401' => ['description' => 'Unauthorized'],
+                '401' => new OpenApiResponse(
+                    statusCode: 401,
+                    description: 'Unauthorized',
+                    content: [
+                        'application/json' => [
+                            'schema' => ['type' => 'object'],
+                        ],
+                    ],
+                ),
             ]);
 
         $this->exampleGenerator->shouldReceive('generateErrorExample')
