@@ -244,4 +244,74 @@ class RouteInfoTest extends TestCase
         $this->assertEquals('/api/users', $withSlash->toOpenApiPath());
         $this->assertEquals('/api/users', $withoutSlash->toOpenApiPath());
     }
+
+    #[Test]
+    public function it_returns_false_for_empty_route_name(): void
+    {
+        $info = new RouteInfo(uri: 'api/users', httpMethods: ['GET'], name: '');
+
+        $this->assertFalse($info->hasName());
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_existing_route_parameter_info_instances(): void
+    {
+        $array = [
+            'uri' => 'api/users/{id}',
+            'httpMethods' => ['GET'],
+            'parameters' => [
+                new RouteParameterInfo(name: 'id', required: true),
+            ],
+        ];
+
+        $info = RouteInfo::fromArray($array);
+
+        $this->assertCount(1, $info->parameters);
+        $this->assertInstanceOf(RouteParameterInfo::class, $info->parameters[0]);
+        $this->assertEquals('id', $info->parameters[0]->name);
+    }
+
+    #[Test]
+    public function it_survives_serialization_round_trip(): void
+    {
+        $original = new RouteInfo(
+            uri: 'api/users/{id}/posts/{post}',
+            httpMethods: ['GET', 'HEAD'],
+            controller: 'App\\Http\\Controllers\\UserPostController',
+            method: 'show',
+            name: 'users.posts.show',
+            middleware: ['auth:api', 'throttle:60,1'],
+            parameters: [
+                new RouteParameterInfo(name: 'id', required: true, schema: ['type' => 'integer']),
+                new RouteParameterInfo(name: 'post', required: true, schema: ['type' => 'string']),
+            ],
+        );
+
+        $restored = RouteInfo::fromArray($original->toArray());
+
+        $this->assertEquals($original->uri, $restored->uri);
+        $this->assertEquals($original->httpMethods, $restored->httpMethods);
+        $this->assertEquals($original->controller, $restored->controller);
+        $this->assertEquals($original->method, $restored->method);
+        $this->assertEquals($original->name, $restored->name);
+        $this->assertEquals($original->middleware, $restored->middleware);
+        $this->assertCount(count($original->parameters), $restored->parameters);
+
+        foreach ($original->parameters as $i => $param) {
+            $this->assertEquals($param->name, $restored->parameters[$i]->name);
+            $this->assertEquals($param->required, $restored->parameters[$i]->required);
+            $this->assertEquals($param->schema, $restored->parameters[$i]->schema);
+        }
+    }
+
+    #[Test]
+    public function it_throws_on_empty_http_methods(): void
+    {
+        $info = new RouteInfo(uri: 'api/users', httpMethods: []);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('RouteInfo must have at least one HTTP method');
+
+        $info->getPrimaryMethod();
+    }
 }

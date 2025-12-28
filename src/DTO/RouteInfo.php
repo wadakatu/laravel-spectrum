@@ -131,9 +131,15 @@ final readonly class RouteInfo
 
     /**
      * Get the primary HTTP method (first in the list).
+     *
+     * @throws \LogicException If httpMethods array is empty
      */
     public function getPrimaryMethod(): string
     {
+        if (count($this->httpMethods) === 0) {
+            throw new \LogicException('RouteInfo must have at least one HTTP method');
+        }
+
         return $this->httpMethods[0];
     }
 
