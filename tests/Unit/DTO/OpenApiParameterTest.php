@@ -266,4 +266,56 @@ class OpenApiParameterTest extends TestCase
         $this->assertEquals('pipeDelimited', OpenApiParameter::STYLE_PIPE_DELIMITED);
         $this->assertEquals('deepObject', OpenApiParameter::STYLE_DEEP_OBJECT);
     }
+
+    #[Test]
+    public function it_handles_deprecated_property(): void
+    {
+        $param = new OpenApiParameter(
+            name: 'old_field',
+            in: 'query',
+            required: false,
+            schema: OpenApiSchema::string(),
+            deprecated: true,
+        );
+
+        $this->assertTrue($param->deprecated);
+
+        $array = $param->toArray();
+        $this->assertTrue($array['deprecated']);
+    }
+
+    #[Test]
+    public function it_handles_allow_empty_value_property(): void
+    {
+        $param = new OpenApiParameter(
+            name: 'filter',
+            in: 'query',
+            required: false,
+            schema: OpenApiSchema::string(),
+            allowEmptyValue: true,
+        );
+
+        $this->assertTrue($param->allowEmptyValue);
+
+        $array = $param->toArray();
+        $this->assertTrue($array['allowEmptyValue']);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_deprecated_and_allow_empty_value(): void
+    {
+        $data = [
+            'name' => 'legacy_param',
+            'in' => 'query',
+            'required' => false,
+            'schema' => ['type' => 'string'],
+            'deprecated' => true,
+            'allowEmptyValue' => true,
+        ];
+
+        $param = OpenApiParameter::fromArray($data);
+
+        $this->assertTrue($param->deprecated);
+        $this->assertTrue($param->allowEmptyValue);
+    }
 }

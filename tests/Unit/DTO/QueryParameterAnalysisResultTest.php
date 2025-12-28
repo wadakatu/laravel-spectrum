@@ -187,4 +187,38 @@ class QueryParameterAnalysisResultTest extends TestCase
         $apiKey = $merged->getByName('api_key');
         $this->assertEquals('API Key', $apiKey->description);
     }
+
+    #[Test]
+    public function it_handles_pipe_delimited_validation_rules(): void
+    {
+        $result = QueryParameterAnalysisResult::empty();
+
+        // Use pipe-delimited string format instead of array
+        $validationRules = [
+            'page' => 'required|integer|min:1',
+            'per_page' => 'integer|between:10,100',
+        ];
+
+        $typeInferenceFn = fn (array $rules): ?string => match (true) {
+            in_array('integer', $rules) => 'integer',
+            in_array('string', $rules) => 'string',
+            default => null,
+        };
+
+        $merged = $result->mergeWithValidation($validationRules, $typeInferenceFn);
+
+        $this->assertEquals(2, $merged->count());
+
+        $page = $merged->getByName('page');
+        $this->assertNotNull($page);
+        $this->assertEquals('integer', $page->type);
+        $this->assertTrue($page->required);
+        $this->assertEquals(['required', 'integer', 'min:1'], $page->validationRules);
+
+        $perPage = $merged->getByName('per_page');
+        $this->assertNotNull($perPage);
+        $this->assertEquals('integer', $perPage->type);
+        $this->assertFalse($perPage->required);
+        $this->assertEquals(['integer', 'between:10,100'], $perPage->validationRules);
+    }
 }

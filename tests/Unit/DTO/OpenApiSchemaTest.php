@@ -213,4 +213,85 @@ class OpenApiSchemaTest extends TestCase
         $this->assertEquals(1, $updated->minimum);
         $this->assertEquals(200, $updated->maximum);
     }
+
+    #[Test]
+    public function it_handles_string_length_constraints(): void
+    {
+        $schema = new OpenApiSchema(
+            type: 'string',
+            minLength: 1,
+            maxLength: 255,
+        );
+
+        $this->assertEquals(1, $schema->minLength);
+        $this->assertEquals(255, $schema->maxLength);
+
+        $array = $schema->toArray();
+        $this->assertEquals(1, $array['minLength']);
+        $this->assertEquals(255, $array['maxLength']);
+    }
+
+    #[Test]
+    public function it_handles_pattern_constraint(): void
+    {
+        $schema = new OpenApiSchema(
+            type: 'string',
+            pattern: '^[a-zA-Z0-9]+$',
+        );
+
+        $this->assertEquals('^[a-zA-Z0-9]+$', $schema->pattern);
+
+        $array = $schema->toArray();
+        $this->assertEquals('^[a-zA-Z0-9]+$', $array['pattern']);
+    }
+
+    #[Test]
+    public function it_handles_nullable_property(): void
+    {
+        $schema = new OpenApiSchema(
+            type: 'string',
+            nullable: true,
+        );
+
+        $this->assertTrue($schema->nullable);
+
+        $array = $schema->toArray();
+        $this->assertTrue($array['nullable']);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_string_constraints(): void
+    {
+        $data = [
+            'type' => 'string',
+            'minLength' => 5,
+            'maxLength' => 100,
+            'pattern' => '^[a-z]+$',
+            'nullable' => true,
+        ];
+
+        $schema = OpenApiSchema::fromArray($data);
+
+        $this->assertEquals(5, $schema->minLength);
+        $this->assertEquals(100, $schema->maxLength);
+        $this->assertEquals('^[a-z]+$', $schema->pattern);
+        $this->assertTrue($schema->nullable);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_items_as_schema_object(): void
+    {
+        $itemsSchema = OpenApiSchema::integer();
+
+        $data = [
+            'type' => 'array',
+            'items' => $itemsSchema,
+        ];
+
+        $schema = OpenApiSchema::fromArray($data);
+
+        $this->assertEquals('array', $schema->type);
+        $this->assertNotNull($schema->items);
+        $this->assertEquals('integer', $schema->items->type);
+    }
 }
