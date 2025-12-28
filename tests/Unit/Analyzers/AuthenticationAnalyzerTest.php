@@ -3,6 +3,8 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
+use LaravelSpectrum\DTO\AuthenticationResult;
+use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -36,16 +38,15 @@ class AuthenticationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($routes);
 
-        $this->assertArrayHasKey('schemes', $result);
-        $this->assertArrayHasKey('routes', $result);
+        $this->assertInstanceOf(AuthenticationResult::class, $result);
 
         // Sanctum認証スキームが検出される
-        $this->assertArrayHasKey('sanctumAuth', $result['schemes']);
+        $this->assertArrayHasKey('sanctumAuth', $result->schemes);
 
         // ルート0と2に認証情報がある
-        $this->assertArrayHasKey(0, $result['routes']);
-        $this->assertArrayHasKey(2, $result['routes']);
-        $this->assertArrayNotHasKey(1, $result['routes']); // publicルートには認証なし
+        $this->assertTrue($result->hasRouteAuthentication(0));
+        $this->assertTrue($result->hasRouteAuthentication(2));
+        $this->assertFalse($result->hasRouteAuthentication(1)); // publicルートには認証なし
     }
 
     #[Test]
@@ -58,9 +59,9 @@ class AuthenticationAnalyzerTest extends TestCase
 
         $auth = $this->analyzer->analyzeRoute($route);
 
-        $this->assertNotNull($auth);
-        $this->assertEquals('apiAuth', $auth['scheme']['name']);
-        $this->assertTrue($auth['required']);
+        $this->assertInstanceOf(RouteAuthentication::class, $auth);
+        $this->assertEquals('apiAuth', $auth->getSchemeName());
+        $this->assertTrue($auth->isRequired());
     }
 
     #[Test]
@@ -98,8 +99,8 @@ class AuthenticationAnalyzerTest extends TestCase
 
         $auth = $this->analyzer->analyzeRoute($route);
 
-        $this->assertNotNull($auth);
-        $this->assertEquals('jwtAuth', $auth['scheme']['name']);
+        $this->assertInstanceOf(RouteAuthentication::class, $auth);
+        $this->assertEquals('jwtAuth', $auth->getSchemeName());
     }
 
     #[Test]

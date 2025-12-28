@@ -2,14 +2,19 @@
 
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\DTO\AuthenticationResult;
+use LaravelSpectrum\DTO\AuthenticationScheme;
+use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\AuthenticationDetector;
 
 class AuthenticationAnalyzer
 {
     /**
      * ルートコレクションから認証情報を分析
+     *
+     * @param  array<int, array<string, mixed>>  $routes
      */
-    public function analyze(array $routes): array
+    public function analyze(array $routes): AuthenticationResult
     {
         $authSchemes = [];
         $routeAuthentications = [];
@@ -22,23 +27,25 @@ class AuthenticationAnalyzer
                 $routeAuthentications[$index] = $authentication;
 
                 // 全体のスキーム一覧に追加（重複を避ける）
-                $schemeName = $authentication['scheme']['name'];
+                $schemeName = $authentication->getSchemeName();
                 if (! isset($authSchemes[$schemeName])) {
-                    $authSchemes[$schemeName] = $authentication['scheme'];
+                    $authSchemes[$schemeName] = $authentication->scheme;
                 }
             }
         }
 
-        return [
-            'schemes' => $authSchemes,
-            'routes' => $routeAuthentications,
-        ];
+        return new AuthenticationResult(
+            schemes: $authSchemes,
+            routes: $routeAuthentications,
+        );
     }
 
     /**
      * 単一ルートの認証情報を分析
+     *
+     * @param  array<string, mixed>  $route
      */
-    public function analyzeRoute(array $route): ?array
+    public function analyzeRoute(array $route): ?RouteAuthentication
     {
         $middleware = $route['middleware'] ?? [];
 
@@ -47,17 +54,19 @@ class AuthenticationAnalyzer
         }
 
         // 認証スキームを検出
-        $scheme = AuthenticationDetector::detectFromMiddleware($middleware);
+        $schemeArray = AuthenticationDetector::detectFromMiddleware($middleware);
 
-        if (! $scheme) {
+        if (! $schemeArray) {
             return null;
         }
 
-        return [
-            'scheme' => $scheme,
-            'middleware' => $middleware,
-            'required' => true, // 認証ミドルウェアがある = 必須
-        ];
+        $scheme = AuthenticationScheme::fromArray($schemeArray);
+
+        return new RouteAuthentication(
+            scheme: $scheme,
+            middleware: $middleware,
+            required: true, // 認証ミドルウェアがある = 必須
+        );
     }
 
     /**
