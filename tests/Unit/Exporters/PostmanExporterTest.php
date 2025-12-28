@@ -361,4 +361,309 @@ class PostmanExporterTest extends TestCase
         $this->assertStringContainsString('Response time is less than 500ms', $testScript);
         $this->assertStringContainsString('Validation error structure', $testScript);
     }
+
+    public function test_export_environment_with_api_key_security(): void
+    {
+        $servers = [['url' => 'https://api.example.com/v1']];
+        $security = [
+            [
+                'type' => 'apiKey',
+                'name' => 'X-API-Key',
+                'in' => 'header',
+            ],
+        ];
+
+        $result = $this->exporter->exportEnvironment($servers, $security, 'staging');
+
+        $this->assertArrayHasKey('name', $result);
+        $this->assertArrayHasKey('values', $result);
+        $this->assertEquals('staging Environment', $result['name']);
+
+        $variables = array_column($result['values'], 'key');
+        $this->assertContains('base_url', $variables);
+        $this->assertContains('api_key', $variables);
+
+        // Verify api_key is marked as secret
+        $apiKeyVar = null;
+        foreach ($result['values'] as $var) {
+            if ($var['key'] === 'api_key') {
+                $apiKeyVar = $var;
+                break;
+            }
+        }
+        $this->assertNotNull($apiKeyVar);
+        $this->assertEquals('secret', $apiKeyVar['type']);
+    }
+
+    public function test_export_environment_with_custom_variables(): void
+    {
+        // Set custom environment variables in config
+        config(['spectrum.export.environment_variables' => [
+            'custom_var' => 'custom_value',
+            'another_var' => 'another_value',
+        ]]);
+
+        $servers = [['url' => 'https://api.example.com']];
+        $security = [];
+
+        $result = $this->exporter->exportEnvironment($servers, $security, 'local');
+
+        $variables = array_column($result['values'], 'key');
+        $this->assertContains('base_url', $variables);
+        $this->assertContains('custom_var', $variables);
+        $this->assertContains('another_var', $variables);
+
+        // Find and verify custom_var
+        $customVar = null;
+        foreach ($result['values'] as $var) {
+            if ($var['key'] === 'custom_var') {
+                $customVar = $var;
+                break;
+            }
+        }
+        $this->assertNotNull($customVar);
+        $this->assertEquals('custom_value', $customVar['value']);
+        $this->assertEquals('default', $customVar['type']);
+    }
+
+    public function test_export_with_api_key_auth(): void
+    {
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'components' => [
+                'securitySchemes' => [
+                    'apiKeyAuth' => [
+                        'type' => 'apiKey',
+                        'in' => 'header',
+                        'name' => 'X-API-Key',
+                    ],
+                ],
+            ],
+            'security' => [
+                ['apiKeyAuth' => []],
+            ],
+            'paths' => [
+                '/protected' => [
+                    'get' => [
+                        'summary' => 'Protected endpoint',
+                        'tags' => ['Protected'],
+                        'security' => [
+                            ['apiKeyAuth' => []],
+                        ],
+                        'responses' => [
+                            '200' => ['description' => 'Success'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        $this->assertArrayHasKey('auth', $result);
+        $this->assertEquals('apikey', $result['auth']['type']);
+    }
+
+    public function test_export_with_no_tags_uses_default_folder(): void
+    {
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'summary' => 'Get users',
+                        // No tags specified
+                        'responses' => [
+                            '200' => ['description' => 'Success'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        // Should have a default folder
+        $this->assertCount(1, $result['item']);
+        $folder = $result['item'][0];
+        $this->assertEquals('Default', $folder['name']);
+    }
+
+    public function test_export_with_accept_header(): void
+    {
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'summary' => 'Get users',
+                        'tags' => ['Users'],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Success',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['type' => 'object'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        $request = $result['item'][0]['item'][0]['request'];
+
+        // Check headers contain Accept
+        $headerKeys = array_column($request['header'], 'key');
+        $this->assertContains('Accept', $headerKeys);
+    }
+
+    public function test_export_with_content_type_header_for_post(): void
+    {
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'paths' => [
+                '/users' => [
+                    'post' => [
+                        'summary' => 'Create user',
+                        'tags' => ['Users'],
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => ['type' => 'object'],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '201' => ['description' => 'Created'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        $request = $result['item'][0]['item'][0]['request'];
+
+        // Check headers contain Content-Type
+        $headerKeys = array_column($request['header'], 'key');
+        $this->assertContains('Content-Type', $headerKeys);
+    }
+
+    public function test_export_with_basic_auth_returns_empty_when_unsupported(): void
+    {
+        // Note: PostmanFormatter currently does not support HTTP Basic auth
+        // This test documents the current behavior
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'components' => [
+                'securitySchemes' => [
+                    'basicAuth' => [
+                        'type' => 'http',
+                        'scheme' => 'basic',
+                    ],
+                ],
+            ],
+            'security' => [
+                ['basicAuth' => []],
+            ],
+            'paths' => [
+                '/protected' => [
+                    'get' => [
+                        'summary' => 'Protected endpoint',
+                        'tags' => ['Protected'],
+                        'responses' => [
+                            '200' => ['description' => 'Success'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        // Basic auth is not currently supported, so auth should be empty
+        $this->assertArrayHasKey('auth', $result);
+        $this->assertEmpty($result['auth']);
+    }
+
+    public function test_export_with_response_examples(): void
+    {
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'summary' => 'Get users',
+                        'tags' => ['Users'],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Success',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'id' => ['type' => 'integer'],
+                                            ],
+                                        ],
+                                        'examples' => [
+                                            'default' => [
+                                                'value' => ['id' => 1],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        $request = $result['item'][0]['item'][0];
+
+        // Should have response examples
+        $this->assertArrayHasKey('response', $request);
+        $this->assertNotEmpty($request['response']);
+    }
+
+    public function test_export_without_servers_has_empty_variables(): void
+    {
+        // When no servers are defined, variables array is empty
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'summary' => 'Get users',
+                        'tags' => ['Users'],
+                        'responses' => [
+                            '200' => ['description' => 'Success'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+
+        // When no servers are defined, variable array should be empty
+        $this->assertArrayHasKey('variable', $result);
+        $this->assertEmpty($result['variable']);
+    }
 }
