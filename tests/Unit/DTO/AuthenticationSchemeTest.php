@@ -82,6 +82,21 @@ class AuthenticationSchemeTest extends TestCase
     }
 
     #[Test]
+    public function it_can_be_constructed_for_openid_connect(): void
+    {
+        $scheme = new AuthenticationScheme(
+            type: AuthenticationType::OPENID_CONNECT,
+            name: 'oidcAuth',
+            openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
+            description: 'OpenID Connect authentication',
+        );
+
+        $this->assertEquals(AuthenticationType::OPENID_CONNECT, $scheme->type);
+        $this->assertEquals('https://example.com/.well-known/openid-configuration', $scheme->openIdConnectUrl);
+        $this->assertEquals('OpenID Connect authentication', $scheme->description);
+    }
+
+    #[Test]
     public function it_creates_from_array_for_http_type(): void
     {
         $data = [
@@ -137,6 +152,23 @@ class AuthenticationSchemeTest extends TestCase
 
         $this->assertEquals(AuthenticationType::OAUTH2, $scheme->type);
         $this->assertEquals($flows, $scheme->flows);
+    }
+
+    #[Test]
+    public function it_creates_from_array_for_openid_connect_type(): void
+    {
+        $data = [
+            'type' => 'openIdConnect',
+            'name' => 'oidcAuth',
+            'openIdConnectUrl' => 'https://example.com/.well-known/openid-configuration',
+            'description' => 'OpenID Connect',
+        ];
+
+        $scheme = AuthenticationScheme::fromArray($data);
+
+        $this->assertEquals(AuthenticationType::OPENID_CONNECT, $scheme->type);
+        $this->assertEquals('https://example.com/.well-known/openid-configuration', $scheme->openIdConnectUrl);
+        $this->assertEquals('OpenID Connect', $scheme->description);
     }
 
     #[Test]
@@ -262,6 +294,25 @@ class AuthenticationSchemeTest extends TestCase
     }
 
     #[Test]
+    public function it_converts_to_openapi_security_scheme_for_openid_connect(): void
+    {
+        $scheme = new AuthenticationScheme(
+            type: AuthenticationType::OPENID_CONNECT,
+            name: 'oidcAuth',
+            openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
+            description: 'OpenID Connect authentication',
+        );
+
+        $openApi = $scheme->toOpenApiSecurityScheme();
+
+        $this->assertEquals([
+            'type' => 'openIdConnect',
+            'openIdConnectUrl' => 'https://example.com/.well-known/openid-configuration',
+            'description' => 'OpenID Connect authentication',
+        ], $openApi);
+    }
+
+    #[Test]
     public function it_checks_if_is_bearer(): void
     {
         $bearer = new AuthenticationScheme(
@@ -358,6 +409,24 @@ class AuthenticationSchemeTest extends TestCase
     }
 
     #[Test]
+    public function it_checks_if_is_openid_connect(): void
+    {
+        $oidc = new AuthenticationScheme(
+            type: AuthenticationType::OPENID_CONNECT,
+            name: 'oidcAuth',
+            openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
+        );
+        $bearer = new AuthenticationScheme(
+            type: AuthenticationType::HTTP,
+            name: 'bearerAuth',
+            scheme: 'bearer',
+        );
+
+        $this->assertTrue($oidc->isOpenIdConnect());
+        $this->assertFalse($bearer->isOpenIdConnect());
+    }
+
+    #[Test]
     public function it_survives_serialization_round_trip(): void
     {
         $original = new AuthenticationScheme(
@@ -375,5 +444,70 @@ class AuthenticationSchemeTest extends TestCase
         $this->assertEquals($original->scheme, $restored->scheme);
         $this->assertEquals($original->bearerFormat, $restored->bearerFormat);
         $this->assertEquals($original->description, $restored->description);
+    }
+
+    #[Test]
+    public function it_survives_serialization_round_trip_for_openid_connect(): void
+    {
+        $original = new AuthenticationScheme(
+            type: AuthenticationType::OPENID_CONNECT,
+            name: 'oidcAuth',
+            openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
+            description: 'OpenID Connect authentication',
+        );
+
+        $restored = AuthenticationScheme::fromArray($original->toArray());
+
+        $this->assertEquals($original->type, $restored->type);
+        $this->assertEquals($original->name, $restored->name);
+        $this->assertEquals($original->openIdConnectUrl, $restored->openIdConnectUrl);
+        $this->assertEquals($original->description, $restored->description);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_defaults(): void
+    {
+        $data = [];
+
+        $scheme = AuthenticationScheme::fromArray($data);
+
+        $this->assertEquals(AuthenticationType::HTTP, $scheme->type);
+        $this->assertEquals('', $scheme->name);
+        $this->assertNull($scheme->scheme);
+        $this->assertNull($scheme->bearerFormat);
+        $this->assertNull($scheme->in);
+        $this->assertNull($scheme->headerName);
+        $this->assertNull($scheme->flows);
+        $this->assertNull($scheme->openIdConnectUrl);
+        $this->assertNull($scheme->description);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_invalid_type_defaults_to_http(): void
+    {
+        $data = [
+            'type' => 'invalid_type',
+            'name' => 'testAuth',
+        ];
+
+        $scheme = AuthenticationScheme::fromArray($data);
+
+        $this->assertEquals(AuthenticationType::HTTP, $scheme->type);
+        $this->assertEquals('testAuth', $scheme->name);
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_openid_connect_url(): void
+    {
+        $scheme = new AuthenticationScheme(
+            type: AuthenticationType::OPENID_CONNECT,
+            name: 'oidcAuth',
+            openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
+        );
+
+        $array = $scheme->toArray();
+
+        $this->assertArrayHasKey('openIdConnectUrl', $array);
+        $this->assertEquals('https://example.com/.well-known/openid-configuration', $array['openIdConnectUrl']);
     }
 }

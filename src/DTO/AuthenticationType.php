@@ -12,6 +12,7 @@ enum AuthenticationType: string
     case HTTP = 'http';
     case API_KEY = 'apiKey';
     case OAUTH2 = 'oauth2';
+    case OPENID_CONNECT = 'openIdConnect';
 
     /**
      * Check if this is an HTTP authentication type.
@@ -35,5 +36,13 @@ enum AuthenticationType: string
     public function isOAuth2(): bool
     {
         return $this === self::OAUTH2;
+    }
+
+    /**
+     * Check if this is an OpenID Connect authentication type.
+     */
+    public function isOpenIdConnect(): bool
+    {
+        return $this === self::OPENID_CONNECT;
     }
 }
