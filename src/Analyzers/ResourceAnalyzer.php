@@ -7,9 +7,9 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Cache\DocumentationCache;
-use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Contracts\HasExamples;
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -17,7 +17,7 @@ use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter;
 
-class ResourceAnalyzer implements ClassAnalyzer, HasErrors
+class ResourceAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -41,21 +41,23 @@ class ResourceAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * Resourceクラスを解析してレスポンス構造を抽出
      *
-     * Returns a structured format with 'properties' key containing field definitions,
-     * along with metadata like 'conditionalFields', 'nestedResources', etc.
+     * Returns a ResourceInfo DTO containing field definitions,
+     * along with metadata like 'with', 'hasExamples', etc.
      */
-    public function analyze(string $resourceClass): array
+    public function analyze(string $resourceClass): ResourceInfo
     {
         try {
-            return $this->cache->rememberResource($resourceClass, function () use ($resourceClass) {
+            $cached = $this->cache->rememberResource($resourceClass, function () use ($resourceClass) {
                 return $this->performAnalysis($resourceClass);
             });
+
+            return ResourceInfo::fromArray($cached);
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $resourceClass,
             ]);
 
-            return [];
+            return ResourceInfo::empty();
         }
     }
 
@@ -65,6 +67,12 @@ class ResourceAnalyzer implements ClassAnalyzer, HasErrors
     protected function performAnalysis(string $resourceClass): array
     {
         if (! class_exists($resourceClass)) {
+            $this->logWarning(
+                "Resource class does not exist: {$resourceClass}",
+                AnalyzerErrorType::ClassNotFound,
+                ['class' => $resourceClass]
+            );
+
             return [];
         }
 
@@ -73,23 +81,47 @@ class ResourceAnalyzer implements ClassAnalyzer, HasErrors
 
             // JsonResourceを継承していない場合はスキップ
             if (! $reflection->isSubclassOf(JsonResource::class)) {
+                $this->logWarning(
+                    "Class is not a JsonResource subclass: {$resourceClass}",
+                    AnalyzerErrorType::UnsupportedFeature,
+                    ['class' => $resourceClass]
+                );
+
                 return [];
             }
 
             $filePath = $reflection->getFileName();
             if (! $filePath || ! file_exists($filePath)) {
+                $this->logWarning(
+                    "Source file not found for resource: {$resourceClass}",
+                    AnalyzerErrorType::FileNotFound,
+                    ['class' => $resourceClass]
+                );
+
                 return [];
             }
 
             // ファイルをパース
             $ast = $this->astHelper->parseFile($filePath);
             if (! $ast) {
+                $this->logWarning(
+                    "Failed to parse source file for resource: {$resourceClass}",
+                    AnalyzerErrorType::ParseError,
+                    ['class' => $resourceClass, 'file' => $filePath]
+                );
+
                 return [];
             }
 
             // クラスノードを探す
             $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
             if (! $classNode) {
+                $this->logWarning(
+                    "Class node not found in AST for resource: {$resourceClass}",
+                    AnalyzerErrorType::AnalysisError,
+                    ['class' => $resourceClass, 'file' => $filePath]
+                );
+
                 return [];
             }
 

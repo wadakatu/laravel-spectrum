@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Generators;
 
 use LaravelSpectrum\Contracts\HasCustomExamples;
 use LaravelSpectrum\Contracts\HasExamples;
+use LaravelSpectrum\DTO\ResourceInfo;
 
 class ExampleGenerator
 {
@@ -11,40 +12,38 @@ class ExampleGenerator
         private ExampleValueFactory $valueFactory
     ) {}
 
-    public function generateFromResource(array $resourceSchema, string $resourceClass): array
+    public function generateFromResource(ResourceInfo $resourceInfo, string $resourceClass): array
     {
+        // Use custom example from ResourceInfo if available
+        if ($resourceInfo->hasCustomExample()) {
+            return $resourceInfo->customExample;
+        }
+
         // Check if the resource implements HasExamples interface (existing)
         if (is_subclass_of($resourceClass, HasExamples::class)) {
-            $resource = new $resourceClass(null);
+            try {
+                $resource = new $resourceClass(null);
 
-            return $resource->getExample();
+                return $resource->getExample();
+            } catch (\Exception $e) {
+                // Fall through to schema-based generation if getExample() fails
+            }
         }
 
         // Check if the resource implements HasCustomExamples interface (new)
         $customMapping = [];
         if (is_subclass_of($resourceClass, HasCustomExamples::class)) {
-            $customMapping = $resourceClass::getExampleMapping();
-        }
-
-        // If resourceSchema doesn't have 'properties' key, it's likely a flat structure
-        // from legacy ResourceAnalyzer format - wrap it in properties
-        if (! isset($resourceSchema['properties']) && ! empty($resourceSchema)) {
-            // Check if it looks like a flat resource structure by looking for common fields
-            $hasResourceFields = false;
-            foreach ($resourceSchema as $key => $value) {
-                if (is_array($value) && isset($value['type'])) {
-                    $hasResourceFields = true;
-                    break;
-                }
-            }
-
-            if ($hasResourceFields) {
-                $resourceSchema = ['properties' => $resourceSchema];
+            try {
+                $customMapping = $resourceClass::getExampleMapping();
+            } catch (\Exception $e) {
+                // Continue with empty custom mapping if getExampleMapping() fails
             }
         }
 
-        // Generate example from schema with custom mappings
-        return $this->generateFromSchema($resourceSchema, $customMapping);
+        // Generate example from properties with custom mappings
+        $schema = ['properties' => $resourceInfo->properties];
+
+        return $this->generateFromSchema($schema, $customMapping);
     }
 
     public function generateFromTransformer(array $transformerSchema): array

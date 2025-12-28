@@ -12,6 +12,7 @@ use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiSchema;
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -866,13 +867,13 @@ class OpenApiGeneratorTest extends TestCase
         $this->resourceAnalyzer->shouldReceive('analyze')
             ->once()
             ->with('App\Http\Resources\UserResource')
-            ->andReturn([
+            ->andReturn(ResourceInfo::fromArray([
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
                     'name' => ['type' => 'string'],
                     'email' => ['type' => 'string'],
                 ],
-            ]);
+            ]));
 
         $this->schemaGenerator->shouldReceive('generateFromResource')
             ->once()
@@ -958,12 +959,12 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->resourceAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn([
+            ->andReturn(ResourceInfo::fromArray([
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
                     'name' => ['type' => 'string'],
                 ],
-            ]);
+            ]));
 
         $this->schemaGenerator->shouldReceive('generateFromResource')
             ->once()
@@ -1030,12 +1031,12 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->resourceAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn([
+            ->andReturn(ResourceInfo::fromArray([
                 'properties' => [
                     'id' => ['type' => 'integer'],
                     'title' => ['type' => 'string'],
                 ],
-            ]);
+            ]));
 
         $this->schemaGenerator->shouldReceive('generateFromResource')
             ->once()
@@ -1125,12 +1126,12 @@ class OpenApiGeneratorTest extends TestCase
         $this->resourceAnalyzer->shouldReceive('analyze')
             ->once()
             ->with('App\Http\Resources\UserResource')
-            ->andReturn([
+            ->andReturn(ResourceInfo::fromArray([
                 'properties' => [
                     'id' => ['type' => 'integer'],
                     'name' => ['type' => 'string'],
                 ],
-            ]);
+            ]));
 
         $this->schemaGenerator->shouldReceive('generateFromResource')
             ->once()
@@ -1579,11 +1580,11 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->resourceAnalyzer->shouldReceive('analyze')
             ->with('App\Http\Resources\UserResource')
-            ->andReturn([
+            ->andReturn(ResourceInfo::fromArray([
                 'properties' => [
                     'id' => ['type' => 'integer'],
                 ],
-            ]);
+            ]));
 
         $this->schemaGenerator->shouldReceive('generateFromResource')
             ->andReturn([

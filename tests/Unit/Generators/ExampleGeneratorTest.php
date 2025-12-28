@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
 use LaravelSpectrum\Tests\Fixtures\Resources\PostResource;
@@ -25,7 +26,7 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_generates_example_from_resource_schema(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'name' => ['type' => 'string'],
@@ -33,9 +34,9 @@ class ExampleGeneratorTest extends TestCase
                 'is_active' => ['type' => 'boolean'],
                 'created_at' => ['type' => 'string', 'format' => 'date-time'],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertIsArray($example);
         $this->assertArrayHasKey('id', $example);
@@ -47,15 +48,15 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_uses_custom_example_when_available(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'name' => ['type' => 'string'],
                 'email' => ['type' => 'string', 'format' => 'email'],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, UserResourceWithExample::class);
+        $example = $this->generator->generateFromResource($resourceInfo, UserResourceWithExample::class);
 
         // Should use custom example from HasExamples interface
         $this->assertEquals(123, $example['id']);
@@ -140,7 +141,7 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_handles_nested_resources(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'title' => ['type' => 'string'],
@@ -153,9 +154,9 @@ class ExampleGeneratorTest extends TestCase
                     ],
                 ],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('user', $example);
         $this->assertIsArray($example['user']);
@@ -166,7 +167,7 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_handles_array_of_objects(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'tags' => [
@@ -180,9 +181,9 @@ class ExampleGeneratorTest extends TestCase
                     ],
                 ],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('tags', $example);
         $this->assertIsArray($example['tags']);
@@ -192,23 +193,23 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_handles_enum_values(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'status' => [
                     'type' => 'string',
                     'enum' => ['active', 'inactive', 'pending'],
                 ],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertEquals('active', $example['status']); // Should use first enum value
     }
 
     public function test_handles_null_values(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'deleted_at' => [
                     'type' => 'string',
@@ -216,9 +217,9 @@ class ExampleGeneratorTest extends TestCase
                     'nullable' => true,
                 ],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('deleted_at', $example);
         $this->assertNull($example['deleted_at']);
@@ -315,16 +316,16 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_handles_array_of_primitive_types(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'tags' => [
                     'type' => 'array',
                     'items' => ['type' => 'string'],
                 ],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('tags', $example);
         $this->assertIsArray($example['tags']);
@@ -332,9 +333,9 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_generates_example_without_properties(): void
     {
-        $schema = [];
+        $resourceInfo = ResourceInfo::fromArray([]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertIsArray($example);
         $this->assertEmpty($example);
@@ -360,13 +361,13 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_generates_integer_field_value(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'count' => ['type' => 'integer'],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('count', $example);
         $this->assertIsInt($example['count']);
@@ -374,13 +375,13 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_generates_number_field_value(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'price' => ['type' => 'number'],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('price', $example);
         $this->assertIsNumeric($example['price']);
@@ -388,13 +389,13 @@ class ExampleGeneratorTest extends TestCase
 
     public function test_generates_boolean_field_value(): void
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'active' => ['type' => 'boolean'],
             ],
-        ];
+        ]);
 
-        $example = $this->generator->generateFromResource($schema, PostResource::class);
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
 
         $this->assertArrayHasKey('active', $example);
         $this->assertIsBool($example['active']);
@@ -407,12 +408,12 @@ class ExampleGeneratorTest extends TestCase
         $valueFactory = new ExampleValueFactory;
         $generator = new ExampleGenerator($valueFactory);
 
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'status' => ['type' => 'string'],
                 'name' => ['type' => 'string'],
             ],
-        ];
+        ]);
 
         // Create a resource that implements HasCustomExamples
         $resource = new class implements \LaravelSpectrum\Contracts\HasCustomExamples
@@ -425,7 +426,7 @@ class ExampleGeneratorTest extends TestCase
             }
         };
 
-        $example = $generator->generateFromResource($schema, get_class($resource));
+        $example = $generator->generateFromResource($resourceInfo, get_class($resource));
 
         $this->assertEquals('custom_status_value', $example['status']);
     }
@@ -436,5 +437,52 @@ class ExampleGeneratorTest extends TestCase
 
         $this->assertArrayHasKey('message', $result);
         $this->assertEquals('Error occurred', $result['message']);
+    }
+
+    public function test_uses_custom_example_from_resource_info(): void
+    {
+        $customExample = ['id' => 999, 'custom_field' => 'custom_value'];
+        $resourceInfo = ResourceInfo::fromArray([
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+            ],
+            'customExample' => $customExample,
+        ]);
+
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
+
+        $this->assertEquals($customExample, $example);
+    }
+
+    public function test_falls_back_to_schema_when_has_examples_throws(): void
+    {
+        $resourceInfo = ResourceInfo::fromArray([
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+            ],
+        ]);
+
+        // Create a resource that throws an exception in getExample()
+        $resource = new class implements \LaravelSpectrum\Contracts\HasExamples
+        {
+            public function getExample(): array
+            {
+                throw new \RuntimeException('Example generation failed');
+            }
+
+            public function getExamples(): array
+            {
+                return [];
+            }
+        };
+
+        // Should not throw, should fall back to schema-based generation
+        $example = $this->generator->generateFromResource($resourceInfo, get_class($resource));
+
+        $this->assertIsArray($example);
+        $this->assertArrayHasKey('id', $example);
+        $this->assertArrayHasKey('name', $example);
     }
 }

@@ -338,14 +338,14 @@ class OpenApiGenerator
 
             // Check if schema is already registered
             if (! $this->schemaRegistry->has($schemaName)) {
-                $resourceStructure = $this->resourceAnalyzer->analyze($resourceClass);
+                $resourceInfo = $this->resourceAnalyzer->analyze($resourceClass);
 
-                if (! empty($resourceStructure)) {
-                    $schema = $this->schemaGenerator->generateFromResource($resourceStructure);
+                if (! $resourceInfo->isEmpty()) {
+                    $schema = $this->schemaGenerator->generateFromResource($resourceInfo);
                     $this->schemaRegistry->register($schemaName, $schema);
 
                     $example = $this->exampleGenerator->generateFromResource(
-                        $resourceStructure,
+                        $resourceInfo,
                         $resourceClass
                     );
 

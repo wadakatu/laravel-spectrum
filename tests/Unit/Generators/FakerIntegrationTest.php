@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
 use LaravelSpectrum\Tests\TestCase;
@@ -83,12 +84,12 @@ class FakerIntegrationTest extends TestCase
     #[Test]
     public function it_uses_custom_generators()
     {
-        $schema = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'status' => ['type' => 'string'],
             ],
-        ];
+        ]);
 
         $customMapping = [
             'status' => fn ($faker) => $faker->randomElement(['pending', 'processing', 'completed']),
@@ -105,7 +106,7 @@ class FakerIntegrationTest extends TestCase
             }
         };
 
-        $example = $this->generator->generateFromResource($schema, get_class($resource));
+        $example = $this->generator->generateFromResource($resourceInfo, get_class($resource));
 
         $this->assertContains($example['status'], ['pending', 'processing', 'completed']);
     }
