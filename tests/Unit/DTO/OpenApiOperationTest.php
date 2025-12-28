@@ -216,6 +216,28 @@ class OpenApiOperationTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_from_array_with_existing_parameter_dtos(): void
+    {
+        $parameter = new OpenApiParameter(
+            name: 'id',
+            in: OpenApiParameter::IN_PATH,
+            required: true,
+            schema: OpenApiSchema::integer(),
+        );
+
+        $data = [
+            'operationId' => 'getUser',
+            'parameters' => [$parameter],
+            'responses' => [],
+        ];
+
+        $operation = OpenApiOperation::fromArray($data);
+
+        $this->assertCount(1, $operation->parameters);
+        $this->assertSame($parameter, $operation->parameters[0]);
+    }
+
+    #[Test]
     public function it_checks_if_has_parameters(): void
     {
         $parameter = new OpenApiParameter(
@@ -363,7 +385,8 @@ class OpenApiOperationTest extends TestCase
             name: 'id',
             in: OpenApiParameter::IN_PATH,
             required: true,
-            schema: OpenApiSchema::string(),
+            schema: OpenApiSchema::integer(),
+            description: 'User ID',
         );
 
         $original = new OpenApiOperation(
@@ -384,8 +407,14 @@ class OpenApiOperationTest extends TestCase
         $this->assertEquals($original->summary, $restored->summary);
         $this->assertEquals($original->tags, $restored->tags);
         $this->assertCount(count($original->parameters), $restored->parameters);
+
+        // Verify all parameter properties are preserved
         $this->assertEquals($original->parameters[0]->name, $restored->parameters[0]->name);
         $this->assertEquals($original->parameters[0]->in, $restored->parameters[0]->in);
+        $this->assertEquals($original->parameters[0]->required, $restored->parameters[0]->required);
+        $this->assertEquals($original->parameters[0]->description, $restored->parameters[0]->description);
+        $this->assertEquals($original->parameters[0]->schema->type, $restored->parameters[0]->schema->type);
+
         $this->assertEquals($original->description, $restored->description);
         $this->assertEquals($original->deprecated, $restored->deprecated);
         $this->assertInstanceOf(OpenApiRequestBody::class, $restored->requestBody);

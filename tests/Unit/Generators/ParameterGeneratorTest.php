@@ -82,6 +82,40 @@ class ParameterGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_replaces_schema_when_merging_enum_with_route_parameter(): void
+    {
+        $route = [
+            'parameters' => [
+                [
+                    'name' => 'status',
+                    'in' => 'path',
+                    'required' => true,
+                    'schema' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 50],
+                ],
+            ],
+        ];
+        $controllerInfo = [
+            'enumParameters' => [
+                [
+                    'name' => 'status',
+                    'type' => 'string',
+                    'enum' => ['active', 'inactive'],
+                    'description' => '',
+                    'required' => true,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        // Verify enum is applied
+        $this->assertEquals(['active', 'inactive'], $parameters[0]->schema->enum);
+        // Original schema constraints are replaced by enum schema
+        $this->assertNull($parameters[0]->schema->minLength);
+        $this->assertNull($parameters[0]->schema->maxLength);
+    }
+
+    #[Test]
     public function it_adds_enum_as_query_parameter_when_not_in_route(): void
     {
         $route = ['parameters' => []];
