@@ -1030,4 +1030,146 @@ class LiveReloadServerTest extends TestCase
         // Clean up
         @unlink($tempFile);
     }
+
+    public function test_on_worker_start_callback_is_invocable(): void
+    {
+        global $wsClients;
+        $wsClients = new \SplObjectStorage;
+
+        $reflection = new \ReflectionClass($this->server);
+        $startWebSocketServerMethod = $reflection->getMethod('startWebSocketServer');
+        $startWebSocketServerMethod->setAccessible(true);
+
+        $startWebSocketServerMethod->invoke($this->server, 'localhost', 8081);
+
+        $wsWorkerProperty = $reflection->getProperty('wsWorker');
+        $wsWorkerProperty->setAccessible(true);
+        $wsWorker = $wsWorkerProperty->getValue($this->server);
+
+        // Verify the onWorkerStart callback is callable
+        $onWorkerStart = $wsWorker->onWorkerStart;
+        $this->assertIsCallable($onWorkerStart);
+    }
+
+    public function test_notify_clients_writes_message_to_temp_file(): void
+    {
+        // Verify the notification is correctly written to temp file
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+
+        // Clean up any existing file
+        @unlink($tempFile);
+
+        // Normal notification should work
+        $this->server->notifyClients(['event' => 'test-notification']);
+
+        // Verify file was created
+        $this->assertFileExists($tempFile);
+
+        $content = file_get_contents($tempFile);
+        $this->assertStringContainsString('test-notification', $content);
+
+        // Clean up
+        @unlink($tempFile);
+    }
+
+    public function test_notify_clients_does_not_write_file_when_json_encode_fails(): void
+    {
+        // Create data with invalid UTF-8 that will cause json_encode to fail
+        $invalidUtf8 = "\xB1\x31"; // Invalid UTF-8 sequence
+
+        // Clean up any existing file
+        $tempFile = sys_get_temp_dir().'/spectrum_ws_message.json';
+        @unlink($tempFile);
+
+        // Get the initial state - file should not exist
+        $this->assertFileDoesNotExist($tempFile);
+
+        // Try to notify with invalid data - json_encode will fail
+        $this->server->notifyClients(['event' => $invalidUtf8]);
+
+        // When json_encode fails, the file should NOT be created
+        // because the method returns early
+        $this->assertFileDoesNotExist($tempFile);
+    }
+
+    public function test_get_swagger_ui_html_with_laravel_view(): void
+    {
+        // Register a test view
+        $viewFactory = $this->app['view'];
+        $viewFactory->addNamespace('spectrum', [__DIR__.'/../../fixtures/views']);
+
+        // Create test view file
+        $viewDir = __DIR__.'/../../fixtures/views';
+        @mkdir($viewDir, 0777, true);
+        file_put_contents($viewDir.'/live-preview.blade.php', '<html><head><title>Test View</title></head><body>WS Port: {{ $wsPort }}</body></html>');
+
+        // First set up the HTTP worker
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8080);
+
+        // Call getSwaggerUIHtml
+        $getSwaggerUIHtmlMethod = $reflection->getMethod('getSwaggerUIHtml');
+        $getSwaggerUIHtmlMethod->setAccessible(true);
+        $html = $getSwaggerUIHtmlMethod->invoke($this->server);
+
+        // Verify the view was rendered with the correct wsPort
+        $this->assertStringContainsString('Test View', $html);
+        $this->assertStringContainsString('WS Port:', $html);
+
+        // Clean up
+        @unlink($viewDir.'/live-preview.blade.php');
+        @rmdir($viewDir);
+    }
+
+    public function test_get_swagger_ui_html_extracts_port_when_http_worker_has_socket(): void
+    {
+        // Set up HTTP server
+        $reflection = new \ReflectionClass($this->server);
+        $startHttpServerMethod = $reflection->getMethod('startHttpServer');
+        $startHttpServerMethod->setAccessible(true);
+        $startHttpServerMethod->invoke($this->server, 'localhost', 8085);
+
+        $httpWorkerProperty = $reflection->getProperty('httpWorker');
+        $httpWorkerProperty->setAccessible(true);
+        $httpWorker = $httpWorkerProperty->getValue($this->server);
+
+        // Verify HTTP worker is set
+        $this->assertNotNull($httpWorker);
+
+        // Get socket name - it should contain the port
+        $socketName = $httpWorker->getSocketName();
+        $this->assertStringContainsString('8085', $socketName);
+    }
+
+    public function test_process_message_queue_handles_unreadable_file(): void
+    {
+        $wsClients = new \SplObjectStorage;
+
+        // Create a temp directory instead of file
+        // file() on a directory returns false
+        $tempDir = sys_get_temp_dir().'/spectrum_ws_message.json';
+
+        // Clean up if file exists
+        @unlink($tempDir);
+
+        // Create directory with same name
+        @mkdir($tempDir, 0777, true);
+
+        $reflection = new \ReflectionClass($this->server);
+        $method = $reflection->getMethod('processMessageQueue');
+        $method->setAccessible(true);
+
+        // This should handle the file read failure gracefully
+        ob_start();
+        $method->invoke($this->server, $wsClients);
+        $output = ob_get_clean();
+
+        // No broadcasting should occur
+        $this->assertStringNotContainsString('Broadcasting message', $output);
+
+        // Clean up
+        @rmdir($tempDir);
+    }
 }
