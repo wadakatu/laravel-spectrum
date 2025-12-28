@@ -8,6 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Contracts\Analyzers\MethodAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\DTO\ControllerInfo;
+use LaravelSpectrum\DTO\EnumParameterInfo;
+use LaravelSpectrum\DTO\FractalInfo;
+use LaravelSpectrum\DTO\PaginationInfo;
+use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -63,36 +68,99 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     /**
      * コントローラーメソッドを解析してFormRequestとResourceを抽出
+     *
+     * @return array<string, mixed> 後方互換性のための配列形式
      */
     public function analyze(string $controller, string $method): array
     {
+        // 後方互換性: 存在しないクラス/メソッドの場合は空配列を返す
         if (! class_exists($controller)) {
             return [];
         }
 
         $reflection = new ReflectionClass($controller);
-
         if (! $reflection->hasMethod($method)) {
             return [];
         }
 
+        return $this->analyzeToResult($controller, $method)->toArray();
+    }
+
+    /**
+     * コントローラーメソッドを解析してControllerInfoを返す
+     */
+    public function analyzeToResult(string $controller, string $method): ControllerInfo
+    {
+        if (! class_exists($controller)) {
+            return ControllerInfo::empty();
+        }
+
+        $reflection = new ReflectionClass($controller);
+
+        if (! $reflection->hasMethod($method)) {
+            return ControllerInfo::empty();
+        }
+
         $methodReflection = $reflection->getMethod($method);
 
-        $result = [
-            'formRequest' => null,
-            'inlineValidation' => null,
-            'resource' => null,
-            'returnsCollection' => false,
-            'fractal' => null,
-            'pagination' => null,
-            'queryParameters' => null,
-            'enumParameters' => [],
-            'response' => null,
-        ];
-
         // パラメータからFormRequestとEnum型を検出
-        $result['enumParameters'] = $this->analyzeEnumParameters($methodReflection);
+        $enumParameters = $this->analyzeEnumParametersToDto($methodReflection);
+        $formRequest = $this->detectFormRequest($methodReflection, $controller, $method);
 
+        // メソッドのASTを取得してインラインバリデーションを検出
+        $inlineValidation = null;
+        $methodNode = $this->getMethodNode($reflection, $method);
+        if ($methodNode) {
+            $result = $this->inlineValidationAnalyzer->analyze($methodNode);
+            if (! empty($result)) {
+                $inlineValidation = $result;
+            }
+        }
+
+        // メソッドのソースコードからResourceを検出
+        $source = $this->methodSourceExtractor->extractSource($methodReflection);
+        [$resource, $returnsCollection] = $this->detectResource($source, $reflection);
+
+        // Fractal使用を検出
+        $fractal = $this->detectFractalUsageToDto($source, $reflection);
+
+        // Pagination使用を検出
+        $pagination = $this->detectPaginationToDto($methodReflection);
+
+        // Query Parameter使用を検出
+        $queryParameters = $this->detectQueryParameters(
+            $methodReflection,
+            $formRequest,
+            $inlineValidation,
+            $controller,
+            $method
+        );
+
+        // レスポンス解析
+        $response = null;
+        $responseInfo = $this->responseAnalyzer->analyze($controller, $method);
+        if ($responseInfo && $responseInfo['type'] !== 'unknown') {
+            $response = $responseInfo;
+        }
+
+        return new ControllerInfo(
+            formRequest: $formRequest,
+            inlineValidation: $inlineValidation,
+            resource: $resource,
+            returnsCollection: $returnsCollection,
+            fractal: $fractal,
+            pagination: $pagination,
+            queryParameters: $queryParameters,
+            enumParameters: $enumParameters,
+            response: $response,
+        );
+    }
+
+    /**
+     * FormRequestクラスを検出
+     */
+    protected function detectFormRequest(ReflectionMethod $methodReflection, string $controller, string $method): ?string
+    {
         foreach ($methodReflection->getParameters() as $parameter) {
             $type = $parameter->getType();
 
@@ -114,100 +182,196 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
                 $className = $type->getName();
                 if (class_exists($className) && is_subclass_of($className, FormRequest::class)) {
-                    $result['formRequest'] = $className;
-                    break;
+                    return $className;
                 }
             }
         }
 
-        // メソッドのASTを取得してインラインバリデーションを検出
-        $methodNode = $this->getMethodNode($reflection, $method);
-        if ($methodNode) {
-            $inlineValidation = $this->inlineValidationAnalyzer->analyze($methodNode);
-            if (! empty($inlineValidation)) {
-                $result['inlineValidation'] = $inlineValidation;
-            }
-        }
+        return null;
+    }
 
-        // メソッドのソースコードからResourceを検出（簡易版）
-        $source = $this->methodSourceExtractor->extractSource($methodReflection);
-
-        // Resourceクラスの使用を検出
+    /**
+     * Resourceクラスを検出
+     *
+     * @param  \ReflectionClass<object>  $reflection
+     * @return array{0: string|null, 1: bool}
+     */
+    protected function detectResource(string $source, ReflectionClass $reflection): array
+    {
         if (preg_match('/(\w+Resource)::collection/', $source, $matches)) {
             $resourceClass = $this->resolveClassName($matches[1], $reflection);
             if ($resourceClass && class_exists($resourceClass)) {
-                $result['resource'] = $resourceClass;
-                $result['returnsCollection'] = true;
+                return [$resourceClass, true];
             }
         } elseif (preg_match('/new\s+(\w+Resource)/', $source, $matches)) {
             $resourceClass = $this->resolveClassName($matches[1], $reflection);
             if ($resourceClass && class_exists($resourceClass)) {
-                $result['resource'] = $resourceClass;
+                return [$resourceClass, false];
             }
         }
 
-        // Fractal使用を検出
-        $this->detectFractalUsage($source, $result, $reflection);
+        return [null, false];
+    }
 
-        // Pagination使用を検出
-        $paginationInfo = $this->paginationAnalyzer->analyzeMethod($methodReflection);
-        if ($paginationInfo) {
-            $result['pagination'] = $paginationInfo;
-        }
-
-        // Query Parameter使用を検出（DTOを使用）
-        $queryParamsResult = $this->queryParameterAnalyzer->analyzeToResult($methodReflection);
-        if ($queryParamsResult->hasParameters()) {
-            // バリデーションルールとマージ
-            $validationRules = [];
-
-            // FormRequestからのバリデーションルール
-            if ($result['formRequest']) {
-                try {
-                    $formRequestAnalysis = $this->formRequestAnalyzer->analyze($result['formRequest']);
-                    if (isset($formRequestAnalysis['rules'])) {
-                        $validationRules = $formRequestAnalysis['rules'];
-                    }
-                } catch (\Exception $e) {
-                    $this->logWarning(
-                        "Failed to analyze FormRequest {$result['formRequest']}: {$e->getMessage()}",
-                        AnalyzerErrorType::AnalysisError,
-                        [
-                            'formRequest' => $result['formRequest'],
-                            'controller' => $controller,
-                            'method' => $method,
-                        ]
-                    );
-                }
-            }
-
-            // インラインバリデーションルール
-            if ($result['inlineValidation'] && isset($result['inlineValidation']['rules'])) {
-                $validationRules = array_merge($validationRules, $result['inlineValidation']['rules']);
-            }
-
-            // バリデーションルールがある場合はマージ
-            if (! empty($validationRules)) {
-                $queryParamsResult = $this->queryParameterAnalyzer->mergeWithValidationToResult(
-                    $queryParamsResult,
-                    $validationRules
+    /**
+     * Fractal使用を検出してDTOを返す
+     *
+     * @param  \ReflectionClass<object>  $reflection
+     */
+    protected function detectFractalUsageToDto(string $source, ReflectionClass $reflection): ?FractalInfo
+    {
+        // fractal()->item() パターン
+        if (preg_match('/fractal\(\)->item\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $transformerClass = $this->resolveClassName($matches[1], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                return new FractalInfo(
+                    transformer: $transformerClass,
+                    isCollection: false,
+                    type: 'item',
+                    hasIncludes: strpos($source, 'parseIncludes') !== false,
                 );
             }
+        }
+        // fractal()->collection() パターン
+        elseif (preg_match('/fractal\(\)->collection\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $transformerClass = $this->resolveClassName($matches[1], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                return new FractalInfo(
+                    transformer: $transformerClass,
+                    isCollection: true,
+                    type: 'collection',
+                    hasIncludes: strpos($source, 'parseIncludes') !== false,
+                );
+            }
+        }
+        // fractal()をチェーン呼び出しするパターン
+        elseif (preg_match('/fractal\(\)\s*->\s*(item|collection)\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $type = $matches[1];
+            $transformerClass = $this->resolveClassName($matches[2], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                return new FractalInfo(
+                    transformer: $transformerClass,
+                    isCollection: $type === 'collection',
+                    type: $type,
+                    hasIncludes: strpos($source, 'parseIncludes') !== false,
+                );
+            }
+        }
 
-            // 後方互換性のため配列に変換
-            $result['queryParameters'] = array_map(
-                fn ($param) => $param->toArray(),
-                $queryParamsResult->parameters
+        return null;
+    }
+
+    /**
+     * Pagination使用を検出してDTOを返す
+     */
+    protected function detectPaginationToDto(ReflectionMethod $methodReflection): ?PaginationInfo
+    {
+        $paginationArray = $this->paginationAnalyzer->analyzeMethod($methodReflection);
+        if ($paginationArray) {
+            return PaginationInfo::fromArray($paginationArray);
+        }
+
+        return null;
+    }
+
+    /**
+     * Query Parameterを検出
+     *
+     * @param  array<string, mixed>|null  $inlineValidation
+     * @return array<int, QueryParameterInfo>
+     */
+    protected function detectQueryParameters(
+        ReflectionMethod $methodReflection,
+        ?string $formRequest,
+        ?array $inlineValidation,
+        string $controller,
+        string $method
+    ): array {
+        $queryParamsResult = $this->queryParameterAnalyzer->analyzeToResult($methodReflection);
+        if (! $queryParamsResult->hasParameters()) {
+            return [];
+        }
+
+        // バリデーションルールとマージ
+        $validationRules = [];
+
+        // FormRequestからのバリデーションルール
+        if ($formRequest) {
+            try {
+                $formRequestAnalysis = $this->formRequestAnalyzer->analyze($formRequest);
+                if (isset($formRequestAnalysis['rules'])) {
+                    $validationRules = $formRequestAnalysis['rules'];
+                }
+            } catch (\Exception $e) {
+                $this->logWarning(
+                    "Failed to analyze FormRequest {$formRequest}: {$e->getMessage()}",
+                    AnalyzerErrorType::AnalysisError,
+                    [
+                        'formRequest' => $formRequest,
+                        'controller' => $controller,
+                        'method' => $method,
+                    ]
+                );
+            }
+        }
+
+        // インラインバリデーションルール
+        if ($inlineValidation && isset($inlineValidation['rules'])) {
+            $validationRules = array_merge($validationRules, $inlineValidation['rules']);
+        }
+
+        // バリデーションルールがある場合はマージ
+        if (! empty($validationRules)) {
+            $queryParamsResult = $this->queryParameterAnalyzer->mergeWithValidationToResult(
+                $queryParamsResult,
+                $validationRules
             );
         }
 
-        // レスポンス解析を追加
-        $responseInfo = $this->responseAnalyzer->analyze($controller, $method);
-        if ($responseInfo && $responseInfo['type'] !== 'unknown') {
-            $result['response'] = $responseInfo;
+        return $queryParamsResult->parameters;
+    }
+
+    /**
+     * Enum型パラメータを解析してDTOの配列を返す
+     *
+     * @return array<int, EnumParameterInfo>
+     */
+    protected function analyzeEnumParametersToDto(ReflectionMethod $method): array
+    {
+        $enumParameters = [];
+
+        foreach ($method->getParameters() as $parameter) {
+            $type = $parameter->getType();
+
+            if (! $type || ! $type instanceof ReflectionNamedType || $type->isBuiltin()) {
+                continue;
+            }
+
+            $className = $type->getName();
+
+            // FormRequestはスキップ
+            if (is_subclass_of($className, FormRequest::class)) {
+                continue;
+            }
+
+            // Enum型かチェック
+            if (enum_exists($className)) {
+                $enumInfo = $this->enumAnalyzer->extractEnumInfo($className);
+                if ($enumInfo) {
+                    $enumParameters[] = new EnumParameterInfo(
+                        name: $parameter->getName(),
+                        type: $enumInfo['type'],
+                        enum: $enumInfo['values'],
+                        required: ! $type->allowsNull() && ! $parameter->isOptional(),
+                        description: "Enum parameter of type {$className}",
+                        in: 'path',
+                        enumClass: $className,
+                    );
+                }
+            }
         }
 
-        return $result;
+        return $enumParameters;
     }
 
     /**
@@ -292,92 +456,5 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         }
 
         return null;
-    }
-
-    /**
-     * Fractal使用を検出
-     *
-     * @param  \ReflectionClass<object>  $reflection
-     */
-    protected function detectFractalUsage(string $source, array &$result, ReflectionClass $reflection): void
-    {
-        // fractal()->item() パターン
-        if (preg_match('/fractal\(\)->item\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
-            $transformerClass = $this->resolveClassName($matches[1], $reflection);
-            if ($transformerClass && class_exists($transformerClass)) {
-                $result['fractal'] = [
-                    'transformer' => $transformerClass,
-                    'collection' => false,
-                    'type' => 'item',
-                    'hasIncludes' => strpos($source, 'parseIncludes') !== false,
-                ];
-            }
-        }
-        // fractal()->collection() パターン
-        elseif (preg_match('/fractal\(\)->collection\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
-            $transformerClass = $this->resolveClassName($matches[1], $reflection);
-            if ($transformerClass && class_exists($transformerClass)) {
-                $result['fractal'] = [
-                    'transformer' => $transformerClass,
-                    'collection' => true,
-                    'type' => 'collection',
-                    'hasIncludes' => strpos($source, 'parseIncludes') !== false,
-                ];
-            }
-        }
-        // fractal()をチェーン呼び出しするパターン
-        elseif (preg_match('/fractal\(\)\s*->\s*(item|collection)\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
-            $type = $matches[1];
-            $transformerClass = $this->resolveClassName($matches[2], $reflection);
-            if ($transformerClass && class_exists($transformerClass)) {
-                $result['fractal'] = [
-                    'transformer' => $transformerClass,
-                    'collection' => $type === 'collection',
-                    'type' => $type,
-                    'hasIncludes' => strpos($source, 'parseIncludes') !== false,
-                ];
-            }
-        }
-    }
-
-    /**
-     * メソッドのEnum型パラメータを解析
-     */
-    protected function analyzeEnumParameters(ReflectionMethod $method): array
-    {
-        $enumParameters = [];
-
-        foreach ($method->getParameters() as $parameter) {
-            $type = $parameter->getType();
-
-            if (! $type || ! $type instanceof ReflectionNamedType || $type->isBuiltin()) {
-                continue;
-            }
-
-            $className = $type->getName();
-
-            // FormRequestはスキップ（既に別で処理されている）
-            if (is_subclass_of($className, FormRequest::class)) {
-                continue;
-            }
-
-            // Enum型かチェック
-            if (enum_exists($className)) {
-                $enumInfo = $this->enumAnalyzer->extractEnumInfo($className);
-                if ($enumInfo) {
-                    $enumParameters[] = [
-                        'name' => $parameter->getName(),
-                        'type' => $enumInfo['type'],
-                        'enum' => $enumInfo['values'],
-                        'required' => ! $type->allowsNull() && ! $parameter->isOptional(),
-                        'description' => "Enum parameter of type {$className}",
-                        'in' => 'path', // またはルート定義に基づいて判定
-                        'enumClass' => $className,
-                    ];
-                }
-            }
-        }
-
-        return $enumParameters;
     }
 }
