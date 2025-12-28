@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
@@ -62,7 +63,7 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
             'attributes' => [],
         ];
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $result->toArray());
     }
 
     public function test_it_detects_anonymous_form_request_with_messages()
@@ -111,7 +112,7 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
             'attributes' => [],
         ];
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $result->toArray());
     }
 
     public function test_it_detects_anonymous_form_request_with_attributes()
@@ -160,7 +161,7 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $result->toArray());
     }
 
     public function test_it_detects_anonymous_form_request_with_array_rules()
@@ -199,7 +200,7 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
             'attributes' => [],
         ];
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $result->toArray());
     }
 
     public function test_it_ignores_anonymous_class_not_extending_form_request()
@@ -228,8 +229,8 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
         $method = $ast[0]->stmts[0];
         $result = $this->analyzer->analyze($method);
 
-        // Should return empty array since the anonymous class doesn't extend FormRequest
-        $this->assertEquals([], $result);
+        // Should return null since the anonymous class doesn't extend FormRequest
+        $this->assertNull($result);
     }
 
     public function test_it_combines_anonymous_form_request_with_other_validations()
@@ -266,12 +267,13 @@ class AnonymousFormRequestAnalyzerTest extends TestCase
         $result = $this->analyzer->analyze($method);
 
         // Since mergeValidations is called, both validation rules should be merged
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertArrayHasKey('id', $result['rules']);
-        $this->assertArrayHasKey('name', $result['rules']);
-        $this->assertArrayHasKey('email', $result['rules']);
-        $this->assertEquals('required|integer', $result['rules']['id']);
-        $this->assertEquals('required|string', $result['rules']['name']);
-        $this->assertEquals('required|email', $result['rules']['email']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertArrayHasKey('id', $result->rules);
+        $this->assertArrayHasKey('name', $result->rules);
+        $this->assertArrayHasKey('email', $result->rules);
+        $this->assertEquals('required|integer', $result->rules['id']);
+        $this->assertEquals('required|string', $result->rules['name']);
+        $this->assertEquals('required|email', $result->rules['email']);
     }
 }

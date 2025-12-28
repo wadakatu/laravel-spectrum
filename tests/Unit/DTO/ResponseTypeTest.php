@@ -89,4 +89,14 @@ class ResponseTypeTest extends TestCase
         $this->assertFalse(ResponseType::VOID->hasStructure());
         $this->assertFalse(ResponseType::UNKNOWN->hasStructure());
     }
+
+    #[Test]
+    public function it_checks_if_unknown(): void
+    {
+        $this->assertTrue(ResponseType::UNKNOWN->isUnknown());
+        $this->assertFalse(ResponseType::VOID->isUnknown());
+        $this->assertFalse(ResponseType::RESOURCE->isUnknown());
+        $this->assertFalse(ResponseType::OBJECT->isUnknown());
+        $this->assertFalse(ResponseType::COLLECTION->isUnknown());
+    }
 }

@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -41,9 +42,10 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertEquals('required|string|max:255', $result['rules']['name']);
-        $this->assertEquals('required|email|unique:users', $result['rules']['email']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertEquals('required|string|max:255', $result->rules['name']);
+        $this->assertEquals('required|email|unique:users', $result->rules['email']);
     }
 
     #[Test]
@@ -64,9 +66,10 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertEquals(['required', 'string', 'max:255'], $result['rules']['name']);
-        $this->assertEquals(['required', 'email', 'unique:users,email'], $result['rules']['email']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertEquals(['required', 'string', 'max:255'], $result->rules['name']);
+        $this->assertEquals(['required', 'email', 'unique:users,email'], $result->rules['email']);
     }
 
     #[Test]
@@ -90,9 +93,9 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('messages', $result);
-        $this->assertEquals('お名前は必須です', $result['messages']['name.required']);
-        $this->assertEquals('メールアドレスは必須です', $result['messages']['email.required']);
+        $this->assertTrue($result->hasMessages());
+        $this->assertEquals('お名前は必須です', $result->messages['name.required']);
+        $this->assertEquals('メールアドレスは必須です', $result->messages['email.required']);
     }
 
     #[Test]
@@ -114,8 +117,8 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertEquals('Full Name', $result['attributes']['name']);
+        $this->assertTrue($result->hasAttributes());
+        $this->assertEquals('Full Name', $result->attributes['name']);
     }
 
     #[Test]
@@ -138,9 +141,10 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertEquals('required|string', $result['rules']['name']);
-        $this->assertEquals('required|email', $result['rules']['email']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertEquals('required|string', $result->rules['name']);
+        $this->assertEquals('required|email', $result->rules['email']);
     }
 
     #[Test]
@@ -166,9 +170,10 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertEquals('required|string', $result['rules']['name']);
-        $this->assertEquals('required|email', $result['rules']['email']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertEquals('required|string', $result->rules['name']);
+        $this->assertEquals('required|email', $result->rules['email']);
     }
 
     #[Test]
@@ -230,7 +235,7 @@ class InlineValidationAnalyzerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_empty_array_for_methods_without_validation()
+    public function it_returns_null_for_methods_without_validation()
     {
         $code = '<?php
         class UserController {
@@ -244,7 +249,7 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertEmpty($result);
+        $this->assertNull($result);
     }
 
     #[Test]
@@ -285,16 +290,17 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('rules', $result);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
 
         // Check username rules
-        $this->assertIsArray($result['rules']['username']);
-        $this->assertContains('required', $result['rules']['username']);
-        $this->assertContains('string', $result['rules']['username']);
-        $this->assertContains('min:3', $result['rules']['username']);
+        $this->assertIsArray($result->rules['username']);
+        $this->assertContains('required', $result->rules['username']);
+        $this->assertContains('string', $result->rules['username']);
+        $this->assertContains('min:3', $result->rules['username']);
         // Closure should be detected but represented as a custom rule
         $hasCustomRule = false;
-        foreach ($result['rules']['username'] as $rule) {
+        foreach ($result->rules['username'] as $rule) {
             if (is_string($rule) && strpos($rule, 'custom:') === 0) {
                 $hasCustomRule = true;
                 break;
@@ -303,14 +309,14 @@ class InlineValidationAnalyzerTest extends TestCase
         $this->assertTrue($hasCustomRule, 'Closure rule should be detected as custom rule');
 
         // Check age rules
-        $this->assertIsArray($result['rules']['age']);
-        $this->assertContains('required', $result['rules']['age']);
-        $this->assertContains('integer', $result['rules']['age']);
+        $this->assertIsArray($result->rules['age']);
+        $this->assertContains('required', $result->rules['age']);
+        $this->assertContains('integer', $result->rules['age']);
 
         // Check email rules
-        $this->assertIsArray($result['rules']['email']);
-        $this->assertContains('required', $result['rules']['email']);
-        $this->assertContains('email', $result['rules']['email']);
+        $this->assertIsArray($result->rules['email']);
+        $this->assertContains('required', $result->rules['email']);
+        $this->assertContains('email', $result->rules['email']);
     }
 
     #[Test]
@@ -340,16 +346,17 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertIsArray($result['rules']['password']);
-        $this->assertContains('sometimes', $result['rules']['password']);
-        $this->assertContains('string', $result['rules']['password']);
-        $this->assertContains('min:8', $result['rules']['password']);
-        $this->assertContains('confirmed', $result['rules']['password']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertIsArray($result->rules['password']);
+        $this->assertContains('sometimes', $result->rules['password']);
+        $this->assertContains('string', $result->rules['password']);
+        $this->assertContains('min:8', $result->rules['password']);
+        $this->assertContains('confirmed', $result->rules['password']);
 
         // Verify closure is detected
         $hasCustomRule = false;
-        foreach ($result['rules']['password'] as $rule) {
+        foreach ($result->rules['password'] as $rule) {
             if (is_string($rule) && strpos($rule, 'custom:') === 0) {
                 $hasCustomRule = true;
                 break;

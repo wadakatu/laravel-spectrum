@@ -7,8 +7,10 @@ namespace LaravelSpectrum\Tests\Unit\DTO;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\EnumParameterInfo;
 use LaravelSpectrum\DTO\FractalInfo;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
+use LaravelSpectrum\DTO\ResponseInfo;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -30,27 +32,30 @@ class ControllerInfoTest extends TestCase
             enum: ['active', 'inactive'],
         );
 
+        $inlineValidation = new InlineValidationInfo(rules: ['name' => 'required']);
+
         $info = new ControllerInfo(
             formRequest: 'App\\Http\\Requests\\CreateUserRequest',
-            inlineValidation: ['rules' => ['name' => 'required']],
+            inlineValidation: $inlineValidation,
             resource: 'App\\Http\\Resources\\UserResource',
             returnsCollection: false,
             fractal: $fractal,
             pagination: $pagination,
             queryParameters: [$queryParam],
             enumParameters: [$enumParam],
-            response: ['type' => 'resource'],
+            response: ResponseInfo::fromArray(['type' => 'resource']),
         );
 
         $this->assertEquals('App\\Http\\Requests\\CreateUserRequest', $info->formRequest);
-        $this->assertEquals(['rules' => ['name' => 'required']], $info->inlineValidation);
+        $this->assertSame($inlineValidation, $info->inlineValidation);
         $this->assertEquals('App\\Http\\Resources\\UserResource', $info->resource);
         $this->assertFalse($info->returnsCollection);
         $this->assertSame($fractal, $info->fractal);
         $this->assertSame($pagination, $info->pagination);
         $this->assertCount(1, $info->queryParameters);
         $this->assertCount(1, $info->enumParameters);
-        $this->assertEquals(['type' => 'resource'], $info->response);
+        $this->assertInstanceOf(ResponseInfo::class, $info->response);
+        $this->assertEquals('resource', $info->response->toArray()['type']);
     }
 
     #[Test]
@@ -125,7 +130,7 @@ class ControllerInfoTest extends TestCase
     public function it_detects_inline_validation(): void
     {
         $withValidation = new ControllerInfo(
-            inlineValidation: ['rules' => ['name' => 'required']],
+            inlineValidation: new InlineValidationInfo(rules: ['name' => 'required']),
         );
         $withoutValidation = ControllerInfo::empty();
 
@@ -161,7 +166,7 @@ class ControllerInfoTest extends TestCase
     public function it_detects_response(): void
     {
         $withResponse = new ControllerInfo(
-            response: ['type' => 'resource'],
+            response: ResponseInfo::fromArray(['type' => 'resource']),
         );
         $withoutResponse = ControllerInfo::empty();
 
@@ -249,10 +254,10 @@ class ControllerInfoTest extends TestCase
     public function it_checks_if_has_validation(): void
     {
         $withFormRequest = new ControllerInfo(formRequest: 'SomeRequest');
-        $withInline = new ControllerInfo(inlineValidation: ['rules' => []]);
+        $withInline = new ControllerInfo(inlineValidation: new InlineValidationInfo(rules: []));
         $withBoth = new ControllerInfo(
             formRequest: 'SomeRequest',
-            inlineValidation: ['rules' => []],
+            inlineValidation: new InlineValidationInfo(rules: []),
         );
         $withNeither = ControllerInfo::empty();
 
@@ -304,5 +309,40 @@ class ControllerInfoTest extends TestCase
         $this->assertInstanceOf(EnumParameterInfo::class, $info->enumParameters[0]);
         $this->assertEquals('status', $info->enumParameters[0]->name);
         $this->assertEquals(['active', 'inactive'], $info->enumParameters[0]->enum);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_inline_validation_data(): void
+    {
+        $array = [
+            'inlineValidation' => [
+                'rules' => ['name' => 'required|string'],
+                'messages' => ['name.required' => 'Name is required'],
+                'attributes' => ['name' => 'Full Name'],
+            ],
+        ];
+
+        $info = ControllerInfo::fromArray($array);
+
+        $this->assertInstanceOf(InlineValidationInfo::class, $info->inlineValidation);
+        $this->assertEquals(['name' => 'required|string'], $info->inlineValidation->rules);
+        $this->assertEquals(['name.required' => 'Name is required'], $info->inlineValidation->messages);
+        $this->assertEquals(['name' => 'Full Name'], $info->inlineValidation->attributes);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_response_data(): void
+    {
+        $array = [
+            'response' => [
+                'type' => 'object',
+                'properties' => ['id' => ['type' => 'integer']],
+            ],
+        ];
+
+        $info = ControllerInfo::fromArray($array);
+
+        $this->assertInstanceOf(ResponseInfo::class, $info->response);
+        $this->assertEquals(['id' => ['type' => 'integer']], $info->response->properties);
     }
 }

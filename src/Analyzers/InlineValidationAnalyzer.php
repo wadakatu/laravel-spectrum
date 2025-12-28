@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Analyzers;
 
-use LaravelSpectrum\Contracts\Analyzers\AstMethodAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\FileSizeFormatter;
@@ -15,7 +15,7 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
-class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
+class InlineValidationAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -36,7 +36,7 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
     /**
      * メソッド内のインラインバリデーションを解析
      */
-    public function analyze(Node\Stmt\ClassMethod $method): array
+    public function analyze(Node\Stmt\ClassMethod $method): ?InlineValidationInfo
     {
         try {
             $validations = [];
@@ -486,17 +486,17 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
                 'method' => $method->name->toString(),
             ]);
 
-            return [];
+            return null;
         }
     }
 
     /**
      * 複数のバリデーションをマージ
      */
-    protected function mergeValidations(array $validations): array
+    protected function mergeValidations(array $validations): ?InlineValidationInfo
     {
         if (empty($validations)) {
-            return [];
+            return null;
         }
 
         // 最初のバリデーションをベースにする
@@ -523,7 +523,11 @@ class InlineValidationAnalyzer implements AstMethodAnalyzer, HasErrors
             }
         }
 
-        return $merged;
+        return new InlineValidationInfo(
+            rules: $merged['rules'],
+            messages: $merged['messages'],
+            attributes: $merged['attributes'],
+        );
     }
 
     /**

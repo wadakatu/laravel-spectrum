@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -48,13 +49,14 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertArrayHasKey('name', $result['rules']);
-        $this->assertArrayHasKey('email', $result['rules']);
-        $this->assertArrayHasKey('password', $result['rules']);
-        $this->assertEquals('required|string|max:255', $result['rules']['name']);
-        $this->assertEquals('required|email|unique:users', $result['rules']['email']);
-        $this->assertEquals('required|string|min:8|confirmed', $result['rules']['password']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertArrayHasKey('name', $result->rules);
+        $this->assertArrayHasKey('email', $result->rules);
+        $this->assertArrayHasKey('password', $result->rules);
+        $this->assertEquals('required|string|max:255', $result->rules['name']);
+        $this->assertEquals('required|email|unique:users', $result->rules['email']);
+        $this->assertEquals('required|string|min:8|confirmed', $result->rules['password']);
     }
 
     public function test_analyzes_request_variable_validate_with_messages(): void
@@ -85,9 +87,9 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('messages', $result);
-        $this->assertEquals('The product name is required.', $result['messages']['name.required']);
-        $this->assertEquals('The product name cannot exceed 100 characters.', $result['messages']['name.max']);
+        $this->assertTrue($result->hasMessages());
+        $this->assertEquals('The product name is required.', $result->messages['name.required']);
+        $this->assertEquals('The product name cannot exceed 100 characters.', $result->messages['name.max']);
     }
 
     public function test_analyzes_request_variable_validate_with_attributes(): void
@@ -120,10 +122,10 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertEquals('First Name', $result['attributes']['first_name']);
-        $this->assertEquals('Last Name', $result['attributes']['last_name']);
-        $this->assertEquals('Phone Number', $result['attributes']['phone_number']);
+        $this->assertTrue($result->hasAttributes());
+        $this->assertEquals('First Name', $result->attributes['first_name']);
+        $this->assertEquals('Last Name', $result->attributes['last_name']);
+        $this->assertEquals('Phone Number', $result->attributes['phone_number']);
     }
 
     public function test_analyzes_different_request_variable_names(): void
@@ -161,17 +163,19 @@ PHP;
         $method1 = $this->findMethod($ast, 'store');
         $result1 = $this->analyzer->analyze($method1);
 
-        $this->assertNotEmpty($result1);
-        $this->assertArrayHasKey('field1', $result1['rules']);
-        $this->assertEquals('required|string', $result1['rules']['field1']);
+        $this->assertNotNull($result1);
+        $this->assertTrue($result1->hasRules());
+        $this->assertArrayHasKey('field1', $result1->rules);
+        $this->assertEquals('required|string', $result1->rules['field1']);
 
         // Test second method
         $method2 = $this->findMethod($ast, 'update');
         $result2 = $this->analyzer->analyze($method2);
 
-        $this->assertNotEmpty($result2);
-        $this->assertArrayHasKey('field2', $result2['rules']);
-        $this->assertEquals('required|integer', $result2['rules']['field2']);
+        $this->assertNotNull($result2);
+        $this->assertTrue($result2->hasRules());
+        $this->assertArrayHasKey('field2', $result2->rules);
+        $this->assertEquals('required|integer', $result2->rules['field2']);
     }
 
     public function test_analyzes_request_variable_validate_with_file_upload(): void
@@ -200,9 +204,10 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertEquals('required|file|mimes:pdf,doc,docx|max:10240', $result['rules']['document']);
-        $this->assertEquals('nullable|image|dimensions:min_width=200,min_height=200', $result['rules']['thumbnail']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertEquals('required|file|mimes:pdf,doc,docx|max:10240', $result->rules['document']);
+        $this->assertEquals('nullable|image|dimensions:min_width=200,min_height=200', $result->rules['thumbnail']);
     }
 
     public function test_analyzes_multiple_request_variable_validate_calls(): void
@@ -244,13 +249,14 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
 
         // Should have all fields from all validate calls merged
-        $this->assertArrayHasKey('action', $result['rules']);
-        $this->assertArrayHasKey('title', $result['rules']);
-        $this->assertArrayHasKey('content', $result['rules']);
-        $this->assertArrayHasKey('id', $result['rules']);
+        $this->assertArrayHasKey('action', $result->rules);
+        $this->assertArrayHasKey('title', $result->rules);
+        $this->assertArrayHasKey('content', $result->rules);
+        $this->assertArrayHasKey('id', $result->rules);
     }
 
     public function test_analyzes_request_variable_validate_with_array_rules(): void
@@ -279,12 +285,13 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertIsArray($result['rules']['username']);
-        $this->assertIsArray($result['rules']['email']);
-        $this->assertIsArray($result['rules']['terms']);
-        $this->assertContains('required', $result['rules']['username']);
-        $this->assertContains('unique:users', $result['rules']['username']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertIsArray($result->rules['username']);
+        $this->assertIsArray($result->rules['email']);
+        $this->assertIsArray($result->rules['terms']);
+        $this->assertContains('required', $result->rules['username']);
+        $this->assertContains('unique:users', $result->rules['username']);
     }
 
     public function test_analyzes_mixed_validation_patterns(): void
@@ -324,14 +331,15 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
 
         // Should have fields from all three validation methods
-        $this->assertArrayHasKey('mode', $result['rules']);
-        $this->assertArrayHasKey('setting1', $result['rules']);
-        $this->assertArrayHasKey('setting2', $result['rules']);
-        $this->assertArrayHasKey('option1', $result['rules']);
-        $this->assertArrayHasKey('option2', $result['rules']);
+        $this->assertArrayHasKey('mode', $result->rules);
+        $this->assertArrayHasKey('setting1', $result->rules);
+        $this->assertArrayHasKey('setting2', $result->rules);
+        $this->assertArrayHasKey('option1', $result->rules);
+        $this->assertArrayHasKey('option2', $result->rules);
     }
 
     /**

@@ -11,6 +11,7 @@ use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\EnumParameterInfo;
 use LaravelSpectrum\DTO\FractalInfo;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
@@ -111,10 +112,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         $inlineValidation = null;
         $methodNode = $this->getMethodNode($reflection, $method);
         if ($methodNode) {
-            $result = $this->inlineValidationAnalyzer->analyze($methodNode);
-            if (! empty($result)) {
-                $inlineValidation = $result;
-            }
+            $inlineValidation = $this->inlineValidationAnalyzer->analyze($methodNode);
         }
 
         // メソッドのソースコードからResourceを検出
@@ -137,10 +135,10 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         );
 
         // レスポンス解析
-        $response = null;
-        $responseInfo = $this->responseAnalyzer->analyze($controller, $method);
-        if ($responseInfo && $responseInfo['type'] !== 'unknown') {
-            $response = $responseInfo;
+        $response = $this->responseAnalyzer->analyze($controller, $method);
+        // Only include response if it's not unknown type
+        if ($response->type->isUnknown()) {
+            $response = null;
         }
 
         return new ControllerInfo(
@@ -277,13 +275,12 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
     /**
      * Query Parameterを検出
      *
-     * @param  array<string, mixed>|null  $inlineValidation
      * @return array<int, QueryParameterInfo>
      */
     protected function detectQueryParameters(
         ReflectionMethod $methodReflection,
         ?string $formRequest,
-        ?array $inlineValidation,
+        ?InlineValidationInfo $inlineValidation,
         string $controller,
         string $method
     ): array {
@@ -316,8 +313,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         }
 
         // インラインバリデーションルール
-        if ($inlineValidation && isset($inlineValidation['rules'])) {
-            $validationRules = array_merge($validationRules, $inlineValidation['rules']);
+        if ($inlineValidation !== null && $inlineValidation->hasRules()) {
+            $validationRules = array_merge($validationRules, $inlineValidation->rules);
         }
 
         // バリデーションルールがある場合はマージ
