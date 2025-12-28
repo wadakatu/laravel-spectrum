@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\Generators\RequestBodyGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\TestCase;
@@ -83,10 +84,10 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
-        $this->assertTrue($result['required']);
-        $this->assertArrayHasKey('application/json', $result['content']);
-        $this->assertEquals('object', $result['content']['application/json']['schema']['type']);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
+        $this->assertTrue($result->required);
+        $this->assertTrue($result->isJson());
+        $this->assertEquals('object', $result->getSchemaFor('application/json')['type']);
     }
 
     #[Test]
@@ -119,8 +120,8 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
-        $this->assertArrayHasKey('application/json', $result['content']);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
+        $this->assertTrue($result->isJson());
     }
 
     #[Test]
@@ -155,8 +156,8 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
-        $this->assertArrayHasKey('oneOf', $result['content']['application/json']['schema']);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
+        $this->assertArrayHasKey('oneOf', $result->getSchemaFor('application/json'));
     }
 
     #[Test]
@@ -194,10 +195,10 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
-        $this->assertTrue($result['required']);
-        $this->assertArrayHasKey('multipart/form-data', $result['content']);
-        $this->assertStringContainsString('file uploads', $result['description']);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
+        $this->assertTrue($result->required);
+        $this->assertTrue($result->isMultipart());
+        $this->assertStringContainsString('file uploads', $result->description);
     }
 
     #[Test]
@@ -238,8 +239,8 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
-        $this->assertStringContainsString('Multiple files allowed', $result['description']);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
+        $this->assertStringContainsString('Multiple files allowed', $result->description);
     }
 
     #[Test]
@@ -270,9 +271,9 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
-        $this->assertArrayHasKey('application/xml', $result['content']);
-        $this->assertArrayNotHasKey('application/json', $result['content']);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
+        $this->assertContains('application/xml', $result->getContentTypes());
+        $this->assertNotContains('application/json', $result->getContentTypes());
     }
 
     #[Test]
@@ -310,7 +311,7 @@ class RequestBodyGeneratorTest extends TestCase
 
         $result = $this->generator->generate($controllerInfo, $route);
 
-        $this->assertNotNull($result);
+        $this->assertInstanceOf(OpenApiRequestBody::class, $result);
     }
 
     #[Test]

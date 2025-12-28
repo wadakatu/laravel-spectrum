@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Generators;
 
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\OpenApiRequestBody;
 
 /**
  * Generates OpenAPI request body definitions from validation rules.
@@ -27,9 +28,9 @@ class RequestBodyGenerator
      *
      * @param  array{formRequest?: string, inlineValidation?: array}  $controllerInfo  Controller analysis result
      * @param  array  $route  Route information
-     * @return array|null Request body definition or null if no validation
+     * @return OpenApiRequestBody|null Request body DTO or null if no validation
      */
-    public function generate(array $controllerInfo, array $route): ?array
+    public function generate(array $controllerInfo, array $route): ?OpenApiRequestBody
     {
         $parameters = [];
         $conditionalRules = null;
@@ -66,20 +67,20 @@ class RequestBodyGenerator
 
         // Check if schema already has content structure
         if (isset($schema['content'])) {
-            return [
-                'required' => true,
-                'content' => $schema['content'],
-            ];
+            return new OpenApiRequestBody(
+                content: $schema['content'],
+                required: true,
+            );
         }
 
-        return [
-            'required' => true,
-            'content' => [
+        return new OpenApiRequestBody(
+            content: [
                 'application/json' => [
                     'schema' => $schema,
                 ],
             ],
-        ];
+            required: true,
+        );
     }
 
     /**
@@ -103,9 +104,9 @@ class RequestBodyGenerator
      * Generate request body for file upload endpoints.
      *
      * @param  array  $parameters  Request parameters
-     * @return array|null Request body with multipart/form-data content
+     * @return OpenApiRequestBody|null Request body with multipart/form-data content
      */
-    protected function generateFileUploadRequestBody(array $parameters): ?array
+    protected function generateFileUploadRequestBody(array $parameters): ?OpenApiRequestBody
     {
         $schema = $this->schemaGenerator->generateFromParameters($parameters);
 
@@ -113,17 +114,13 @@ class RequestBodyGenerator
             return null;
         }
 
-        $requestBody = [
-            'required' => true,
-            'content' => $schema['content'],
-        ];
-
         $description = $this->generateFileUploadDescription($parameters);
-        if ($description) {
-            $requestBody['description'] = $description;
-        }
 
-        return $requestBody;
+        return new OpenApiRequestBody(
+            content: $schema['content'],
+            required: true,
+            description: $description ?: null,
+        );
     }
 
     /**

@@ -8,6 +8,7 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
+use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -367,9 +368,8 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->requestBodyGenerator->shouldReceive('generate')
             ->once()
-            ->andReturn([
-                'required' => true,
-                'content' => [
+            ->andReturn(new OpenApiRequestBody(
+                content: [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -380,7 +380,8 @@ class OpenApiGeneratorTest extends TestCase
                         ],
                     ],
                 ],
-            ]);
+                required: true,
+            ));
 
         $this->requestAnalyzer->shouldReceive('analyzeWithDetails')
             ->once()
