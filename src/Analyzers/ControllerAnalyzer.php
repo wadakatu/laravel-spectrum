@@ -137,10 +137,10 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         );
 
         // レスポンス解析
-        $response = null;
-        $responseInfo = $this->responseAnalyzer->analyze($controller, $method);
-        if ($responseInfo && $responseInfo['type'] !== 'unknown') {
-            $response = $responseInfo;
+        $response = $this->responseAnalyzer->analyze($controller, $method);
+        // Only include response if it's not unknown type
+        if ($response->type->isUnknown()) {
+            $response = null;
         }
 
         return new ControllerInfo(

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Analyzers\AST\Visitors\ReturnStatementVisitor;
-use LaravelSpectrum\Contracts\Analyzers\MethodAnalyzer;
+use LaravelSpectrum\DTO\ResponseInfo;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\CollectionAnalyzer;
 use LaravelSpectrum\Support\MethodSourceExtractor;
@@ -14,7 +14,10 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\Parser;
 
-class ResponseAnalyzer implements MethodAnalyzer
+/**
+ * Analyzes controller methods to determine their response structure.
+ */
+class ResponseAnalyzer
 {
     private Parser $parser;
 
@@ -40,7 +43,7 @@ class ResponseAnalyzer implements MethodAnalyzer
         $this->typeInferenceEngine = $typeInferenceEngine ?? new AstTypeInferenceEngine;
     }
 
-    public function analyze(string $controllerClass, string $method): array
+    public function analyze(string $controllerClass, string $method): ResponseInfo
     {
         try {
             $reflection = new \ReflectionClass($controllerClass);
@@ -59,7 +62,7 @@ class ResponseAnalyzer implements MethodAnalyzer
             $returnStatements = $returnVisitor->getReturnStatements();
 
             if (empty($returnStatements)) {
-                return ['type' => 'void'];
+                return ResponseInfo::void();
             }
 
             // 各return文を解析
@@ -72,10 +75,10 @@ class ResponseAnalyzer implements MethodAnalyzer
             }
 
             // 最も可能性の高いレスポンス構造を返す
-            return $this->mergeResponses($responses);
+            return ResponseInfo::fromArray($this->mergeResponses($responses));
 
         } catch (\Exception $e) {
-            return ['type' => 'unknown', 'error' => $e->getMessage()];
+            return ResponseInfo::unknownWithError($e->getMessage());
         }
     }
 

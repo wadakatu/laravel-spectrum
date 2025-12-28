@@ -22,7 +22,7 @@ final readonly class ControllerInfo
      * @param  PaginationInfo|null  $pagination  Pagination info if detected
      * @param  array<int, QueryParameterInfo>  $queryParameters  Query parameters if detected
      * @param  array<int, EnumParameterInfo>  $enumParameters  Enum parameters from method signature
-     * @param  array<string, mixed>|null  $response  Response analysis info (to be replaced with DTO in #227)
+     * @param  ResponseInfo|null  $response  Response analysis info
      */
     public function __construct(
         public ?string $formRequest = null,
@@ -33,7 +33,7 @@ final readonly class ControllerInfo
         public ?PaginationInfo $pagination = null,
         public array $queryParameters = [],
         public array $enumParameters = [],
-        public ?array $response = null,
+        public ?ResponseInfo $response = null,
     ) {}
 
     /**
@@ -79,6 +79,12 @@ final readonly class ControllerInfo
             }
         }
 
+        // Convert response array to DTO
+        $response = null;
+        if (isset($data['response']) && is_array($data['response'])) {
+            $response = ResponseInfo::fromArray($data['response']);
+        }
+
         return new self(
             formRequest: $data['formRequest'] ?? null,
             inlineValidation: $data['inlineValidation'] ?? null,
@@ -88,7 +94,7 @@ final readonly class ControllerInfo
             pagination: $pagination,
             queryParameters: $queryParameters,
             enumParameters: $enumParameters,
-            response: $data['response'] ?? null,
+            response: $response,
         );
     }
 
@@ -108,7 +114,7 @@ final readonly class ControllerInfo
             'pagination' => $this->pagination?->toArray(),
             'queryParameters' => array_map(fn (QueryParameterInfo $p) => $p->toArray(), $this->queryParameters),
             'enumParameters' => array_map(fn (EnumParameterInfo $p) => $p->toArray(), $this->enumParameters),
-            'response' => $this->response,
+            'response' => $this->response?->toArray(),
         ];
     }
 

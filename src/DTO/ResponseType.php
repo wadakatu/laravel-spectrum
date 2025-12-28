@@ -46,4 +46,12 @@ enum ResponseType: string
     {
         return in_array($this, [self::OBJECT, self::COLLECTION, self::RESOURCE], true);
     }
+
+    /**
+     * Check if this response type is unknown.
+     */
+    public function isUnknown(): bool
+    {
+        return $this === self::UNKNOWN;
+    }
 }

@@ -9,6 +9,7 @@ use LaravelSpectrum\DTO\EnumParameterInfo;
 use LaravelSpectrum\DTO\FractalInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
+use LaravelSpectrum\DTO\ResponseInfo;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -39,7 +40,7 @@ class ControllerInfoTest extends TestCase
             pagination: $pagination,
             queryParameters: [$queryParam],
             enumParameters: [$enumParam],
-            response: ['type' => 'resource'],
+            response: ResponseInfo::fromArray(['type' => 'resource']),
         );
 
         $this->assertEquals('App\\Http\\Requests\\CreateUserRequest', $info->formRequest);
@@ -50,7 +51,8 @@ class ControllerInfoTest extends TestCase
         $this->assertSame($pagination, $info->pagination);
         $this->assertCount(1, $info->queryParameters);
         $this->assertCount(1, $info->enumParameters);
-        $this->assertEquals(['type' => 'resource'], $info->response);
+        $this->assertInstanceOf(ResponseInfo::class, $info->response);
+        $this->assertEquals('resource', $info->response->toArray()['type']);
     }
 
     #[Test]
@@ -161,7 +163,7 @@ class ControllerInfoTest extends TestCase
     public function it_detects_response(): void
     {
         $withResponse = new ControllerInfo(
-            response: ['type' => 'resource'],
+            response: ResponseInfo::fromArray(['type' => 'resource']),
         );
         $withoutResponse = ControllerInfo::empty();
 
