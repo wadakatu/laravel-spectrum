@@ -310,4 +310,39 @@ class ControllerInfoTest extends TestCase
         $this->assertEquals('status', $info->enumParameters[0]->name);
         $this->assertEquals(['active', 'inactive'], $info->enumParameters[0]->enum);
     }
+
+    #[Test]
+    public function it_creates_from_array_with_inline_validation_data(): void
+    {
+        $array = [
+            'inlineValidation' => [
+                'rules' => ['name' => 'required|string'],
+                'messages' => ['name.required' => 'Name is required'],
+                'attributes' => ['name' => 'Full Name'],
+            ],
+        ];
+
+        $info = ControllerInfo::fromArray($array);
+
+        $this->assertInstanceOf(InlineValidationInfo::class, $info->inlineValidation);
+        $this->assertEquals(['name' => 'required|string'], $info->inlineValidation->rules);
+        $this->assertEquals(['name.required' => 'Name is required'], $info->inlineValidation->messages);
+        $this->assertEquals(['name' => 'Full Name'], $info->inlineValidation->attributes);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_response_data(): void
+    {
+        $array = [
+            'response' => [
+                'type' => 'object',
+                'properties' => ['id' => ['type' => 'integer']],
+            ],
+        ];
+
+        $info = ControllerInfo::fromArray($array);
+
+        $this->assertInstanceOf(ResponseInfo::class, $info->response);
+        $this->assertEquals(['id' => ['type' => 'integer']], $info->response->properties);
+    }
 }

@@ -235,7 +235,7 @@ class InlineValidationAnalyzerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_empty_array_for_methods_without_validation()
+    public function it_returns_null_for_methods_without_validation()
     {
         $code = '<?php
         class UserController {
@@ -249,7 +249,7 @@ class InlineValidationAnalyzerTest extends TestCase
 
         $result = $this->analyzer->analyze($method);
 
-        $this->assertEmpty($result);
+        $this->assertNull($result);
     }
 
     #[Test]
