@@ -559,4 +559,40 @@ class ParameterGeneratorTest extends TestCase
         // items should still be added
         $this->assertNotNull($param->schema->items);
     }
+
+    #[Test]
+    public function it_creates_open_api_parameter_with_both_default_and_enum(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'status',
+            type: 'string',
+            default: 'active',
+            enum: ['active', 'inactive', 'pending'],
+        );
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertEquals('active', $param->schema->default);
+        $this->assertEquals(['active', 'inactive', 'pending'], $param->schema->enum);
+    }
+
+    #[Test]
+    public function it_handles_validation_rules_with_no_extractable_constraints(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'field',
+            type: 'string',
+            validationRules: ['nullable', 'string'],
+        );
+
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->once()
+            ->with(['nullable', 'string'])
+            ->andReturn([]);
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertNull($param->schema->minimum);
+        $this->assertNull($param->schema->maximum);
+    }
 }

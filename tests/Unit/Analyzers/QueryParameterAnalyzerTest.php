@@ -440,4 +440,23 @@ class QueryParameterAnalyzerTest extends TestCase
         $this->assertIsArray($result['parameters']);
         $this->assertEquals('search', $result['parameters'][0]['name']);
     }
+
+    public function test_analyze_to_result_returns_empty_when_no_request_calls(): void
+    {
+        $controller = new class
+        {
+            public function index()
+            {
+                // No request calls at all
+                return ['data' => 'static'];
+            }
+        };
+
+        $method = new \ReflectionMethod($controller, 'index');
+        $result = $this->analyzer->analyzeToResult($method);
+
+        $this->assertInstanceOf(QueryParameterAnalysisResult::class, $result);
+        $this->assertFalse($result->hasParameters());
+        $this->assertEquals(0, $result->count());
+    }
 }
