@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Generators\Support;
 
+use LaravelSpectrum\DTO\EnumBackingType;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -184,6 +186,38 @@ class SchemaPropertyMapperTest extends TestCase
         $result = $this->mapper->mapEnum($source, $target);
 
         $this->assertEquals(['existing' => 'value'], $result);
+    }
+
+    #[Test]
+    public function it_maps_enum_info_dto_with_string_backing(): void
+    {
+        $enumInfo = new EnumInfo(
+            class: 'App\\Enums\\Status',
+            values: ['active', 'inactive'],
+            backingType: EnumBackingType::STRING,
+        );
+        $source = ['enum' => $enumInfo];
+
+        $result = $this->mapper->mapEnum($source);
+
+        $this->assertEquals(['active', 'inactive'], $result['enum']);
+        $this->assertEquals('string', $result['type']);
+    }
+
+    #[Test]
+    public function it_maps_enum_info_dto_with_integer_backing(): void
+    {
+        $enumInfo = new EnumInfo(
+            class: 'App\\Enums\\Priority',
+            values: [1, 2, 3],
+            backingType: EnumBackingType::INTEGER,
+        );
+        $source = ['enum' => $enumInfo];
+
+        $result = $this->mapper->mapEnum($source);
+
+        $this->assertEquals([1, 2, 3], $result['enum']);
+        $this->assertEquals('integer', $result['type']);
     }
 
     #[Test]

@@ -357,7 +357,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
                 if ($enumInfo) {
                     $enumParameters[] = new EnumParameterInfo(
                         name: $parameter->getName(),
-                        type: $enumInfo->backingType->value,
+                        type: $enumInfo->getOpenApiType(),
                         enum: $enumInfo->values,
                         required: ! $type->allowsNull() && ! $parameter->isOptional(),
                         description: "Enum parameter of type {$className}",

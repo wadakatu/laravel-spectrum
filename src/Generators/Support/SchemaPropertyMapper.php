@@ -155,10 +155,7 @@ final class SchemaPropertyMapper
         if ($enum instanceof EnumInfo) {
             // EnumInfo DTO from EnumAnalyzer
             $target['enum'] = $enum->values;
-
-            // Override type based on backing type
-            $type = $enum->backingType->value;
-            $target['type'] = $type === 'int' ? 'integer' : $type;
+            $target['type'] = $enum->getOpenApiType();
 
             return $target;
         }

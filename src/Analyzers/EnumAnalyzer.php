@@ -264,7 +264,11 @@ class EnumAnalyzer
                 backingType: $backingType,
             );
         } catch (\Exception $e) {
-            // Log error and return null
+            // Log the error for debugging - enum extraction failures should not be silent
+            if (function_exists('report')) {
+                report($e);
+            }
+
             return null;
         }
     }
