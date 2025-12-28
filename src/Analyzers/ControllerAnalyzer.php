@@ -155,9 +155,9 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             $result['pagination'] = $paginationInfo;
         }
 
-        // Query Parameter使用を検出
-        $queryParams = $this->queryParameterAnalyzer->analyze($methodReflection);
-        if (! empty($queryParams['parameters'])) {
+        // Query Parameter使用を検出（DTOを使用）
+        $queryParamsResult = $this->queryParameterAnalyzer->analyzeToResult($methodReflection);
+        if ($queryParamsResult->hasParameters()) {
             // バリデーションルールとマージ
             $validationRules = [];
 
@@ -188,10 +188,17 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
             // バリデーションルールがある場合はマージ
             if (! empty($validationRules)) {
-                $queryParams = $this->queryParameterAnalyzer->mergeWithValidation($queryParams, $validationRules);
+                $queryParamsResult = $this->queryParameterAnalyzer->mergeWithValidationToResult(
+                    $queryParamsResult,
+                    $validationRules
+                );
             }
 
-            $result['queryParameters'] = $queryParams['parameters'];
+            // 後方互換性のため配列に変換
+            $result['queryParameters'] = array_map(
+                fn ($param) => $param->toArray(),
+                $queryParamsResult->parameters
+            );
         }
 
         // レスポンス解析を追加

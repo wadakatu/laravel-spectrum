@@ -3,6 +3,8 @@
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Contracts\Analyzers\ReflectionMethodAnalyzer;
+use LaravelSpectrum\DTO\QueryParameterAnalysisResult;
+use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use ReflectionMethod;
@@ -15,14 +17,24 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
     ) {}
 
     /**
-     * Analyze a controller method to detect query parameters
+     * Analyze a controller method to detect query parameters.
+     *
+     * @return array{parameters: array<int, array<string, mixed>>}
      */
     public function analyze(ReflectionMethod $method): array
+    {
+        return $this->analyzeToResult($method)->toArray();
+    }
+
+    /**
+     * Analyze a controller method and return a typed result.
+     */
+    public function analyzeToResult(ReflectionMethod $method): QueryParameterAnalysisResult
     {
         $ast = $this->detector->parseMethod($method);
 
         if (! $ast) {
-            return ['parameters' => []];
+            return QueryParameterAnalysisResult::empty();
         }
 
         $detectedParams = $this->detector->detectRequestCalls($ast);
@@ -30,77 +42,49 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
         $parameters = [];
 
         foreach ($detectedParams as $param) {
-            $parameter = [
-                'name' => $param['name'],
-                'type' => $this->inferType($param),
-                'required' => $this->isRequired($param),
-                'default' => $param['default'] ?? null,
-                'source' => $param['method'],
-                'context' => $param['context'] ?? [],
-            ];
-
-            // Generate description from parameter name
-            $parameter['description'] = $this->generateDescription($param['name']);
-
-            // Check for enum values
-            if ($enum = $this->detectEnumValues($param)) {
-                $parameter['enum'] = $enum;
-            }
-
-            // Check for validation constraints from context
-            if (isset($param['context']['validation'])) {
-                $parameter['validation_rules'] = $param['context']['validation'];
-            }
-
-            $parameters[] = $parameter;
+            $parameters[] = new QueryParameterInfo(
+                name: $param['name'],
+                type: $this->inferType($param),
+                required: $this->isRequired($param),
+                default: $param['default'] ?? null,
+                source: $param['method'],
+                description: $this->generateDescription($param['name']),
+                enum: $this->detectEnumValues($param),
+                validationRules: $param['context']['validation'] ?? null,
+                context: $param['context'] ?? [],
+            );
         }
 
-        return ['parameters' => $parameters];
+        return QueryParameterAnalysisResult::fromParameters($parameters);
     }
 
     /**
-     * Merge query parameters with validation rules
+     * Merge query parameters with validation rules.
+     *
+     * @param  array{parameters: array<int, array<string, mixed>>}  $queryParams
+     * @param  array<string, string|array<string>>  $validationRules
+     * @return array{parameters: array<int, array<string, mixed>>}
      */
     public function mergeWithValidation(array $queryParams, array $validationRules): array
     {
-        $parameters = $queryParams['parameters'] ?? [];
-        $paramsByName = [];
+        $result = QueryParameterAnalysisResult::fromArray($queryParams);
 
-        // Index existing parameters by name
-        foreach ($parameters as $param) {
-            $paramsByName[$param['name']] = $param;
-        }
+        return $this->mergeWithValidationToResult($result, $validationRules)->toArray();
+    }
 
-        // Process validation rules
-        foreach ($validationRules as $field => $rules) {
-            // Skip if it's not a query parameter (e.g., nested fields)
-            if (str_contains($field, '.') || str_contains($field, '*')) {
-                continue;
-            }
-
-            $rulesArray = is_string($rules) ? explode('|', $rules) : $rules;
-
-            if (isset($paramsByName[$field])) {
-                // Update existing parameter with validation info
-                $paramsByName[$field]['validation_rules'] = $rulesArray;
-                $paramsByName[$field]['type'] = $this->typeInference->inferFromValidationRules($rulesArray)
-                    ?? $paramsByName[$field]['type'];
-                $paramsByName[$field]['required'] = in_array('required', $rulesArray);
-            } else {
-                // Add new parameter from validation
-                $paramsByName[$field] = [
-                    'name' => $field,
-                    'type' => $this->typeInference->inferFromValidationRules($rulesArray) ?? 'string',
-                    'required' => in_array('required', $rulesArray),
-                    'default' => null,
-                    'source' => 'validation',
-                    'validation_rules' => $rulesArray,
-                    'description' => $this->generateDescription($field),
-                ];
-            }
-        }
-
-        return ['parameters' => array_values($paramsByName)];
+    /**
+     * Merge query parameters with validation rules and return a typed result.
+     *
+     * @param  array<string, string|array<string>>  $validationRules
+     */
+    public function mergeWithValidationToResult(
+        QueryParameterAnalysisResult $queryParams,
+        array $validationRules
+    ): QueryParameterAnalysisResult {
+        return $queryParams->mergeWithValidation(
+            $validationRules,
+            fn (array $rules): ?string => $this->typeInference->inferFromValidationRules($rules)
+        );
     }
 
     /**

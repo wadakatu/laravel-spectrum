@@ -66,13 +66,10 @@ final readonly class QueryParameterInfo
             'name' => $this->name,
             'type' => $this->type,
             'required' => $this->required,
+            'default' => $this->default,
             'source' => $this->source,
             'context' => $this->context,
         ];
-
-        if ($this->default !== null) {
-            $result['default'] = $this->default;
-        }
 
         if ($this->description !== null) {
             $result['description'] = $this->description;
