@@ -180,11 +180,12 @@ class AstHelper
      * Find an anonymous class node in the AST.
      *
      * @param  array<Node\Stmt>  $ast  The parsed AST nodes from PhpParser
+     * @param  int|null  $atLine  If provided, only match anonymous class starting at this line
      * @return Node\Stmt\Class_|null The found anonymous class node or null if not found
      */
-    public function findAnonymousClassNode(array $ast): ?Node\Stmt\Class_
+    public function findAnonymousClassNode(array $ast, ?int $atLine = null): ?Node\Stmt\Class_
     {
-        $visitor = new AST\Visitors\AnonymousClassFindingVisitor;
+        $visitor = new AST\Visitors\AnonymousClassFindingVisitor($atLine);
         $this->traverse($ast, $visitor);
 
         return $visitor->getClassNode();
