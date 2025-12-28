@@ -531,7 +531,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('conditional_rules', $result);
         $this->assertEmpty($result['parameters']);
-        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false], $result['conditional_rules']);
     }
 
     #[Test]
@@ -553,7 +553,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('conditional_rules', $result);
         $this->assertEmpty($result['parameters']);
-        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false], $result['conditional_rules']);
     }
 
     #[Test]
@@ -634,7 +634,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('conditional_rules', $result);
         $this->assertEmpty($result['parameters']);
-        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false], $result['conditional_rules']);
     }
 
     #[Test]
@@ -814,7 +814,7 @@ class FormRequestAnalyzerTest extends TestCase
         $mockAnonymousAnalyzer->method('analyzeWithConditionalRules')
             ->willReturn([
                 'parameters' => [['name' => 'name', 'type' => 'string', 'required' => true]],
-                'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
+                'conditional_rules' => ['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false],
             ]);
 
         $analyzer = new FormRequestAnalyzer(
@@ -927,7 +927,7 @@ class FormRequestAnalyzerTest extends TestCase
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('conditional_rules', $result);
         $this->assertEmpty($result['parameters']);
-        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $result['conditional_rules']);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false], $result['conditional_rules']);
         $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
     }
 

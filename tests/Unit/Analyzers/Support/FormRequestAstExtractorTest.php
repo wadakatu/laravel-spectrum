@@ -611,7 +611,7 @@ PHP;
         $classNode = $this->extractor->findClassNode($ast, 'TestRequest');
         $conditionalRules = $this->extractor->extractConditionalRules($classNode);
 
-        $this->assertEquals(['rules_sets' => [], 'merged_rules' => []], $conditionalRules);
+        $this->assertEquals(['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false], $conditionalRules);
     }
 
     // ========== Edge cases ==========
