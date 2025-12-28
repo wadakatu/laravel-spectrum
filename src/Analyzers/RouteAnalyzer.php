@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Str;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\DTO\RouteInfo;
+use LaravelSpectrum\DTO\RouteParameterInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -29,16 +31,37 @@ class RouteAnalyzer implements HasErrors
 
     /**
      * APIルートを解析して構造化された配列を返す
+     *
+     * @return array<int, array<string, mixed>>
      */
     public function analyze(bool $useCache = true): array
+    {
+        return array_map(
+            fn (RouteInfo $route) => $route->toArray(),
+            $this->analyzeToResult($useCache)
+        );
+    }
+
+    /**
+     * APIルートを解析してRouteInfoの配列を返す
+     *
+     * @return array<int, RouteInfo>
+     */
+    public function analyzeToResult(bool $useCache = true): array
     {
         if (! $useCache || ! $this->cache->isEnabled()) {
             return $this->performAnalysis();
         }
 
-        return $this->cache->rememberRoutes(function () {
-            return $this->performAnalysis();
+        // Cache stores arrays, so we need to convert back to DTOs
+        $cached = $this->cache->rememberRoutes(function () {
+            return array_map(
+                fn (RouteInfo $route) => $route->toArray(),
+                $this->performAnalysis()
+            );
         });
+
+        return array_map(fn (array $data) => RouteInfo::fromArray($data), $cached);
     }
 
     /**
@@ -134,6 +157,8 @@ class RouteAnalyzer implements HasErrors
 
     /**
      * 実際のルート解析処理
+     *
+     * @return array<int, RouteInfo>
      */
     protected function performAnalysis(): array
     {
@@ -177,15 +202,15 @@ class RouteAnalyzer implements HasErrors
                     continue;
                 }
 
-                $routes[] = [
-                    'uri' => $route->uri(),
-                    'httpMethods' => $route->methods(),
-                    'controller' => get_class($controller),
-                    'method' => $method,
-                    'name' => $route->getName(),
-                    'middleware' => $this->extractMiddleware($route),
-                    'parameters' => $this->extractRouteParameters($route),
-                ];
+                $routes[] = new RouteInfo(
+                    uri: $route->uri(),
+                    httpMethods: $route->methods(),
+                    controller: get_class($controller),
+                    method: $method,
+                    name: $route->getName(),
+                    middleware: $this->extractMiddleware($route),
+                    parameters: $this->extractRouteParametersToDto($route),
+                );
             } catch (\Exception $e) {
                 $this->logError(
                     "Failed to analyze route {$route->uri()}: {$e->getMessage()}",
@@ -222,9 +247,24 @@ class RouteAnalyzer implements HasErrors
     }
 
     /**
-     * ルートパラメータを抽出
+     * ルートパラメータを抽出（配列形式）
+     *
+     * @return array<int, array<string, mixed>>
      */
     protected function extractRouteParameters(Route $route): array
+    {
+        return array_map(
+            fn (RouteParameterInfo $param) => $param->toArray(),
+            $this->extractRouteParametersToDto($route)
+        );
+    }
+
+    /**
+     * ルートパラメータを抽出（DTO形式）
+     *
+     * @return array<int, RouteParameterInfo>
+     */
+    protected function extractRouteParametersToDto(Route $route): array
     {
         preg_match_all('/\{([^}]+)\}/', $route->uri(), $matches);
 
@@ -233,14 +273,12 @@ class RouteAnalyzer implements HasErrors
             $isOptional = Str::endsWith($param, '?');
             $name = rtrim($param, '?');
 
-            $parameters[] = [
-                'name' => $name,
-                'required' => ! $isOptional,
-                'in' => 'path',
-                'schema' => [
-                    'type' => 'string', // デフォルト、後で型推論で上書き可能
-                ],
-            ];
+            $parameters[] = new RouteParameterInfo(
+                name: $name,
+                required: ! $isOptional,
+                in: 'path',
+                schema: ['type' => 'string'], // デフォルト、後で型推論で上書き可能
+            );
         }
 
         return $parameters;
