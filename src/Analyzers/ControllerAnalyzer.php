@@ -258,8 +258,15 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
                 return null;
             }
 
-            // クラスノードを探す
-            $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
+            // Handle anonymous classes by finding them by line number
+            if ($reflection->isAnonymous()) {
+                $startLine = $reflection->getStartLine();
+                $classNode = $this->astHelper->findAnonymousClassNode($ast, $startLine);
+            } else {
+                // クラスノードを探す
+                $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
+            }
+
             if (! $classNode) {
                 return null;
             }

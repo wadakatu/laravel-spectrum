@@ -182,15 +182,13 @@ class QueryParameterDetectionTest extends TestCase
         $pageParam = $this->findParameter($operation['parameters'], 'page');
         $this->assertNotNull($pageParam);
         $this->assertEquals('integer', $pageParam['schema']['type']);
-        // TODO: Fix inline validation detection for anonymous classes
-        // $this->assertEquals(1, $pageParam['schema']['minimum']);
+        $this->assertEquals(1, $pageParam['schema']['minimum']);
 
         $perPageParam = $this->findParameter($operation['parameters'], 'per_page');
         $this->assertNotNull($perPageParam);
         $this->assertEquals('integer', $perPageParam['schema']['type']);
-        // TODO: Fix inline validation detection for anonymous classes
-        // $this->assertEquals(10, $perPageParam['schema']['minimum']);
-        // $this->assertEquals(100, $perPageParam['schema']['maximum']);
+        $this->assertEquals(10, $perPageParam['schema']['minimum']);
+        $this->assertEquals(100, $perPageParam['schema']['maximum']);
 
         // Check that non-validated parameter is still detected
         $sortParam = $this->findParameter($operation['parameters'], 'sort');
