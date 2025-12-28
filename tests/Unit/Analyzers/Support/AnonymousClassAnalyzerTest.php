@@ -187,13 +187,13 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $this->parameterBuilder->shouldReceive('buildFromRules')
             ->with([], [], '')
-            ->andReturn(['param1']);
+            ->andReturn([['name' => 'param1', 'type' => 'string', 'required' => false]]);
 
         $result = $this->analyzer->analyzeWithConditionalRules($reflection);
 
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('conditional_rules', $result);
-        $this->assertEquals(['param1'], $result['parameters']);
+        $this->assertEquals([['name' => 'param1', 'type' => 'string', 'required' => false]], $result['parameters']);
     }
 
     // ========== createMockInstance() tests (via analyze) ==========
