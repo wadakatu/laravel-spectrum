@@ -10,13 +10,14 @@ namespace LaravelSpectrum\DTO;
 final readonly class AuthenticationScheme
 {
     /**
-     * @param  AuthenticationType  $type  The authentication type (http, apiKey, oauth2)
+     * @param  AuthenticationType  $type  The authentication type (http, apiKey, oauth2, openIdConnect)
      * @param  string  $name  The unique name for this scheme
      * @param  string|null  $scheme  The HTTP scheme (bearer, basic) - for http type
      * @param  string|null  $bearerFormat  The bearer format (e.g., JWT) - for bearer scheme
      * @param  string|null  $in  Where the API key is located (header, query, cookie) - for apiKey type
      * @param  string|null  $headerName  The actual header/query/cookie name - for apiKey type
      * @param  array<string, array<string, mixed>>|null  $flows  OAuth2 flows - for oauth2 type
+     * @param  string|null  $openIdConnectUrl  The OpenID Connect URL - for openIdConnect type
      * @param  string|null  $description  Description of the authentication scheme
      */
     public function __construct(
@@ -27,6 +28,7 @@ final readonly class AuthenticationScheme
         public ?string $in = null,
         public ?string $headerName = null,
         public ?array $flows = null,
+        public ?string $openIdConnectUrl = null,
         public ?string $description = null,
     ) {}
 
@@ -48,6 +50,7 @@ final readonly class AuthenticationScheme
             in: $data['in'] ?? null,
             headerName: $data['headerName'] ?? null,
             flows: $data['flows'] ?? null,
+            openIdConnectUrl: $data['openIdConnectUrl'] ?? null,
             description: $data['description'] ?? null,
         );
     }
@@ -82,6 +85,10 @@ final readonly class AuthenticationScheme
 
         if ($this->flows !== null) {
             $result['flows'] = $this->flows;
+        }
+
+        if ($this->openIdConnectUrl !== null) {
+            $result['openIdConnectUrl'] = $this->openIdConnectUrl;
         }
 
         if ($this->description !== null) {
@@ -130,6 +137,11 @@ final readonly class AuthenticationScheme
             $result['flows'] = $this->flows;
         }
 
+        // OpenID Connect type
+        if ($this->type->isOpenIdConnect() && $this->openIdConnectUrl !== null) {
+            $result['openIdConnectUrl'] = $this->openIdConnectUrl;
+        }
+
         // Description is common to all types
         if ($this->description !== null) {
             $result['description'] = $this->description;
@@ -176,5 +188,13 @@ final readonly class AuthenticationScheme
     public function isHttp(): bool
     {
         return $this->type->isHttp();
+    }
+
+    /**
+     * Check if this is an OpenID Connect authentication scheme.
+     */
+    public function isOpenIdConnect(): bool
+    {
+        return $this->type->isOpenIdConnect();
     }
 }
