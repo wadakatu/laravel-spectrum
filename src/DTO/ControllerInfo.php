@@ -15,7 +15,7 @@ final readonly class ControllerInfo
 {
     /**
      * @param  string|null  $formRequest  The FormRequest class name if detected
-     * @param  array<string, mixed>|null  $inlineValidation  Inline validation rules if detected (to be replaced with DTO in #226)
+     * @param  InlineValidationInfo|null  $inlineValidation  Inline validation rules if detected
      * @param  string|null  $resource  The Resource class name if detected
      * @param  bool  $returnsCollection  Whether the method returns a collection
      * @param  FractalInfo|null  $fractal  Fractal transformer info if detected
@@ -26,7 +26,7 @@ final readonly class ControllerInfo
      */
     public function __construct(
         public ?string $formRequest = null,
-        public ?array $inlineValidation = null,
+        public ?InlineValidationInfo $inlineValidation = null,
         public ?string $resource = null,
         public bool $returnsCollection = false,
         public ?FractalInfo $fractal = null,
@@ -85,9 +85,15 @@ final readonly class ControllerInfo
             $response = ResponseInfo::fromArray($data['response']);
         }
 
+        // Convert inlineValidation array to DTO
+        $inlineValidation = null;
+        if (isset($data['inlineValidation']) && is_array($data['inlineValidation'])) {
+            $inlineValidation = InlineValidationInfo::fromArray($data['inlineValidation']);
+        }
+
         return new self(
             formRequest: $data['formRequest'] ?? null,
-            inlineValidation: $data['inlineValidation'] ?? null,
+            inlineValidation: $inlineValidation,
             resource: $data['resource'] ?? null,
             returnsCollection: $data['returnsCollection'] ?? false,
             fractal: $fractal,
@@ -107,7 +113,7 @@ final readonly class ControllerInfo
     {
         return [
             'formRequest' => $this->formRequest,
-            'inlineValidation' => $this->inlineValidation,
+            'inlineValidation' => $this->inlineValidation?->toArray(),
             'resource' => $this->resource,
             'returnsCollection' => $this->returnsCollection,
             'fractal' => $this->fractal?->toArray(),

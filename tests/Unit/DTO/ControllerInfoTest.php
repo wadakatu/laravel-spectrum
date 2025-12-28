@@ -7,6 +7,7 @@ namespace LaravelSpectrum\Tests\Unit\DTO;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\EnumParameterInfo;
 use LaravelSpectrum\DTO\FractalInfo;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\DTO\ResponseInfo;
@@ -31,9 +32,11 @@ class ControllerInfoTest extends TestCase
             enum: ['active', 'inactive'],
         );
 
+        $inlineValidation = new InlineValidationInfo(rules: ['name' => 'required']);
+
         $info = new ControllerInfo(
             formRequest: 'App\\Http\\Requests\\CreateUserRequest',
-            inlineValidation: ['rules' => ['name' => 'required']],
+            inlineValidation: $inlineValidation,
             resource: 'App\\Http\\Resources\\UserResource',
             returnsCollection: false,
             fractal: $fractal,
@@ -44,7 +47,7 @@ class ControllerInfoTest extends TestCase
         );
 
         $this->assertEquals('App\\Http\\Requests\\CreateUserRequest', $info->formRequest);
-        $this->assertEquals(['rules' => ['name' => 'required']], $info->inlineValidation);
+        $this->assertSame($inlineValidation, $info->inlineValidation);
         $this->assertEquals('App\\Http\\Resources\\UserResource', $info->resource);
         $this->assertFalse($info->returnsCollection);
         $this->assertSame($fractal, $info->fractal);
@@ -127,7 +130,7 @@ class ControllerInfoTest extends TestCase
     public function it_detects_inline_validation(): void
     {
         $withValidation = new ControllerInfo(
-            inlineValidation: ['rules' => ['name' => 'required']],
+            inlineValidation: new InlineValidationInfo(rules: ['name' => 'required']),
         );
         $withoutValidation = ControllerInfo::empty();
 
@@ -251,10 +254,10 @@ class ControllerInfoTest extends TestCase
     public function it_checks_if_has_validation(): void
     {
         $withFormRequest = new ControllerInfo(formRequest: 'SomeRequest');
-        $withInline = new ControllerInfo(inlineValidation: ['rules' => []]);
+        $withInline = new ControllerInfo(inlineValidation: new InlineValidationInfo(rules: []));
         $withBoth = new ControllerInfo(
             formRequest: 'SomeRequest',
-            inlineValidation: ['rules' => []],
+            inlineValidation: new InlineValidationInfo(rules: []),
         );
         $withNeither = ControllerInfo::empty();
 

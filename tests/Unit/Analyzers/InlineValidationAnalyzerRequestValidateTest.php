@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -48,13 +49,14 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertArrayHasKey('name', $result['rules']);
-        $this->assertArrayHasKey('email', $result['rules']);
-        $this->assertArrayHasKey('age', $result['rules']);
-        $this->assertEquals('required|string|max:255', $result['rules']['name']);
-        $this->assertEquals('required|email|unique:users', $result['rules']['email']);
-        $this->assertEquals('required|integer|min:18', $result['rules']['age']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertArrayHasKey('name', $result->rules);
+        $this->assertArrayHasKey('email', $result->rules);
+        $this->assertArrayHasKey('age', $result->rules);
+        $this->assertEquals('required|string|max:255', $result->rules['name']);
+        $this->assertEquals('required|email|unique:users', $result->rules['email']);
+        $this->assertEquals('required|integer|min:18', $result->rules['age']);
     }
 
     public function test_analyzes_request_validate_with_messages(): void
@@ -85,9 +87,9 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('messages', $result);
-        $this->assertEquals('タイトルは必須です', $result['messages']['title.required']);
-        $this->assertEquals('内容は必須です', $result['messages']['content.required']);
+        $this->assertTrue($result->hasMessages());
+        $this->assertEquals('タイトルは必須です', $result->messages['title.required']);
+        $this->assertEquals('内容は必須です', $result->messages['content.required']);
     }
 
     public function test_analyzes_request_validate_with_attributes(): void
@@ -118,9 +120,9 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertEquals('ユーザー名', $result['attributes']['user_name']);
-        $this->assertEquals('メールアドレス', $result['attributes']['user_email']);
+        $this->assertTrue($result->hasAttributes());
+        $this->assertEquals('ユーザー名', $result->attributes['user_name']);
+        $this->assertEquals('メールアドレス', $result->attributes['user_email']);
     }
 
     public function test_analyzes_request_validate_with_file_upload(): void
@@ -149,9 +151,10 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertEquals('required|image|mimes:jpeg,png|max:2048', $result['rules']['photo']);
-        $this->assertEquals('nullable|file|mimes:pdf,doc,docx|max:10240', $result['rules']['document']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertEquals('required|image|mimes:jpeg,png|max:2048', $result->rules['photo']);
+        $this->assertEquals('nullable|file|mimes:pdf,doc,docx|max:10240', $result->rules['document']);
     }
 
     public function test_analyzes_multiple_request_validate_calls(): void
@@ -193,14 +196,15 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
 
         // Should have all fields from all validate calls merged
-        $this->assertArrayHasKey('step', $result['rules']);
-        $this->assertArrayHasKey('name', $result['rules']);
-        $this->assertArrayHasKey('email', $result['rules']);
-        $this->assertArrayHasKey('company', $result['rules']);
-        $this->assertArrayHasKey('position', $result['rules']);
+        $this->assertArrayHasKey('step', $result->rules);
+        $this->assertArrayHasKey('name', $result->rules);
+        $this->assertArrayHasKey('email', $result->rules);
+        $this->assertArrayHasKey('company', $result->rules);
+        $this->assertArrayHasKey('position', $result->rules);
     }
 
     public function test_analyzes_request_validate_with_array_rules(): void
@@ -229,13 +233,14 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
-        $this->assertIsArray($result['rules']['name']);
-        $this->assertIsArray($result['rules']['email']);
-        $this->assertIsArray($result['rules']['password']);
-        $this->assertContains('required', $result['rules']['name']);
-        $this->assertContains('string', $result['rules']['name']);
-        $this->assertContains('max:255', $result['rules']['name']);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
+        $this->assertIsArray($result->rules['name']);
+        $this->assertIsArray($result->rules['email']);
+        $this->assertIsArray($result->rules['password']);
+        $this->assertContains('required', $result->rules['name']);
+        $this->assertContains('string', $result->rules['name']);
+        $this->assertContains('max:255', $result->rules['name']);
     }
 
     public function test_detects_both_this_validate_and_request_validate(): void
@@ -271,12 +276,13 @@ PHP;
         $result = $this->analyzer->analyze($method);
 
         $this->assertNotEmpty($result);
-        $this->assertArrayHasKey('rules', $result);
+        $this->assertInstanceOf(InlineValidationInfo::class, $result);
+        $this->assertTrue($result->hasRules());
 
         // Should have fields from both validation methods
-        $this->assertArrayHasKey('type', $result['rules']);
-        $this->assertArrayHasKey('advanced_option', $result['rules']);
-        $this->assertArrayHasKey('level', $result['rules']);
+        $this->assertArrayHasKey('type', $result->rules);
+        $this->assertArrayHasKey('advanced_option', $result->rules);
+        $this->assertArrayHasKey('level', $result->rules);
     }
 
     /**
