@@ -40,8 +40,8 @@ class ValidationDescriptionGenerator
 
             // Check for enum rule and add enum class name to description
             $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);
-            if ($enumResult && isset($enumResult['class']) && $enumResult['class'] !== '') {
-                $enumClassName = class_basename($enumResult['class']);
+            if ($enumResult && $enumResult->class !== '') {
+                $enumClassName = class_basename($enumResult->class);
                 $description .= " ({$enumClassName})";
             }
         }

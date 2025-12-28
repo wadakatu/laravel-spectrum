@@ -8,6 +8,8 @@ use LaravelSpectrum\Analyzers\Support\FormatInferrer;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
+use LaravelSpectrum\DTO\EnumBackingType;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
@@ -338,11 +340,11 @@ class ParameterBuilderTest extends TestCase
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
             ->andReturnUsing(function ($rule) {
                 if (is_string($rule) && str_contains($rule, 'UserStatus')) {
-                    return [
-                        'class' => 'App\\Enums\\UserStatus',
-                        'values' => ['active', 'inactive'],
-                        'type' => 'string',
-                    ];
+                    return new EnumInfo(
+                        class: 'App\\Enums\\UserStatus',
+                        values: ['active', 'inactive'],
+                        backingType: EnumBackingType::STRING,
+                    );
                 }
 
                 return null;
@@ -365,7 +367,8 @@ class ParameterBuilderTest extends TestCase
 
         $status = $this->findParameter($parameters, 'status');
         $this->assertArrayHasKey('enum', $status);
-        $this->assertEquals('App\\Enums\\UserStatus', $status['enum']['class']);
+        $this->assertInstanceOf(EnumInfo::class, $status['enum']);
+        $this->assertEquals('App\\Enums\\UserStatus', $status['enum']->class);
     }
 
     // ========== Edge cases ==========
@@ -568,11 +571,11 @@ class ParameterBuilderTest extends TestCase
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
             ->andReturnUsing(function ($rule) {
                 if (is_string($rule) && str_contains($rule, 'PaymentType')) {
-                    return [
-                        'class' => 'App\\Enums\\PaymentType',
-                        'values' => ['credit', 'debit'],
-                        'type' => 'string',
-                    ];
+                    return new EnumInfo(
+                        class: 'App\\Enums\\PaymentType',
+                        values: ['credit', 'debit'],
+                        backingType: EnumBackingType::STRING,
+                    );
                 }
 
                 return null;
@@ -600,7 +603,8 @@ class ParameterBuilderTest extends TestCase
 
         $payment = $this->findParameter($parameters, 'payment');
         $this->assertArrayHasKey('enum', $payment);
-        $this->assertEquals('App\\Enums\\PaymentType', $payment['enum']['class']);
+        $this->assertInstanceOf(EnumInfo::class, $payment['enum']);
+        $this->assertEquals('App\\Enums\\PaymentType', $payment['enum']->class);
     }
 
     #[Test]
@@ -622,6 +626,11 @@ class ParameterBuilderTest extends TestCase
     #[Test]
     public function it_passes_namespace_and_use_statements_to_enum_analyzer(): void
     {
+        $enumInfo = new EnumInfo(
+            class: 'App\\Enums\\Status',
+            values: ['active'],
+            backingType: EnumBackingType::STRING,
+        );
         $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
         // Called by both ParameterBuilder.findEnumInfo() and ValidationDescriptionGenerator.generateDescription()
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
@@ -629,7 +638,7 @@ class ParameterBuilderTest extends TestCase
             ->andReturn(null);
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
             ->with('Status', 'App\\Http\\Requests', ['Status' => 'App\\Enums\\Status'])
-            ->andReturn(['class' => 'App\\Enums\\Status', 'values' => ['active'], 'type' => 'string']);
+            ->andReturn($enumInfo);
 
         $builder = new ParameterBuilder(
             $this->typeInference,
@@ -646,7 +655,8 @@ class ParameterBuilderTest extends TestCase
 
         $status = $this->findParameter($parameters, 'status');
         $this->assertArrayHasKey('enum', $status);
-        $this->assertEquals('App\\Enums\\Status', $status['enum']['class']);
+        $this->assertInstanceOf(EnumInfo::class, $status['enum']);
+        $this->assertEquals('App\\Enums\\Status', $status['enum']->class);
     }
 
     // ========== Helper methods ==========

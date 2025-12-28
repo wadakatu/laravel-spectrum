@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
+use LaravelSpectrum\DTO\EnumBackingType;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Support\EnumExtractor;
 use ReflectionClass;
 use ReflectionMethod;
@@ -19,14 +22,13 @@ class EnumAnalyzer
     }
 
     /**
-     * Analyze validation rule for enum constraints
+     * Analyze validation rule for enum constraints.
      *
      * @param  mixed  $rule
      * @param  string|null  $namespace  Optional namespace for resolving relative class names
-     * @param  array  $useStatements  Use statements for resolving class names
-     * @return array|null ['class' => string, 'values' => array, 'type' => string]
+     * @param  array<string, string>  $useStatements  Use statements for resolving class names
      */
-    public function analyzeValidationRule($rule, ?string $namespace = null, array $useStatements = []): ?array
+    public function analyzeValidationRule($rule, ?string $namespace = null, array $useStatements = []): ?EnumInfo
     {
         if ($rule === null) {
             return null;
@@ -152,9 +154,9 @@ class EnumAnalyzer
     }
 
     /**
-     * Analyze Eloquent model casts for enum types
+     * Analyze Eloquent model casts for enum types.
      *
-     * @return array Array of field => enum info
+     * @return array<string, EnumInfo>
      */
     public function analyzeEloquentCasts(string $modelClass): array
     {
@@ -196,12 +198,13 @@ class EnumAnalyzer
     }
 
     /**
-     * Analyze method signature for enum parameters and return types
+     * Analyze method signature for enum parameters and return types.
      *
-     * @return array ['parameters' => [...], 'return' => ...]
+     * @return array{parameters: array<string, EnumInfo>, return: EnumInfo|null}
      */
     public function analyzeMethodSignature(ReflectionMethod $method): array
     {
+        /** @var array{parameters: array<string, EnumInfo>, return: EnumInfo|null} $result */
         $result = [
             'parameters' => [],
             'return' => null,
@@ -240,11 +243,9 @@ class EnumAnalyzer
     }
 
     /**
-     * Extract enum information from class name
-     *
-     * @return array|null ['class' => string, 'values' => array, 'type' => string]
+     * Extract enum information from class name.
      */
-    public function extractEnumInfo(string $enumClass): ?array
+    public function extractEnumInfo(string $enumClass): ?EnumInfo
     {
         if (! enum_exists($enumClass)) {
             return null;
@@ -253,14 +254,21 @@ class EnumAnalyzer
         try {
             $values = $this->enumExtractor->extractValues($enumClass);
             $type = $this->enumExtractor->getEnumType($enumClass);
+            // Normalize 'integer' to 'int' for EnumBackingType
+            $normalizedType = $type === 'integer' ? 'int' : $type;
+            $backingType = EnumBackingType::tryFrom($normalizedType) ?? EnumBackingType::STRING;
 
-            return [
-                'class' => $enumClass,
-                'values' => $values,
-                'type' => $type,
-            ];
+            return new EnumInfo(
+                class: $enumClass,
+                values: $values,
+                backingType: $backingType,
+            );
         } catch (\Exception $e) {
-            // Log error and return null
+            // Log the error for debugging - enum extraction failures should not be silent
+            if (function_exists('report')) {
+                report($e);
+            }
+
             return null;
         }
     }
