@@ -8,11 +8,15 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
+use LaravelSpectrum\DTO\AuthenticationResult;
+use LaravelSpectrum\DTO\AuthenticationScheme;
+use LaravelSpectrum\DTO\AuthenticationType;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\DTO\ResourceInfo;
+use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -132,7 +136,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -162,7 +166,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
         $result = $this->generator->generate([]);
@@ -185,7 +189,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
         $result = $this->generator->generate([]);
@@ -202,7 +206,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
         $result = $this->generator->generate([]);
@@ -223,7 +227,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
         $result = $this->generator->generate([]);
@@ -260,7 +264,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -335,7 +339,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -444,13 +448,23 @@ class OpenApiGeneratorTest extends TestCase
             ],
         ];
 
-        $authSchemes = [
-            'sanctum' => [
-                'type' => 'http',
-                'scheme' => 'bearer',
-                'bearerFormat' => 'JWT',
-            ],
-        ];
+        $sanctumScheme = new AuthenticationScheme(
+            type: AuthenticationType::HTTP,
+            name: 'sanctum',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+        );
+
+        $routeAuth = new RouteAuthentication(
+            scheme: $sanctumScheme,
+            middleware: ['auth:sanctum'],
+            required: true,
+        );
+
+        $authResult = new AuthenticationResult(
+            schemes: ['sanctum' => $sanctumScheme],
+            routes: [0 => $routeAuth],
+        );
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
             ->once();
@@ -461,16 +475,11 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn([
-                'schemes' => $authSchemes,
-                'routes' => [
-                    0 => ['type' => 'bearer', 'scheme' => 'sanctum'],
-                ],
-            ]);
+            ->andReturn($authResult);
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
-            ->with($authSchemes)
+            ->with(['sanctum' => $sanctumScheme->toArray()])
             ->andReturn([
                 'bearerAuth' => [
                     'type' => 'http',
@@ -481,7 +490,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->securitySchemeGenerator->shouldReceive('generateEndpointSecurity')
             ->once()
-            ->with(['type' => 'bearer', 'scheme' => 'sanctum'])
+            ->with($routeAuth->toArray())
             ->andReturn([
                 ['bearerAuth' => []],
             ]);
@@ -575,7 +584,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -650,7 +659,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -688,7 +697,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -720,7 +729,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -753,7 +762,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -808,7 +817,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('analyze')
             ->once()
-            ->andReturn(['schemes' => []]);
+            ->andReturn(AuthenticationResult::empty());
 
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
             ->once()
@@ -842,7 +851,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
         $this->controllerAnalyzer->shouldReceive('analyze')
@@ -935,7 +944,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
         $this->controllerAnalyzer->shouldReceive('analyze')
@@ -1007,7 +1016,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
         $this->controllerAnalyzer->shouldReceive('analyze')
@@ -1098,7 +1107,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
         $this->controllerAnalyzer->shouldReceive('analyze')
@@ -1178,7 +1187,7 @@ class OpenApiGeneratorTest extends TestCase
         ];
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1233,7 +1242,7 @@ class OpenApiGeneratorTest extends TestCase
         ];
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1274,7 +1283,7 @@ class OpenApiGeneratorTest extends TestCase
         ];
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1378,7 +1387,7 @@ class OpenApiGeneratorTest extends TestCase
         ];
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1459,7 +1468,7 @@ class OpenApiGeneratorTest extends TestCase
         ];
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => [], 'routes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1517,7 +1526,7 @@ class OpenApiGeneratorTest extends TestCase
         );
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1535,7 +1544,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->schemaRegistry->register('OldSchema', ['type' => 'object']);
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1560,7 +1569,7 @@ class OpenApiGeneratorTest extends TestCase
         ];
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
@@ -1610,12 +1619,24 @@ class OpenApiGeneratorTest extends TestCase
     #[Test]
     public function it_applies_global_security_when_required_is_true(): void
     {
+        $bearerScheme = new AuthenticationScheme(
+            type: AuthenticationType::HTTP,
+            name: 'bearer',
+            scheme: 'bearer',
+        );
+        $authResult = new AuthenticationResult(
+            schemes: ['bearer' => $bearerScheme],
+            routes: [],
+        );
+
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => ['bearer' => []]]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn($authResult);
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
             ->andReturn(['scheme' => 'bearer', 'required' => true]);
 
-        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->with(['bearer' => $bearerScheme->toArray()])
+            ->andReturn([]);
         $this->securitySchemeGenerator->shouldReceive('generateEndpointSecurity')
             ->once()
             ->with(['scheme' => 'bearer', 'required' => true])
@@ -1631,7 +1652,7 @@ class OpenApiGeneratorTest extends TestCase
     public function it_does_not_apply_global_security_when_required_is_false(): void
     {
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes');
-        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->andReturn(AuthenticationResult::empty());
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
             ->andReturn(['scheme' => 'bearer', 'required' => false]);
 
@@ -1651,7 +1672,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
         $result = $this->generator->generate([]);
@@ -1676,7 +1697,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
-        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(['schemes' => []]);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
         $result = $this->generator->generate([]);

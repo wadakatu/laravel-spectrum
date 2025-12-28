@@ -7,7 +7,9 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
+use LaravelSpectrum\DTO\AuthenticationResult;
 use LaravelSpectrum\DTO\OpenApiOperation;
+use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
 
 /**
@@ -83,7 +85,7 @@ class OpenApiGenerator
                 $operation = $this->generateOperation(
                     $route,
                     strtolower($method),
-                    $authenticationInfo['routes'][$index] ?? null
+                    $authenticationInfo->getRouteAuthentication($index)
                 );
 
                 $openapi['paths'][$path][strtolower($method)] = $operation->toArray();
@@ -126,7 +128,7 @@ class OpenApiGenerator
     /**
      * Build the base OpenAPI structure.
      */
-    protected function buildBaseStructure(array $authenticationInfo): array
+    protected function buildBaseStructure(AuthenticationResult $authenticationInfo): array
     {
         $info = [
             'title' => config('spectrum.title', config('app.name').' API'),
@@ -149,6 +151,12 @@ class OpenApiGenerator
             $info['license'] = $license;
         }
 
+        // Convert AuthenticationScheme DTOs to arrays for backward compatibility
+        $schemesArray = [];
+        foreach ($authenticationInfo->schemes as $name => $scheme) {
+            $schemesArray[$name] = $scheme->toArray();
+        }
+
         return [
             'openapi' => $this->getOpenApiVersion(),
             'info' => $info,
@@ -162,7 +170,7 @@ class OpenApiGenerator
             'components' => [
                 'schemas' => [],
                 'securitySchemes' => $this->securitySchemeGenerator->generateSecuritySchemes(
-                    $authenticationInfo['schemes']
+                    $schemesArray
                 ),
             ],
         ];
@@ -184,7 +192,7 @@ class OpenApiGenerator
     /**
      * Generate a single operation.
      */
-    protected function generateOperation(array $route, string $method, ?array $authentication = null): OpenApiOperation
+    protected function generateOperation(array $route, string $method, ?RouteAuthentication $authentication = null): OpenApiOperation
     {
         $controllerInfo = $this->controllerAnalyzer->analyze(
             $route['controller'],
@@ -200,7 +208,10 @@ class OpenApiGenerator
         // Apply security
         $security = null;
         if ($authentication) {
-            $generatedSecurity = $this->securitySchemeGenerator->generateEndpointSecurity($authentication);
+            // Convert DTO to array for backward compatibility with SecuritySchemeGenerator
+            $generatedSecurity = $this->securitySchemeGenerator->generateEndpointSecurity(
+                $authentication->toArray()
+            );
             if (! empty($generatedSecurity)) {
                 $security = $generatedSecurity;
             }
