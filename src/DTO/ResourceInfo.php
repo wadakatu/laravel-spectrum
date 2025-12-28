@@ -34,18 +34,40 @@ final readonly class ResourceInfo
      * Create from an array.
      *
      * @param  array<string, mixed>  $data
+     *
+     * @throws \InvalidArgumentException If data is malformed
      */
     public static function fromArray(array $data): self
     {
+        $properties = $data['properties'] ?? [];
+        if (! is_array($properties)) {
+            throw new \InvalidArgumentException('ResourceInfo properties must be an array');
+        }
+
+        $with = $data['with'] ?? [];
+        if (! is_array($with)) {
+            throw new \InvalidArgumentException('ResourceInfo with must be an array');
+        }
+
+        $conditionalFields = $data['conditionalFields'] ?? [];
+        if (! is_array($conditionalFields)) {
+            throw new \InvalidArgumentException('ResourceInfo conditionalFields must be an array');
+        }
+
+        $nestedResources = $data['nestedResources'] ?? [];
+        if (! is_array($nestedResources)) {
+            throw new \InvalidArgumentException('ResourceInfo nestedResources must be an array');
+        }
+
         return new self(
-            properties: $data['properties'] ?? [],
-            with: $data['with'] ?? [],
+            properties: $properties,
+            with: $with,
             hasExamples: $data['hasExamples'] ?? false,
             customExample: $data['customExample'] ?? null,
             customExamples: $data['customExamples'] ?? null,
             isCollection: $data['isCollection'] ?? false,
-            conditionalFields: $data['conditionalFields'] ?? [],
-            nestedResources: $data['nestedResources'] ?? [],
+            conditionalFields: $conditionalFields,
+            nestedResources: $nestedResources,
         );
     }
 

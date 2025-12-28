@@ -67,6 +67,12 @@ class ResourceAnalyzer implements HasErrors
     protected function performAnalysis(string $resourceClass): array
     {
         if (! class_exists($resourceClass)) {
+            $this->logWarning(
+                "Resource class does not exist: {$resourceClass}",
+                AnalyzerErrorType::ClassNotFound,
+                ['class' => $resourceClass]
+            );
+
             return [];
         }
 
@@ -75,23 +81,47 @@ class ResourceAnalyzer implements HasErrors
 
             // JsonResourceを継承していない場合はスキップ
             if (! $reflection->isSubclassOf(JsonResource::class)) {
+                $this->logWarning(
+                    "Class is not a JsonResource subclass: {$resourceClass}",
+                    AnalyzerErrorType::UnsupportedFeature,
+                    ['class' => $resourceClass]
+                );
+
                 return [];
             }
 
             $filePath = $reflection->getFileName();
             if (! $filePath || ! file_exists($filePath)) {
+                $this->logWarning(
+                    "Source file not found for resource: {$resourceClass}",
+                    AnalyzerErrorType::FileNotFound,
+                    ['class' => $resourceClass]
+                );
+
                 return [];
             }
 
             // ファイルをパース
             $ast = $this->astHelper->parseFile($filePath);
             if (! $ast) {
+                $this->logWarning(
+                    "Failed to parse source file for resource: {$resourceClass}",
+                    AnalyzerErrorType::ParseError,
+                    ['class' => $resourceClass, 'file' => $filePath]
+                );
+
                 return [];
             }
 
             // クラスノードを探す
             $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
             if (! $classNode) {
+                $this->logWarning(
+                    "Class node not found in AST for resource: {$resourceClass}",
+                    AnalyzerErrorType::AnalysisError,
+                    ['class' => $resourceClass, 'file' => $filePath]
+                );
+
                 return [];
             }
 

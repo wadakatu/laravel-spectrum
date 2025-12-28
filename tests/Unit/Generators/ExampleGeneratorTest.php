@@ -438,4 +438,51 @@ class ExampleGeneratorTest extends TestCase
         $this->assertArrayHasKey('message', $result);
         $this->assertEquals('Error occurred', $result['message']);
     }
+
+    public function test_uses_custom_example_from_resource_info(): void
+    {
+        $customExample = ['id' => 999, 'custom_field' => 'custom_value'];
+        $resourceInfo = ResourceInfo::fromArray([
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+            ],
+            'customExample' => $customExample,
+        ]);
+
+        $example = $this->generator->generateFromResource($resourceInfo, PostResource::class);
+
+        $this->assertEquals($customExample, $example);
+    }
+
+    public function test_falls_back_to_schema_when_has_examples_throws(): void
+    {
+        $resourceInfo = ResourceInfo::fromArray([
+            'properties' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+            ],
+        ]);
+
+        // Create a resource that throws an exception in getExample()
+        $resource = new class implements \LaravelSpectrum\Contracts\HasExamples
+        {
+            public function getExample(): array
+            {
+                throw new \RuntimeException('Example generation failed');
+            }
+
+            public function getExamples(): array
+            {
+                return [];
+            }
+        };
+
+        // Should not throw, should fall back to schema-based generation
+        $example = $this->generator->generateFromResource($resourceInfo, get_class($resource));
+
+        $this->assertIsArray($example);
+        $this->assertArrayHasKey('id', $example);
+        $this->assertArrayHasKey('name', $example);
+    }
 }

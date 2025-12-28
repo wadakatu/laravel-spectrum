@@ -21,15 +21,23 @@ class ExampleGenerator
 
         // Check if the resource implements HasExamples interface (existing)
         if (is_subclass_of($resourceClass, HasExamples::class)) {
-            $resource = new $resourceClass(null);
+            try {
+                $resource = new $resourceClass(null);
 
-            return $resource->getExample();
+                return $resource->getExample();
+            } catch (\Exception $e) {
+                // Fall through to schema-based generation if getExample() fails
+            }
         }
 
         // Check if the resource implements HasCustomExamples interface (new)
         $customMapping = [];
         if (is_subclass_of($resourceClass, HasCustomExamples::class)) {
-            $customMapping = $resourceClass::getExampleMapping();
+            try {
+                $customMapping = $resourceClass::getExampleMapping();
+            } catch (\Exception $e) {
+                // Continue with empty custom mapping if getExampleMapping() fails
+            }
         }
 
         // Generate example from properties with custom mappings

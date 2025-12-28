@@ -253,4 +253,130 @@ class ResourceInfoTest extends TestCase
         $this->assertEquals(['type' => 'integer'], $merged['id']);
         $this->assertEquals(['type' => 'object'], $merged['meta']);
     }
+
+    #[Test]
+    public function it_can_be_constructed_with_conditional_fields(): void
+    {
+        $info = new ResourceInfo(
+            properties: ['id' => ['type' => 'integer']],
+            conditionalFields: ['secret' => ['condition' => 'when_admin', 'type' => 'string']],
+        );
+
+        $this->assertCount(1, $info->conditionalFields);
+        $this->assertArrayHasKey('secret', $info->conditionalFields);
+        $this->assertEquals('when_admin', $info->conditionalFields['secret']['condition']);
+    }
+
+    #[Test]
+    public function it_can_be_constructed_with_nested_resources(): void
+    {
+        $info = new ResourceInfo(
+            properties: ['id' => ['type' => 'integer']],
+            nestedResources: ['UserResource', 'PostResource'],
+        );
+
+        $this->assertCount(2, $info->nestedResources);
+        $this->assertContains('UserResource', $info->nestedResources);
+        $this->assertContains('PostResource', $info->nestedResources);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_conditional_fields_and_nested_resources(): void
+    {
+        $array = [
+            'properties' => ['id' => ['type' => 'integer']],
+            'conditionalFields' => ['secret' => ['condition' => 'when_admin']],
+            'nestedResources' => ['UserResource', 'ProfileResource'],
+        ];
+
+        $info = ResourceInfo::fromArray($array);
+
+        $this->assertCount(1, $info->conditionalFields);
+        $this->assertEquals(['condition' => 'when_admin'], $info->conditionalFields['secret']);
+        $this->assertCount(2, $info->nestedResources);
+        $this->assertEquals(['UserResource', 'ProfileResource'], $info->nestedResources);
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_conditional_fields_and_nested_resources(): void
+    {
+        $info = new ResourceInfo(
+            properties: ['id' => ['type' => 'integer']],
+            conditionalFields: ['secret' => ['condition' => 'when_admin']],
+            nestedResources: ['UserResource', 'ProfileResource'],
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayHasKey('conditionalFields', $array);
+        $this->assertArrayHasKey('nestedResources', $array);
+        $this->assertEquals(['secret' => ['condition' => 'when_admin']], $array['conditionalFields']);
+        $this->assertEquals(['UserResource', 'ProfileResource'], $array['nestedResources']);
+    }
+
+    #[Test]
+    public function it_does_not_include_empty_conditional_fields_and_nested_resources_in_array(): void
+    {
+        $info = new ResourceInfo(
+            properties: ['id' => ['type' => 'integer']],
+            conditionalFields: [],
+            nestedResources: [],
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayNotHasKey('conditionalFields', $array);
+        $this->assertArrayNotHasKey('nestedResources', $array);
+    }
+
+    #[Test]
+    public function it_survives_serialization_round_trip_with_conditional_fields_and_nested_resources(): void
+    {
+        $original = new ResourceInfo(
+            properties: ['id' => ['type' => 'integer']],
+            conditionalFields: ['secret' => ['condition' => 'when_admin']],
+            nestedResources: ['UserResource', 'ProfileResource'],
+        );
+
+        $restored = ResourceInfo::fromArray($original->toArray());
+
+        $this->assertEquals($original->conditionalFields, $restored->conditionalFields);
+        $this->assertEquals($original->nestedResources, $restored->nestedResources);
+    }
+
+    #[Test]
+    public function it_throws_exception_for_invalid_properties(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ResourceInfo properties must be an array');
+
+        ResourceInfo::fromArray(['properties' => 'not an array']);
+    }
+
+    #[Test]
+    public function it_throws_exception_for_invalid_with(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ResourceInfo with must be an array');
+
+        ResourceInfo::fromArray(['with' => 'not an array']);
+    }
+
+    #[Test]
+    public function it_throws_exception_for_invalid_conditional_fields(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ResourceInfo conditionalFields must be an array');
+
+        ResourceInfo::fromArray(['conditionalFields' => 'not an array']);
+    }
+
+    #[Test]
+    public function it_throws_exception_for_invalid_nested_resources(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ResourceInfo nestedResources must be an array');
+
+        ResourceInfo::fromArray(['nestedResources' => 'not an array']);
+    }
 }
