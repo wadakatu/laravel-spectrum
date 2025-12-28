@@ -203,8 +203,8 @@ class OpenApiGenerator
         // Generate request body for POST, PUT, PATCH
         if (in_array($method, ['post', 'put', 'patch'])) {
             $requestBody = $this->requestBodyGenerator->generate($controllerInfo, $route);
-            if ($requestBody) {
-                $operation['requestBody'] = $requestBody;
+            if ($requestBody !== null) {
+                $operation['requestBody'] = $requestBody->toArray();
             }
         }
 
