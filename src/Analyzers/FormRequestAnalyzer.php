@@ -10,6 +10,8 @@ use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\DTO\ConditionalRuleSet;
+use LaravelSpectrum\DTO\ValidationAnalysisResult;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -29,16 +31,6 @@ use LaravelSpectrum\Support\HasErrorCollection;
 class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
 {
     use HasErrorCollection;
-
-    /**
-     * Empty result structure for conditional rules analysis.
-     *
-     * @var array{parameters: array<mixed>, conditional_rules: array{rules_sets: array<mixed>, merged_rules: array<mixed>}}
-     */
-    private const EMPTY_CONDITIONAL_RESULT = [
-        'parameters' => [],
-        'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-    ];
 
     protected DocumentationCache $cache;
 
@@ -187,67 +179,99 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
     }
 
     /**
-     * Analyze with conditional rules detection
+     * Analyze with conditional rules detection (returns array for backward compatibility).
+     *
+     * @return array<string, mixed>
      */
     public function analyzeWithConditionalRules(string $requestClass): array
     {
-        return $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
-            try {
-                $context = $this->prepareAnalysisContext($requestClass);
+        return $this->analyzeWithConditionalRulesToResult($requestClass)->toArray();
+    }
 
-                if ($context['type'] === 'skip') {
-                    return self::EMPTY_CONDITIONAL_RESULT;
-                }
+    /**
+     * Analyze with conditional rules detection and return structured result.
+     */
+    public function analyzeWithConditionalRulesToResult(string $requestClass): ValidationAnalysisResult
+    {
+        try {
+            // Cache stores arrays, so we need to convert back to DTO
+            $cached = $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
+                return $this->performConditionalAnalysis($requestClass)->toArray();
+            });
 
-                if ($context['type'] === 'anonymous') {
-                    return $this->anonymousClassAnalyzer->analyzeWithConditionalRules($context['reflection']);
-                }
+            return ValidationAnalysisResult::fromArray($cached);
+        } catch (\Exception $e) {
+            $this->logException($e, AnalyzerErrorType::ConditionalAnalysisError, [
+                'class' => $requestClass,
+            ]);
 
-                // Extract conditional rules
-                $conditionalRules = $this->astExtractor->extractConditionalRules($context['classNode']);
-                $attributes = $this->astExtractor->extractAttributes($context['classNode']);
-                $messages = $this->astExtractor->extractMessages($context['classNode']);
+            return ValidationAnalysisResult::empty();
+        }
+    }
 
-                if (! empty($conditionalRules['rules_sets'])) {
-                    $parameters = $this->parameterBuilder->buildFromConditionalRules(
-                        $conditionalRules,
-                        $attributes,
-                        $context['namespace'],
-                        $context['useStatements']
-                    );
+    /**
+     * Perform the actual conditional rules analysis.
+     */
+    protected function performConditionalAnalysis(string $requestClass): ValidationAnalysisResult
+    {
+        try {
+            $context = $this->prepareAnalysisContext($requestClass);
 
-                    return [
-                        'parameters' => $parameters,
-                        'conditional_rules' => $conditionalRules,
-                        'attributes' => $attributes,
-                        'messages' => $messages,
-                    ];
-                }
+            if ($context['type'] === 'skip') {
+                return ValidationAnalysisResult::empty();
+            }
 
-                // Fallback to regular analysis
-                $rules = $this->astExtractor->extractRules($context['classNode']);
-                $parameters = $this->parameterBuilder->buildFromRules(
-                    $rules,
+            if ($context['type'] === 'anonymous') {
+                // Anonymous class analyzer returns array, convert to DTO
+                return ValidationAnalysisResult::fromArray(
+                    $this->anonymousClassAnalyzer->analyzeWithConditionalRules($context['reflection'])
+                );
+            }
+
+            // Extract conditional rules
+            $conditionalRulesArray = $this->astExtractor->extractConditionalRules($context['classNode']);
+            $attributes = $this->astExtractor->extractAttributes($context['classNode']);
+            $messages = $this->astExtractor->extractMessages($context['classNode']);
+
+            if (! empty($conditionalRulesArray['rules_sets'])) {
+                $parameters = $this->parameterBuilder->buildFromConditionalRules(
+                    $conditionalRulesArray,
                     $attributes,
                     $context['namespace'],
                     $context['useStatements']
                 );
 
-                return [
-                    'parameters' => $parameters,
-                    'conditional_rules' => ['rules_sets' => [], 'merged_rules' => []],
-                    'attributes' => $attributes,
-                    'messages' => $messages,
-                ];
-
-            } catch (\Exception $e) {
-                $this->logException($e, AnalyzerErrorType::ConditionalAnalysisError, [
-                    'class' => $requestClass,
-                ]);
-
-                return self::EMPTY_CONDITIONAL_RESULT;
+                return new ValidationAnalysisResult(
+                    parameters: $parameters,
+                    conditionalRules: ConditionalRuleSet::fromArray($conditionalRulesArray),
+                    attributes: $attributes,
+                    messages: $messages,
+                );
             }
-        });
+
+            // Fallback to regular analysis
+            $rules = $this->astExtractor->extractRules($context['classNode']);
+            $parameters = $this->parameterBuilder->buildFromRules(
+                $rules,
+                $attributes,
+                $context['namespace'],
+                $context['useStatements']
+            );
+
+            return new ValidationAnalysisResult(
+                parameters: $parameters,
+                conditionalRules: ConditionalRuleSet::empty(),
+                attributes: $attributes,
+                messages: $messages,
+            );
+
+        } catch (\Exception $e) {
+            $this->logException($e, AnalyzerErrorType::ConditionalAnalysisError, [
+                'class' => $requestClass,
+            ]);
+
+            return ValidationAnalysisResult::empty();
+        }
     }
 
     /**

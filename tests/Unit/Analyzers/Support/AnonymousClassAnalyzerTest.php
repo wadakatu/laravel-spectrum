@@ -578,7 +578,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $mockAstExtractor = Mockery::mock(FormRequestAstExtractor::class);
         $mockClassNode = Mockery::mock(\PhpParser\Node\Stmt\Class_::class);
         $mockAstExtractor->shouldReceive('findAnonymousClassNode')->andReturn($mockClassNode);
-        $mockAstExtractor->shouldReceive('extractConditionalRules')->andReturn(['rules_sets' => [], 'merged_rules' => []]);
+        $mockAstExtractor->shouldReceive('extractConditionalRules')->andReturn(['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false]);
         $mockAstExtractor->shouldReceive('extractRules')->andReturn(['name' => 'required']);
         $mockAstExtractor->shouldReceive('extractAttributes')->andReturn([]);
         $mockAstExtractor->shouldReceive('extractUseStatements')->andReturn([]);

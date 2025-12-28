@@ -164,13 +164,13 @@ class FormRequestAstExtractor
      * Extract conditional rules from the rules() method.
      *
      * @param  Node\Stmt\Class_  $class  The FormRequest class node
-     * @return array{rules_sets: array<mixed>, merged_rules: array<string, mixed>} Extracted conditional rule sets
+     * @return array{rules_sets: array<mixed>, merged_rules: array<string, mixed>, has_conditions: bool} Extracted conditional rule sets
      */
     public function extractConditionalRules(Node\Stmt\Class_ $class): array
     {
         $rulesMethod = $this->findMethodNode($class, 'rules');
         if (! $rulesMethod) {
-            return ['rules_sets' => [], 'merged_rules' => []];
+            return ['rules_sets' => [], 'merged_rules' => [], 'has_conditions' => false];
         }
 
         $visitor = new AST\Visitors\ConditionalRulesExtractorVisitor($this->printer);
