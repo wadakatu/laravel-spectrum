@@ -210,4 +210,36 @@ class EnumInfoTest extends TestCase
         $this->assertEquals($original->values, $restored->values);
         $this->assertEquals($original->backingType, $restored->backingType);
     }
+
+    #[Test]
+    public function it_defaults_to_string_type_when_invalid_type_provided(): void
+    {
+        $array = [
+            'class' => 'App\\Enums\\Test',
+            'values' => ['a', 'b'],
+            'type' => 'invalid_type',
+        ];
+
+        $info = EnumInfo::fromArray($array);
+
+        $this->assertEquals(EnumBackingType::STRING, $info->backingType);
+    }
+
+    #[Test]
+    public function it_handles_empty_class_name(): void
+    {
+        $info = new EnumInfo('', [], EnumBackingType::STRING);
+
+        $this->assertEquals('', $info->class);
+        $this->assertEquals('', $info->getShortClassName());
+    }
+
+    #[Test]
+    public function it_counts_zero_values(): void
+    {
+        $info = new EnumInfo('App\\Enums\\Empty', [], EnumBackingType::STRING);
+
+        $this->assertEquals(0, $info->count());
+        $this->assertFalse($info->hasValues());
+    }
 }
