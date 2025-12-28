@@ -2,10 +2,15 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\AuthenticationScheme;
+
 class SecuritySchemeGenerator
 {
     /**
      * OpenAPIのsecuritySchemesセクションを生成
+     *
+     * @param  array<string, array<string, mixed>>  $authSchemes
+     * @return array<string, array<string, mixed>>
      */
     public function generateSecuritySchemes(array $authSchemes): array
     {
@@ -20,54 +25,42 @@ class SecuritySchemeGenerator
 
     /**
      * 単一のセキュリティスキームを生成
+     *
+     * @param  array<string, mixed>|AuthenticationScheme  $scheme
+     * @return array<string, mixed>
      */
-    protected function generateScheme(array $scheme): array
+    protected function generateScheme(array|AuthenticationScheme $scheme): array
     {
-        $openApiScheme = [
-            'type' => $scheme['type'],
-        ];
+        // Convert array to DTO if needed
+        $dto = $scheme instanceof AuthenticationScheme
+            ? $scheme
+            : AuthenticationScheme::fromArray($scheme);
 
-        // HTTPタイプの場合
-        if ($scheme['type'] === 'http') {
-            $openApiScheme['scheme'] = $scheme['scheme'];
-
-            if (isset($scheme['bearerFormat'])) {
-                $openApiScheme['bearerFormat'] = $scheme['bearerFormat'];
-            }
-        }
-
-        // API Keyタイプの場合
-        elseif ($scheme['type'] === 'apiKey') {
-            $openApiScheme['in'] = $scheme['in'];
-            $openApiScheme['name'] = $scheme['headerName'] ?? $scheme['name'];
-        }
-
-        // OAuth2タイプの場合
-        elseif ($scheme['type'] === 'oauth2') {
-            $openApiScheme['flows'] = $scheme['flows'];
-        }
-
-        // 説明を追加
-        if (isset($scheme['description'])) {
-            $openApiScheme['description'] = $scheme['description'];
-        }
-
-        return $openApiScheme;
+        return $dto->toOpenApiSecurityScheme();
     }
 
     /**
      * エンドポイントのsecurityセクションを生成
+     *
+     * @param  array<string, mixed>  $authentication
+     * @return array<int, array<string, array<int, string>>>
      */
     public function generateEndpointSecurity(array $authentication): array
     {
-        if (! $authentication || ! $authentication['required']) {
+        if (! $authentication || ! isset($authentication['required']) || ! $authentication['required']) {
             return [];
         }
 
-        $schemeName = $authentication['scheme']['name'];
+        // Convert scheme to DTO if it's an array
+        $schemeData = $authentication['scheme'] ?? [];
+        $dto = $schemeData instanceof AuthenticationScheme
+            ? $schemeData
+            : AuthenticationScheme::fromArray($schemeData);
+
+        $schemeName = $dto->name;
 
         // OAuth2の場合はスコープを含める
-        if ($authentication['scheme']['type'] === 'oauth2') {
+        if ($dto->isOAuth2()) {
             $scopes = $authentication['scopes'] ?? [];
 
             return [[$schemeName => $scopes]];
@@ -79,6 +72,9 @@ class SecuritySchemeGenerator
 
     /**
      * 複数の認証方式をサポートする場合
+     *
+     * @param  array<int, array<string, mixed>>  $authentications
+     * @return array<int, array<string, array<int, string>>>
      */
     public function generateMultipleAuthSecurity(array $authentications): array
     {
@@ -95,6 +91,10 @@ class SecuritySchemeGenerator
 
     /**
      * グローバル認証とローカル認証をマージ
+     *
+     * @param  array<string, mixed>|null  $global
+     * @param  array<string, mixed>|null  $local
+     * @return array<string, mixed>|null
      */
     public function mergeAuthentications(?array $global, ?array $local): ?array
     {

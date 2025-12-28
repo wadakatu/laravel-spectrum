@@ -133,6 +133,24 @@ class AuthenticationSchemeTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_from_array_for_api_key_using_name_as_header_name_fallback(): void
+    {
+        // When headerName is not provided, name should be used as the OpenAPI 'name' field
+        $data = [
+            'type' => 'apiKey',
+            'name' => 'X-API-Key',
+            'in' => 'header',
+        ];
+
+        $scheme = AuthenticationScheme::fromArray($data);
+
+        $this->assertEquals(AuthenticationType::API_KEY, $scheme->type);
+        $this->assertEquals('X-API-Key', $scheme->name);
+        $this->assertEquals('X-API-Key', $scheme->headerName);
+        $this->assertEquals('header', $scheme->in);
+    }
+
+    #[Test]
     public function it_creates_from_array_for_oauth2_type(): void
     {
         $flows = [

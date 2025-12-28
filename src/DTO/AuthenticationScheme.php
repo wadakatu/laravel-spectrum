@@ -42,13 +42,19 @@ final readonly class AuthenticationScheme
         $typeString = $data['type'] ?? 'http';
         $type = AuthenticationType::tryFrom($typeString) ?? AuthenticationType::HTTP;
 
+        // For apiKey type, use headerName if provided, otherwise fall back to name
+        $headerName = $data['headerName'] ?? null;
+        if ($type->isApiKey() && $headerName === null && isset($data['name'])) {
+            $headerName = $data['name'];
+        }
+
         return new self(
             type: $type,
             name: $data['name'] ?? '',
             scheme: $data['scheme'] ?? null,
             bearerFormat: $data['bearerFormat'] ?? null,
             in: $data['in'] ?? null,
-            headerName: $data['headerName'] ?? null,
+            headerName: $headerName,
             flows: $data['flows'] ?? null,
             openIdConnectUrl: $data['openIdConnectUrl'] ?? null,
             description: $data['description'] ?? null,
