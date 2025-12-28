@@ -27,11 +27,15 @@ class ParameterGenerator
      *
      * @param  array{parameters: array}  $route  Route information with parameters
      * @param  array{enumParameters?: array, queryParameters?: array}  $controllerInfo  Controller analysis result
-     * @return array<array> OpenAPI parameter definitions
+     * @return array<int, OpenApiParameter> OpenAPI parameter definitions
      */
     public function generate(array $route, array $controllerInfo): array
     {
-        $parameters = $route['parameters'] ?? [];
+        // Convert route parameters to DTOs
+        $parameters = array_map(
+            fn (array $param) => OpenApiParameter::fromArray($param),
+            $route['parameters'] ?? []
+        );
 
         // Add enum type parameters
         $parameters = $this->addEnumParameters($parameters, $controllerInfo);
@@ -45,9 +49,9 @@ class ParameterGenerator
     /**
      * Add enum type parameters from controller analysis.
      *
-     * @param  array  $parameters  Existing parameters
+     * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
      * @param  array  $controllerInfo  Controller analysis result
-     * @return array Updated parameters
+     * @return array<int, OpenApiParameter> Updated parameters
      */
     protected function addEnumParameters(array $parameters, array $controllerInfo): array
     {
@@ -61,36 +65,38 @@ class ParameterGenerator
             // Check if this is already a route parameter
             $matchIndex = null;
             foreach ($result as $index => $routeParam) {
-                if ($routeParam['name'] === $enumParam['name']) {
+                if ($routeParam->name === $enumParam['name']) {
                     $matchIndex = $index;
                     break;
                 }
             }
 
             if ($matchIndex !== null) {
-                // Add enum information to existing route parameter
-                $result[$matchIndex]['schema'] = [
-                    'type' => $enumParam['type'],
-                    'enum' => $enumParam['enum'],
-                ];
-                if (! empty($enumParam['description'])) {
-                    $result[$matchIndex]['description'] = $enumParam['description'];
-                }
+                // Update existing route parameter with enum schema
+                $enumSchema = new OpenApiSchema(
+                    type: $enumParam['type'],
+                    enum: $enumParam['enum'],
+                );
+                $result[$matchIndex] = new OpenApiParameter(
+                    name: $result[$matchIndex]->name,
+                    in: $result[$matchIndex]->in,
+                    required: $result[$matchIndex]->required,
+                    schema: $enumSchema,
+                    description: ! empty($enumParam['description']) ? $enumParam['description'] : $result[$matchIndex]->description,
+                );
             } else {
                 // If not a route parameter, add as query parameter
-                $newParam = [
-                    'name' => $enumParam['name'],
-                    'in' => 'query',
-                    'required' => $enumParam['required'],
-                    'schema' => [
-                        'type' => $enumParam['type'],
-                        'enum' => $enumParam['enum'],
-                    ],
-                ];
-                if (! empty($enumParam['description'])) {
-                    $newParam['description'] = $enumParam['description'];
-                }
-                $result[] = $newParam;
+                $enumSchema = new OpenApiSchema(
+                    type: $enumParam['type'],
+                    enum: $enumParam['enum'],
+                );
+                $result[] = new OpenApiParameter(
+                    name: $enumParam['name'],
+                    in: OpenApiParameter::IN_QUERY,
+                    required: $enumParam['required'],
+                    schema: $enumSchema,
+                    description: ! empty($enumParam['description']) ? $enumParam['description'] : null,
+                );
             }
         }
 
@@ -100,9 +106,9 @@ class ParameterGenerator
     /**
      * Add query parameters from controller analysis.
      *
-     * @param  array  $parameters  Existing parameters
+     * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
      * @param  array  $controllerInfo  Controller analysis result
-     * @return array Updated parameters
+     * @return array<int, OpenApiParameter> Updated parameters
      */
     protected function addQueryParameters(array $parameters, array $controllerInfo): array
     {
@@ -111,77 +117,77 @@ class ParameterGenerator
         }
 
         foreach ($controllerInfo['queryParameters'] as $queryParam) {
-            $parameter = [
-                'name' => $queryParam['name'],
-                'in' => 'query',
-                'required' => $queryParam['required'] ?? false,
-                'schema' => [
-                    'type' => $queryParam['type'],
-                ],
-            ];
+            $type = $queryParam['type'] ?? 'string';
 
-            // Add style and explode for array types
-            $parameter = $this->applyStyleAndExplode($parameter, $queryParam);
+            // Build schema
+            $schema = OpenApiSchema::fromType($type);
 
             // Add default value
             if (isset($queryParam['default'])) {
-                $parameter['schema']['default'] = $queryParam['default'];
+                $schema = new OpenApiSchema(
+                    type: $schema->type,
+                    format: $schema->format,
+                    default: $queryParam['default'],
+                    enum: $queryParam['enum'] ?? null,
+                    items: $type === 'array' ? OpenApiSchema::string() : null,
+                );
+            } elseif (isset($queryParam['enum'])) {
+                $schema = $schema->withEnum($queryParam['enum']);
             }
 
-            // Add enum values
-            if (isset($queryParam['enum'])) {
-                $parameter['schema']['enum'] = $queryParam['enum'];
-            }
-
-            // Add description
-            if (isset($queryParam['description'])) {
-                $parameter['description'] = $queryParam['description'];
+            // Add items for array types
+            if ($type === 'array' && $schema->items === null) {
+                $schema = new OpenApiSchema(
+                    type: 'array',
+                    format: $schema->format,
+                    default: $schema->default,
+                    enum: $schema->enum,
+                    items: OpenApiSchema::string(),
+                );
             }
 
             // Add validation constraints
             if (isset($queryParam['validation_rules'])) {
                 $constraints = $this->typeInference->getConstraintsFromRules($queryParam['validation_rules']);
-                foreach ($constraints as $key => $value) {
-                    $parameter['schema'][$key] = $value;
+                if (! empty($constraints)) {
+                    $schema = new OpenApiSchema(
+                        type: $schema->type,
+                        format: $schema->format,
+                        default: $schema->default,
+                        enum: $schema->enum,
+                        minimum: $constraints['minimum'] ?? $schema->minimum,
+                        maximum: $constraints['maximum'] ?? $schema->maximum,
+                        minLength: $constraints['minLength'] ?? $schema->minLength,
+                        maxLength: $constraints['maxLength'] ?? $schema->maxLength,
+                        pattern: $constraints['pattern'] ?? $schema->pattern,
+                        items: $schema->items,
+                    );
                 }
             }
 
-            $parameters[] = $parameter;
+            // Create parameter DTO
+            $param = new OpenApiParameter(
+                name: $queryParam['name'],
+                in: OpenApiParameter::IN_QUERY,
+                required: $queryParam['required'] ?? false,
+                schema: $schema,
+                description: $queryParam['description'] ?? null,
+            );
+
+            // Apply style and explode for array types
+            if ($type === 'array') {
+                $includeStyle = config('spectrum.parameters.include_style', true);
+                if ($includeStyle) {
+                    $style = config('spectrum.parameters.array_style', 'form');
+                    $explode = config('spectrum.parameters.array_explode', true);
+                    $param = $param->withStyleAndExplode($style, $explode);
+                }
+            }
+
+            $parameters[] = $param;
         }
 
         return $parameters;
-    }
-
-    /**
-     * Apply style and explode properties for array/object type parameters.
-     *
-     * @param  array<string, mixed>  $parameter  The parameter definition
-     * @param  array<string, mixed>  $queryParam  The query parameter info
-     * @return array<string, mixed> Updated parameter with style/explode if applicable
-     */
-    protected function applyStyleAndExplode(array $parameter, array $queryParam): array
-    {
-        $type = $queryParam['type'] ?? 'string';
-
-        // Only apply to array types
-        if ($type !== 'array') {
-            return $parameter;
-        }
-
-        // Add items schema for array types
-        $parameter['schema']['items'] = ['type' => 'string'];
-
-        // Check if style/explode should be included based on config
-        $includeStyle = config('spectrum.parameters.include_style', true);
-        if (! $includeStyle) {
-            return $parameter;
-        }
-
-        // Apply style and explode from config
-        $parameter['style'] = config('spectrum.parameters.array_style', 'form');
-        $parameter['explode'] = config('spectrum.parameters.array_explode', true);
-
-        return $parameter;
     }
 
     /**

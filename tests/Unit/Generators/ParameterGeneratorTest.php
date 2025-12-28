@@ -49,7 +49,8 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('id', $parameters[0]['name']);
+        $this->assertInstanceOf(OpenApiParameter::class, $parameters[0]);
+        $this->assertEquals('id', $parameters[0]->name);
     }
 
     #[Test]
@@ -57,7 +58,7 @@ class ParameterGeneratorTest extends TestCase
     {
         $route = [
             'parameters' => [
-                ['name' => 'status', 'in' => 'path', 'required' => true],
+                ['name' => 'status', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string']],
             ],
         ];
         $controllerInfo = [
@@ -75,9 +76,43 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('status', $parameters[0]['name']);
-        $this->assertEquals(['active', 'inactive', 'pending'], $parameters[0]['schema']['enum']);
-        $this->assertEquals('User status', $parameters[0]['description']);
+        $this->assertEquals('status', $parameters[0]->name);
+        $this->assertEquals(['active', 'inactive', 'pending'], $parameters[0]->schema->enum);
+        $this->assertEquals('User status', $parameters[0]->description);
+    }
+
+    #[Test]
+    public function it_replaces_schema_when_merging_enum_with_route_parameter(): void
+    {
+        $route = [
+            'parameters' => [
+                [
+                    'name' => 'status',
+                    'in' => 'path',
+                    'required' => true,
+                    'schema' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 50],
+                ],
+            ],
+        ];
+        $controllerInfo = [
+            'enumParameters' => [
+                [
+                    'name' => 'status',
+                    'type' => 'string',
+                    'enum' => ['active', 'inactive'],
+                    'description' => '',
+                    'required' => true,
+                ],
+            ],
+        ];
+
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        // Verify enum is applied
+        $this->assertEquals(['active', 'inactive'], $parameters[0]->schema->enum);
+        // Original schema constraints are replaced by enum schema
+        $this->assertNull($parameters[0]->schema->minLength);
+        $this->assertNull($parameters[0]->schema->maxLength);
     }
 
     #[Test]
@@ -99,10 +134,10 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('sort', $parameters[0]['name']);
-        $this->assertEquals('query', $parameters[0]['in']);
-        $this->assertFalse($parameters[0]['required']);
-        $this->assertEquals(['asc', 'desc'], $parameters[0]['schema']['enum']);
+        $this->assertEquals('sort', $parameters[0]->name);
+        $this->assertEquals('query', $parameters[0]->in);
+        $this->assertFalse($parameters[0]->required);
+        $this->assertEquals(['asc', 'desc'], $parameters[0]->schema->enum);
     }
 
     #[Test]
@@ -123,10 +158,10 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('page', $parameters[0]['name']);
-        $this->assertEquals('query', $parameters[0]['in']);
-        $this->assertEquals('integer', $parameters[0]['schema']['type']);
-        $this->assertEquals(1, $parameters[0]['schema']['default']);
+        $this->assertEquals('page', $parameters[0]->name);
+        $this->assertEquals('query', $parameters[0]->in);
+        $this->assertEquals('integer', $parameters[0]->schema->type);
+        $this->assertEquals(1, $parameters[0]->schema->default);
     }
 
     #[Test]
@@ -147,7 +182,7 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('Search term', $parameters[0]['description']);
+        $this->assertEquals('Search term', $parameters[0]->description);
     }
 
     #[Test]
@@ -168,7 +203,7 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals(['name', 'date', 'price'], $parameters[0]['schema']['enum']);
+        $this->assertEquals(['name', 'date', 'price'], $parameters[0]->schema->enum);
     }
 
     #[Test]
@@ -194,8 +229,8 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals(1, $parameters[0]['schema']['minimum']);
-        $this->assertEquals(100, $parameters[0]['schema']['maximum']);
+        $this->assertEquals(1, $parameters[0]->schema->minimum);
+        $this->assertEquals(100, $parameters[0]->schema->maximum);
     }
 
     #[Test]
@@ -230,16 +265,16 @@ class ParameterGeneratorTest extends TestCase
         $this->assertCount(3, $parameters);
 
         // Route parameter
-        $this->assertEquals('id', $parameters[0]['name']);
-        $this->assertEquals('path', $parameters[0]['in']);
+        $this->assertEquals('id', $parameters[0]->name);
+        $this->assertEquals('path', $parameters[0]->in);
 
         // Enum as query parameter
-        $this->assertEquals('status', $parameters[1]['name']);
-        $this->assertEquals('query', $parameters[1]['in']);
+        $this->assertEquals('status', $parameters[1]->name);
+        $this->assertEquals('query', $parameters[1]->in);
 
         // Query parameter
-        $this->assertEquals('page', $parameters[2]['name']);
-        $this->assertEquals('query', $parameters[2]['in']);
+        $this->assertEquals('page', $parameters[2]->name);
+        $this->assertEquals('query', $parameters[2]->in);
     }
 
     #[Test]
@@ -275,7 +310,7 @@ class ParameterGeneratorTest extends TestCase
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
-        $this->assertArrayNotHasKey('description', $parameters[0]);
+        $this->assertNull($parameters[0]->description);
     }
 
     #[Test]
@@ -296,7 +331,7 @@ class ParameterGeneratorTest extends TestCase
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
-        $this->assertArrayNotHasKey('description', $parameters[0]);
+        $this->assertNull($parameters[0]->description);
     }
 
     #[Test]
@@ -315,7 +350,7 @@ class ParameterGeneratorTest extends TestCase
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
-        $this->assertTrue($parameters[0]['required']);
+        $this->assertTrue($parameters[0]->required);
     }
 
     #[Test]
@@ -335,9 +370,9 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('ids', $parameters[0]['name']);
-        $this->assertEquals('form', $parameters[0]['style']);
-        $this->assertTrue($parameters[0]['explode']);
+        $this->assertEquals('ids', $parameters[0]->name);
+        $this->assertEquals('form', $parameters[0]->style);
+        $this->assertTrue($parameters[0]->explode);
     }
 
     #[Test]
@@ -357,9 +392,9 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('array', $parameters[0]['schema']['type']);
-        $this->assertArrayHasKey('items', $parameters[0]['schema']);
-        $this->assertEquals('string', $parameters[0]['schema']['items']['type']);
+        $this->assertEquals('array', $parameters[0]->schema->type);
+        $this->assertNotNull($parameters[0]->schema->items);
+        $this->assertEquals('string', $parameters[0]->schema->items->type);
     }
 
     #[Test]
@@ -379,8 +414,8 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertCount(1, $parameters);
-        $this->assertArrayNotHasKey('style', $parameters[0]);
-        $this->assertArrayNotHasKey('explode', $parameters[0]);
+        $this->assertNull($parameters[0]->style);
+        $this->assertNull($parameters[0]->explode);
     }
 
     #[Test]
@@ -401,10 +436,10 @@ class ParameterGeneratorTest extends TestCase
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
-        $this->assertArrayNotHasKey('style', $parameters[0]);
-        $this->assertArrayNotHasKey('explode', $parameters[0]);
+        $this->assertNull($parameters[0]->style);
+        $this->assertNull($parameters[0]->explode);
         // items should still be added for arrays
-        $this->assertArrayHasKey('items', $parameters[0]['schema']);
+        $this->assertNotNull($parameters[0]->schema->items);
     }
 
     #[Test]
@@ -425,7 +460,7 @@ class ParameterGeneratorTest extends TestCase
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
-        $this->assertEquals('spaceDelimited', $parameters[0]['style']);
+        $this->assertEquals('spaceDelimited', $parameters[0]->style);
     }
 
     #[Test]
@@ -446,7 +481,7 @@ class ParameterGeneratorTest extends TestCase
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
-        $this->assertFalse($parameters[0]['explode']);
+        $this->assertFalse($parameters[0]->explode);
     }
 
     #[Test]

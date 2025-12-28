@@ -13,7 +13,7 @@ final readonly class OpenApiOperation
      * @param  string  $operationId  Unique operation identifier
      * @param  string|null  $summary  Short summary of the operation
      * @param  array<int, string>  $tags  Tags for API documentation control
-     * @param  array<int, array<string, mixed>>  $parameters  Path, query, header, cookie parameters
+     * @param  array<int, OpenApiParameter>  $parameters  Path, query, header, cookie parameters
      * @param  array<string, array<string, mixed>>  $responses  Response definitions keyed by status code
      * @param  string|null  $description  Verbose explanation of the operation
      * @param  OpenApiRequestBody|null  $requestBody  Request body definition
@@ -44,11 +44,19 @@ final readonly class OpenApiOperation
             $requestBody = OpenApiRequestBody::fromArray($data['requestBody']);
         }
 
+        // Convert parameter arrays to DTOs
+        $parameters = [];
+        foreach ($data['parameters'] ?? [] as $param) {
+            $parameters[] = $param instanceof OpenApiParameter
+                ? $param
+                : OpenApiParameter::fromArray($param);
+        }
+
         return new self(
             operationId: $data['operationId'] ?? '',
             summary: $data['summary'] ?? null,
             tags: $data['tags'] ?? [],
-            parameters: $data['parameters'] ?? [],
+            parameters: $parameters,
             responses: $data['responses'] ?? [],
             description: $data['description'] ?? null,
             requestBody: $requestBody,
@@ -67,7 +75,10 @@ final readonly class OpenApiOperation
         $result = [
             'operationId' => $this->operationId,
             'tags' => $this->tags,
-            'parameters' => $this->parameters,
+            'parameters' => array_map(
+                fn (OpenApiParameter $param) => $param->toArray(),
+                $this->parameters
+            ),
             'responses' => $this->responses,
         ];
 
