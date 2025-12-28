@@ -193,12 +193,20 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
      */
     public function analyzeWithConditionalRulesToResult(string $requestClass): ValidationAnalysisResult
     {
-        // Cache stores arrays, so we need to convert back to DTO
-        $cached = $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
-            return $this->performConditionalAnalysis($requestClass)->toArray();
-        });
+        try {
+            // Cache stores arrays, so we need to convert back to DTO
+            $cached = $this->cache->rememberFormRequest($requestClass.':conditional', function () use ($requestClass) {
+                return $this->performConditionalAnalysis($requestClass)->toArray();
+            });
 
-        return ValidationAnalysisResult::fromArray($cached);
+            return ValidationAnalysisResult::fromArray($cached);
+        } catch (\Exception $e) {
+            $this->logException($e, AnalyzerErrorType::ConditionalAnalysisError, [
+                'class' => $requestClass,
+            ]);
+
+            return ValidationAnalysisResult::empty();
+        }
     }
 
     /**
