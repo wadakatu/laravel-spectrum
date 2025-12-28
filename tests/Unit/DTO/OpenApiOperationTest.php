@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Tests\Unit\DTO;
 
 use LaravelSpectrum\DTO\OpenApiOperation;
+use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
+use LaravelSpectrum\DTO\OpenApiSchema;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -35,11 +37,18 @@ class OpenApiOperationTest extends TestCase
             required: true,
         );
 
+        $parameter = new OpenApiParameter(
+            name: 'include',
+            in: OpenApiParameter::IN_QUERY,
+            required: false,
+            schema: OpenApiSchema::string(),
+        );
+
         $operation = new OpenApiOperation(
             operationId: 'createUser',
             summary: 'Create a user',
             tags: ['Users'],
-            parameters: [['name' => 'include', 'in' => 'query']],
+            parameters: [$parameter],
             responses: [],
             description: 'Creates a new user in the system',
             requestBody: $requestBody,
@@ -73,27 +82,30 @@ class OpenApiOperationTest extends TestCase
     #[Test]
     public function it_converts_to_array(): void
     {
+        $parameter = new OpenApiParameter(
+            name: 'id',
+            in: OpenApiParameter::IN_PATH,
+            required: true,
+            schema: OpenApiSchema::string(),
+        );
+
         $operation = new OpenApiOperation(
             operationId: 'getUser',
             summary: 'Get a user',
             tags: ['Users'],
-            parameters: [
-                ['name' => 'id', 'in' => 'path', 'required' => true],
-            ],
+            parameters: [$parameter],
             responses: [],
         );
 
         $array = $operation->toArray();
 
-        $this->assertEquals([
-            'operationId' => 'getUser',
-            'summary' => 'Get a user',
-            'tags' => ['Users'],
-            'parameters' => [
-                ['name' => 'id', 'in' => 'path', 'required' => true],
-            ],
-            'responses' => [],
-        ], $array);
+        $this->assertEquals('getUser', $array['operationId']);
+        $this->assertEquals('Get a user', $array['summary']);
+        $this->assertEquals(['Users'], $array['tags']);
+        $this->assertCount(1, $array['parameters']);
+        $this->assertEquals('id', $array['parameters'][0]['name']);
+        $this->assertEquals('path', $array['parameters'][0]['in']);
+        $this->assertTrue($array['parameters'][0]['required']);
     }
 
     #[Test]
@@ -206,11 +218,18 @@ class OpenApiOperationTest extends TestCase
     #[Test]
     public function it_checks_if_has_parameters(): void
     {
+        $parameter = new OpenApiParameter(
+            name: 'id',
+            in: OpenApiParameter::IN_PATH,
+            required: true,
+            schema: OpenApiSchema::string(),
+        );
+
         $with = new OpenApiOperation(
             operationId: 'op1',
             summary: null,
             tags: [],
-            parameters: [['name' => 'id']],
+            parameters: [$parameter],
             responses: [],
         );
         $without = new OpenApiOperation(
@@ -340,11 +359,18 @@ class OpenApiOperationTest extends TestCase
             required: true,
         );
 
+        $parameter = new OpenApiParameter(
+            name: 'id',
+            in: OpenApiParameter::IN_PATH,
+            required: true,
+            schema: OpenApiSchema::string(),
+        );
+
         $original = new OpenApiOperation(
             operationId: 'fullOp',
             summary: 'Full operation',
             tags: ['Test'],
-            parameters: [['name' => 'id', 'in' => 'path']],
+            parameters: [$parameter],
             responses: [],
             description: 'A full test operation',
             requestBody: $requestBody,
@@ -357,7 +383,9 @@ class OpenApiOperationTest extends TestCase
         $this->assertEquals($original->operationId, $restored->operationId);
         $this->assertEquals($original->summary, $restored->summary);
         $this->assertEquals($original->tags, $restored->tags);
-        $this->assertEquals($original->parameters, $restored->parameters);
+        $this->assertCount(count($original->parameters), $restored->parameters);
+        $this->assertEquals($original->parameters[0]->name, $restored->parameters[0]->name);
+        $this->assertEquals($original->parameters[0]->in, $restored->parameters[0]->in);
         $this->assertEquals($original->description, $restored->description);
         $this->assertEquals($original->deprecated, $restored->deprecated);
         $this->assertInstanceOf(OpenApiRequestBody::class, $restored->requestBody);

@@ -8,8 +8,10 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
+use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\DTO\OpenApiResponse;
+use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -605,12 +607,12 @@ class OpenApiGeneratorTest extends TestCase
         $this->parameterGenerator->shouldReceive('generate')
             ->once()
             ->andReturn([
-                [
-                    'name' => 'user',
-                    'in' => 'path',
-                    'required' => true,
-                    'schema' => ['type' => 'integer'],
-                ],
+                new OpenApiParameter(
+                    name: 'user',
+                    in: OpenApiParameter::IN_PATH,
+                    required: true,
+                    schema: OpenApiSchema::integer(),
+                ),
             ]);
 
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')
