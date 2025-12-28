@@ -207,4 +207,26 @@ class OpenApiRequestBodyTest extends TestCase
         $this->assertEquals($original->description, $restored->description);
         $this->assertEquals($original->content, $restored->content);
     }
+
+    #[Test]
+    public function it_returns_null_when_content_type_has_no_schema(): void
+    {
+        $requestBody = new OpenApiRequestBody(
+            content: [
+                'application/json' => [
+                    'example' => ['id' => 1],
+                ],
+            ],
+        );
+
+        $this->assertNull($requestBody->getSchemaFor('application/json'));
+    }
+
+    #[Test]
+    public function it_returns_empty_array_when_no_content_types(): void
+    {
+        $requestBody = new OpenApiRequestBody(content: []);
+
+        $this->assertEquals([], $requestBody->getContentTypes());
+    }
 }

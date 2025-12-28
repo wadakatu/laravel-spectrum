@@ -319,6 +319,20 @@ class OpenApiOperationTest extends TestCase
     }
 
     #[Test]
+    public function it_gets_zero_tag_count(): void
+    {
+        $operation = new OpenApiOperation(
+            operationId: 'op',
+            summary: null,
+            tags: [],
+            parameters: [],
+            responses: [],
+        );
+
+        $this->assertEquals(0, $operation->getTagCount());
+    }
+
+    #[Test]
     public function it_survives_serialization_round_trip(): void
     {
         $requestBody = new OpenApiRequestBody(

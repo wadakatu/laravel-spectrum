@@ -231,4 +231,16 @@ class OpenApiResponseTest extends TestCase
         $this->assertEquals($original->description, $restored->description);
         $this->assertEquals($original->content, $restored->content);
     }
+
+    #[Test]
+    public function it_creates_from_array_with_camel_case_status_code(): void
+    {
+        $response = OpenApiResponse::fromArray([
+            'statusCode' => '404',
+            'description' => 'Not Found',
+        ]);
+
+        $this->assertEquals('404', $response->statusCode);
+        $this->assertEquals('Not Found', $response->description);
+    }
 }
