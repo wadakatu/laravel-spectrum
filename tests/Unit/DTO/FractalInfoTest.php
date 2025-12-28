@@ -85,4 +85,41 @@ class FractalInfoTest extends TestCase
         $this->assertTrue($item->isItem());
         $this->assertFalse($collection->isItem());
     }
+
+    #[Test]
+    public function it_creates_from_array_with_defaults(): void
+    {
+        $array = [
+            'transformer' => 'UserTransformer',
+        ];
+
+        $info = FractalInfo::fromArray($array);
+
+        $this->assertEquals('UserTransformer', $info->transformer);
+        $this->assertFalse($info->isCollection);
+        $this->assertEquals('item', $info->type);
+        $this->assertFalse($info->hasIncludes);
+    }
+
+    #[Test]
+    public function it_derives_type_from_collection_flag_when_not_provided(): void
+    {
+        // When collection is true and type is not specified
+        $collectionArray = [
+            'transformer' => 'UserTransformer',
+            'collection' => true,
+        ];
+        $collectionInfo = FractalInfo::fromArray($collectionArray);
+        $this->assertEquals('collection', $collectionInfo->type);
+        $this->assertTrue($collectionInfo->isCollection);
+
+        // When collection is false and type is not specified
+        $itemArray = [
+            'transformer' => 'UserTransformer',
+            'collection' => false,
+        ];
+        $itemInfo = FractalInfo::fromArray($itemArray);
+        $this->assertEquals('item', $itemInfo->type);
+        $this->assertFalse($itemInfo->isCollection);
+    }
 }
