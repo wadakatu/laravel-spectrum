@@ -1,0 +1,157 @@
+<?php
+
+declare(strict_types=1);
+
+namespace LaravelSpectrum\DTO;
+
+/**
+ * Represents the result of analyzing a controller method's response.
+ */
+final readonly class ResponseInfo
+{
+    /**
+     * @param  ResponseType  $type  The type of response
+     * @param  array<string, array<string, mixed>>  $properties  The response properties/schema
+     * @param  string|null  $resourceClass  The resource class name (for resource type)
+     * @param  string|null  $error  Error message if analysis failed
+     */
+    public function __construct(
+        public ResponseType $type,
+        public array $properties = [],
+        public ?string $resourceClass = null,
+        public ?string $error = null,
+    ) {}
+
+    /**
+     * Create from an array.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function fromArray(array $data): self
+    {
+        $typeString = $data['type'] ?? 'unknown';
+        $type = ResponseType::tryFrom($typeString) ?? ResponseType::UNKNOWN;
+
+        return new self(
+            type: $type,
+            properties: $data['properties'] ?? [],
+            resourceClass: $data['class'] ?? null,
+            error: $data['error'] ?? null,
+        );
+    }
+
+    /**
+     * Convert to array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        $result = [
+            'type' => $this->type->value,
+            'properties' => $this->properties,
+        ];
+
+        if ($this->resourceClass !== null) {
+            $result['class'] = $this->resourceClass;
+        }
+
+        if ($this->error !== null) {
+            $result['error'] = $this->error;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Create a void response info.
+     */
+    public static function void(): self
+    {
+        return new self(
+            type: ResponseType::VOID,
+            properties: [],
+        );
+    }
+
+    /**
+     * Create an unknown response info.
+     */
+    public static function unknown(): self
+    {
+        return new self(
+            type: ResponseType::UNKNOWN,
+            properties: [],
+        );
+    }
+
+    /**
+     * Create an unknown response info with error.
+     */
+    public static function unknownWithError(string $error): self
+    {
+        return new self(
+            type: ResponseType::UNKNOWN,
+            properties: [],
+            error: $error,
+        );
+    }
+
+    /**
+     * Check if this is a void response.
+     */
+    public function isVoid(): bool
+    {
+        return $this->type->isVoid();
+    }
+
+    /**
+     * Check if this is a collection response.
+     */
+    public function isCollection(): bool
+    {
+        return $this->type->isCollection();
+    }
+
+    /**
+     * Check if this is a resource response.
+     */
+    public function isResource(): bool
+    {
+        return $this->type->isResource();
+    }
+
+    /**
+     * Check if this response has an error.
+     */
+    public function hasError(): bool
+    {
+        return $this->error !== null;
+    }
+
+    /**
+     * Check if this response has properties.
+     */
+    public function hasProperties(): bool
+    {
+        return count($this->properties) > 0;
+    }
+
+    /**
+     * Check if this response has a resource class.
+     */
+    public function hasResourceClass(): bool
+    {
+        return $this->resourceClass !== null;
+    }
+
+    /**
+     * Get all property names.
+     *
+     * @return array<int, string>
+     */
+    public function getPropertyNames(): array
+    {
+        return array_keys($this->properties);
+    }
+}
