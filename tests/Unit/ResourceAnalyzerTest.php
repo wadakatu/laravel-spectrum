@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit;
 
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Tests\Fixtures\BooleanTestResource;
 use LaravelSpectrum\Tests\Fixtures\CollectionTestResource;
 use LaravelSpectrum\Tests\Fixtures\DateTestResource;
@@ -48,8 +49,8 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze(UserResource::class);
 
         // Assert
-        $this->assertArrayHasKey('properties', $structure);
-        $properties = $structure['properties'];
+        $this->assertInstanceOf(ResourceInfo::class, $structure);
+        $properties = $structure->properties;
         $this->assertArrayHasKey('id', $properties);
         $this->assertArrayHasKey('name', $properties);
         $this->assertArrayHasKey('email', $properties);
@@ -67,7 +68,7 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $properties = $structure['properties'];
+        $properties = $structure->properties;
         $this->assertEquals('string', $properties['created_at']['type']);
         $this->assertStringContainsString(' ', $properties['created_at']['example']);
     }
@@ -79,8 +80,8 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze(\stdClass::class);
 
         // Assert
-        $this->assertIsArray($structure);
-        $this->assertEmpty($structure);
+        $this->assertInstanceOf(ResourceInfo::class, $structure);
+        $this->assertTrue($structure->isEmpty());
     }
 
     #[Test]
@@ -93,7 +94,7 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $properties = $structure['properties'];
+        $properties = $structure->properties;
         $this->assertArrayHasKey('id', $properties);
         $this->assertArrayHasKey('posts_count', $properties);
         $this->assertEquals('integer', $properties['id']['type']);
@@ -110,7 +111,7 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $properties = $structure['properties'];
+        $properties = $structure->properties;
         $this->assertArrayHasKey('tags', $properties);
         $this->assertArrayHasKey('categories', $properties);
         $this->assertEquals('array', $properties['tags']['type']);
@@ -127,7 +128,7 @@ class ResourceAnalyzerTest extends TestCase
         $structure = $this->analyzer->analyze($testResourceClass);
 
         // Assert
-        $properties = $structure['properties'];
+        $properties = $structure->properties;
         $this->assertEquals('boolean', $properties['verified']['type']);
     }
 
@@ -136,14 +137,14 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(SimpleUserResource::class);
 
-        $this->assertArrayHasKey('properties', $result);
-        $this->assertArrayHasKey('id', $result['properties']);
-        $this->assertArrayHasKey('name', $result['properties']);
-        $this->assertArrayHasKey('email', $result['properties']);
+        $this->assertNotEmpty($result->properties);
+        $this->assertArrayHasKey('id', $result->properties);
+        $this->assertArrayHasKey('name', $result->properties);
+        $this->assertArrayHasKey('email', $result->properties);
 
-        $this->assertEquals('integer', $result['properties']['id']['type']);
-        $this->assertEquals('string', $result['properties']['name']['type']);
-        $this->assertEquals('string', $result['properties']['email']['type']);
+        $this->assertEquals('integer', $result->properties['id']['type']);
+        $this->assertEquals('string', $result->properties['name']['type']);
+        $this->assertEquals('string', $result->properties['email']['type']);
     }
 
     #[Test]
@@ -151,11 +152,10 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(ConditionalFieldsResource::class);
 
-        $this->assertArrayHasKey('conditionalFields', $result);
-        $this->assertNotEmpty($result['conditionalFields']);
+        $this->assertNotEmpty($result->conditionalFields);
 
         // secret フィールドが条件付きとして認識されているか
-        $this->assertTrue($result['properties']['secret']['conditional']);
+        $this->assertTrue($result->properties['secret']['conditional']);
     }
 
     #[Test]
@@ -163,12 +163,12 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(NestedResourcesResource::class);
 
-        $this->assertArrayHasKey('nestedResources', $result);
-        $this->assertContains('PostResource', $result['nestedResources']);
-        $this->assertContains('ProfileResource', $result['nestedResources']);
+        $this->assertNotEmpty($result->nestedResources);
+        $this->assertContains('PostResource', $result->nestedResources);
+        $this->assertContains('ProfileResource', $result->nestedResources);
 
         // posts が配列として認識されているか
-        $this->assertEquals('array', $result['properties']['posts']['type']);
+        $this->assertEquals('array', $result->properties['posts']['type']);
     }
 
     #[Test]
@@ -176,10 +176,10 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(RelationshipResource::class);
 
-        $this->assertArrayHasKey('posts', $result['properties']);
-        $this->assertTrue($result['properties']['posts']['conditional']);
-        $this->assertEquals('whenLoaded', $result['properties']['posts']['condition']);
-        $this->assertEquals('posts', $result['properties']['posts']['relation']);
+        $this->assertArrayHasKey('posts', $result->properties);
+        $this->assertTrue($result->properties['posts']['conditional']);
+        $this->assertEquals('whenLoaded', $result->properties['posts']['condition']);
+        $this->assertEquals('posts', $result->properties['posts']['relation']);
     }
 
     #[Test]
@@ -187,8 +187,8 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(DateFormattingResource::class);
 
-        $this->assertEquals('string', $result['properties']['created_at']['type']);
-        $this->assertEquals('date-time', $result['properties']['created_at']['format']);
+        $this->assertEquals('string', $result->properties['created_at']['type']);
+        $this->assertEquals('date-time', $result->properties['created_at']['format']);
     }
 
     #[Test]
@@ -197,18 +197,18 @@ class ResourceAnalyzerTest extends TestCase
         $result = $this->analyzer->analyze(MethodChainResource::class);
 
         // Enumのvalue
-        $this->assertEquals('string', $result['properties']['status']['type']);
-        $this->assertEquals('enum', $result['properties']['status']['source']);
+        $this->assertEquals('string', $result->properties['status']['type']);
+        $this->assertEquals('enum', $result->properties['status']['source']);
 
         // 文字列連結
-        $this->assertEquals('string', $result['properties']['full_name']['type']);
+        $this->assertEquals('string', $result->properties['full_name']['type']);
     }
 
     #[Test]
     public function it_can_generate_openapi_schema()
     {
         $result = $this->analyzer->analyze(SimpleUserResource::class);
-        $schema = $this->analyzer->generateSchema($result);
+        $schema = $this->analyzer->generateSchema($result->toArray());
 
         $this->assertEquals('object', $schema['type']);
         $this->assertArrayHasKey('properties', $schema);
@@ -225,7 +225,7 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(NoToArrayResource::class);
 
-        $this->assertEmpty($result);
+        $this->assertTrue($result->isEmpty());
     }
 
     #[Test]
@@ -233,7 +233,7 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(UserCollection::class);
 
-        $this->assertTrue($result['isCollection']);
+        $this->assertTrue($result->isCollection);
     }
 
     #[Test]
@@ -241,8 +241,8 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(ResourceWithMeta::class);
 
-        $this->assertArrayHasKey('with', $result);
-        $this->assertArrayHasKey('meta', $result['with']);
+        $this->assertTrue($result->hasWithData());
+        $this->assertArrayHasKey('meta', $result->with);
     }
 
     #[Test]
@@ -354,7 +354,7 @@ class ResourceAnalyzerTest extends TestCase
     public function it_generates_schema_with_additional_meta_from_with_method(): void
     {
         $result = $this->analyzer->analyze(ResourceWithMeta::class);
-        $schema = $this->analyzer->generateSchema($result);
+        $schema = $this->analyzer->generateSchema($result->toArray());
 
         // with() メソッドからの追加メタデータがスキーマに含まれる
         $this->assertArrayHasKey('meta', $schema['properties']);
@@ -388,8 +388,8 @@ class ResourceAnalyzerTest extends TestCase
     {
         $structure = $this->analyzer->analyze('NonExistentClass');
 
-        $this->assertIsArray($structure);
-        $this->assertEmpty($structure);
+        $this->assertInstanceOf(ResourceInfo::class, $structure);
+        $this->assertTrue($structure->isEmpty());
     }
 
     #[Test]
@@ -405,8 +405,8 @@ class ResourceAnalyzerTest extends TestCase
 
         $result = $analyzer->analyze(UserResource::class);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertInstanceOf(ResourceInfo::class, $result);
+        $this->assertTrue($result->isEmpty());
     }
 
     #[Test]
@@ -414,14 +414,13 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(\LaravelSpectrum\Tests\Fixtures\Resources\ResourceWithExamples::class);
 
-        $this->assertArrayHasKey('properties', $result);
-        $this->assertArrayHasKey('hasExamples', $result);
-        $this->assertTrue($result['hasExamples']);
-        $this->assertArrayHasKey('customExample', $result);
-        $this->assertArrayHasKey('customExamples', $result);
-        $this->assertEquals(1, $result['customExample']['id']);
-        $this->assertArrayHasKey('default', $result['customExamples']);
-        $this->assertArrayHasKey('admin', $result['customExamples']);
+        $this->assertNotEmpty($result->properties);
+        $this->assertTrue($result->hasExamples);
+        $this->assertNotNull($result->customExample);
+        $this->assertTrue($result->hasCustomExamples());
+        $this->assertEquals(1, $result->customExample['id']);
+        $this->assertArrayHasKey('default', $result->customExamples);
+        $this->assertArrayHasKey('admin', $result->customExamples);
     }
 
     #[Test]
@@ -429,8 +428,7 @@ class ResourceAnalyzerTest extends TestCase
     {
         $result = $this->analyzer->analyze(UserCollection::class);
 
-        $this->assertArrayHasKey('isCollection', $result);
-        $this->assertTrue($result['isCollection']);
+        $this->assertTrue($result->isCollection);
     }
 
     #[Test]
@@ -518,8 +516,8 @@ class ResourceAnalyzerTest extends TestCase
         $analyzer = new ResourceAnalyzer($astHelper, $cache);
         $result = $analyzer->analyze(UserResource::class);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertInstanceOf(ResourceInfo::class, $result);
+        $this->assertTrue($result->isEmpty());
     }
 
     #[Test]
@@ -539,8 +537,8 @@ class ResourceAnalyzerTest extends TestCase
         $analyzer = new ResourceAnalyzer($astHelper, $cache);
         $result = $analyzer->analyze(UserResource::class);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertInstanceOf(ResourceInfo::class, $result);
+        $this->assertTrue($result->isEmpty());
     }
 
     #[Test]
@@ -558,8 +556,8 @@ class ResourceAnalyzerTest extends TestCase
         $analyzer = new ResourceAnalyzer($astHelper, $cache);
         $result = $analyzer->analyze(UserResource::class);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertInstanceOf(ResourceInfo::class, $result);
+        $this->assertTrue($result->isEmpty());
     }
 
     #[Test]

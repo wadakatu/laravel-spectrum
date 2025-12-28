@@ -16,6 +16,8 @@ final readonly class ResourceInfo
      * @param  mixed  $customExample  Custom example data
      * @param  array<int, array<string, mixed>>|null  $customExamples  Multiple custom examples
      * @param  bool  $isCollection  Whether this is a collection resource
+     * @param  array<string, mixed>  $conditionalFields  Conditional field definitions
+     * @param  array<int, string>  $nestedResources  List of nested resource class names
      */
     public function __construct(
         public array $properties,
@@ -24,6 +26,8 @@ final readonly class ResourceInfo
         public mixed $customExample = null,
         public ?array $customExamples = null,
         public bool $isCollection = false,
+        public array $conditionalFields = [],
+        public array $nestedResources = [],
     ) {}
 
     /**
@@ -40,6 +44,8 @@ final readonly class ResourceInfo
             customExample: $data['customExample'] ?? null,
             customExamples: $data['customExamples'] ?? null,
             isCollection: $data['isCollection'] ?? false,
+            conditionalFields: $data['conditionalFields'] ?? [],
+            nestedResources: $data['nestedResources'] ?? [],
         );
     }
 
@@ -72,6 +78,14 @@ final readonly class ResourceInfo
 
         if ($this->isCollection) {
             $result['isCollection'] = $this->isCollection;
+        }
+
+        if (count($this->conditionalFields) > 0) {
+            $result['conditionalFields'] = $this->conditionalFields;
+        }
+
+        if (count($this->nestedResources) > 0) {
+            $result['nestedResources'] = $this->nestedResources;
         }
 
         return $result;

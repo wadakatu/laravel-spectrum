@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 use LaravelSpectrum\Support\TypeInference;
 
@@ -183,14 +184,11 @@ class SchemaGenerator
     /**
      * リソース構造からスキーマを生成
      */
-    public function generateFromResource(array $resourceStructure): array
+    public function generateFromResource(ResourceInfo $resourceInfo): array
     {
-        // Extract properties from the structured format
-        $resourceProperties = $resourceStructure['properties'] ?? [];
-
         $properties = [];
 
-        foreach ($resourceProperties as $field => $info) {
+        foreach ($resourceInfo->properties as $field => $info) {
             $schema = [
                 'type' => $info['type'],
             ];

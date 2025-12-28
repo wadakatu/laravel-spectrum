@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -165,16 +166,16 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_generates_schema_from_resource_without_example_keys()
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'name' => ['type' => 'string'],
                 'email' => ['type' => 'string', 'example' => 'user@example.com'],
                 'created_at' => ['type' => 'string'],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         $this->assertEquals('object', $schema['type']);
         $this->assertArrayHasKey('properties', $schema);
@@ -324,16 +325,16 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_generates_schema_from_resource_preserves_type(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'secret' => [
                     'type' => 'string',
                 ],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         $this->assertEquals('object', $schema['type']);
         $this->assertArrayHasKey('id', $schema['properties']);
@@ -345,16 +346,16 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_generates_schema_from_resource_preserves_nested_type(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'id' => ['type' => 'integer'],
                 'address' => [
                     'type' => 'object',
                 ],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         $this->assertEquals('object', $schema['properties']['address']['type']);
     }
@@ -362,15 +363,15 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_generates_schema_from_resource_preserves_array_type(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'tags' => [
                     'type' => 'array',
                 ],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         $this->assertEquals('array', $schema['properties']['tags']['type']);
     }
@@ -378,11 +379,11 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_generates_schema_from_empty_resource(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         $this->assertEquals('object', $schema['type']);
         $this->assertEmpty($schema['properties']);
@@ -391,16 +392,16 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_generates_schema_from_resource_with_example(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'email' => [
                     'type' => 'string',
                     'example' => 'user@example.com',
                 ],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         $this->assertArrayHasKey('example', $schema['properties']['email']);
         $this->assertEquals('user@example.com', $schema['properties']['email']['example']);
@@ -760,15 +761,15 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_handles_resource_with_nested_objects(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'user' => [
                     'type' => 'object',
                 ],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         // generateFromResource only extracts type and example
         $this->assertEquals('object', $schema['properties']['user']['type']);
@@ -777,15 +778,15 @@ class SchemaGeneratorTest extends TestCase
     #[Test]
     public function it_handles_resource_with_array_type(): void
     {
-        $resourceStructure = [
+        $resourceInfo = ResourceInfo::fromArray([
             'properties' => [
                 'items' => [
                     'type' => 'array',
                 ],
             ],
-        ];
+        ]);
 
-        $schema = $this->generator->generateFromResource($resourceStructure);
+        $schema = $this->generator->generateFromResource($resourceInfo);
 
         // generateFromResource only extracts type
         $this->assertEquals('array', $schema['properties']['items']['type']);

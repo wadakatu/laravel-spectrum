@@ -7,9 +7,9 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Cache\DocumentationCache;
-use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\Contracts\HasExamples;
+use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -17,7 +17,7 @@ use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter;
 
-class ResourceAnalyzer implements ClassAnalyzer, HasErrors
+class ResourceAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
@@ -41,21 +41,23 @@ class ResourceAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * Resourceクラスを解析してレスポンス構造を抽出
      *
-     * Returns a structured format with 'properties' key containing field definitions,
-     * along with metadata like 'conditionalFields', 'nestedResources', etc.
+     * Returns a ResourceInfo DTO containing field definitions,
+     * along with metadata like 'with', 'hasExamples', etc.
      */
-    public function analyze(string $resourceClass): array
+    public function analyze(string $resourceClass): ResourceInfo
     {
         try {
-            return $this->cache->rememberResource($resourceClass, function () use ($resourceClass) {
+            $cached = $this->cache->rememberResource($resourceClass, function () use ($resourceClass) {
                 return $this->performAnalysis($resourceClass);
             });
+
+            return ResourceInfo::fromArray($cached);
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $resourceClass,
             ]);
 
-            return [];
+            return ResourceInfo::empty();
         }
     }
 
