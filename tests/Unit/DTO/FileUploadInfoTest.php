@@ -268,4 +268,62 @@ class FileUploadInfoTest extends TestCase
         $this->assertEquals($original->dimensions->minWidth, $restored->dimensions->minWidth);
         $this->assertEquals($original->dimensions->maxWidth, $restored->dimensions->maxWidth);
     }
+
+    #[Test]
+    public function it_creates_from_array_with_partial_dimensions(): void
+    {
+        $array = [
+            'is_image' => true,
+            'dimensions' => [
+                'min_width' => 150,
+                'ratio' => '16/9',
+            ],
+        ];
+
+        $info = FileUploadInfo::fromArray($array);
+
+        $this->assertInstanceOf(FileDimensions::class, $info->dimensions);
+        $this->assertEquals(150, $info->dimensions->minWidth);
+        $this->assertNull($info->dimensions->maxWidth);
+        $this->assertNull($info->dimensions->minHeight);
+        $this->assertNull($info->dimensions->maxHeight);
+        $this->assertEquals('16/9', $info->dimensions->ratio);
+    }
+
+    #[Test]
+    public function it_preserves_zero_size_values(): void
+    {
+        $info = new FileUploadInfo(minSize: 0, maxSize: 1024);
+
+        $array = $info->toArray();
+
+        $this->assertArrayHasKey('min_size', $array);
+        $this->assertArrayHasKey('max_size', $array);
+        $this->assertEquals(0, $array['min_size']);
+        $this->assertEquals(1024, $array['max_size']);
+    }
+
+    #[Test]
+    public function it_treats_zero_size_as_valid_constraint(): void
+    {
+        $info = new FileUploadInfo(minSize: 0);
+
+        $this->assertTrue($info->hasSizeConstraints());
+    }
+
+    #[Test]
+    public function it_excludes_false_boolean_fields_from_array(): void
+    {
+        $info = new FileUploadInfo(
+            isImage: false,
+            multiple: false,
+            mimes: ['pdf'],
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayNotHasKey('is_image', $array);
+        $this->assertArrayNotHasKey('multiple', $array);
+        $this->assertArrayHasKey('mimes', $array);
+    }
 }

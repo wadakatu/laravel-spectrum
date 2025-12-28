@@ -192,4 +192,26 @@ class FileDimensionsTest extends TestCase
         $this->assertEquals($original->maxHeight, $restored->maxHeight);
         $this->assertEquals($original->ratio, $restored->ratio);
     }
+
+    #[Test]
+    public function it_preserves_zero_dimension_values(): void
+    {
+        $dimensions = new FileDimensions(minWidth: 0, minHeight: 0);
+
+        $array = $dimensions->toArray();
+
+        $this->assertArrayHasKey('min_width', $array);
+        $this->assertArrayHasKey('min_height', $array);
+        $this->assertEquals(0, $array['min_width']);
+        $this->assertEquals(0, $array['min_height']);
+    }
+
+    #[Test]
+    public function it_treats_zero_as_valid_constraint(): void
+    {
+        $dimensions = new FileDimensions(minWidth: 0);
+
+        $this->assertFalse($dimensions->isEmpty());
+        $this->assertTrue($dimensions->hasWidthConstraints());
+    }
 }
