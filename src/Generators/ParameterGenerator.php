@@ -2,6 +2,9 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\OpenApiParameter;
+use LaravelSpectrum\DTO\OpenApiSchema;
+use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 
 /**
@@ -179,5 +182,87 @@ class ParameterGenerator
         $parameter['explode'] = config('spectrum.parameters.array_explode', true);
 
         return $parameter;
+    }
+
+    /**
+     * Convert a QueryParameterInfo to an OpenApiParameter.
+     */
+    public function createFromQueryParameterInfo(QueryParameterInfo $info): OpenApiParameter
+    {
+        // Build schema from the info
+        $schema = OpenApiSchema::fromType($info->type);
+
+        // Add default value
+        if ($info->default !== null) {
+            $schema = new OpenApiSchema(
+                type: $schema->type,
+                format: $schema->format,
+                default: $info->default,
+                enum: $info->enum,
+                items: $info->type === 'array' ? OpenApiSchema::string() : null,
+            );
+        } elseif ($info->enum !== null) {
+            $schema = $schema->withEnum($info->enum);
+        }
+
+        // Add items for array types
+        if ($info->type === 'array' && $schema->items === null) {
+            $schema = new OpenApiSchema(
+                type: 'array',
+                format: $schema->format,
+                default: $schema->default,
+                enum: $schema->enum,
+                items: OpenApiSchema::string(),
+            );
+        }
+
+        // Add validation constraints
+        if ($info->validationRules !== null) {
+            $constraints = $this->typeInference->getConstraintsFromRules($info->validationRules);
+            if (! empty($constraints)) {
+                $schema = new OpenApiSchema(
+                    type: $schema->type,
+                    format: $schema->format,
+                    default: $schema->default,
+                    enum: $schema->enum,
+                    minimum: $constraints['minimum'] ?? $schema->minimum,
+                    maximum: $constraints['maximum'] ?? $schema->maximum,
+                    minLength: $constraints['minLength'] ?? $schema->minLength,
+                    maxLength: $constraints['maxLength'] ?? $schema->maxLength,
+                    pattern: $constraints['pattern'] ?? $schema->pattern,
+                    items: $schema->items,
+                );
+            }
+        }
+
+        // Create the parameter
+        $param = OpenApiParameter::fromQueryParameterInfo($info);
+
+        // Apply style and explode for array types
+        if ($info->type === 'array') {
+            $includeStyle = config('spectrum.parameters.include_style', true);
+            if ($includeStyle) {
+                $style = config('spectrum.parameters.array_style', 'form');
+                $explode = config('spectrum.parameters.array_explode', true);
+                $param = $param->withStyleAndExplode($style, $explode);
+            }
+        }
+
+        // Update schema with constraints
+        return $param->withSchema($schema);
+    }
+
+    /**
+     * Convert multiple QueryParameterInfo objects to OpenApiParameter objects.
+     *
+     * @param  array<int, QueryParameterInfo>  $infos
+     * @return array<int, OpenApiParameter>
+     */
+    public function createMultipleFromQueryParameterInfos(array $infos): array
+    {
+        return array_map(
+            fn (QueryParameterInfo $info) => $this->createFromQueryParameterInfo($info),
+            $infos
+        );
     }
 }

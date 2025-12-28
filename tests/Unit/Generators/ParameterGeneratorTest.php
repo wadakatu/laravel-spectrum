@@ -2,6 +2,8 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\OpenApiParameter;
+use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Generators\ParameterGenerator;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use LaravelSpectrum\Tests\TestCase;
@@ -445,5 +447,152 @@ class ParameterGeneratorTest extends TestCase
         $parameters = $this->generator->generate($route, $controllerInfo);
 
         $this->assertFalse($parameters[0]['explode']);
+    }
+
+    #[Test]
+    public function it_creates_open_api_parameter_from_query_parameter_info(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'page',
+            type: 'integer',
+            required: false,
+            default: 1,
+            description: 'Page number',
+        );
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertInstanceOf(OpenApiParameter::class, $param);
+        $this->assertEquals('page', $param->name);
+        $this->assertEquals('query', $param->in);
+        $this->assertFalse($param->required);
+        $this->assertEquals('integer', $param->schema->type);
+        $this->assertEquals(1, $param->schema->default);
+        $this->assertEquals('Page number', $param->description);
+    }
+
+    #[Test]
+    public function it_creates_open_api_parameter_with_enum(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'status',
+            type: 'string',
+            required: true,
+            enum: ['active', 'inactive', 'pending'],
+        );
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertEquals(['active', 'inactive', 'pending'], $param->schema->enum);
+        $this->assertTrue($param->required);
+    }
+
+    #[Test]
+    public function it_creates_open_api_parameter_with_array_type(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'ids',
+            type: 'array',
+            required: false,
+        );
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertEquals('array', $param->schema->type);
+        $this->assertNotNull($param->schema->items);
+        $this->assertEquals('string', $param->schema->items->type);
+        $this->assertEquals('form', $param->style);
+        $this->assertTrue($param->explode);
+    }
+
+    #[Test]
+    public function it_creates_open_api_parameter_with_validation_constraints(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'limit',
+            type: 'integer',
+            validationRules: ['integer', 'min:1', 'max:100'],
+        );
+
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->once()
+            ->with(['integer', 'min:1', 'max:100'])
+            ->andReturn(['minimum' => 1, 'maximum' => 100]);
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertEquals(1, $param->schema->minimum);
+        $this->assertEquals(100, $param->schema->maximum);
+    }
+
+    #[Test]
+    public function it_creates_multiple_open_api_parameters_from_infos(): void
+    {
+        $infos = [
+            new QueryParameterInfo(name: 'page', type: 'integer', default: 1),
+            new QueryParameterInfo(name: 'search', type: 'string'),
+        ];
+
+        $params = $this->generator->createMultipleFromQueryParameterInfos($infos);
+
+        $this->assertCount(2, $params);
+        $this->assertInstanceOf(OpenApiParameter::class, $params[0]);
+        $this->assertInstanceOf(OpenApiParameter::class, $params[1]);
+        $this->assertEquals('page', $params[0]->name);
+        $this->assertEquals('search', $params[1]->name);
+    }
+
+    #[Test]
+    public function it_respects_include_style_config_for_dto_array_parameters(): void
+    {
+        config(['spectrum.parameters.include_style' => false]);
+
+        $info = new QueryParameterInfo(
+            name: 'ids',
+            type: 'array',
+        );
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertNull($param->style);
+        $this->assertNull($param->explode);
+        // items should still be added
+        $this->assertNotNull($param->schema->items);
+    }
+
+    #[Test]
+    public function it_creates_open_api_parameter_with_both_default_and_enum(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'status',
+            type: 'string',
+            default: 'active',
+            enum: ['active', 'inactive', 'pending'],
+        );
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertEquals('active', $param->schema->default);
+        $this->assertEquals(['active', 'inactive', 'pending'], $param->schema->enum);
+    }
+
+    #[Test]
+    public function it_handles_validation_rules_with_no_extractable_constraints(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'field',
+            type: 'string',
+            validationRules: ['nullable', 'string'],
+        );
+
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->once()
+            ->with(['nullable', 'string'])
+            ->andReturn([]);
+
+        $param = $this->generator->createFromQueryParameterInfo($info);
+
+        $this->assertNull($param->schema->minimum);
+        $this->assertNull($param->schema->maximum);
     }
 }

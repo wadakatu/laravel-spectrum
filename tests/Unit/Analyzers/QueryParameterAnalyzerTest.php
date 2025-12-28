@@ -3,6 +3,8 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
+use LaravelSpectrum\DTO\QueryParameterAnalysisResult;
+use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Support\QueryParameterDetector;
 use LaravelSpectrum\Support\QueryParameterTypeInference;
 use LaravelSpectrum\Tests\Fixtures\Controllers\FilteredController;
@@ -306,5 +308,155 @@ class QueryParameterAnalyzerTest extends TestCase
 
         $includeDeleted = collect($result['parameters'])->firstWhere('name', 'include_deleted');
         $this->assertEquals('Include Deleted', $includeDeleted['description']);
+    }
+
+    public function test_analyze_to_result_returns_dto(): void
+    {
+        $controller = new class
+        {
+            public function index(\Illuminate\Http\Request $request)
+            {
+                $search = $request->input('search');
+                $page = $request->input('page', 1);
+            }
+        };
+
+        $method = new \ReflectionMethod($controller, 'index');
+        $result = $this->analyzer->analyzeToResult($method);
+
+        $this->assertInstanceOf(QueryParameterAnalysisResult::class, $result);
+        $this->assertEquals(2, $result->count());
+        $this->assertTrue($result->hasParameters());
+
+        $search = $result->getByName('search');
+        $this->assertInstanceOf(QueryParameterInfo::class, $search);
+        $this->assertEquals('search', $search->name);
+        $this->assertEquals('string', $search->type);
+        $this->assertFalse($search->required);
+
+        $page = $result->getByName('page');
+        $this->assertInstanceOf(QueryParameterInfo::class, $page);
+        $this->assertEquals('page', $page->name);
+        $this->assertEquals('integer', $page->type);
+        $this->assertEquals(1, $page->default);
+    }
+
+    public function test_analyze_to_result_with_typed_methods(): void
+    {
+        $controller = new class
+        {
+            public function settings(\Illuminate\Http\Request $request)
+            {
+                $showAll = $request->boolean('show_all');
+                $limit = $request->integer('limit', 100);
+            }
+        };
+
+        $method = new \ReflectionMethod($controller, 'settings');
+        $result = $this->analyzer->analyzeToResult($method);
+
+        $showAll = $result->getByName('show_all');
+        $this->assertEquals('boolean', $showAll->type);
+
+        $limit = $result->getByName('limit');
+        $this->assertEquals('integer', $limit->type);
+        $this->assertEquals(100, $limit->default);
+    }
+
+    public function test_analyze_to_result_with_enum(): void
+    {
+        $controller = new class
+        {
+            public function sort(\Illuminate\Http\Request $request)
+            {
+                $sort = $request->input('sort', 'relevance');
+                if (! in_array($sort, ['relevance', 'date', 'popularity'])) {
+                    $sort = 'relevance';
+                }
+            }
+        };
+
+        $method = new \ReflectionMethod($controller, 'sort');
+        $result = $this->analyzer->analyzeToResult($method);
+
+        $sort = $result->getByName('sort');
+        $this->assertEquals('relevance', $sort->default);
+        $this->assertEquals(['relevance', 'date', 'popularity'], $sort->enum);
+    }
+
+    public function test_merge_with_validation_to_result(): void
+    {
+        $queryParams = QueryParameterAnalysisResult::fromParameters([
+            new QueryParameterInfo(
+                name: 'search',
+                type: 'string',
+                required: false,
+            ),
+            new QueryParameterInfo(
+                name: 'page',
+                type: 'string',
+                required: false,
+                default: 1,
+            ),
+        ]);
+
+        $validationRules = [
+            'search' => ['string', 'max:255'],
+            'page' => ['integer', 'min:1'],
+            'per_page' => ['integer', 'between:10,100'],
+        ];
+
+        $result = $this->analyzer->mergeWithValidationToResult($queryParams, $validationRules);
+
+        $this->assertInstanceOf(QueryParameterAnalysisResult::class, $result);
+        $this->assertEquals(3, $result->count());
+
+        $page = $result->getByName('page');
+        $this->assertEquals('integer', $page->type);
+        $this->assertEquals(['integer', 'min:1'], $page->validationRules);
+
+        $perPage = $result->getByName('per_page');
+        $this->assertNotNull($perPage);
+        $this->assertEquals('integer', $perPage->type);
+        $this->assertEquals('validation', $perPage->source);
+    }
+
+    public function test_analyze_returns_array_for_backward_compatibility(): void
+    {
+        $controller = new class
+        {
+            public function index(\Illuminate\Http\Request $request)
+            {
+                $search = $request->input('search');
+            }
+        };
+
+        $method = new \ReflectionMethod($controller, 'index');
+        $result = $this->analyzer->analyze($method);
+
+        // Should return array format for backward compatibility
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('parameters', $result);
+        $this->assertIsArray($result['parameters']);
+        $this->assertEquals('search', $result['parameters'][0]['name']);
+    }
+
+    public function test_analyze_to_result_returns_empty_when_no_request_calls(): void
+    {
+        $controller = new class
+        {
+            public function index()
+            {
+                // No request calls at all
+                return ['data' => 'static'];
+            }
+        };
+
+        $method = new \ReflectionMethod($controller, 'index');
+        $result = $this->analyzer->analyzeToResult($method);
+
+        $this->assertInstanceOf(QueryParameterAnalysisResult::class, $result);
+        $this->assertFalse($result->hasParameters());
+        $this->assertEquals(0, $result->count());
     }
 }
