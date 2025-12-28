@@ -7,6 +7,7 @@ use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
+use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\Support\PaginationDetector;
 
 /**
@@ -85,9 +86,7 @@ class OpenApiGenerator
                     $authenticationInfo['routes'][$index] ?? null
                 );
 
-                if ($operation) {
-                    $openapi['paths'][$path][strtolower($method)] = $operation;
-                }
+                $openapi['paths'][$path][strtolower($method)] = $operation->toArray();
             }
         }
 
@@ -185,38 +184,37 @@ class OpenApiGenerator
     /**
      * Generate a single operation.
      */
-    protected function generateOperation(array $route, string $method, ?array $authentication = null): array
+    protected function generateOperation(array $route, string $method, ?array $authentication = null): OpenApiOperation
     {
         $controllerInfo = $this->controllerAnalyzer->analyze(
             $route['controller'],
             $route['method']
         );
 
-        $operation = [
-            'summary' => $this->metadataGenerator->generateSummary($route, $method),
-            'operationId' => $this->metadataGenerator->generateOperationId($route, $method),
-            'tags' => $this->tagGenerator->generate($route),
-            'parameters' => $this->parameterGenerator->generate($route, $controllerInfo),
-            'responses' => $this->generateResponses($route, $controllerInfo),
-        ];
-
         // Generate request body for POST, PUT, PATCH
+        $requestBody = null;
         if (in_array($method, ['post', 'put', 'patch'])) {
             $requestBody = $this->requestBodyGenerator->generate($controllerInfo, $route);
-            if ($requestBody !== null) {
-                $operation['requestBody'] = $requestBody->toArray();
-            }
         }
 
         // Apply security
+        $security = null;
         if ($authentication) {
-            $security = $this->securitySchemeGenerator->generateEndpointSecurity($authentication);
-            if (! empty($security)) {
-                $operation['security'] = $security;
+            $generatedSecurity = $this->securitySchemeGenerator->generateEndpointSecurity($authentication);
+            if (! empty($generatedSecurity)) {
+                $security = $generatedSecurity;
             }
         }
 
-        return $operation;
+        return new OpenApiOperation(
+            operationId: $this->metadataGenerator->generateOperationId($route, $method),
+            summary: $this->metadataGenerator->generateSummary($route, $method),
+            tags: $this->tagGenerator->generate($route),
+            parameters: $this->parameterGenerator->generate($route, $controllerInfo),
+            responses: $this->generateResponses($route, $controllerInfo),
+            requestBody: $requestBody,
+            security: $security,
+        );
     }
 
     /**
