@@ -4,6 +4,8 @@ namespace LaravelSpectrum\Tests\Unit\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
+use LaravelSpectrum\DTO\EnumBackingType;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -119,9 +121,14 @@ class ValidationDescriptionGeneratorTest extends TestCase
     #[Test]
     public function it_includes_enum_class_name_in_description(): void
     {
+        $enumInfo = new EnumInfo(
+            class: 'App\Enums\UserStatus',
+            values: ['active', 'inactive'],
+            backingType: EnumBackingType::STRING,
+        );
         $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
-            ->andReturn(['class' => 'App\Enums\UserStatus']);
+            ->andReturn($enumInfo);
 
         $generator = new ValidationDescriptionGenerator($enumAnalyzer);
         $description = $generator->generateDescription('status', ['required']);
@@ -347,9 +354,14 @@ class ValidationDescriptionGeneratorTest extends TestCase
     #[Test]
     public function it_handles_enum_result_with_empty_class(): void
     {
+        $enumInfo = new EnumInfo(
+            class: '',
+            values: ['active', 'inactive'],
+            backingType: EnumBackingType::STRING,
+        );
         $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
-            ->andReturn(['class' => '']);
+            ->andReturn($enumInfo);
 
         $generator = new ValidationDescriptionGenerator($enumAnalyzer);
         $description = $generator->generateDescription('status', ['required']);
@@ -358,11 +370,11 @@ class ValidationDescriptionGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_enum_result_without_class_key(): void
+    public function it_handles_null_enum_result(): void
     {
         $enumAnalyzer = Mockery::mock(EnumAnalyzer::class);
         $enumAnalyzer->shouldReceive('analyzeValidationRule')
-            ->andReturn(['values' => ['active', 'inactive']]);
+            ->andReturn(null);
 
         $generator = new ValidationDescriptionGenerator($enumAnalyzer);
         $description = $generator->generateDescription('status', ['required']);

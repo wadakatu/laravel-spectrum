@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Generators\Support;
 
+use LaravelSpectrum\DTO\EnumInfo;
+
 /**
  * Maps properties from source arrays to OpenAPI schema format.
  *
@@ -131,11 +133,12 @@ final class SchemaPropertyMapper
     }
 
     /**
-     * Map enum property with support for EnumAnalyzer structure.
+     * Map enum property with support for EnumInfo DTO and legacy array structure.
      *
-     * Handles both simple enum arrays and structured enum data from EnumAnalyzer:
-     * - Simple: ['active', 'inactive']
-     * - Structured: ['values' => ['active', 'inactive'], 'type' => 'string']
+     * Handles:
+     * - EnumInfo DTO from EnumAnalyzer
+     * - Simple enum arrays: ['active', 'inactive']
+     * - Legacy structured arrays: ['values' => ['active', 'inactive'], 'type' => 'string']
      *
      * @param  array<string, mixed>  $source
      * @param  array<string, mixed>  $target
@@ -149,8 +152,19 @@ final class SchemaPropertyMapper
 
         $enum = $source['enum'];
 
+        if ($enum instanceof EnumInfo) {
+            // EnumInfo DTO from EnumAnalyzer
+            $target['enum'] = $enum->values;
+
+            // Override type based on backing type
+            $type = $enum->backingType->value;
+            $target['type'] = $type === 'int' ? 'integer' : $type;
+
+            return $target;
+        }
+
         if (is_array($enum) && isset($enum['values'])) {
-            // Structured enum from EnumAnalyzer
+            // Legacy structured enum from EnumAnalyzer
             $target['enum'] = $enum['values'];
 
             // Override type if specified in enum structure

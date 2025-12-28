@@ -705,7 +705,7 @@ class InlineValidationAnalyzer implements HasErrors
             // Check for enum rule and add enum class name to description
             $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);
             if ($enumResult) {
-                $enumClassName = class_basename($enumResult['class']);
+                $enumClassName = class_basename($enumResult->class);
                 $descriptions[] = "({$enumClassName})";
             }
         }

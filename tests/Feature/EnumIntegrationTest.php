@@ -6,6 +6,7 @@ use Illuminate\Validation\Rule;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\Fixtures\Enums\PriorityEnum;
 use LaravelSpectrum\Tests\Fixtures\Enums\StatusEnum;
@@ -136,12 +137,14 @@ class EnumIntegrationTest extends TestCase
         // Check status is not required but has enum
         $statusParam = array_filter($parameters, fn ($p) => $p['name'] === 'status')[0];
         $this->assertFalse($statusParam['required']);
-        $this->assertEquals(['active', 'inactive', 'pending'], $statusParam['enum']['values']);
+        $this->assertInstanceOf(EnumInfo::class, $statusParam['enum']);
+        $this->assertEquals(['active', 'inactive', 'pending'], $statusParam['enum']->values);
 
         // Check priority has conditional requirement and enum
         $priorityParam = array_filter($parameters, fn ($p) => $p['name'] === 'priority')[1];
         $this->assertTrue($priorityParam['required']); // required_if is treated as required
-        $this->assertEquals([1, 2, 3], $priorityParam['enum']['values']);
-        $this->assertEquals('integer', $priorityParam['enum']['type']);
+        $this->assertInstanceOf(EnumInfo::class, $priorityParam['enum']);
+        $this->assertEquals([1, 2, 3], $priorityParam['enum']->values);
+        $this->assertEquals('int', $priorityParam['enum']->backingType->value);
     }
 }

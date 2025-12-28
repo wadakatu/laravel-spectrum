@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
 
@@ -268,8 +269,11 @@ class ParameterBuilder
 
     /**
      * Find enum information from rules.
+     *
+     * @param  array<int|string, mixed>  $rules
+     * @param  array<string, string>  $useStatements
      */
-    protected function findEnumInfo(array $rules, ?string $namespace, array $useStatements = []): ?array
+    protected function findEnumInfo(array $rules, ?string $namespace, array $useStatements = []): ?EnumInfo
     {
         foreach ($rules as $rule) {
             $enumResult = $this->enumAnalyzer->analyzeValidationRule($rule, $namespace, $useStatements);

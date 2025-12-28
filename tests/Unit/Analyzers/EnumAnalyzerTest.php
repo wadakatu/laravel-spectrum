@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
+use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\Tests\Fixtures\Enums\PriorityEnum;
 use LaravelSpectrum\Tests\Fixtures\Enums\SimpleEnum;
 use LaravelSpectrum\Tests\Fixtures\Enums\StatusEnum;
@@ -29,9 +32,10 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals(StatusEnum::class, $result['class']);
-        $this->assertEquals(['active', 'inactive', 'pending'], $result['values']);
-        $this->assertEquals('string', $result['type']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(StatusEnum::class, $result->class);
+        $this->assertEquals(['active', 'inactive', 'pending'], $result->values);
+        $this->assertEquals('string', $result->backingType->value);
     }
 
     public function test_analyzes_new_enum_instance(): void
@@ -40,9 +44,10 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals(PriorityEnum::class, $result['class']);
-        $this->assertEquals([1, 2, 3], $result['values']);
-        $this->assertEquals('integer', $result['type']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(PriorityEnum::class, $result->class);
+        $this->assertEquals([1, 2, 3], $result->values);
+        $this->assertEquals('int', $result->backingType->value);
     }
 
     public function test_analyzes_string_enum_rule(): void
@@ -51,9 +56,10 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals(UserTypeEnum::class, $result['class']);
-        $this->assertEquals(['admin', 'user', 'guest'], $result['values']);
-        $this->assertEquals('string', $result['type']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(UserTypeEnum::class, $result->class);
+        $this->assertEquals(['admin', 'user', 'guest'], $result->values);
+        $this->assertEquals('string', $result->backingType->value);
     }
 
     public function test_analyzes_unit_enum(): void
@@ -62,9 +68,10 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals(SimpleEnum::class, $result['class']);
-        $this->assertEquals(['OPTION_A', 'OPTION_B', 'OPTION_C'], $result['values']);
-        $this->assertEquals('string', $result['type']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(SimpleEnum::class, $result->class);
+        $this->assertEquals(['OPTION_A', 'OPTION_B', 'OPTION_C'], $result->values);
+        $this->assertEquals('string', $result->backingType->value);
     }
 
     public function test_returns_null_for_non_enum_rules(): void
@@ -88,12 +95,14 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeEloquentCasts($modelClass);
 
         $this->assertArrayHasKey('status', $result);
-        $this->assertEquals(StatusEnum::class, $result['status']['class']);
-        $this->assertEquals(['active', 'inactive', 'pending'], $result['status']['values']);
-        $this->assertEquals('string', $result['status']['type']);
+        $this->assertInstanceOf(EnumInfo::class, $result['status']);
+        $this->assertEquals(StatusEnum::class, $result['status']->class);
+        $this->assertEquals(['active', 'inactive', 'pending'], $result['status']->values);
+        $this->assertEquals('string', $result['status']->backingType->value);
 
         $this->assertArrayHasKey('priority', $result);
-        $this->assertEquals(PriorityEnum::class, $result['priority']['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result['priority']);
+        $this->assertEquals(PriorityEnum::class, $result['priority']->class);
     }
 
     public function test_analyzes_method_signature_parameters(): void
@@ -106,7 +115,8 @@ class EnumAnalyzerTest extends TestCase
 
         $this->assertArrayHasKey('parameters', $result);
         $this->assertArrayHasKey('status', $result['parameters']);
-        $this->assertEquals(StatusEnum::class, $result['parameters']['status']['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result['parameters']['status']);
+        $this->assertEquals(StatusEnum::class, $result['parameters']['status']->class);
     }
 
     public function test_analyzes_method_signature_return_type(): void
@@ -118,8 +128,9 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeMethodSignature($method);
 
         $this->assertArrayHasKey('return', $result);
-        $this->assertEquals(StatusEnum::class, $result['return']['class']);
-        $this->assertEquals(['active', 'inactive', 'pending'], $result['return']['values']);
+        $this->assertInstanceOf(EnumInfo::class, $result['return']);
+        $this->assertEquals(StatusEnum::class, $result['return']->class);
+        $this->assertEquals(['active', 'inactive', 'pending'], $result['return']->values);
     }
 
     public function test_analyzes_array_validation_with_enum(): void
@@ -128,8 +139,9 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals(TagEnum::class, $result['class']);
-        $this->assertEquals(['featured', 'popular', 'new', 'trending'], $result['values']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(TagEnum::class, $result->class);
+        $this->assertEquals(['featured', 'popular', 'new', 'trending'], $result->values);
     }
 
     public function test_handles_enum_with_namespace_alias(): void
@@ -139,7 +151,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
 
         $this->assertNotNull($result);
-        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result->class);
     }
 
     public function test_handles_array_format_from_ast_extraction(): void
@@ -151,8 +164,9 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals(StatusEnum::class, $result['class']);
-        $this->assertEquals(['active', 'inactive', 'pending'], $result['values']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(StatusEnum::class, $result->class);
+        $this->assertEquals(['active', 'inactive', 'pending'], $result->values);
     }
 
     public function test_handles_array_format_with_use_statements(): void
@@ -167,7 +181,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
 
         $this->assertNotNull($result);
-        $this->assertEquals(StatusEnum::class, $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(StatusEnum::class, $result->class);
     }
 
     public function test_handles_array_format_with_namespace(): void
@@ -180,7 +195,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
 
         $this->assertNotNull($result);
-        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result->class);
     }
 
     public function test_handles_ast_string_rule_enum_format(): void
@@ -192,7 +208,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
 
         $this->assertNotNull($result);
-        $this->assertEquals(StatusEnum::class, $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(StatusEnum::class, $result->class);
     }
 
     public function test_handles_ast_string_rule_enum_with_namespace(): void
@@ -202,7 +219,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
 
         $this->assertNotNull($result);
-        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result->class);
     }
 
     public function test_handles_ast_new_enum_format(): void
@@ -214,7 +232,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
 
         $this->assertNotNull($result);
-        $this->assertEquals(StatusEnum::class, $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(StatusEnum::class, $result->class);
     }
 
     public function test_handles_ast_new_enum_with_namespace(): void
@@ -224,7 +243,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, $namespace);
 
         $this->assertNotNull($result);
-        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals('LaravelSpectrum\\Tests\\Fixtures\\Enums\\StatusEnum', $result->class);
     }
 
     public function test_handles_concatenated_enum_string(): void
@@ -236,7 +256,8 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule, null, $useStatements);
 
         $this->assertNotNull($result);
-        $this->assertEquals(UserTypeEnum::class, $result['class']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals(UserTypeEnum::class, $result->class);
     }
 
     public function test_returns_empty_array_for_nonexistent_model_class(): void
@@ -294,8 +315,9 @@ class EnumAnalyzerTest extends TestCase
         $result = $this->analyzer->analyzeValidationRule($rule);
 
         $this->assertNotNull($result);
-        $this->assertEquals('integer', $result['type']);
-        $this->assertEquals([1, 2, 3], $result['values']);
+        $this->assertInstanceOf(EnumInfo::class, $result);
+        $this->assertEquals('int', $result->backingType->value);
+        $this->assertEquals([1, 2, 3], $result->values);
     }
 
     public function test_handles_object_rule_that_is_not_enum(): void
