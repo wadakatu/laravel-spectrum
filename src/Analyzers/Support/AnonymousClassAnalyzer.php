@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Analyzers\Support;
 
+use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\Support\ErrorCollector;
 use PhpParser\Error;
 use PhpParser\Parser;
@@ -243,7 +244,9 @@ class AnonymousClassAnalyzer
             $namespace = $reflection->getNamespaceName();
             $useStatements = $this->astExtractor->extractUseStatements($ast);
 
-            return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
+            $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
+
+            return $this->convertParametersToArrays($parameters);
         } catch (Error $e) {
             $this->errorCollector->addWarning(
                 'AnonymousClassAnalyzer',
@@ -312,7 +315,7 @@ class AnonymousClassAnalyzer
                 $parameters = $this->parameterBuilder->buildFromConditionalRules($conditionalRules, $attributes);
 
                 return [
-                    'parameters' => $parameters,
+                    'parameters' => $this->convertParametersToArrays($parameters),
                     'conditional_rules' => $conditionalRules,
                 ];
             }
@@ -408,7 +411,9 @@ class AnonymousClassAnalyzer
         $attributes = $this->invokeMethodSafely($reflection, $instance, 'attributes', [], false);
         $namespace = $reflection->getNamespaceName();
 
-        return $this->parameterBuilder->buildFromRules($rules, $attributes ?? [], $namespace);
+        $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes ?? [], $namespace);
+
+        return $this->convertParametersToArrays($parameters);
     }
 
     /**
@@ -497,5 +502,23 @@ class AnonymousClassAnalyzer
 
             return $default;
         }
+    }
+
+    /**
+     * Convert ParameterDefinition DTOs to arrays for backward compatibility.
+     *
+     * Handles both DTO instances and legacy arrays (from mocks in tests).
+     *
+     * @param  array<ParameterDefinition|array<string, mixed>>  $parameters
+     * @return array<array<string, mixed>>
+     */
+    protected function convertParametersToArrays(array $parameters): array
+    {
+        return array_map(
+            fn (ParameterDefinition|array $param) => $param instanceof ParameterDefinition
+                ? $param->toArray()
+                : $param,
+            $parameters
+        );
     }
 }

@@ -11,6 +11,7 @@ use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\DTO\ConditionalRuleSet;
+use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\DTO\ValidationAnalysisResult;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -161,13 +162,15 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             $rules = $this->astExtractor->extractRules($context['classNode']);
             $attributes = $this->astExtractor->extractAttributes($context['classNode']);
 
-            // Build parameters
-            return $this->parameterBuilder->buildFromRules(
+            // Build parameters and convert to arrays for backward compatibility
+            $parameters = $this->parameterBuilder->buildFromRules(
                 $rules,
                 $attributes,
                 $context['namespace'],
                 $context['useStatements']
             );
+
+            return $this->convertParametersToArrays($parameters);
 
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::AnalysisError, [
@@ -242,7 +245,7 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
                 );
 
                 return new ValidationAnalysisResult(
-                    parameters: $parameters,
+                    parameters: $this->convertParametersToArrays($parameters),
                     conditionalRules: ConditionalRuleSet::fromArray($conditionalRulesArray),
                     attributes: $attributes,
                     messages: $messages,
@@ -259,7 +262,7 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             );
 
             return new ValidationAnalysisResult(
-                parameters: $parameters,
+                parameters: $this->convertParametersToArrays($parameters),
                 conditionalRules: ConditionalRuleSet::empty(),
                 attributes: $attributes,
                 messages: $messages,
@@ -314,5 +317,23 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
 
             return [];
         }
+    }
+
+    /**
+     * Convert ParameterDefinition DTOs to arrays for backward compatibility.
+     *
+     * Handles both DTO instances and legacy arrays (from mocks in tests).
+     *
+     * @param  array<ParameterDefinition|array<string, mixed>>  $parameters
+     * @return array<array<string, mixed>>
+     */
+    protected function convertParametersToArrays(array $parameters): array
+    {
+        return array_map(
+            fn (ParameterDefinition|array $param) => $param instanceof ParameterDefinition
+                ? $param->toArray()
+                : $param,
+            $parameters
+        );
     }
 }

@@ -5,6 +5,8 @@ namespace LaravelSpectrum\Analyzers\Support;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\DTO\EnumInfo;
+use LaravelSpectrum\DTO\FileUploadInfo;
+use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
 
@@ -28,11 +30,11 @@ class ParameterBuilder
     /**
      * Build parameters from validation rules.
      *
-     * @param  array  $rules  The validation rules
-     * @param  array  $attributes  Custom field attributes/descriptions
+     * @param  array<string, mixed>  $rules  The validation rules
+     * @param  array<string, string>  $attributes  Custom field attributes/descriptions
      * @param  string|null  $namespace  The namespace for enum resolution
-     * @param  array  $useStatements  Use statements for enum resolution
-     * @return array<array> The built parameters
+     * @param  array<string, string>  $useStatements  Use statements for enum resolution
+     * @return array<ParameterDefinition> The built parameters
      */
     public function buildFromRules(array $rules, array $attributes = [], ?string $namespace = null, array $useStatements = []): array
     {
@@ -65,11 +67,11 @@ class ParameterBuilder
     /**
      * Build parameters from conditional rules.
      *
-     * @param  array  $conditionalRules  The conditional rules structure
-     * @param  array  $attributes  Custom field attributes/descriptions
+     * @param  array<string, mixed>  $conditionalRules  The conditional rules structure
+     * @param  array<string, string>  $attributes  Custom field attributes/descriptions
      * @param  string  $namespace  The namespace for enum resolution
-     * @param  array  $useStatements  Use statements for enum resolution
-     * @return array<array> The built parameters
+     * @param  array<string, string>  $useStatements  Use statements for enum resolution
+     * @return array<ParameterDefinition> The built parameters
      */
     public function buildFromConditionalRules(array $conditionalRules, array $attributes = [], string $namespace = '', array $useStatements = []): array
     {
@@ -161,27 +163,38 @@ class ParameterBuilder
 
     /**
      * Build a file upload parameter.
+     *
+     * @param  array<string, mixed>  $fileInfo
+     * @param  array<string>  $ruleArray
+     * @param  array<string, string>  $attributes
      */
-    protected function buildFileParameter(string $field, array $fileInfo, array $ruleArray, array $attributes): array
+    protected function buildFileParameter(string $field, array $fileInfo, array $ruleArray, array $attributes): ParameterDefinition
     {
-        return [
-            'name' => $field,
-            'in' => 'body',
-            'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
-            'type' => 'file',
-            'format' => 'binary',
-            'file_info' => $fileInfo,
-            'description' => $this->descriptionGenerator->generateFileDescriptionWithAttribute(
+        $fileUploadInfo = FileUploadInfo::fromArray($fileInfo);
+
+        return new ParameterDefinition(
+            name: $field,
+            in: 'body',
+            required: $this->ruleRequirementAnalyzer->isRequired($ruleArray),
+            type: 'file',
+            description: $this->descriptionGenerator->generateFileDescriptionWithAttribute(
                 $field,
                 $fileInfo,
                 $attributes[$field] ?? null
             ),
-            'validation' => $ruleArray,
-        ];
+            example: null,
+            validation: $ruleArray,
+            format: 'binary',
+            fileInfo: $fileUploadInfo,
+        );
     }
 
     /**
      * Build a standard (non-file) parameter.
+     *
+     * @param  array<string>  $ruleArray
+     * @param  array<string, string>  $attributes
+     * @param  array<string, string>  $useStatements
      */
     protected function buildStandardParameter(
         string $field,
@@ -189,47 +202,48 @@ class ParameterBuilder
         array $attributes,
         ?string $namespace,
         array $useStatements
-    ): array {
+    ): ParameterDefinition {
         // Check for enum rules
         $enumInfo = $this->findEnumInfo($ruleArray, $namespace, $useStatements);
 
-        $parameter = [
-            'name' => $field,
-            'in' => 'body',
-            'required' => $this->ruleRequirementAnalyzer->isRequired($ruleArray),
-            'type' => $this->typeInference->inferFromRules($ruleArray),
-            'description' => $attributes[$field] ?? $this->descriptionGenerator->generateDescription(
+        // Determine format
+        $format = $this->formatInferrer->inferFormat($ruleArray);
+
+        // Determine conditional rule information
+        $conditionalRequired = null;
+        $conditionalRules = null;
+        if ($this->ruleRequirementAnalyzer->hasConditionalRequired($ruleArray)) {
+            $conditionalRequired = true;
+            $conditionalRules = $this->ruleRequirementAnalyzer->extractConditionalRuleDetails($ruleArray);
+        }
+
+        return new ParameterDefinition(
+            name: $field,
+            in: 'body',
+            required: $this->ruleRequirementAnalyzer->isRequired($ruleArray),
+            type: $this->typeInference->inferFromRules($ruleArray),
+            description: $attributes[$field] ?? $this->descriptionGenerator->generateDescription(
                 $field,
                 $ruleArray,
                 $namespace,
                 $useStatements
             ),
-            'example' => $this->typeInference->generateExample($field, $ruleArray),
-            'validation' => $ruleArray,
-        ];
-
-        // Add format for various field types
-        $format = $this->formatInferrer->inferFormat($ruleArray);
-        if ($format) {
-            $parameter['format'] = $format;
-        }
-
-        // Add conditional rule information
-        if ($this->ruleRequirementAnalyzer->hasConditionalRequired($ruleArray)) {
-            $parameter['conditional_required'] = true;
-            $parameter['conditional_rules'] = $this->ruleRequirementAnalyzer->extractConditionalRuleDetails($ruleArray);
-        }
-
-        // Add enum information if found
-        if ($enumInfo) {
-            $parameter['enum'] = $enumInfo;
-        }
-
-        return $parameter;
+            example: $this->typeInference->generateExample($field, $ruleArray),
+            validation: $ruleArray,
+            format: $format,
+            conditionalRequired: $conditionalRequired,
+            conditionalRules: $conditionalRules,
+            enum: $enumInfo,
+        );
     }
 
     /**
      * Build a conditional parameter.
+     *
+     * @param  array<string>  $mergedRules
+     * @param  array<string, mixed>  $processedField
+     * @param  array<string, string>  $attributes
+     * @param  array<string, string>  $useStatements
      */
     protected function buildConditionalParameter(
         string $field,
@@ -238,33 +252,27 @@ class ParameterBuilder
         array $attributes,
         string $namespace,
         array $useStatements
-    ): array {
+    ): ParameterDefinition {
         // Check for enum rules
         $enumInfo = $this->findEnumInfo($mergedRules, $namespace, $useStatements);
 
         // Extract rules_by_condition with fallback for safety
         $rulesByCondition = $processedField['rules_by_condition'] ?? [];
 
-        $parameter = [
-            'name' => $field,
-            'in' => 'body',
-            'required' => $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($rulesByCondition),
-            'type' => $this->typeInference->inferFromRules($mergedRules),
-            'description' => $attributes[$field] ?? $this->descriptionGenerator->generateConditionalDescription(
+        return new ParameterDefinition(
+            name: $field,
+            in: 'body',
+            required: $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($rulesByCondition),
+            type: $this->typeInference->inferFromRules($mergedRules),
+            description: $attributes[$field] ?? $this->descriptionGenerator->generateConditionalDescription(
                 $field,
                 $processedField
             ),
-            'conditional_rules' => $rulesByCondition,
-            'validation' => $mergedRules,
-            'example' => $this->typeInference->generateExample($field, $mergedRules),
-        ];
-
-        // Add enum information if found
-        if ($enumInfo) {
-            $parameter['enum'] = $enumInfo;
-        }
-
-        return $parameter;
+            example: $this->typeInference->generateExample($field, $mergedRules),
+            validation: $mergedRules,
+            conditionalRules: $rulesByCondition,
+            enum: $enumInfo,
+        );
     }
 
     /**

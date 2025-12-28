@@ -10,6 +10,7 @@ use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\DTO\EnumBackingType;
 use LaravelSpectrum\DTO\EnumInfo;
+use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
 use Mockery;
@@ -68,15 +69,17 @@ class ParameterBuilderTest extends TestCase
 
         $nameParam = $this->findParameter($parameters, 'name');
         $this->assertNotNull($nameParam);
-        $this->assertTrue($nameParam['required']);
-        $this->assertEquals('string', $nameParam['type']);
-        $this->assertEquals('body', $nameParam['in']);
+        $this->assertInstanceOf(ParameterDefinition::class, $nameParam);
+        $this->assertTrue($nameParam->required);
+        $this->assertEquals('string', $nameParam->type);
+        $this->assertEquals('body', $nameParam->in);
 
         $emailParam = $this->findParameter($parameters, 'email');
         $this->assertNotNull($emailParam);
-        $this->assertTrue($emailParam['required']);
-        $this->assertEquals('string', $emailParam['type']);
-        $this->assertEquals('email', $emailParam['format']);
+        $this->assertInstanceOf(ParameterDefinition::class, $emailParam);
+        $this->assertTrue($emailParam->required);
+        $this->assertEquals('string', $emailParam->type);
+        $this->assertEquals('email', $emailParam->format);
     }
 
     #[Test]
@@ -90,8 +93,8 @@ class ParameterBuilderTest extends TestCase
 
         $ageParam = $this->findParameter($parameters, 'age');
         $this->assertNotNull($ageParam);
-        $this->assertTrue($ageParam['required']);
-        $this->assertEquals('integer', $ageParam['type']);
+        $this->assertTrue($ageParam->required);
+        $this->assertEquals('integer', $ageParam->type);
     }
 
     #[Test]
@@ -106,7 +109,7 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $this->assertCount(1, $parameters);
-        $this->assertEquals('name', $parameters[0]['name']);
+        $this->assertEquals('name', $parameters[0]->name);
     }
 
     #[Test]
@@ -122,7 +125,7 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules, $attributes);
 
         $emailParam = $this->findParameter($parameters, 'email');
-        $this->assertEquals('メールアドレス', $emailParam['description']);
+        $this->assertEquals('メールアドレス', $emailParam->description);
     }
 
     #[Test]
@@ -135,8 +138,8 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $param = $this->findParameter($parameters, 'user_name');
-        $this->assertStringContainsString('User Name', $param['description']);
-        $this->assertStringContainsString('(最大100文字)', $param['description']);
+        $this->assertStringContainsString('User Name', $param->description);
+        $this->assertStringContainsString('(最大100文字)', $param->description);
     }
 
     #[Test]
@@ -150,10 +153,10 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $birthDate = $this->findParameter($parameters, 'birth_date');
-        $this->assertEquals('date', $birthDate['format']);
+        $this->assertEquals('date', $birthDate->format);
 
         $createdAt = $this->findParameter($parameters, 'created_at');
-        $this->assertEquals('date-time', $createdAt['format']);
+        $this->assertEquals('date-time', $createdAt->format);
     }
 
     #[Test]
@@ -167,10 +170,10 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $nickname = $this->findParameter($parameters, 'nickname');
-        $this->assertFalse($nickname['required']);
+        $this->assertFalse($nickname->required);
 
         $bio = $this->findParameter($parameters, 'bio');
-        $this->assertFalse($bio['required']);
+        $this->assertFalse($bio->required);
     }
 
     #[Test]
@@ -183,8 +186,8 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $phone = $this->findParameter($parameters, 'phone');
-        $this->assertTrue($phone['conditional_required']);
-        $this->assertArrayHasKey('conditional_rules', $phone);
+        $this->assertTrue($phone->conditionalRequired);
+        $this->assertTrue($phone->hasConditionalRules());
     }
 
     #[Test]
@@ -198,11 +201,11 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $email = $this->findParameter($parameters, 'email');
-        $this->assertArrayHasKey('example', $email);
+        $this->assertNotNull($email->example);
 
         $age = $this->findParameter($parameters, 'age');
-        $this->assertArrayHasKey('example', $age);
-        $this->assertIsInt($age['example']);
+        $this->assertNotNull($age->example);
+        $this->assertIsInt($age->example);
     }
 
     // ========== File upload tests ==========
@@ -218,9 +221,10 @@ class ParameterBuilderTest extends TestCase
 
         $avatar = $this->findParameter($parameters, 'avatar');
         $this->assertNotNull($avatar);
-        $this->assertEquals('file', $avatar['type']);
-        $this->assertEquals('binary', $avatar['format']);
-        $this->assertArrayHasKey('file_info', $avatar);
+        $this->assertEquals('file', $avatar->type);
+        $this->assertEquals('binary', $avatar->format);
+        $this->assertNotNull($avatar->fileInfo);
+        $this->assertTrue($avatar->isFileUpload());
     }
 
     #[Test]
@@ -233,8 +237,8 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $photo = $this->findParameter($parameters, 'photo');
-        $this->assertEquals('file', $photo['type']);
-        $this->assertArrayHasKey('file_info', $photo);
+        $this->assertEquals('file', $photo->type);
+        $this->assertNotNull($photo->fileInfo);
     }
 
     // ========== buildFromConditionalRules tests ==========
@@ -269,7 +273,7 @@ class ParameterBuilderTest extends TestCase
 
         $cardNumber = $this->findParameter($parameters, 'card_number');
         $this->assertNotNull($cardNumber);
-        $this->assertArrayHasKey('conditional_rules', $cardNumber);
+        $this->assertTrue($cardNumber->hasConditionalRules());
 
         $accountNumber = $this->findParameter($parameters, 'account_number');
         $this->assertNotNull($accountNumber);
@@ -301,7 +305,7 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
 
         $email = $this->findParameter($parameters, 'email');
-        $this->assertCount(2, $email['conditional_rules']);
+        $this->assertCount(2, $email->conditionalRules);
     }
 
     #[Test]
@@ -327,7 +331,7 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromConditionalRules($conditionalRules, $attributes);
 
         $payment = $this->findParameter($parameters, 'payment_method');
-        $this->assertEquals('支払い方法', $payment['description']);
+        $this->assertEquals('支払い方法', $payment->description);
     }
 
     // ========== Enum tests ==========
@@ -366,9 +370,9 @@ class ParameterBuilderTest extends TestCase
         $parameters = $builder->buildFromRules($rules);
 
         $status = $this->findParameter($parameters, 'status');
-        $this->assertArrayHasKey('enum', $status);
-        $this->assertInstanceOf(EnumInfo::class, $status['enum']);
-        $this->assertEquals('App\\Enums\\UserStatus', $status['enum']->class);
+        $this->assertTrue($status->hasEnum());
+        $this->assertInstanceOf(EnumInfo::class, $status->enum);
+        $this->assertEquals('App\\Enums\\UserStatus', $status->enum->class);
     }
 
     // ========== Edge cases ==========
@@ -406,7 +410,7 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules);
 
         $name = $this->findParameter($parameters, 'name');
-        $this->assertEquals(['required', 'string', 'max:255'], $name['validation']);
+        $this->assertEquals(['required', 'string', 'max:255'], $name->validation);
     }
 
     #[Test]
@@ -436,10 +440,10 @@ class ParameterBuilderTest extends TestCase
 
         $parameters = $this->builder->buildFromRules($rules);
 
-        $this->assertEquals('integer', $this->findParameter($parameters, 'count')['type']);
-        $this->assertEquals('number', $this->findParameter($parameters, 'price')['type']);
-        $this->assertEquals('boolean', $this->findParameter($parameters, 'is_active')['type']);
-        $this->assertEquals('array', $this->findParameter($parameters, 'tags')['type']);
+        $this->assertEquals('integer', $this->findParameter($parameters, 'count')->type);
+        $this->assertEquals('number', $this->findParameter($parameters, 'price')->type);
+        $this->assertEquals('boolean', $this->findParameter($parameters, 'is_active')->type);
+        $this->assertEquals('array', $this->findParameter($parameters, 'tags')->type);
     }
 
     // ========== Malformed input edge cases ==========
@@ -558,8 +562,8 @@ class ParameterBuilderTest extends TestCase
         $this->assertCount(1, $parameters);
         $field = $this->findParameter($parameters, 'field');
         $this->assertNotNull($field);
-        $this->assertArrayHasKey('conditional_rules', $field);
-        $this->assertEquals([], $field['conditional_rules'][0]['conditions']);
+        $this->assertTrue($field->hasConditionalRules());
+        $this->assertEquals([], $field->conditionalRules[0]['conditions']);
     }
 
     // ========== Suggested improvements tests ==========
@@ -602,9 +606,9 @@ class ParameterBuilderTest extends TestCase
         $parameters = $builder->buildFromConditionalRules($conditionalRules);
 
         $payment = $this->findParameter($parameters, 'payment');
-        $this->assertArrayHasKey('enum', $payment);
-        $this->assertInstanceOf(EnumInfo::class, $payment['enum']);
-        $this->assertEquals('App\\Enums\\PaymentType', $payment['enum']->class);
+        $this->assertTrue($payment->hasEnum());
+        $this->assertInstanceOf(EnumInfo::class, $payment->enum);
+        $this->assertEquals('App\\Enums\\PaymentType', $payment->enum->class);
     }
 
     #[Test]
@@ -620,7 +624,7 @@ class ParameterBuilderTest extends TestCase
         $parameters = $this->builder->buildFromRules($rules, $attributes);
 
         $document = $this->findParameter($parameters, 'document');
-        $this->assertStringContainsString('PDFドキュメント', $document['description']);
+        $this->assertStringContainsString('PDFドキュメント', $document->description);
     }
 
     #[Test]
@@ -654,17 +658,20 @@ class ParameterBuilderTest extends TestCase
         $parameters = $builder->buildFromRules($rules, [], 'App\\Http\\Requests', ['Status' => 'App\\Enums\\Status']);
 
         $status = $this->findParameter($parameters, 'status');
-        $this->assertArrayHasKey('enum', $status);
-        $this->assertInstanceOf(EnumInfo::class, $status['enum']);
-        $this->assertEquals('App\\Enums\\Status', $status['enum']->class);
+        $this->assertTrue($status->hasEnum());
+        $this->assertInstanceOf(EnumInfo::class, $status->enum);
+        $this->assertEquals('App\\Enums\\Status', $status->enum->class);
     }
 
     // ========== Helper methods ==========
 
-    private function findParameter(array $parameters, string $name): ?array
+    /**
+     * @param  array<ParameterDefinition>  $parameters
+     */
+    private function findParameter(array $parameters, string $name): ?ParameterDefinition
     {
         foreach ($parameters as $parameter) {
-            if ($parameter['name'] === $name) {
+            if ($parameter->name === $name) {
                 return $parameter;
             }
         }
