@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
 use LaravelSpectrum\Tests\TestCase;
@@ -24,8 +25,10 @@ class ErrorResponseGeneratorTest extends TestCase
         $responses = $this->generator->generateErrorResponses();
 
         $this->assertArrayHasKey('401', $responses);
-        $this->assertEquals('Unauthorized', $responses['401']['description']);
-        $this->assertArrayHasKey('content', $responses['401']);
+        $this->assertInstanceOf(OpenApiResponse::class, $responses['401']);
+        $this->assertEquals('Unauthorized', $responses['401']->description);
+        $this->assertTrue($responses['401']->hasContent());
+        $this->assertTrue($responses['401']->isClientError());
     }
 
     #[Test]
@@ -41,9 +44,11 @@ class ErrorResponseGeneratorTest extends TestCase
         $responses = $this->generator->generateErrorResponses($formRequestData);
 
         $this->assertArrayHasKey('422', $responses);
-        $this->assertEquals('Validation Error', $responses['422']['description']);
+        $this->assertInstanceOf(OpenApiResponse::class, $responses['422']);
+        $this->assertEquals('Validation Error', $responses['422']->description);
+        $this->assertTrue($responses['422']->isClientError());
 
-        $schema = $responses['422']['content']['application/json']['schema'];
+        $schema = $responses['422']->content['application/json']['schema'];
         $this->assertArrayHasKey('errors', $schema['properties']);
 
         $errorProperties = $schema['properties']['errors']['properties'];
@@ -61,7 +66,7 @@ class ErrorResponseGeneratorTest extends TestCase
         ];
 
         $responses = $this->generator->generateErrorResponses($formRequestData);
-        $example = $responses['422']['content']['application/json']['schema']['properties']['errors']['example'];
+        $example = $responses['422']->content['application/json']['schema']['properties']['errors']['example'];
 
         $this->assertArrayHasKey('email', $example);
         $this->assertIsArray($example['email']);
@@ -77,6 +82,10 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertArrayHasKey('403', $responses);
         $this->assertArrayHasKey('404', $responses);
         $this->assertArrayHasKey('500', $responses);
+
+        $this->assertInstanceOf(OpenApiResponse::class, $responses['401']);
+        $this->assertInstanceOf(OpenApiResponse::class, $responses['500']);
+        $this->assertTrue($responses['500']->isServerError());
     }
 
     #[Test]
@@ -88,6 +97,9 @@ class ErrorResponseGeneratorTest extends TestCase
         $this->assertArrayNotHasKey('403', $responses);
         $this->assertArrayHasKey('404', $responses);
         $this->assertArrayHasKey('500', $responses);
+
+        $this->assertInstanceOf(OpenApiResponse::class, $responses['404']);
+        $this->assertTrue($responses['404']->isClientError());
     }
 
     #[Test]

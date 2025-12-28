@@ -257,15 +257,21 @@ class OpenApiGenerator
             ];
         }
 
-        // Generate error responses
-        $allErrorResponses = $this->errorResponseGenerator->generateErrorResponses($validationData);
+        // Generate error responses (returns DTOs)
+        $allErrorResponseDTOs = $this->errorResponseGenerator->generateErrorResponses($validationData);
 
-        // Get default error responses
-        $defaultErrorResponses = $this->errorResponseGenerator->getDefaultErrorResponses(
+        // Get default error responses (returns DTOs)
+        $defaultErrorResponseDTOs = $this->errorResponseGenerator->getDefaultErrorResponses(
             $method,
             $requiresAuth,
             ! empty($validationData)
         );
+
+        // Convert DTOs to arrays for modification
+        $defaultErrorResponses = [];
+        foreach ($defaultErrorResponseDTOs as $statusCode => $dto) {
+            $defaultErrorResponses[$statusCode] = $dto->toArray();
+        }
 
         if (empty($validationData)) {
             foreach ($defaultErrorResponses as $statusCode => &$errorResponse) {
@@ -279,8 +285,8 @@ class OpenApiGenerator
         }
 
         $responses = $defaultErrorResponses;
-        if (isset($allErrorResponses['422'])) {
-            $responses['422'] = $allErrorResponses['422'];
+        if (isset($allErrorResponseDTOs['422'])) {
+            $responses['422'] = $allErrorResponseDTOs['422']->toArray();
             $validationExample = $this->exampleGenerator->generateErrorExample(422, $validationData['rules'] ?? []);
             if (isset($responses['422']['content']['application/json'])) {
                 $responses['422']['content']['application/json']['example'] = $validationExample;
