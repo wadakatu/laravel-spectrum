@@ -78,6 +78,18 @@ class FieldPatternRegistryTest extends TestCase
 
     public function test_handles_phone_pattern_variations(): void
     {
+        // phone pattern
+        $config = $this->registry->getConfig('phone');
+        $this->assertNotNull($config);
+        $this->assertEquals('phone', $config->type);
+        $this->assertEquals('phone', $config->format);
+
+        // phonenumber pattern
+        $config = $this->registry->getConfig('phonenumber');
+        $this->assertNotNull($config);
+        $this->assertEquals('phone', $config->type);
+        $this->assertEquals('phone', $config->format);
+
         // fax pattern
         $config = $this->registry->getConfig('fax');
         $this->assertNotNull($config);
