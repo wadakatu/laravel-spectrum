@@ -264,12 +264,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
      */
     protected function detectPaginationToDto(ReflectionMethod $methodReflection): ?PaginationInfo
     {
-        $paginationArray = $this->paginationAnalyzer->analyzeMethod($methodReflection);
-        if ($paginationArray) {
-            return PaginationInfo::fromArray($paginationArray);
-        }
-
-        return null;
+        return $this->paginationAnalyzer->analyzeMethod($methodReflection);
     }
 
     /**
