@@ -14,7 +14,7 @@ final readonly class OpenApiOperation
      * @param  string|null  $summary  Short summary of the operation
      * @param  array<int, string>  $tags  Tags for API documentation control
      * @param  array<int, OpenApiParameter>  $parameters  Path, query, header, cookie parameters
-     * @param  array<string, array<string, mixed>>  $responses  Response definitions keyed by status code
+     * @param  array<string, OpenApiResponse>  $responses  Response definitions keyed by status code
      * @param  string|null  $description  Verbose explanation of the operation
      * @param  OpenApiRequestBody|null  $requestBody  Request body definition
      * @param  array<int, array<string, array<int, string>>>|null  $security  Security requirements
@@ -52,12 +52,20 @@ final readonly class OpenApiOperation
                 : OpenApiParameter::fromArray($param);
         }
 
+        // Convert response arrays to DTOs
+        $responses = [];
+        foreach ($data['responses'] ?? [] as $statusCode => $responseData) {
+            $responses[(string) $statusCode] = $responseData instanceof OpenApiResponse
+                ? $responseData
+                : OpenApiResponse::fromArray(array_merge($responseData, ['status_code' => $statusCode]));
+        }
+
         return new self(
             operationId: $data['operationId'] ?? '',
             summary: $data['summary'] ?? null,
             tags: $data['tags'] ?? [],
             parameters: $parameters,
-            responses: $data['responses'] ?? [],
+            responses: $responses,
             description: $data['description'] ?? null,
             requestBody: $requestBody,
             security: $data['security'] ?? null,
@@ -72,6 +80,12 @@ final readonly class OpenApiOperation
      */
     public function toArray(): array
     {
+        // Convert response DTOs to arrays
+        $responses = [];
+        foreach ($this->responses as $statusCode => $response) {
+            $responses[$statusCode] = $response->toArray();
+        }
+
         $result = [
             'operationId' => $this->operationId,
             'tags' => $this->tags,
@@ -79,7 +93,7 @@ final readonly class OpenApiOperation
                 fn (OpenApiParameter $param) => $param->toArray(),
                 $this->parameters
             ),
-            'responses' => $this->responses,
+            'responses' => $responses,
         ];
 
         if ($this->summary !== null) {

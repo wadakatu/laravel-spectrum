@@ -10,6 +10,7 @@ use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\DTO\AuthenticationResult;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiOperation;
+use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
 
@@ -231,19 +232,35 @@ class OpenApiGenerator
 
     /**
      * Generate responses for an operation.
+     *
+     * @return array<string, OpenApiResponse>
      */
     protected function generateResponses(array $route, ControllerInfo $controllerInfo): array
     {
         $responses = [];
 
-        // Success response
+        // Success response (returns raw array with 'code' and 'response' keys)
         $successResponse = $this->generateSuccessResponse($route, $controllerInfo);
-        $responses[$successResponse['code']] = $successResponse['response'];
+        $statusCode = (string) $successResponse['code'];
+        $responses[$statusCode] = new OpenApiResponse(
+            statusCode: $statusCode,
+            description: $successResponse['response']['description'] ?? '',
+            content: $successResponse['response']['content'] ?? null,
+        );
 
-        // Error responses
+        // Error responses (returns raw arrays)
         $errorResponses = $this->generateErrorResponses($route, $controllerInfo);
 
-        return $responses + $errorResponses;
+        // Convert error response arrays to DTOs
+        foreach ($errorResponses as $code => $responseData) {
+            $responses[(string) $code] = new OpenApiResponse(
+                statusCode: (string) $code,
+                description: $responseData['description'] ?? '',
+                content: $responseData['content'] ?? null,
+            );
+        }
+
+        return $responses;
     }
 
     /**
