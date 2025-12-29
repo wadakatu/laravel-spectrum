@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\DTO\EnumInfo;
+use LaravelSpectrum\DTO\MethodSignatureInfo;
 use LaravelSpectrum\Tests\Fixtures\Enums\PriorityEnum;
 use LaravelSpectrum\Tests\Fixtures\Enums\SimpleEnum;
 use LaravelSpectrum\Tests\Fixtures\Enums\StatusEnum;
@@ -382,5 +383,75 @@ class EnumAnalyzerTest extends TestCase
 
         $this->assertArrayHasKey('parameters', $result);
         $this->assertEmpty($result['parameters']);
+    }
+
+    // Tests for new analyzeSignature() method returning MethodSignatureInfo DTO
+
+    public function test_analyze_signature_returns_method_signature_info(): void
+    {
+        $method = new ReflectionMethod(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController::class,
+            'store'
+        );
+
+        $result = $this->analyzer->analyzeSignature($method);
+
+        $this->assertInstanceOf(MethodSignatureInfo::class, $result);
+    }
+
+    public function test_analyze_signature_detects_enum_parameters(): void
+    {
+        $method = new ReflectionMethod(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController::class,
+            'store'
+        );
+
+        $result = $this->analyzer->analyzeSignature($method);
+
+        $this->assertTrue($result->hasParameters());
+        $this->assertArrayHasKey('status', $result->parameters);
+        $this->assertInstanceOf(EnumInfo::class, $result->parameters['status']);
+    }
+
+    public function test_analyze_signature_detects_enum_return_type(): void
+    {
+        $method = new ReflectionMethod(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController::class,
+            'getStatus'
+        );
+
+        $result = $this->analyzer->analyzeSignature($method);
+
+        $this->assertTrue($result->hasReturnType());
+        $this->assertInstanceOf(EnumInfo::class, $result->return);
+        $this->assertEquals(StatusEnum::class, $result->return->class);
+    }
+
+    public function test_analyze_signature_returns_empty_for_non_enum_method(): void
+    {
+        $method = new ReflectionMethod(\DateTime::class, 'getTimestamp');
+
+        $result = $this->analyzer->analyzeSignature($method);
+
+        $this->assertFalse($result->hasAnyEnums());
+        $this->assertEquals([], $result->parameters);
+        $this->assertNull($result->return);
+    }
+
+    public function test_analyze_signature_helper_methods_work(): void
+    {
+        $method = new ReflectionMethod(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\EnumTestController::class,
+            'store'
+        );
+
+        $result = $this->analyzer->analyzeSignature($method);
+
+        $this->assertTrue($result->hasAnyEnums());
+        $this->assertEquals(['status', 'priority'], $result->getParameterNames());
+        $this->assertEquals(2, $result->parameterCount());
+        $this->assertInstanceOf(EnumInfo::class, $result->getParameter('status'));
+        $this->assertInstanceOf(EnumInfo::class, $result->getParameter('priority'));
+        $this->assertNull($result->getParameter('nonexistent'));
     }
 }

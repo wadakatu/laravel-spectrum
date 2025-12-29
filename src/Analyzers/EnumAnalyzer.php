@@ -7,6 +7,7 @@ namespace LaravelSpectrum\Analyzers;
 use Illuminate\Validation\Rules\Enum;
 use LaravelSpectrum\DTO\EnumBackingType;
 use LaravelSpectrum\DTO\EnumInfo;
+use LaravelSpectrum\DTO\MethodSignatureInfo;
 use LaravelSpectrum\Support\EnumExtractor;
 use ReflectionClass;
 use ReflectionMethod;
@@ -200,15 +201,12 @@ class EnumAnalyzer
     /**
      * Analyze method signature for enum parameters and return types.
      *
-     * @return array{parameters: array<string, EnumInfo>, return: EnumInfo|null}
+     * Returns a MethodSignatureInfo DTO with enum information for parameters and return type.
      */
-    public function analyzeMethodSignature(ReflectionMethod $method): array
+    public function analyzeSignature(ReflectionMethod $method): MethodSignatureInfo
     {
-        /** @var array{parameters: array<string, EnumInfo>, return: EnumInfo|null} $result */
-        $result = [
-            'parameters' => [],
-            'return' => null,
-        ];
+        $parameters = [];
+        $return = null;
 
         // Analyze parameters
         foreach ($method->getParameters() as $parameter) {
@@ -220,7 +218,7 @@ class EnumAnalyzer
                 if (enum_exists($typeName)) {
                     $enumInfo = $this->extractEnumInfo($typeName);
                     if ($enumInfo) {
-                        $result['parameters'][$parameter->getName()] = $enumInfo;
+                        $parameters[$parameter->getName()] = $enumInfo;
                     }
                 }
             }
@@ -234,12 +232,33 @@ class EnumAnalyzer
             if (enum_exists($typeName)) {
                 $enumInfo = $this->extractEnumInfo($typeName);
                 if ($enumInfo) {
-                    $result['return'] = $enumInfo;
+                    $return = $enumInfo;
                 }
             }
         }
 
-        return $result;
+        return new MethodSignatureInfo(
+            parameters: $parameters,
+            return: $return,
+        );
+    }
+
+    /**
+     * Analyze method signature for enum parameters and return types (backward compatible).
+     *
+     * @return array{parameters: array<string, EnumInfo>, return: EnumInfo|null}
+     *
+     * @deprecated Use analyzeSignature() which returns a MethodSignatureInfo DTO
+     */
+    public function analyzeMethodSignature(ReflectionMethod $method): array
+    {
+        $result = $this->analyzeSignature($method);
+
+        // Return backward-compatible array format with EnumInfo objects
+        return [
+            'parameters' => $result->parameters,
+            'return' => $result->return,
+        ];
     }
 
     /**
