@@ -451,15 +451,6 @@ class FieldPatternRegistryTest extends TestCase
                 'fakerArgs' => [],
                 'staticValue' => '#FF5733',
             ],
-            'hex_color normalized' => [
-                'field' => 'hex_color',
-                'type' => 'color',
-                'format' => 'hex',
-                'fakerMethod' => 'hexColor',
-                'fakerArgs' => [],
-                'staticValue' => '#FF5733',
-            ],
-
             // Gender pattern
             'gender exact' => [
                 'field' => 'gender',

@@ -791,13 +791,6 @@ final class FieldPatternRegistry
                     'fakerArgs' => [],
                     'staticValue' => 'sk_test_********************',
                 ],
-                'api_key' => [
-                    'type' => 'token',
-                    'format' => 'string',
-                    'fakerMethod' => 'sha256',
-                    'fakerArgs' => [],
-                    'staticValue' => 'sk_test_********************',
-                ],
                 'apitoken' => [
                     'type' => 'token',
                     'format' => 'string',
@@ -805,21 +798,7 @@ final class FieldPatternRegistry
                     'fakerArgs' => [],
                     'staticValue' => 'sk_test_********************',
                 ],
-                'api_token' => [
-                    'type' => 'token',
-                    'format' => 'string',
-                    'fakerMethod' => 'sha256',
-                    'fakerArgs' => [],
-                    'staticValue' => 'sk_test_********************',
-                ],
                 'accesstoken' => [
-                    'type' => 'token',
-                    'format' => 'string',
-                    'fakerMethod' => 'sha256',
-                    'fakerArgs' => [],
-                    'staticValue' => 'sk_test_********************',
-                ],
-                'access_token' => [
                     'type' => 'token',
                     'format' => 'string',
                     'fakerMethod' => 'sha256',
@@ -974,14 +953,6 @@ final class FieldPatternRegistry
                     'fakerArgs' => [],
                     'staticValue' => '#FF5733',
                 ],
-                'hex_color' => [
-                    'type' => 'color',
-                    'format' => 'hex',
-                    'fakerMethod' => 'hexColor',
-                    'fakerArgs' => [],
-                    'staticValue' => '#FF5733',
-                ],
-
                 // Misc fields
                 'gender' => [
                     'type' => 'gender',
