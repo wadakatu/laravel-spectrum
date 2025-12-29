@@ -6,7 +6,8 @@
         ],
         "excludes": [
             "Console",
-            "Facades"
+            "Facades",
+            "Support/Example/FieldPatternRegistry.php"
         ]
     },
     "logs": {
