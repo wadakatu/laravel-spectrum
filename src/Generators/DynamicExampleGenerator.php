@@ -123,7 +123,7 @@ class DynamicExampleGenerator
 
         if ($config !== null) {
             // Use valueProvider which has proper error handling
-            $result = $this->valueProvider->generate($fieldName, $config);
+            $result = $this->valueProvider->generate($fieldName, $config->toArray());
 
             return is_string($result) ? $result : (string) $result;
         }

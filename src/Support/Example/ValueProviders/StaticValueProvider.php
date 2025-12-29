@@ -27,7 +27,7 @@ final class StaticValueProvider implements ExampleGenerationStrategy
         $pattern = $this->registry->getConfig($fieldName);
 
         if ($pattern !== null) {
-            return $pattern['staticValue'];
+            return $pattern->staticValue;
         }
 
         // Fall back to type-based generation

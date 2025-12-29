@@ -29,14 +29,14 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
         if ($pattern !== null) {
             // If fakerMethod is set, invoke it
-            if ($pattern['fakerMethod'] !== null) {
-                return $this->invokeFakerMethod($pattern['fakerMethod'], $pattern['fakerArgs']);
+            if ($pattern->hasFakerMethod()) {
+                return $this->invokeFakerMethod($pattern->fakerMethod, $pattern->fakerArgs);
             }
 
             // Handle special cases where fakerMethod is null but pattern exists
             // (e.g., password fields that need special handling)
-            if ($pattern['format'] !== null) {
-                return $this->generateByFormat($pattern['format']);
+            if ($pattern->hasFormat()) {
+                return $this->generateByFormat($pattern->format);
             }
         }
 
