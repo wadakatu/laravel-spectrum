@@ -15,7 +15,12 @@ final readonly class DetectedQueryParameter
     /**
      * Methods that return typed values.
      */
-    private const TYPED_METHODS = ['integer', 'float', 'boolean', 'string', 'date'];
+    private const TYPED_METHODS = [
+        'boolean', 'bool',
+        'integer', 'int',
+        'float', 'double',
+        'string', 'array', 'date',
+    ];
 
     /**
      * @param  array<string, mixed>  $context

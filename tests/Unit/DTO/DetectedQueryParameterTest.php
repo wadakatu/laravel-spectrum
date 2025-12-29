@@ -98,7 +98,7 @@ class DetectedQueryParameterTest extends TestCase
     #[Test]
     public function it_detects_typed_methods(): void
     {
-        $typedMethods = ['integer', 'float', 'boolean', 'string', 'date'];
+        $typedMethods = ['boolean', 'bool', 'integer', 'int', 'float', 'double', 'string', 'array', 'date'];
 
         foreach ($typedMethods as $method) {
             $param = DetectedQueryParameter::create(
