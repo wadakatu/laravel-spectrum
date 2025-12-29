@@ -260,7 +260,9 @@ class ParameterDefinitionTest extends TestCase
         $this->assertTrue($array['conditional_required']);
         $this->assertArrayHasKey('conditional_rules', $array);
         $this->assertArrayHasKey('enum', $array);
-        $this->assertSame($enumInfo, $array['enum']);
+        // enum is now serialized to array via toArray()
+        $this->assertIsArray($array['enum']);
+        $this->assertEquals($enumInfo->toArray(), $array['enum']);
     }
 
     #[Test]

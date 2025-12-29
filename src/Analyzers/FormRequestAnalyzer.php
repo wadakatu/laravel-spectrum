@@ -129,10 +129,26 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
      */
     public function analyze(string $requestClass): array
     {
+        return $this->convertParametersToArrays($this->analyzeToResult($requestClass));
+    }
+
+    /**
+     * FormRequestクラスを解析してParameterDefinition DTOの配列を返す
+     *
+     * @return array<ParameterDefinition>
+     */
+    public function analyzeToResult(string $requestClass): array
+    {
         try {
-            return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
-                return $this->performAnalysis($requestClass);
+            // Cache stores arrays, so we need to convert back to DTOs
+            $cached = $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
+                return $this->convertParametersToArrays($this->performAnalysisToResult($requestClass));
             });
+
+            return array_map(
+                fn (array $data) => ParameterDefinition::fromArray($data),
+                $cached
+            );
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::AnalysisError, [
                 'class' => $requestClass,
@@ -143,9 +159,19 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
     }
 
     /**
-     * 実際の解析処理
+     * 実際の解析処理（配列を返す - 後方互換性のため）
      */
     protected function performAnalysis(string $requestClass): array
+    {
+        return $this->convertParametersToArrays($this->performAnalysisToResult($requestClass));
+    }
+
+    /**
+     * 実際の解析処理（ParameterDefinition DTOの配列を返す）
+     *
+     * @return array<ParameterDefinition>
+     */
+    protected function performAnalysisToResult(string $requestClass): array
     {
         try {
             $context = $this->prepareAnalysisContext($requestClass);
@@ -155,22 +181,26 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             }
 
             if ($context['type'] === 'anonymous') {
-                return $this->anonymousClassAnalyzer->analyze($context['reflection']);
+                // AnonymousClassAnalyzer returns arrays, convert to DTOs
+                $arrays = $this->anonymousClassAnalyzer->analyze($context['reflection']);
+
+                return array_map(
+                    fn (array $data) => ParameterDefinition::fromArray($data),
+                    $arrays
+                );
             }
 
             // Extract rules and attributes from AST
             $rules = $this->astExtractor->extractRules($context['classNode']);
             $attributes = $this->astExtractor->extractAttributes($context['classNode']);
 
-            // Build parameters and convert to arrays for backward compatibility
-            $parameters = $this->parameterBuilder->buildFromRules(
+            // Build parameters (returns ParameterDefinition DTOs)
+            return $this->parameterBuilder->buildFromRules(
                 $rules,
                 $attributes,
                 $context['namespace'],
                 $context['useStatements']
             );
-
-            return $this->convertParametersToArrays($parameters);
 
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::AnalysisError, [

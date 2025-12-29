@@ -73,13 +73,21 @@ final readonly class ParameterDefinition
     public static function fromArray(array $data): self
     {
         $enum = null;
-        if (isset($data['enum']) && $data['enum'] instanceof EnumInfo) {
-            $enum = $data['enum'];
+        if (isset($data['enum'])) {
+            if ($data['enum'] instanceof EnumInfo) {
+                $enum = $data['enum'];
+            } elseif (is_array($data['enum'])) {
+                $enum = EnumInfo::fromArray($data['enum']);
+            }
         }
 
         $fileInfo = null;
-        if (isset($data['file_info']) && $data['file_info'] instanceof FileUploadInfo) {
-            $fileInfo = $data['file_info'];
+        if (isset($data['file_info'])) {
+            if ($data['file_info'] instanceof FileUploadInfo) {
+                $fileInfo = $data['file_info'];
+            } elseif (is_array($data['file_info'])) {
+                $fileInfo = FileUploadInfo::fromArray($data['file_info']);
+            }
         }
 
         return new self(
@@ -128,7 +136,7 @@ final readonly class ParameterDefinition
         }
 
         if ($this->enum !== null) {
-            $result['enum'] = $this->enum;
+            $result['enum'] = $this->enum->toArray();
         }
 
         if ($this->fileInfo !== null) {
