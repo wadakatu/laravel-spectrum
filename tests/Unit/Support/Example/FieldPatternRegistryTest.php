@@ -29,6 +29,95 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('safeEmail', $config->fakerMethod);
     }
 
+    public function test_handles_id_pattern_with_faker_args(): void
+    {
+        $config = $this->registry->getConfig('id');
+        $this->assertNotNull($config);
+        $this->assertEquals('id', $config->type);
+        $this->assertEquals('integer', $config->format);
+        $this->assertEquals('unique->numberBetween', $config->fakerMethod);
+        $this->assertEquals([1, 10000], $config->fakerArgs);
+        $this->assertEquals(1, $config->staticValue);
+    }
+
+    public function test_handles_name_pattern_variations(): void
+    {
+        // name pattern
+        $config = $this->registry->getConfig('name');
+        $this->assertNotNull($config);
+        $this->assertEquals('name', $config->type);
+        $this->assertEquals('full_name', $config->format);
+        $this->assertEquals('name', $config->fakerMethod);
+
+        // firstname pattern (normalized from first_name)
+        $config = $this->registry->getConfig('first_name');
+        $this->assertNotNull($config);
+        $this->assertEquals('name', $config->type);
+        $this->assertEquals('first_name', $config->format);
+        $this->assertEquals('firstName', $config->fakerMethod);
+
+        // fullname pattern
+        $config = $this->registry->getConfig('fullname');
+        $this->assertNotNull($config);
+        $this->assertEquals('name', $config->type);
+        $this->assertEquals('full_name', $config->format);
+
+        // emailaddress pattern (normalized)
+        $config = $this->registry->getConfig('emailaddress');
+        $this->assertNotNull($config);
+        $this->assertEquals('email', $config->type);
+        $this->assertEquals('email', $config->format);
+    }
+
+    public function test_handles_phone_pattern_variations(): void
+    {
+        // fax pattern
+        $config = $this->registry->getConfig('fax');
+        $this->assertNotNull($config);
+        $this->assertEquals('phone', $config->type);
+        $this->assertEquals('phone', $config->format);
+    }
+
+    public function test_handles_address_pattern_variations(): void
+    {
+        // street pattern
+        $config = $this->registry->getConfig('street');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
+
+        // city pattern
+        $config = $this->registry->getConfig('city');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
+
+        // state pattern with fakerArgs
+        $config = $this->registry->getConfig('state');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
+        $this->assertEquals('randomElement', $config->fakerMethod);
+        $this->assertEquals([['CA', 'NY', 'TX', 'FL', 'IL']], $config->fakerArgs);
+
+        // postalcode pattern (normalized)
+        $config = $this->registry->getConfig('postalcode');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
+    }
+
+    public function test_handles_location_pattern_variations(): void
+    {
+        // lat pattern
+        $config = $this->registry->getConfig('lat');
+        $this->assertNotNull($config);
+        $this->assertEquals('location', $config->type);
+        $this->assertEquals('decimal', $config->format);
+
+        // lng pattern
+        $config = $this->registry->getConfig('lng');
+        $this->assertNotNull($config);
+        $this->assertEquals('location', $config->type);
+        $this->assertEquals('decimal', $config->format);
+    }
+
     public function test_get_config_returns_pattern_for_compound_field(): void
     {
         $config = $this->registry->getConfig('user_email');
