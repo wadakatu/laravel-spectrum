@@ -50,7 +50,7 @@ jobs:
 
       - name: Execute tests (with coverage)
         if: matrix.php == '8.2' && matrix.laravel == '12.*'
-        run: vendor/bin/phpunit --coverage-clover coverage.xml
+        run: php -d memory_limit=512M vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Execute tests (without coverage)
         if: matrix.php != '8.2' || matrix.laravel != '12.*'
