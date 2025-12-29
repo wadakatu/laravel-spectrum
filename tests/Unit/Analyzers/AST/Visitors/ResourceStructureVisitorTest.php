@@ -314,8 +314,15 @@ class ResourceStructureVisitorTest extends TestCase
 
         $structure = $visitor->getStructure();
 
-        $this->assertEquals('object', $structure['properties']['type']);
-        $this->assertTrue($structure['properties']['merged']);
+        // array_merge is now properly parsed - all properties should be extracted
+        $this->assertArrayHasKey('id', $structure['properties']);
+        $this->assertArrayHasKey('name', $structure['properties']);
+        $this->assertArrayHasKey('email', $structure['properties']);
+        $this->assertArrayHasKey('phone', $structure['properties']);
+        $this->assertEquals('integer', $structure['properties']['id']['type']);
+        $this->assertEquals('string', $structure['properties']['name']['type']);
+        $this->assertEquals('string', $structure['properties']['email']['type']);
+        $this->assertEquals('string', $structure['properties']['phone']['type']);
     }
 
     #[Test]
@@ -417,8 +424,10 @@ class ResourceStructureVisitorTest extends TestCase
 
         $structure = $visitor->getStructure();
 
+        // Dynamic structures are flagged with a notice in the expression field
         $this->assertArrayHasKey('_notice', $structure['properties']);
-        $this->assertStringContainsString('Dynamic structure detected', $structure['properties']['_notice']);
+        $this->assertArrayHasKey('expression', $structure['properties']['_notice']);
+        $this->assertStringContainsString('Dynamic structure detected', $structure['properties']['_notice']['expression']);
     }
 
     #[Test]
