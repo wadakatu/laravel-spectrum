@@ -120,11 +120,12 @@ final readonly class DiagnosticReport
             $data['warnings']
         );
 
+        // Recalculate counts from actual arrays to maintain invariants
         return new self(
             errors: $errors,
             warnings: $warnings,
-            totalErrors: $data['summary']['total_errors'],
-            totalWarnings: $data['summary']['total_warnings'],
+            totalErrors: count($errors),
+            totalWarnings: count($warnings),
             generatedAt: $data['summary']['generated_at'],
         );
     }
