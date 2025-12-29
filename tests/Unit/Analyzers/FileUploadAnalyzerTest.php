@@ -296,6 +296,25 @@ class FileUploadAnalyzerTest extends TestCase
         $this->assertEquals('3/2', $info->dimensions->ratio);
     }
 
+    public function test_analyze_rules_to_result_with_exact_dimensions(): void
+    {
+        $rules = [
+            'banner' => 'image|dimensions:width=1920,height=1080',
+        ];
+
+        $result = $this->analyzer->analyzeRulesToResult($rules);
+
+        $info = $result['banner'];
+        $this->assertTrue($info->isImage);
+        $this->assertNotNull($info->dimensions);
+        $this->assertEquals(1920, $info->dimensions->width);
+        $this->assertEquals(1080, $info->dimensions->height);
+        $this->assertNull($info->dimensions->minWidth);
+        $this->assertNull($info->dimensions->maxWidth);
+        $this->assertNull($info->dimensions->minHeight);
+        $this->assertNull($info->dimensions->maxHeight);
+    }
+
     public function test_analyze_rules_to_result_min_max_size(): void
     {
         $rules = [

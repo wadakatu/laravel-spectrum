@@ -104,7 +104,7 @@ final readonly class FileDimensions
      */
     public function hasWidthConstraints(): bool
     {
-        return $this->minWidth !== null || $this->maxWidth !== null;
+        return $this->width !== null || $this->minWidth !== null || $this->maxWidth !== null;
     }
 
     /**
@@ -112,7 +112,7 @@ final readonly class FileDimensions
      */
     public function hasHeightConstraints(): bool
     {
-        return $this->minHeight !== null || $this->maxHeight !== null;
+        return $this->height !== null || $this->minHeight !== null || $this->maxHeight !== null;
     }
 
     /**
