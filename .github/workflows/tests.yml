@@ -32,7 +32,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
-          coverage: ${{ (matrix.php == '8.2' && matrix.laravel == '12.*') && 'xdebug' || 'pcov' }}
+          coverage: ${{ (matrix.php == '8.2' && matrix.laravel == '12.*') && 'pcov' || 'none' }}
           ini-values: memory_limit=512M
 
       - name: Setup problem matchers
@@ -50,8 +50,6 @@ jobs:
 
       - name: Execute tests (with coverage)
         if: matrix.php == '8.2' && matrix.laravel == '12.*'
-        env:
-          XDEBUG_MODE: coverage
         run: vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Execute tests (without coverage)

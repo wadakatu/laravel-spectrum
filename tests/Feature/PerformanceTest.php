@@ -26,9 +26,9 @@ class PerformanceTest extends TestCase
 
     public function test_memory_manager_prevents_excessive_usage()
     {
-        // Skip when running with Xdebug as it uses significantly more memory
-        if (extension_loaded('xdebug')) {
-            $this->markTestSkipped('This test is skipped when Xdebug is enabled due to memory overhead');
+        // Skip when running with coverage extensions as they increase memory usage
+        if (extension_loaded('pcov') || extension_loaded('xdebug')) {
+            $this->markTestSkipped('This test is skipped when coverage extensions are enabled due to memory overhead');
         }
 
         // メモリ制限を低く設定
