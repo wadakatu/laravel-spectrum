@@ -11,6 +11,7 @@ use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\DTO\ConditionalRuleSet;
+use LaravelSpectrum\DTO\FormRequestAnalysisContext;
 use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\DTO\ValidationAnalysisResult;
 use LaravelSpectrum\Support\AnalyzerErrorType;
@@ -62,41 +63,33 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
      * It validates the class, creates reflection, checks for anonymous classes, and parses the AST.
      *
      * @param  string  $requestClass  The fully qualified FormRequest class name
-     * @return array{
-     *     type: 'skip'|'anonymous'|'ready',
-     *     reflection?: \ReflectionClass<\Illuminate\Foundation\Http\FormRequest>,
-     *     ast?: array<\PhpParser\Node\Stmt>,
-     *     classNode?: \PhpParser\Node\Stmt\Class_,
-     *     useStatements?: array<string, string>,
-     *     namespace?: string
-     * } Returns an array indicating the analysis state:
-     *   - 'skip': Class doesn't exist, is not a FormRequest subclass, AST parsing failed, or class node not found in AST
-     *   - 'anonymous': Class is anonymous, file path unavailable, or file does not exist (includes 'reflection')
-     *   - 'ready': Full analysis context ready (includes all fields)
+     * @return FormRequestAnalysisContext Returns a context DTO indicating the analysis state:
+     *                                    - Skip: Class doesn't exist, is not a FormRequest subclass, AST parsing failed, or class node not found in AST
+     *                                    - Anonymous: Class is anonymous, file path unavailable, or file does not exist
+     *                                    - Ready: Full analysis context ready with AST and reflection
      */
-    protected function prepareAnalysisContext(string $requestClass): array
+    protected function prepareAnalysisContext(string $requestClass): FormRequestAnalysisContext
     {
         if (! class_exists($requestClass)) {
-            return ['type' => 'skip'];
+            return FormRequestAnalysisContext::skip();
         }
 
+        /** @var \ReflectionClass<object> $reflection */
         $reflection = new \ReflectionClass($requestClass);
 
         if (! $reflection->isSubclassOf(\Illuminate\Foundation\Http\FormRequest::class)) {
-            return ['type' => 'skip'];
+            return FormRequestAnalysisContext::skip();
         }
 
         $filePath = $reflection->getFileName();
         if (! $filePath || ! file_exists($filePath) || $reflection->isAnonymous()) {
-            return [
-                'type' => 'anonymous',
-                'reflection' => $reflection,
-            ];
+            // @phpstan-ignore argument.type (ReflectionClass invariance - FormRequest is subtype of object)
+            return FormRequestAnalysisContext::anonymous($reflection);
         }
 
         $ast = $this->astExtractor->parseFile($filePath);
         if (! $ast) {
-            return ['type' => 'skip'];
+            return FormRequestAnalysisContext::skip();
         }
 
         $classNode = $this->astExtractor->findClassNode($ast, $reflection->getShortName());
@@ -111,17 +104,16 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
                 ]
             );
 
-            return ['type' => 'skip'];
+            return FormRequestAnalysisContext::skip();
         }
 
-        return [
-            'type' => 'ready',
-            'reflection' => $reflection,
-            'ast' => $ast,
-            'classNode' => $classNode,
-            'useStatements' => $this->astExtractor->extractUseStatements($ast),
-            'namespace' => $reflection->getNamespaceName(),
-        ];
+        return FormRequestAnalysisContext::ready(
+            $reflection, // @phpstan-ignore argument.type (ReflectionClass invariance - FormRequest is subtype of object)
+            $ast,
+            $classNode,
+            $this->astExtractor->extractUseStatements($ast),
+            $reflection->getNamespaceName(),
+        );
     }
 
     /**
@@ -176,13 +168,13 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
         try {
             $context = $this->prepareAnalysisContext($requestClass);
 
-            if ($context['type'] === 'skip') {
+            if ($context->isSkip()) {
                 return [];
             }
 
-            if ($context['type'] === 'anonymous') {
+            if ($context->isAnonymous()) {
                 // AnonymousClassAnalyzer returns arrays, convert to DTOs
-                $arrays = $this->anonymousClassAnalyzer->analyze($context['reflection']);
+                $arrays = $this->anonymousClassAnalyzer->analyze($context->reflection);
 
                 return array_map(
                     fn (array $data) => ParameterDefinition::fromArray($data),
@@ -191,15 +183,15 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             }
 
             // Extract rules and attributes from AST
-            $rules = $this->astExtractor->extractRules($context['classNode']);
-            $attributes = $this->astExtractor->extractAttributes($context['classNode']);
+            $rules = $this->astExtractor->extractRules($context->classNode);
+            $attributes = $this->astExtractor->extractAttributes($context->classNode);
 
             // Build parameters (returns ParameterDefinition DTOs)
             return $this->parameterBuilder->buildFromRules(
                 $rules,
                 $attributes,
-                $context['namespace'],
-                $context['useStatements']
+                $context->namespace,
+                $context->useStatements
             );
 
         } catch (\Exception $e) {
@@ -250,28 +242,28 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
         try {
             $context = $this->prepareAnalysisContext($requestClass);
 
-            if ($context['type'] === 'skip') {
+            if ($context->isSkip()) {
                 return ValidationAnalysisResult::empty();
             }
 
-            if ($context['type'] === 'anonymous') {
+            if ($context->isAnonymous()) {
                 // Anonymous class analyzer returns array, convert to DTO
                 return ValidationAnalysisResult::fromArray(
-                    $this->anonymousClassAnalyzer->analyzeWithConditionalRules($context['reflection'])
+                    $this->anonymousClassAnalyzer->analyzeWithConditionalRules($context->reflection)
                 );
             }
 
             // Extract conditional rules
-            $conditionalRulesArray = $this->astExtractor->extractConditionalRules($context['classNode']);
-            $attributes = $this->astExtractor->extractAttributes($context['classNode']);
-            $messages = $this->astExtractor->extractMessages($context['classNode']);
+            $conditionalRulesArray = $this->astExtractor->extractConditionalRules($context->classNode);
+            $attributes = $this->astExtractor->extractAttributes($context->classNode);
+            $messages = $this->astExtractor->extractMessages($context->classNode);
 
             if (! empty($conditionalRulesArray['rules_sets'])) {
                 $parameters = $this->parameterBuilder->buildFromConditionalRules(
                     $conditionalRulesArray,
                     $attributes,
-                    $context['namespace'],
-                    $context['useStatements']
+                    $context->namespace,
+                    $context->useStatements
                 );
 
                 return new ValidationAnalysisResult(
@@ -283,12 +275,12 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             }
 
             // Fallback to regular analysis
-            $rules = $this->astExtractor->extractRules($context['classNode']);
+            $rules = $this->astExtractor->extractRules($context->classNode);
             $parameters = $this->parameterBuilder->buildFromRules(
                 $rules,
                 $attributes,
-                $context['namespace'],
-                $context['useStatements']
+                $context->namespace,
+                $context->useStatements
             );
 
             return new ValidationAnalysisResult(
@@ -325,19 +317,19 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
         try {
             $context = $this->prepareAnalysisContext($requestClass);
 
-            if ($context['type'] === 'skip') {
+            if ($context->isSkip()) {
                 return [];
             }
 
-            if ($context['type'] === 'anonymous') {
-                return $this->anonymousClassAnalyzer->analyzeDetails($context['reflection']);
+            if ($context->isAnonymous()) {
+                return $this->anonymousClassAnalyzer->analyzeDetails($context->reflection);
             }
 
             // Extract rules, attributes, and messages from AST
             return [
-                'rules' => $this->astExtractor->extractRules($context['classNode']),
-                'attributes' => $this->astExtractor->extractAttributes($context['classNode']),
-                'messages' => $this->astExtractor->extractMessages($context['classNode']),
+                'rules' => $this->astExtractor->extractRules($context->classNode),
+                'attributes' => $this->astExtractor->extractAttributes($context->classNode),
+                'messages' => $this->astExtractor->extractMessages($context->classNode),
             ];
 
         } catch (\Exception $e) {
