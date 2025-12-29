@@ -253,4 +253,44 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('url', $config->type);
         $this->assertEquals('url', $config->format);
     }
+
+    public function test_handles_date_suffix_fields(): void
+    {
+        // Use expiry_date to test _date suffix pattern
+        // (birth_date normalizes to birthdate which has its own pattern)
+        $config = $this->registry->getConfig('expiry_date');
+        $this->assertNotNull($config);
+        $this->assertEquals('date', $config->type);
+        $this->assertEquals('date', $config->format);
+        $this->assertEquals('date', $config->fakerMethod);
+        $this->assertEquals(['Y-m-d'], $config->fakerArgs);
+        $this->assertEquals('2024-01-15', $config->staticValue);
+    }
+
+    public function test_handles_image_pattern_via_compound_match(): void
+    {
+        // profile_image matches 'image' pattern via compound field matching
+        // (last part after underscore)
+        $config = $this->registry->getConfig('profile_image');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([640, 480], $config->fakerArgs);
+        $this->assertEquals('https://example.com/image.jpg', $config->staticValue);
+    }
+
+    public function test_handles_image_pattern_via_content_contains(): void
+    {
+        // Test image pattern via str_contains in matchSuffixPrefixPatterns()
+        // This field doesn't match compound matching (last part 'data' has no pattern)
+        // But contains 'image' so triggers the content pattern
+        $config = $this->registry->getConfig('featured_image_data');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([640, 480], $config->fakerArgs);
+        $this->assertEquals('https://example.com/image.jpg', $config->staticValue);
+    }
 }
