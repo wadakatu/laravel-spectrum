@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,13 +30,13 @@ class ConditionalSchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required', 'email', 'unique:users'],
                     ],
                     [
                         'conditions' => [
-                            ['type' => 'else', 'negated_conditions' => []],
+                            ConditionResult::elseBranch(),
                         ],
                         'rules' => ['sometimes', 'email'],
                     ],
@@ -49,7 +50,7 @@ class ConditionalSchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required', 'min:8'],
                     ],
@@ -121,7 +122,7 @@ class ConditionalSchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'user_method', 'expression' => '$this->user()->isAdmin()'],
+                            ConditionResult::custom('$this->user()->isAdmin()'),
                         ],
                         'rules' => ['required', 'string'],
                     ],
@@ -149,14 +150,14 @@ class ConditionalSchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required', 'in:draft,published'],
                     ],
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
-                            ['type' => 'user_method', 'expression' => '$this->user()->isAdmin()'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
+                            ConditionResult::custom('$this->user()->isAdmin()'),
                         ],
                         'rules' => ['required', 'in:draft,published,archived'],
                     ],

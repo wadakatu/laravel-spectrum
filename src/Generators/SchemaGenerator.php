@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 use LaravelSpectrum\Support\TypeInference;
@@ -291,12 +292,14 @@ class SchemaGenerator
 
     /**
      * Extract HTTP method from conditions array
+     *
+     * @param  array<ConditionResult>  $conditions
      */
     private function extractHttpMethodFromConditions(array $conditions): ?string
     {
         foreach ($conditions as $condition) {
-            if (isset($condition['type']) && $condition['type'] === 'http_method' && isset($condition['method'])) {
-                return $condition['method'];
+            if ($condition->isHttpMethod() && $condition->method !== null) {
+                return $condition->method;
             }
         }
 
@@ -378,6 +381,8 @@ class SchemaGenerator
 
     /**
      * Generate human-readable condition description
+     *
+     * @param  array<ConditionResult>  $conditions
      */
     private function generateConditionDescription(array $conditions): string
     {
@@ -388,23 +393,18 @@ class SchemaGenerator
         $parts = [];
 
         foreach ($conditions as $condition) {
-            switch ($condition['type']) {
-                case 'http_method':
-                    $parts[] = "When HTTP method is {$condition['method']}";
-                    break;
-                case 'user_check':
-                    $parts[] = "When user {$condition['method']}()";
-                    break;
-                case 'request_field':
-                    $field = $condition['field'] ?? 'field';
-                    $parts[] = "When request {$condition['check']} '{$field}'";
-                    break;
-                case 'else':
-                    $parts[] = 'Otherwise';
-                    break;
-                default:
-                    $expression = $condition['expression'] ?? 'custom condition';
-                    $parts[] = "When {$expression}";
+            if ($condition->isHttpMethod()) {
+                $parts[] = "When HTTP method is {$condition->method}";
+            } elseif ($condition->isUserCheck()) {
+                $parts[] = "When user {$condition->method}()";
+            } elseif ($condition->isRequestField()) {
+                $field = $condition->field ?? 'field';
+                $parts[] = "When request {$condition->check} '{$field}'";
+            } elseif ($condition->isElseBranch()) {
+                $parts[] = 'Otherwise';
+            } else {
+                $expression = $condition->expression ?? 'custom condition';
+                $parts[] = "When {$expression}";
             }
         }
 
@@ -428,6 +428,8 @@ class SchemaGenerator
 
     /**
      * Generate unique key for condition set
+     *
+     * @param  array<ConditionResult>  $conditions
      */
     private function generateConditionKey(array $conditions): string
     {
@@ -437,18 +439,18 @@ class SchemaGenerator
 
         $parts = [];
         foreach ($conditions as $condition) {
-            if ($condition['type'] === 'http_method' && isset($condition['method'])) {
-                $parts[] = strtolower($condition['method']);
-            } elseif ($condition['type'] === 'else') {
+            if ($condition->isHttpMethod() && $condition->method !== null) {
+                $parts[] = strtolower($condition->method);
+            } elseif ($condition->isElseBranch()) {
                 $parts[] = 'else';
-            } elseif ($condition['type'] === 'user_check' && isset($condition['method'])) {
-                $parts[] = 'user_'.strtolower($condition['method']);
-            } elseif ($condition['type'] === 'request_field') {
-                $field = $condition['field'] ?? 'field';
-                $check = $condition['check'] ?? 'has';
+            } elseif ($condition->isUserCheck() && $condition->method !== null) {
+                $parts[] = 'user_'.strtolower($condition->method);
+            } elseif ($condition->isRequestField()) {
+                $field = $condition->field ?? 'field';
+                $check = $condition->check ?? 'has';
                 $parts[] = 'request_'.strtolower($check).'_'.strtolower($field);
             } else {
-                $parts[] = substr(md5($condition['expression'] ?? 'unknown'), 0, 8);
+                $parts[] = substr(md5($condition->expression ?? 'unknown'), 0, 8);
             }
         }
 

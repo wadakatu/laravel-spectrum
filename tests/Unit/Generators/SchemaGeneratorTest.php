@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\SchemaGenerator;
 use LaravelSpectrum\Tests\TestCase;
@@ -563,13 +564,13 @@ class SchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required', 'email'],
                     ],
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'PUT'],
+                            ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                         ],
                         'rules' => ['sometimes', 'email'],
                     ],
@@ -583,7 +584,7 @@ class SchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required', 'string'],
                     ],
@@ -614,7 +615,7 @@ class SchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'other_condition', 'value' => 'test'],
+                            ConditionResult::custom('other_condition'),
                         ],
                         'rules' => ['required', 'string'],
                     ],
@@ -882,7 +883,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'POST'],
+                        ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                     ],
                     'rules' => [
                         'name' => 'required|string',
@@ -911,7 +912,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'POST'],
+                        ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                     ],
                     'rules' => [
                         'name' => 'required|string|min:3',
@@ -920,7 +921,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'PUT'],
+                        ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                     ],
                     'rules' => [
                         'name' => 'string|max:100',
@@ -948,7 +949,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'POST'],
+                        ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                     ],
                     'rules' => [
                         'name' => 'required',
@@ -956,7 +957,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'PUT'],
+                        ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                     ],
                     'rules' => [
                         'name' => 'string',
@@ -979,7 +980,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                        ConditionResult::userCheck('isAdmin', '$this->isAdmin()'),
                     ],
                     'rules' => [
                         'level' => 'required|integer',
@@ -987,7 +988,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'user_check', 'method' => 'isGuest'],
+                        ConditionResult::userCheck('isGuest', '$this->isGuest()'),
                     ],
                     'rules' => [
                         'level' => 'integer',
@@ -1010,7 +1011,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'request_field', 'check' => 'has', 'field' => 'type'],
+                        ConditionResult::requestField('has', 'type', '$this->has("type")'),
                     ],
                     'rules' => [
                         'data' => 'required',
@@ -1018,7 +1019,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'request_field', 'check' => 'filled', 'field' => 'value'],
+                        ConditionResult::requestField('filled', 'value', '$this->filled("value")'),
                     ],
                     'rules' => [
                         'data' => 'string',
@@ -1041,7 +1042,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'POST'],
+                        ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                     ],
                     'rules' => [
                         'name' => 'required',
@@ -1049,7 +1050,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'else'],
+                        ConditionResult::elseBranch(),
                     ],
                     'rules' => [
                         'name' => 'string',
@@ -1071,7 +1072,7 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'custom', 'expression' => 'count > 10'],
+                        ConditionResult::custom('count > 10'),
                     ],
                     'rules' => [
                         'items' => 'required|array',
@@ -1079,7 +1080,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'custom', 'expression' => 'count <= 10'],
+                        ConditionResult::custom('count <= 10'),
                     ],
                     'rules' => [
                         'items' => 'array',
@@ -1108,7 +1109,7 @@ class SchemaGeneratorTest extends TestCase
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'PUT'],
+                        ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                     ],
                     'rules' => [
                         'name' => 'string',
@@ -1129,11 +1130,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'string|min:3'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string|min:5'],
                 ],
             ],
@@ -1151,11 +1152,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'string|max:50'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string|max:100'],
                 ],
             ],
@@ -1173,11 +1174,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['age' => 'integer|min:18|max:120'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['age' => 'integer|min:0'],
                 ],
             ],
@@ -1197,11 +1198,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['contact' => 'email'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['contact' => 'string'],
                 ],
             ],
@@ -1219,11 +1220,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['website' => 'url'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['website' => 'string'],
                 ],
             ],
@@ -1241,11 +1242,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['birth_date' => 'date'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['birth_date' => 'string'],
                 ],
             ],
@@ -1263,11 +1264,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['created_at' => 'datetime'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['created_at' => 'string'],
                 ],
             ],
@@ -1285,11 +1286,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['status' => 'in:active,inactive,pending'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['status' => 'string'],
                 ],
             ],
@@ -1307,11 +1308,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['phone' => 'regex:^\\d{3}-\\d{4}$'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['phone' => 'string'],
                 ],
             ],
@@ -1329,15 +1330,15 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'required'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string'],
                 ],
                 [
-                    'conditions' => [['type' => 'else']],
+                    'conditions' => [ConditionResult::elseBranch()],
                     'rules' => ['name' => 'nullable'],
                 ],
             ],
@@ -1362,7 +1363,7 @@ class SchemaGeneratorTest extends TestCase
                     'rules' => ['name' => 'required'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string'],
                 ],
             ],
@@ -1380,13 +1381,13 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => [
                         'status' => ['required', new \stdClass],
                     ],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['status' => 'string'],
                 ],
             ],
@@ -1405,11 +1406,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'required_if:type,admin'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string'],
                 ],
             ],
@@ -1426,11 +1427,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'required_unless:type,guest'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string'],
                 ],
             ],
@@ -1447,11 +1448,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'required_with:email'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string'],
                 ],
             ],
@@ -1468,11 +1469,11 @@ class SchemaGeneratorTest extends TestCase
         $conditionalRules = [
             'rules_sets' => [
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'POST']],
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
                     'rules' => ['name' => 'required_without:nickname'],
                 ],
                 [
-                    'conditions' => [['type' => 'http_method', 'method' => 'PUT']],
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
                     'rules' => ['name' => 'string'],
                 ],
             ],
@@ -1641,13 +1642,13 @@ class SchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required', 'string', 'min:3'],
                     ],
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'PUT'],
+                            ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                         ],
                         'rules' => ['string', 'max:100'],
                     ],
@@ -1699,13 +1700,13 @@ class SchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['required'],
                     ],
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'POST'],
+                            ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
                         ],
                         'rules' => ['string'],
                     ],
@@ -1719,7 +1720,7 @@ class SchemaGeneratorTest extends TestCase
                 'conditional_rules' => [
                     [
                         'conditions' => [
-                            ['type' => 'http_method', 'method' => 'PUT'],
+                            ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                         ],
                         'rules' => ['string'],
                     ],
@@ -1777,14 +1778,14 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'POST'],
-                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                        ConditionResult::httpMethod('POST', '$this->isMethod("POST")'),
+                        ConditionResult::userCheck('isAdmin', '$this->isAdmin()'),
                     ],
                     'rules' => ['level' => 'required|integer'],
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'PUT'],
+                        ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                     ],
                     'rules' => ['level' => 'integer'],
                 ],
@@ -1806,13 +1807,13 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'request_field', 'check' => 'has', 'field' => 'type'],
+                        ConditionResult::requestField('has', 'type', '$this->has("type")'),
                     ],
                     'rules' => ['data' => 'required'],
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'request_field', 'check' => 'filled', 'field' => 'value'],
+                        ConditionResult::requestField('filled', 'value', '$this->filled("value")'),
                     ],
                     'rules' => ['data' => 'string'],
                 ],
@@ -1833,13 +1834,13 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'custom', 'expression' => 'count > 10'],
+                        ConditionResult::custom('count > 10'),
                     ],
                     'rules' => ['items' => 'required'],
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'custom', 'expression' => 'count <= 10'],
+                        ConditionResult::custom('count <= 10'),
                     ],
                     'rules' => ['items' => 'array'],
                 ],
@@ -1868,13 +1869,13 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'user_check', 'method' => 'isAdmin'],
+                        ConditionResult::userCheck('isAdmin', '$this->isAdmin()'),
                     ],
                     'rules' => ['level' => 'required'],
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'user_check', 'method' => 'isGuest'],
+                        ConditionResult::userCheck('isGuest', '$this->isGuest()'),
                     ],
                     'rules' => ['level' => 'integer'],
                 ],
@@ -1895,13 +1896,13 @@ class SchemaGeneratorTest extends TestCase
             'rules_sets' => [
                 [
                     'conditions' => [
-                        ['type' => 'unknown_type'],
+                        ConditionResult::custom('unknown'),
                     ],
                     'rules' => ['data' => 'required'],
                 ],
                 [
                     'conditions' => [
-                        ['type' => 'http_method', 'method' => 'PUT'],
+                        ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")'),
                     ],
                     'rules' => ['data' => 'string'],
                 ],
