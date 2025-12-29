@@ -262,7 +262,7 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
                 );
 
                 return new ValidationAnalysisResult(
-                    parameters: $this->convertParametersToArrays($parameters),
+                    parameters: $parameters,
                     conditionalRules: ConditionalRuleSet::fromArray($conditionalRulesArray),
                     attributes: $attributes,
                     messages: $messages,
@@ -279,7 +279,7 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             );
 
             return new ValidationAnalysisResult(
-                parameters: $this->convertParametersToArrays($parameters),
+                parameters: $parameters,
                 conditionalRules: ConditionalRuleSet::empty(),
                 attributes: $attributes,
                 messages: $messages,
