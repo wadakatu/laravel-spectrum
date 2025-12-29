@@ -50,7 +50,7 @@ class AstHelperTest extends TestCase
 
         $warnings = $this->errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertEquals('file_not_found', $warnings[0]['metadata']['error_type']);
+        $this->assertEquals('file_not_found', $warnings[0]->metadata['error_type']);
     }
 
     #[Test]
@@ -66,8 +66,8 @@ class AstHelperTest extends TestCase
 
             $errors = $this->errorCollector->getErrors();
             $this->assertNotEmpty($errors);
-            $this->assertEquals('parse_error', $errors[0]['metadata']['error_type']);
-            $this->assertStringContainsString($tempFile, $errors[0]['metadata']['file_path']);
+            $this->assertEquals('parse_error', $errors[0]->metadata['error_type']);
+            $this->assertStringContainsString($tempFile, $errors[0]->metadata['file_path']);
         } finally {
             unlink($tempFile);
         }
@@ -108,7 +108,7 @@ PHP;
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertEquals('parse_error', $errors[0]['metadata']['error_type']);
+        $this->assertEquals('parse_error', $errors[0]->metadata['error_type']);
     }
 
     #[Test]
@@ -122,7 +122,7 @@ PHP;
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertEquals('test/file.php', $errors[0]['metadata']['file_path']);
+        $this->assertEquals('test/file.php', $errors[0]->metadata['file_path']);
     }
 
     #[Test]

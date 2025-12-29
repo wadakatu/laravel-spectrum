@@ -248,8 +248,8 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertStringContainsString('Test error', $errors[0]['message']);
-        $this->assertEquals('Exception', $errors[0]['metadata']['exception_class']);
+        $this->assertStringContainsString('Test error', $errors[0]->message);
+        $this->assertEquals('Exception', $errors[0]->metadata['exception_class']);
     }
 
     #[Test]
@@ -264,8 +264,8 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertStringContainsString('Details extraction error', $errors[0]['message']);
-        $this->assertEquals('Exception', $errors[0]['metadata']['exception_class']);
+        $this->assertStringContainsString('Details extraction error', $errors[0]->message);
+        $this->assertEquals('Exception', $errors[0]->metadata['exception_class']);
     }
 
     // ========== Edge cases ==========
@@ -391,8 +391,8 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $warnings = $this->errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertStringContainsString('Parser returned null AST', $warnings[0]['message']);
-        $this->assertEquals('anonymous_ast_null_result', $warnings[0]['metadata']['error_type']);
+        $this->assertStringContainsString('Parser returned null AST', $warnings[0]->message);
+        $this->assertEquals('anonymous_ast_null_result', $warnings[0]->metadata['error_type']);
 
         unlink($tempFile);
     }
@@ -433,8 +433,8 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $warnings = $this->errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertStringContainsString('Anonymous class node not found', $warnings[0]['message']);
-        $this->assertEquals('anonymous_class_node_not_found', $warnings[0]['metadata']['error_type']);
+        $this->assertStringContainsString('Anonymous class node not found', $warnings[0]->message);
+        $this->assertEquals('anonymous_class_node_not_found', $warnings[0]->metadata['error_type']);
 
         unlink($tempFile);
     }
@@ -475,9 +475,9 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $warnings = $this->errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertStringContainsString('Failed to parse anonymous class AST', $warnings[0]['message']);
-        $this->assertEquals('anonymous_ast_parse_error', $warnings[0]['metadata']['error_type']);
-        $this->assertEquals('PhpParser\\Error', $warnings[0]['metadata']['exception_class']);
+        $this->assertStringContainsString('Failed to parse anonymous class AST', $warnings[0]->message);
+        $this->assertEquals('anonymous_ast_parse_error', $warnings[0]->metadata['error_type']);
+        $this->assertEquals('PhpParser\\Error', $warnings[0]->metadata['exception_class']);
 
         unlink($tempFile);
     }
@@ -512,7 +512,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
         // In PHP 8.x, file_get_contents on a directory throws, which is caught by outer handler
-        $this->assertStringContainsString('file_get_contents', $errors[0]['message']);
+        $this->assertStringContainsString('file_get_contents', $errors[0]->message);
 
         rmdir($tempDir);
     }
@@ -542,8 +542,8 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $warnings = $this->errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertStringContainsString('Line information not available', $warnings[0]['message']);
-        $this->assertEquals('anonymous_line_info_unavailable', $warnings[0]['metadata']['error_type']);
+        $this->assertStringContainsString('Line information not available', $warnings[0]->message);
+        $this->assertEquals('anonymous_line_info_unavailable', $warnings[0]->metadata['error_type']);
 
         unlink($tempFile);
     }
@@ -619,7 +619,7 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         // Should log a warning about fallback
         $warnings = $this->errorCollector->getWarnings();
-        $fallbackWarnings = array_filter($warnings, fn ($w) => isset($w['metadata']['error_type']) && $w['metadata']['error_type'] === 'anonymous_conditional_rules_fallback');
+        $fallbackWarnings = array_filter($warnings, fn ($w) => isset($w->metadata['error_type']) && $w->metadata['error_type'] === 'anonymous_conditional_rules_fallback');
         $this->assertNotEmpty($fallbackWarnings, 'Expected fallback warning to be logged');
 
         unlink($tempFile);
@@ -661,7 +661,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $analyzer->analyzeWithConditionalRules($reflection);
 
         $warnings = $this->errorCollector->getWarnings();
-        $astNullWarnings = array_filter($warnings, fn ($w) => str_contains($w['metadata']['error_type'], 'ast_null'));
+        $astNullWarnings = array_filter($warnings, fn ($w) => str_contains($w->metadata['error_type'], 'ast_null'));
         $this->assertNotEmpty($astNullWarnings);
 
         unlink($tempFile);
@@ -682,9 +682,9 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertStringContainsString('Conditional test error', $errors[0]['message']);
+        $this->assertStringContainsString('Conditional test error', $errors[0]->message);
         // Exception is caught by analyze() fallback, so error type is from analyze()
-        $this->assertEquals('anonymous_reflection_analysis_error', $errors[0]['metadata']['error_type']);
+        $this->assertEquals('anonymous_reflection_analysis_error', $errors[0]->metadata['error_type']);
     }
 
     // ========== invokeMethodSafely() tests ==========
@@ -709,9 +709,9 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertStringContainsString('Failed to invoke rules()', $errors[0]['message']);
-        $this->assertEquals('anonymous_method_invocation_error', $errors[0]['metadata']['error_type']);
-        $this->assertEquals('RuntimeException', $errors[0]['metadata']['exception_class']);
+        $this->assertStringContainsString('Failed to invoke rules()', $errors[0]->message);
+        $this->assertEquals('anonymous_method_invocation_error', $errors[0]->metadata['error_type']);
+        $this->assertEquals('RuntimeException', $errors[0]->metadata['exception_class']);
     }
 
     #[Test]
@@ -741,9 +741,9 @@ class AnonymousClassAnalyzerTest extends TestCase
 
         // Warning should be logged for non-critical method failure
         $warnings = $this->errorCollector->getWarnings();
-        $attributeWarnings = array_filter($warnings, fn ($w) => str_contains($w['message'], 'attributes'));
+        $attributeWarnings = array_filter($warnings, fn ($w) => str_contains($w->message, 'attributes'));
         $this->assertNotEmpty($attributeWarnings);
-        $this->assertEquals('anonymous_non_critical_method_failure', array_values($attributeWarnings)[0]['metadata']['error_type']);
+        $this->assertEquals('anonymous_non_critical_method_failure', array_values($attributeWarnings)[0]->metadata['error_type']);
     }
 
     // ========== Additional edge case tests ==========
@@ -797,7 +797,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $analyzer->analyzeWithConditionalRules($reflection);
 
         $warnings = $this->errorCollector->getWarnings();
-        $parseErrorWarnings = array_filter($warnings, fn ($w) => $w['metadata']['error_type'] === 'anonymous_conditional_ast_parse_error');
+        $parseErrorWarnings = array_filter($warnings, fn ($w) => $w->metadata['error_type'] === 'anonymous_conditional_ast_parse_error');
         $this->assertNotEmpty($parseErrorWarnings, 'Expected conditional AST parse error warning');
 
         unlink($tempFile);
@@ -835,7 +835,7 @@ class AnonymousClassAnalyzerTest extends TestCase
         $analyzer->analyzeWithConditionalRules($reflection);
 
         $warnings = $this->errorCollector->getWarnings();
-        $nodeNotFoundWarnings = array_filter($warnings, fn ($w) => $w['metadata']['error_type'] === 'anonymous_conditional_class_node_not_found');
+        $nodeNotFoundWarnings = array_filter($warnings, fn ($w) => $w->metadata['error_type'] === 'anonymous_conditional_class_node_not_found');
         $this->assertNotEmpty($nodeNotFoundWarnings, 'Expected conditional class node not found warning');
 
         unlink($tempFile);

@@ -981,7 +981,7 @@ class FormRequestAnalyzerTest extends TestCase
         // Check that the warning was logged with correct type
         $warnings = $analyzer->getErrorCollector()->getWarnings();
         $this->assertTrue(
-            collect($warnings)->contains(fn ($warning) => str_contains($warning['message'], 'Class node not found'))
+            collect($warnings)->contains(fn ($warning) => str_contains($warning->message, 'Class node not found'))
         );
     }
 
