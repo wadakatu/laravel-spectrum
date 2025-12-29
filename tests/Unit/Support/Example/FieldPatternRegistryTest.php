@@ -120,6 +120,11 @@ class FieldPatternRegistryTest extends TestCase
         $config = $this->registry->getConfig('postalcode');
         $this->assertNotNull($config);
         $this->assertEquals('address', $config->type);
+
+        // countrycode pattern
+        $config = $this->registry->getConfig('countrycode');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
     }
 
     public function test_handles_location_pattern_variations(): void
