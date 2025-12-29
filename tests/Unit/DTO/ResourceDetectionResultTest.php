@@ -11,12 +11,9 @@ use PHPUnit\Framework\TestCase;
 class ResourceDetectionResultTest extends TestCase
 {
     #[Test]
-    public function it_can_create_with_resource_class(): void
+    public function it_can_create_single_resource(): void
     {
-        $result = new ResourceDetectionResult(
-            resourceClass: 'App\Http\Resources\UserResource',
-            isCollection: false,
-        );
+        $result = ResourceDetectionResult::single('App\Http\Resources\UserResource');
 
         $this->assertEquals('App\Http\Resources\UserResource', $result->resourceClass);
         $this->assertFalse($result->isCollection);
@@ -25,22 +22,16 @@ class ResourceDetectionResultTest extends TestCase
     #[Test]
     public function it_can_create_collection_resource(): void
     {
-        $result = new ResourceDetectionResult(
-            resourceClass: 'App\Http\Resources\UserResource',
-            isCollection: true,
-        );
+        $result = ResourceDetectionResult::collection('App\Http\Resources\UserResource');
 
         $this->assertEquals('App\Http\Resources\UserResource', $result->resourceClass);
         $this->assertTrue($result->isCollection);
     }
 
     #[Test]
-    public function it_can_create_with_null_resource(): void
+    public function it_can_create_not_found_result(): void
     {
-        $result = new ResourceDetectionResult(
-            resourceClass: null,
-            isCollection: false,
-        );
+        $result = ResourceDetectionResult::notFound();
 
         $this->assertNull($result->resourceClass);
         $this->assertFalse($result->isCollection);
@@ -49,15 +40,8 @@ class ResourceDetectionResultTest extends TestCase
     #[Test]
     public function it_checks_if_resource_was_found(): void
     {
-        $withResource = new ResourceDetectionResult(
-            resourceClass: 'App\Http\Resources\UserResource',
-            isCollection: false,
-        );
-
-        $withoutResource = new ResourceDetectionResult(
-            resourceClass: null,
-            isCollection: false,
-        );
+        $withResource = ResourceDetectionResult::single('App\Http\Resources\UserResource');
+        $withoutResource = ResourceDetectionResult::notFound();
 
         $this->assertTrue($withResource->hasResource());
         $this->assertFalse($withoutResource->hasResource());
@@ -96,10 +80,7 @@ class ResourceDetectionResultTest extends TestCase
     #[Test]
     public function it_converts_to_array(): void
     {
-        $result = new ResourceDetectionResult(
-            resourceClass: 'App\Http\Resources\UserResource',
-            isCollection: true,
-        );
+        $result = ResourceDetectionResult::collection('App\Http\Resources\UserResource');
 
         $array = $result->toArray();
 

@@ -16,7 +16,7 @@ final readonly class ResourceDetectionResult
      * @param  string|null  $resourceClass  The fully qualified resource class name, or null if not found
      * @param  bool  $isCollection  Whether the resource is used as a collection
      */
-    public function __construct(
+    private function __construct(
         public ?string $resourceClass,
         public bool $isCollection,
     ) {}
@@ -69,10 +69,16 @@ final readonly class ResourceDetectionResult
      */
     public static function fromArray(array $data): self
     {
-        return new self(
-            resourceClass: $data['resourceClass'] ?? null,
-            isCollection: $data['isCollection'] ?? false,
-        );
+        $resourceClass = $data['resourceClass'] ?? null;
+        $isCollection = $data['isCollection'] ?? false;
+
+        if ($resourceClass === null) {
+            return self::notFound();
+        }
+
+        return $isCollection
+            ? self::collection($resourceClass)
+            : self::single($resourceClass);
     }
 
     /**
