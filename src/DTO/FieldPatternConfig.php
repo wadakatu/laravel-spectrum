@@ -44,6 +44,47 @@ final readonly class FieldPatternConfig
     }
 
     /**
+     * Create a config for Faker-based generation.
+     *
+     * @param  string  $type  The semantic type of the field
+     * @param  string  $fakerMethod  The Faker method to use
+     * @param  array<int, mixed>  $fakerArgs  Arguments to pass to the Faker method
+     * @param  string|null  $format  Optional format hint
+     */
+    public static function forFaker(
+        string $type,
+        string $fakerMethod,
+        array $fakerArgs = [],
+        ?string $format = null
+    ): self {
+        return new self(
+            type: $type,
+            format: $format,
+            fakerMethod: $fakerMethod,
+            fakerArgs: $fakerArgs,
+            staticValue: null,
+        );
+    }
+
+    /**
+     * Create a config for static value generation.
+     *
+     * @param  string  $type  The semantic type of the field
+     * @param  mixed  $staticValue  The static value to use
+     * @param  string|null  $format  Optional format hint
+     */
+    public static function forStaticValue(string $type, mixed $staticValue, ?string $format = null): self
+    {
+        return new self(
+            type: $type,
+            format: $format,
+            fakerMethod: null,
+            fakerArgs: [],
+            staticValue: $staticValue,
+        );
+    }
+
+    /**
      * Convert to array.
      *
      * @return array{type: string, format: string|null, fakerMethod: string|null, fakerArgs: array<int, mixed>, staticValue: mixed}

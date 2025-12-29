@@ -211,6 +211,73 @@ class FieldPatternConfigTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_for_faker_with_all_parameters(): void
+    {
+        $config = FieldPatternConfig::forFaker(
+            type: 'id',
+            fakerMethod: 'numberBetween',
+            fakerArgs: [1, 1000],
+            format: 'integer'
+        );
+
+        $this->assertEquals('id', $config->type);
+        $this->assertEquals('integer', $config->format);
+        $this->assertEquals('numberBetween', $config->fakerMethod);
+        $this->assertEquals([1, 1000], $config->fakerArgs);
+        $this->assertNull($config->staticValue);
+        $this->assertTrue($config->hasFakerMethod());
+        $this->assertFalse($config->hasStaticValue());
+    }
+
+    #[Test]
+    public function it_creates_for_faker_with_defaults(): void
+    {
+        $config = FieldPatternConfig::forFaker(
+            type: 'email',
+            fakerMethod: 'safeEmail'
+        );
+
+        $this->assertEquals('email', $config->type);
+        $this->assertNull($config->format);
+        $this->assertEquals('safeEmail', $config->fakerMethod);
+        $this->assertEquals([], $config->fakerArgs);
+        $this->assertNull($config->staticValue);
+    }
+
+    #[Test]
+    public function it_creates_for_static_value_with_format(): void
+    {
+        $config = FieldPatternConfig::forStaticValue(
+            type: 'password',
+            staticValue: '********',
+            format: 'password'
+        );
+
+        $this->assertEquals('password', $config->type);
+        $this->assertEquals('password', $config->format);
+        $this->assertNull($config->fakerMethod);
+        $this->assertEquals([], $config->fakerArgs);
+        $this->assertEquals('********', $config->staticValue);
+        $this->assertFalse($config->hasFakerMethod());
+        $this->assertTrue($config->hasStaticValue());
+    }
+
+    #[Test]
+    public function it_creates_for_static_value_without_format(): void
+    {
+        $config = FieldPatternConfig::forStaticValue(
+            type: 'boolean',
+            staticValue: true
+        );
+
+        $this->assertEquals('boolean', $config->type);
+        $this->assertNull($config->format);
+        $this->assertNull($config->fakerMethod);
+        $this->assertEquals([], $config->fakerArgs);
+        $this->assertTrue($config->staticValue);
+    }
+
+    #[Test]
     public function it_creates_from_array(): void
     {
         $data = [
@@ -262,6 +329,18 @@ class FieldPatternConfigTest extends TestCase
 
         $this->assertEquals('randomElement', $config->fakerMethod);
         $this->assertEquals([['active', 'inactive', 'pending']], $config->fakerArgs);
+    }
+
+    #[Test]
+    public function it_creates_from_empty_array_with_all_defaults(): void
+    {
+        $config = FieldPatternConfig::fromArray([]);
+
+        $this->assertEquals('string', $config->type);
+        $this->assertNull($config->format);
+        $this->assertNull($config->fakerMethod);
+        $this->assertEquals([], $config->fakerArgs);
+        $this->assertNull($config->staticValue);
     }
 
     #[Test]

@@ -116,6 +116,28 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('custom@example.com', $config->staticValue);
     }
 
+    public function test_register_pattern_accepts_field_pattern_config_directly(): void
+    {
+        $config = new FieldPatternConfig(
+            type: 'custom',
+            format: 'custom_format',
+            fakerMethod: 'word',
+            fakerArgs: ['arg1', 'arg2'],
+            staticValue: 'dto_value',
+        );
+
+        $this->registry->registerPattern('dto_field', $config);
+
+        $result = $this->registry->getConfig('dto_field');
+
+        // Should return the exact same object (no conversion needed)
+        $this->assertSame($config, $result);
+        $this->assertEquals('custom', $result->type);
+        $this->assertEquals('custom_format', $result->format);
+        $this->assertEquals(['arg1', 'arg2'], $result->fakerArgs);
+        $this->assertEquals('dto_value', $result->staticValue);
+    }
+
     public function test_register_pattern_throws_on_empty_pattern(): void
     {
         $this->expectException(\InvalidArgumentException::class);
