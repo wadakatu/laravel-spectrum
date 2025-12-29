@@ -562,14 +562,13 @@ class InlineValidationAnalyzer implements HasErrors
             return [];
         }
 
-        // Analyze file upload fields
-        $fileFields = $this->fileUploadAnalyzer->analyzeRules($validation['rules']);
+        // Analyze file upload fields (returns FileUploadInfo DTOs)
+        $fileFields = $this->fileUploadAnalyzer->analyzeRulesToResult($validation['rules']);
 
         foreach ($validation['rules'] as $field => $rules) {
             // Check if this is a file upload field
             if (isset($fileFields[$field])) {
-                $fileInfoArray = $fileFields[$field];
-                $fileInfoDto = FileUploadInfo::fromArray($fileInfoArray);
+                $fileInfo = $fileFields[$field];
                 $rulesList = is_array($rules) ? $rules : explode('|', $rules);
 
                 $parameters[] = new InlineParameterInfo(
@@ -577,9 +576,9 @@ class InlineValidationAnalyzer implements HasErrors
                     type: 'file',
                     required: in_array('required', $rulesList) || $this->hasRequiredIf($rulesList),
                     rules: $rules,
-                    description: $this->generateFileDescription($field, $fileInfoArray, $validation['attributes'] ?? []),
+                    description: $this->generateFileDescription($field, $fileInfo->toArray(), $validation['attributes'] ?? []),
                     format: 'binary',
-                    fileInfo: $fileInfoDto,
+                    fileInfo: $fileInfo,
                 );
 
                 continue;
