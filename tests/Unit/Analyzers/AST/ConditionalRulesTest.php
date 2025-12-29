@@ -49,10 +49,10 @@ class ConditionalRulesTest extends TestCase
         $defaultRules = null;
 
         foreach ($ruleSets as $ruleSet) {
-            if (! empty($ruleSet['conditions']) && $ruleSet['conditions'][0]['type'] === 'http_method') {
-                if ($ruleSet['conditions'][0]['method'] === 'POST') {
+            if (! empty($ruleSet['conditions']) && $ruleSet['conditions'][0]->isHttpMethod()) {
+                if ($ruleSet['conditions'][0]->method === 'POST') {
                     $postRules = $ruleSet;
-                } elseif ($ruleSet['conditions'][0]['method'] === 'PUT') {
+                } elseif ($ruleSet['conditions'][0]->method === 'PUT') {
                     $putRules = $ruleSet;
                 }
             } elseif (empty($ruleSet['conditions'])) {
@@ -105,9 +105,9 @@ class ConditionalRulesTest extends TestCase
 
         $this->assertNotNull($adminRuleSet);
         $this->assertCount(2, $adminRuleSet['conditions']);
-        $this->assertEquals('http_method', $adminRuleSet['conditions'][0]['type']);
-        $this->assertEquals('custom', $adminRuleSet['conditions'][1]['type']);
-        $this->assertStringContainsString('isAdmin', $adminRuleSet['conditions'][1]['expression']);
+        $this->assertEquals('http_method', $adminRuleSet['conditions'][0]->getTypeAsString());
+        $this->assertEquals('custom', $adminRuleSet['conditions'][1]->getTypeAsString());
+        $this->assertStringContainsString('isAdmin', $adminRuleSet['conditions'][1]->expression);
     }
 
     #[Test]
@@ -124,8 +124,8 @@ class ConditionalRulesTest extends TestCase
         $deleteRules = null;
         foreach ($ruleSets as $ruleSet) {
             if (! empty($ruleSet['conditions']) &&
-                $ruleSet['conditions'][0]['type'] === 'http_method' &&
-                $ruleSet['conditions'][0]['method'] === 'DELETE') {
+                $ruleSet['conditions'][0]->isHttpMethod() &&
+                $ruleSet['conditions'][0]->method === 'DELETE') {
                 $deleteRules = $ruleSet;
                 break;
             }
@@ -149,8 +149,8 @@ class ConditionalRulesTest extends TestCase
         $putRules = null;
         foreach ($ruleSets as $ruleSet) {
             if (! empty($ruleSet['conditions']) &&
-                $ruleSet['conditions'][0]['type'] === 'http_method' &&
-                $ruleSet['conditions'][0]['method'] === 'PUT') {
+                $ruleSet['conditions'][0]->isHttpMethod() &&
+                $ruleSet['conditions'][0]->method === 'PUT') {
                 $putRules = $ruleSet;
                 break;
             }
@@ -172,8 +172,8 @@ class ConditionalRulesTest extends TestCase
 
         // Check that request()->isMethod() is recognized
         $postRules = $ruleSets[0];
-        $this->assertEquals('http_method', $postRules['conditions'][0]['type']);
-        $this->assertEquals('POST', $postRules['conditions'][0]['method']);
+        $this->assertEquals('http_method', $postRules['conditions'][0]->getTypeAsString());
+        $this->assertEquals('POST', $postRules['conditions'][0]->method);
     }
 
     #[Test]
@@ -248,8 +248,8 @@ class ConditionalRulesTest extends TestCase
 
         // Check custom condition type
         $premiumRules = $ruleSets[0];
-        $this->assertEquals('custom', $premiumRules['conditions'][0]['type']);
-        $this->assertStringContainsString('isPremium', $premiumRules['conditions'][0]['expression']);
+        $this->assertEquals('custom', $premiumRules['conditions'][0]->getTypeAsString());
+        $this->assertStringContainsString('isPremium', $premiumRules['conditions'][0]->expression);
     }
 
     #[Test]

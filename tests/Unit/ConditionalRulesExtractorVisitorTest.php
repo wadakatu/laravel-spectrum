@@ -54,8 +54,8 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $ruleSets = $visitor->getRuleSets();
 
         $this->assertCount(2, $ruleSets['rules_sets']);
-        $this->assertEquals('http_method', $ruleSets['rules_sets'][0]['conditions'][0]['type']);
-        $this->assertEquals('POST', $ruleSets['rules_sets'][0]['conditions'][0]['method']);
+        $this->assertEquals('http_method', $ruleSets['rules_sets'][0]['conditions'][0]->getTypeAsString());
+        $this->assertEquals('POST', $ruleSets['rules_sets'][0]['conditions'][0]->method);
     }
 
     #[Test]
@@ -146,7 +146,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $hasCustomCondition = false;
         foreach ($ruleSets['rules_sets'] as $ruleSet) {
             foreach ($ruleSet['conditions'] as $condition) {
-                if ($condition['type'] === 'custom' && strpos($condition['expression'], 'isAdmin') !== false) {
+                if ($condition->isCustom() && strpos($condition->expression, 'isAdmin') !== false) {
                     $hasCustomCondition = true;
                     break 2;
                 }
@@ -222,7 +222,7 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
 
         // Check else condition
         $elseRuleSet = end($ruleSets['rules_sets']);
-        $this->assertEquals('else', $elseRuleSet['conditions'][0]['type']);
+        $this->assertEquals('else', $elseRuleSet['conditions'][0]->getTypeAsString());
     }
 
     #[Test]
@@ -1335,8 +1335,8 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
         $ruleSets = $visitor->getRuleSets();
         $this->assertNotEmpty($ruleSets['rules_sets']);
         $firstCondition = $ruleSets['rules_sets'][0]['conditions'][0] ?? null;
-        $this->assertEquals('request_field', $firstCondition['type']);
-        $this->assertEquals('missing', $firstCondition['check']);
+        $this->assertEquals('request_field', $firstCondition->getTypeAsString());
+        $this->assertEquals('missing', $firstCondition->check);
     }
 
     #[Test]

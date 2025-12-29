@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers\AST\Visitors;
 
+use LaravelSpectrum\DTO\ConditionResult;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -17,7 +20,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     /** @var array<array{conditions: array, rules: array}> */
     private array $ruleSets = [];
 
-    /** @var array<array{type: string, ...}> Current condition path */
+    /** @var array<ConditionResult> Current condition path */
     private array $currentPath = [];
 
     /** @var bool Whether we found a return statement */
@@ -127,7 +130,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
         // Process else block
         if ($node->else) {
-            $this->currentPath[] = ['type' => 'else', 'description' => 'Default case'];
+            $this->currentPath[] = ConditionResult::elseBranch();
             $this->traverseStatements($node->else->stmts);
             array_pop($this->currentPath);
         }
@@ -262,7 +265,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * Enhanced condition analysis
      */
-    private function analyzeCondition(Node\Expr $condition): array
+    private function analyzeCondition(Node\Expr $condition): ConditionResult
     {
         // HTTP method checks
         if ($this->isHttpMethodCheck($condition)) {
@@ -291,10 +294,9 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
         }
 
         // Generic condition
-        return [
-            'type' => 'custom',
-            'expression' => $this->printer->prettyPrintExpr($condition),
-        ];
+        return ConditionResult::custom(
+            $this->printer->prettyPrintExpr($condition)
+        );
     }
 
     /**
@@ -316,7 +318,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
      *
      * @param  Node\Expr\MethodCall  $call  Pre-validated by isHttpMethodCheck
      */
-    private function extractHttpMethodCondition(Node\Expr\MethodCall $call): array
+    private function extractHttpMethodCondition(Node\Expr\MethodCall $call): ConditionResult
     {
         $method = null;
 
@@ -325,11 +327,10 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
             $method = $call->args[0]->value->value;
         }
 
-        return [
-            'type' => 'http_method',
-            'method' => $method,
-            'expression' => $this->printer->prettyPrintExpr($call),
-        ];
+        return ConditionResult::httpMethod(
+            $method,
+            $this->printer->prettyPrintExpr($call)
+        );
     }
 
     /**
@@ -358,15 +359,14 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
      *
      * @param  Node\Expr\MethodCall  $call  Pre-validated by isUserCheck
      */
-    private function extractUserCondition(Node\Expr\MethodCall $call): array
+    private function extractUserCondition(Node\Expr\MethodCall $call): ConditionResult
     {
         $method = $call->name instanceof Node\Identifier ? $call->name->toString() : 'unknown';
 
-        return [
-            'type' => 'user_check',
-            'method' => $method,
-            'expression' => $this->printer->prettyPrintExpr($call),
-        ];
+        return ConditionResult::userCheck(
+            $method,
+            $this->printer->prettyPrintExpr($call)
+        );
     }
 
     /**
@@ -395,7 +395,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     /**
      * Extract request field condition
      */
-    private function extractRequestFieldCondition(Node\Expr $expr): array
+    private function extractRequestFieldCondition(Node\Expr $expr): ConditionResult
     {
         if ($expr instanceof Node\Expr\MethodCall) {
             $field = null;
@@ -404,18 +404,18 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
                 $field = $expr->args[0]->value->value;
             }
 
-            return [
-                'type' => 'request_field',
-                'check' => $expr->name->toString(),
-                'field' => $field,
-                'expression' => $this->printer->prettyPrintExpr($expr),
-            ];
+            return ConditionResult::requestField(
+                $expr->name->toString(),
+                $field,
+                $this->printer->prettyPrintExpr($expr)
+            );
         }
 
-        return [
-            'type' => 'request_field',
-            'expression' => $this->printer->prettyPrintExpr($expr),
-        ];
+        return ConditionResult::requestField(
+            null,
+            null,
+            $this->printer->prettyPrintExpr($expr)
+        );
     }
 
     /**
@@ -435,12 +435,11 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
      *
      * @param  Node\Expr\StaticCall  $call  Pre-validated by isRuleWhenPattern
      */
-    private function extractRuleWhenCondition(Node\Expr\StaticCall $call): array
+    private function extractRuleWhenCondition(Node\Expr\StaticCall $call): ConditionResult
     {
-        return [
-            'type' => 'rule_when',
-            'expression' => $this->printer->prettyPrintExpr($call),
-        ];
+        return ConditionResult::ruleWhen(
+            $this->printer->prettyPrintExpr($call)
+        );
     }
 
     private function traverseStatements(array $statements): void
