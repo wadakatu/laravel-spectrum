@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\DTO\QueryParameterInfo;
@@ -26,10 +27,10 @@ class ParameterGenerator
      * Generate parameters for an API operation.
      *
      * @param  array{parameters: array}  $route  Route information with parameters
-     * @param  array{enumParameters?: array, queryParameters?: array}  $controllerInfo  Controller analysis result
+     * @param  ControllerInfo  $controllerInfo  Controller analysis result
      * @return array<int, OpenApiParameter> OpenAPI parameter definitions
      */
-    public function generate(array $route, array $controllerInfo): array
+    public function generate(array $route, ControllerInfo $controllerInfo): array
     {
         // Convert route parameters to DTOs
         $parameters = array_map(
@@ -50,18 +51,19 @@ class ParameterGenerator
      * Add enum type parameters from controller analysis.
      *
      * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
-     * @param  array  $controllerInfo  Controller analysis result
+     * @param  ControllerInfo  $controllerInfo  Controller analysis result
      * @return array<int, OpenApiParameter> Updated parameters
      */
-    protected function addEnumParameters(array $parameters, array $controllerInfo): array
+    protected function addEnumParameters(array $parameters, ControllerInfo $controllerInfo): array
     {
-        if (empty($controllerInfo['enumParameters'])) {
+        if (! $controllerInfo->hasEnumParameters()) {
             return $parameters;
         }
 
         $result = $parameters;
 
-        foreach ($controllerInfo['enumParameters'] as $enumParam) {
+        foreach ($controllerInfo->enumParameters as $enumParamDTO) {
+            $enumParam = $enumParamDTO->toArray();
             // Check if this is already a route parameter
             $matchIndex = null;
             foreach ($result as $index => $routeParam) {
@@ -107,16 +109,17 @@ class ParameterGenerator
      * Add query parameters from controller analysis.
      *
      * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
-     * @param  array  $controllerInfo  Controller analysis result
+     * @param  ControllerInfo  $controllerInfo  Controller analysis result
      * @return array<int, OpenApiParameter> Updated parameters
      */
-    protected function addQueryParameters(array $parameters, array $controllerInfo): array
+    protected function addQueryParameters(array $parameters, ControllerInfo $controllerInfo): array
     {
-        if (empty($controllerInfo['queryParameters'])) {
+        if (! $controllerInfo->hasQueryParameters()) {
             return $parameters;
         }
 
-        foreach ($controllerInfo['queryParameters'] as $queryParam) {
+        foreach ($controllerInfo->queryParameters as $queryParamDTO) {
+            $queryParam = $queryParamDTO->toArray();
             $type = $queryParam['type'] ?? 'string';
 
             // Build schema

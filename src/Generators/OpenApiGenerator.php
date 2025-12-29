@@ -8,6 +8,7 @@ use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\DTO\AuthenticationResult;
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
@@ -194,7 +195,7 @@ class OpenApiGenerator
      */
     protected function generateOperation(array $route, string $method, ?RouteAuthentication $authentication = null): OpenApiOperation
     {
-        $controllerInfo = $this->controllerAnalyzer->analyze(
+        $controllerInfo = $this->controllerAnalyzer->analyzeToResult(
             $route['controller'],
             $route['method']
         );
@@ -231,7 +232,7 @@ class OpenApiGenerator
     /**
      * Generate responses for an operation.
      */
-    protected function generateResponses(array $route, array $controllerInfo): array
+    protected function generateResponses(array $route, ControllerInfo $controllerInfo): array
     {
         $responses = [];
 
@@ -248,7 +249,7 @@ class OpenApiGenerator
     /**
      * Generate error responses.
      */
-    protected function generateErrorResponses(array $route, array $controllerInfo): array
+    protected function generateErrorResponses(array $route, ControllerInfo $controllerInfo): array
     {
         $method = strtolower($route['httpMethods'][0]);
         $requiresAuth = $this->requiresAuth($route);
@@ -256,13 +257,13 @@ class OpenApiGenerator
         // Get validation data
         $validationData = null;
 
-        if (! empty($controllerInfo['formRequest'])) {
-            $validationData = $this->requestAnalyzer->analyzeWithDetails($controllerInfo['formRequest']);
-        } elseif (! empty($controllerInfo['inlineValidation'])) {
+        if ($controllerInfo->hasFormRequest()) {
+            $validationData = $this->requestAnalyzer->analyzeWithDetails($controllerInfo->formRequest);
+        } elseif ($controllerInfo->hasInlineValidation()) {
             $validationData = [
-                'rules' => $controllerInfo['inlineValidation']['rules'] ?? [],
-                'messages' => $controllerInfo['inlineValidation']['messages'] ?? [],
-                'attributes' => $controllerInfo['inlineValidation']['attributes'] ?? [],
+                'rules' => $controllerInfo->inlineValidation->rules ?? [],
+                'messages' => $controllerInfo->inlineValidation->messages ?? [],
+                'attributes' => $controllerInfo->inlineValidation->attributes ?? [],
             ];
         }
 
@@ -315,7 +316,7 @@ class OpenApiGenerator
     /**
      * Generate success response.
      */
-    protected function generateSuccessResponse(array $route, array $controllerInfo): array
+    protected function generateSuccessResponse(array $route, ControllerInfo $controllerInfo): array
     {
         $method = strtolower($route['httpMethods'][0]);
 
@@ -330,10 +331,10 @@ class OpenApiGenerator
         ];
 
         // Response from ResponseAnalyzer (excluding Resource type)
-        if (! empty($controllerInfo['response'])
-            && $controllerInfo['response']['type'] !== 'resource'
+        if ($controllerInfo->hasResponse()
+            && ! $controllerInfo->response->isResource()
             && config('spectrum.response_detection.enabled', true)) {
-            $responseSchema = $this->responseSchemaGenerator->generate($controllerInfo['response'], (int) $statusCode);
+            $responseSchema = $this->responseSchemaGenerator->generate($controllerInfo->response->toArray(), (int) $statusCode);
             if (! empty($responseSchema[$statusCode])) {
                 return [
                     'code' => $statusCode,
@@ -343,8 +344,8 @@ class OpenApiGenerator
         }
 
         // Resource class response
-        if (! empty($controllerInfo['resource'])) {
-            $resourceClass = $controllerInfo['resource'];
+        if ($controllerInfo->hasResource()) {
+            $resourceClass = $controllerInfo->resource;
             $schemaName = $this->schemaRegistry->extractSchemaName($resourceClass);
 
             // Check if schema is already registered
@@ -378,8 +379,8 @@ class OpenApiGenerator
             $schemaRef = $this->schemaRegistry->getRef($schemaName);
             $example = $this->resourceExamples[$schemaName] ?? null;
 
-            if (! empty($controllerInfo['pagination'])) {
-                $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
+            if ($controllerInfo->hasPagination()) {
+                $paginationType = $this->paginationDetector->getPaginationType($controllerInfo->pagination->type);
                 $paginatedSchema = $this->paginationSchemaGenerator->generate($paginationType, $schemaRef);
 
                 $response['content'] = [
@@ -397,12 +398,12 @@ class OpenApiGenerator
             } else {
                 $response['content'] = [
                     'application/json' => [
-                        'schema' => $controllerInfo['returnsCollection']
+                        'schema' => $controllerInfo->returnsCollection
                             ? ['type' => 'array', 'items' => $schemaRef]
                             : $schemaRef,
                         'examples' => [
                             'default' => [
-                                'value' => $controllerInfo['returnsCollection']
+                                'value' => $controllerInfo->returnsCollection
                                     ? ($example ? $this->exampleGenerator->generateCollectionExample($example, false) : null)
                                     : $example,
                             ],
@@ -412,11 +413,11 @@ class OpenApiGenerator
             }
         }
         // Pagination only (without Resource)
-        elseif (! empty($controllerInfo['pagination'])) {
-            $modelClass = $controllerInfo['pagination']['model'];
+        elseif ($controllerInfo->hasPagination()) {
+            $modelClass = $controllerInfo->pagination->model;
             $basicSchema = $this->generateBasicModelSchema($modelClass);
 
-            $paginationType = $this->paginationDetector->getPaginationType($controllerInfo['pagination']['type']);
+            $paginationType = $this->paginationDetector->getPaginationType($controllerInfo->pagination->type);
             $paginatedSchema = $this->paginationSchemaGenerator->generate($paginationType, $basicSchema);
 
             $response['content'] = [

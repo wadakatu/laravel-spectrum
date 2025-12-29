@@ -5,6 +5,7 @@ namespace LaravelSpectrum\Tests\Feature;
 use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Tests\Fixtures\Controllers\ProfileController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
@@ -335,8 +336,8 @@ class OpenApiGeneratorTest extends TestCase
     protected function mockControllerAnalysis(string $method, array $result): void
     {
         $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');
-        $controllerAnalyzer->shouldReceive('analyze')
-            ->andReturn($result);
+        $controllerAnalyzer->shouldReceive('analyzeToResult')
+            ->andReturn(ControllerInfo::fromArray($result));
 
         $this->app->instance('LaravelSpectrum\Analyzers\ControllerAnalyzer', $controllerAnalyzer);
     }

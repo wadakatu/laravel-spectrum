@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Generators\ParameterGenerator;
@@ -44,7 +45,7 @@ class ParameterGeneratorTest extends TestCase
                 ['name' => 'id', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'integer']],
             ],
         ];
-        $controllerInfo = [];
+        $controllerInfo = ControllerInfo::empty();
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -61,7 +62,7 @@ class ParameterGeneratorTest extends TestCase
                 ['name' => 'status', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string']],
             ],
         ];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'enumParameters' => [
                 [
                     'name' => 'status',
@@ -71,7 +72,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => true,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -94,7 +95,7 @@ class ParameterGeneratorTest extends TestCase
                 ],
             ],
         ];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'enumParameters' => [
                 [
                     'name' => 'status',
@@ -104,7 +105,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => true,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -119,7 +120,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_enum_as_query_parameter_when_not_in_route(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'enumParameters' => [
                 [
                     'name' => 'sort',
@@ -129,7 +130,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -144,7 +145,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_query_parameters(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'page',
@@ -153,7 +154,7 @@ class ParameterGeneratorTest extends TestCase
                     'default' => 1,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -168,7 +169,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_query_parameter_with_description(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'search',
@@ -177,7 +178,7 @@ class ParameterGeneratorTest extends TestCase
                     'description' => 'Search term',
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -189,7 +190,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_query_parameter_with_enum(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'order',
@@ -198,7 +199,7 @@ class ParameterGeneratorTest extends TestCase
                     'enum' => ['name', 'date', 'price'],
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -210,7 +211,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_validation_constraints_to_query_parameter(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'limit',
@@ -219,7 +220,7 @@ class ParameterGeneratorTest extends TestCase
                     'validation_rules' => ['integer', 'min:1', 'max:100'],
                 ],
             ],
-        ];
+        ]);
 
         $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
             ->once()
@@ -241,7 +242,7 @@ class ParameterGeneratorTest extends TestCase
                 ['name' => 'id', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'integer']],
             ],
         ];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'enumParameters' => [
                 [
                     'name' => 'status',
@@ -258,7 +259,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -281,7 +282,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_handles_empty_parameters(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [];
+        $controllerInfo = ControllerInfo::empty();
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -296,7 +297,7 @@ class ParameterGeneratorTest extends TestCase
                 ['name' => 'status', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string']],
             ],
         ];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'enumParameters' => [
                 [
                     'name' => 'status',
@@ -306,7 +307,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => true,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -317,7 +318,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_does_not_add_empty_description_to_enum_query_parameter(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'enumParameters' => [
                 [
                     'name' => 'status',
@@ -327,7 +328,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -338,7 +339,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_handles_required_query_parameter(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'api_key',
@@ -346,7 +347,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => true,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -357,7 +358,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_style_and_explode_to_array_query_parameters(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'ids',
@@ -365,7 +366,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -379,7 +380,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_adds_items_schema_to_array_parameters(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'tags',
@@ -387,7 +388,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -401,7 +402,7 @@ class ParameterGeneratorTest extends TestCase
     public function it_does_not_add_style_for_simple_types(): void
     {
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'page',
@@ -409,7 +410,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -424,7 +425,7 @@ class ParameterGeneratorTest extends TestCase
         config(['spectrum.parameters.include_style' => false]);
 
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'ids',
@@ -432,7 +433,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -448,7 +449,7 @@ class ParameterGeneratorTest extends TestCase
         config(['spectrum.parameters.array_style' => 'spaceDelimited']);
 
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'ids',
@@ -456,7 +457,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
@@ -469,7 +470,7 @@ class ParameterGeneratorTest extends TestCase
         config(['spectrum.parameters.array_explode' => false]);
 
         $route = ['parameters' => []];
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'queryParameters' => [
                 [
                     'name' => 'ids',
@@ -477,7 +478,7 @@ class ParameterGeneratorTest extends TestCase
                     'required' => false,
                 ],
             ],
-        ];
+        ]);
 
         $parameters = $this->generator->generate($route, $controllerInfo);
 
