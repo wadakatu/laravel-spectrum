@@ -177,8 +177,8 @@ class FractalTransformerAnalyzerTest extends TestCase
 
         $warnings = $errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertEquals('class_not_found', $warnings[0]['metadata']['error_type']);
-        $this->assertStringContainsString('NonExistentTransformerClass', $warnings[0]['message']);
+        $this->assertEquals('class_not_found', $warnings[0]->metadata['error_type']);
+        $this->assertStringContainsString('NonExistentTransformerClass', $warnings[0]->message);
     }
 
     #[Test]
@@ -196,8 +196,8 @@ class FractalTransformerAnalyzerTest extends TestCase
 
         $warnings = $errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertEquals('invalid_parent_class', $warnings[0]['metadata']['error_type']);
-        $this->assertStringContainsString('stdClass', $warnings[0]['message']);
+        $this->assertEquals('invalid_parent_class', $warnings[0]->metadata['error_type']);
+        $this->assertStringContainsString('stdClass', $warnings[0]->message);
     }
 
     // ========== Additional coverage tests ==========
@@ -298,7 +298,7 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertEmpty($result);
         $warnings = $errorCollector->getWarnings();
         $this->assertNotEmpty($warnings, 'Expected warning for class_node_not_found');
-        $this->assertEquals('class_node_not_found', $warnings[0]['metadata']['error_type']);
+        $this->assertEquals('class_node_not_found', $warnings[0]->metadata['error_type']);
     }
 
     #[Test]

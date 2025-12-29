@@ -126,7 +126,7 @@ PHP;
 
         $errors = $this->errorCollector->getErrors();
         $this->assertNotEmpty($errors);
-        $this->assertEquals('parse_error', $errors[0]['metadata']['error_type']);
+        $this->assertEquals('parse_error', $errors[0]->metadata['error_type']);
     }
 
     #[Test]
@@ -143,8 +143,8 @@ PHP;
 
             $errors = $this->errorCollector->getErrors();
             $this->assertNotEmpty($errors);
-            $this->assertEquals('parse_error', $errors[0]['metadata']['error_type']);
-            $this->assertStringContainsString($tempFile, $errors[0]['metadata']['file_path']);
+            $this->assertEquals('parse_error', $errors[0]->metadata['error_type']);
+            $this->assertStringContainsString($tempFile, $errors[0]->metadata['file_path']);
         } finally {
             unlink($tempFile);
         }
@@ -159,7 +159,7 @@ PHP;
 
         $warnings = $this->errorCollector->getWarnings();
         $this->assertNotEmpty($warnings);
-        $this->assertEquals('file_not_found', $warnings[0]['metadata']['error_type']);
+        $this->assertEquals('file_not_found', $warnings[0]->metadata['error_type']);
     }
 
     // ========== Empty file/code handling tests ==========

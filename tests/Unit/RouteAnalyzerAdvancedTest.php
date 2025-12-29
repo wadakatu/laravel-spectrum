@@ -190,8 +190,8 @@ PHP;
         // Assert
         $errors = $this->errorCollector->getErrors();
         $this->assertCount(1, $errors);
-        $this->assertStringContainsString('Failed to load route file', $errors[0]['message']);
-        $this->assertStringContainsString('Route loading error', $errors[0]['message']);
+        $this->assertStringContainsString('Failed to load route file', $errors[0]->message);
+        $this->assertStringContainsString('Route loading error', $errors[0]->message);
 
         // Cleanup
         unlink($tempFile);

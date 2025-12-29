@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Support;
 
+use LaravelSpectrum\DTO\ErrorEntry;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -100,10 +101,11 @@ class HasErrorCollectionTest extends TestCase
         $this->assertCount(1, $errors);
 
         $error = $errors[0];
-        $this->assertEquals(TestClassWithErrorCollection::class, $error['context']);
-        $this->assertEquals('Test error message', $error['message']);
-        $this->assertEquals(AnalyzerErrorType::ParseError->value, $error['metadata']['error_type']);
-        $this->assertEquals('TestClass', $error['metadata']['class']);
+        $this->assertInstanceOf(ErrorEntry::class, $error);
+        $this->assertEquals(TestClassWithErrorCollection::class, $error->context);
+        $this->assertEquals('Test error message', $error->message);
+        $this->assertEquals(AnalyzerErrorType::ParseError->value, $error->metadata['error_type']);
+        $this->assertEquals('TestClass', $error->metadata['class']);
     }
 
     #[Test]
@@ -123,10 +125,11 @@ class HasErrorCollectionTest extends TestCase
         $this->assertCount(1, $warnings);
 
         $warning = $warnings[0];
-        $this->assertEquals(TestClassWithErrorCollection::class, $warning['context']);
-        $this->assertEquals('Test warning message', $warning['message']);
-        $this->assertEquals(AnalyzerErrorType::UnsupportedFeature->value, $warning['metadata']['error_type']);
-        $this->assertEquals('advanced', $warning['metadata']['feature']);
+        $this->assertInstanceOf(ErrorEntry::class, $warning);
+        $this->assertEquals(TestClassWithErrorCollection::class, $warning->context);
+        $this->assertEquals('Test warning message', $warning->message);
+        $this->assertEquals(AnalyzerErrorType::UnsupportedFeature->value, $warning->metadata['error_type']);
+        $this->assertEquals('advanced', $warning->metadata['feature']);
     }
 
     #[Test]
@@ -148,14 +151,15 @@ class HasErrorCollectionTest extends TestCase
         $this->assertCount(1, $errors);
 
         $error = $errors[0];
-        $this->assertEquals(TestClassWithErrorCollection::class, $error['context']);
-        $this->assertEquals('Something went wrong', $error['message']);
-        $this->assertEquals(AnalyzerErrorType::AnalysisError->value, $error['metadata']['error_type']);
-        $this->assertEquals(\RuntimeException::class, $error['metadata']['exception_class']);
-        $this->assertArrayHasKey('file', $error['metadata']);
-        $this->assertArrayHasKey('line', $error['metadata']);
-        $this->assertArrayHasKey('trace', $error['metadata']);
-        $this->assertEquals('processing', $error['metadata']['action']);
+        $this->assertInstanceOf(ErrorEntry::class, $error);
+        $this->assertEquals(TestClassWithErrorCollection::class, $error->context);
+        $this->assertEquals('Something went wrong', $error->message);
+        $this->assertEquals(AnalyzerErrorType::AnalysisError->value, $error->metadata['error_type']);
+        $this->assertEquals(\RuntimeException::class, $error->metadata['exception_class']);
+        $this->assertArrayHasKey('file', $error->metadata);
+        $this->assertArrayHasKey('line', $error->metadata);
+        $this->assertArrayHasKey('trace', $error->metadata);
+        $this->assertEquals('processing', $error->metadata['action']);
     }
 
     #[Test]
@@ -194,7 +198,8 @@ class HasErrorCollectionTest extends TestCase
         $this->assertCount(count($errorTypes), $errors);
 
         foreach ($errors as $index => $error) {
-            $this->assertEquals($errorTypes[$index]->value, $error['metadata']['error_type']);
+            $this->assertInstanceOf(ErrorEntry::class, $error);
+            $this->assertEquals($errorTypes[$index]->value, $error->metadata['error_type']);
         }
     }
 
