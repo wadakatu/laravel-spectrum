@@ -27,7 +27,7 @@ final readonly class FormRequestAnalysisContext
      * @param  array<string, string>  $useStatements  Map of short names to fully qualified names (for ready only)
      * @param  string|null  $namespace  The namespace of the class (for ready only)
      */
-    public function __construct(
+    private function __construct(
         public FormRequestAnalysisContextType $type,
         public ?ReflectionClass $reflection = null,
         public ?array $ast = null,
