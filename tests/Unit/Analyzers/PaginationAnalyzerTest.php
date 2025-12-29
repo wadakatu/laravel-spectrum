@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use LaravelSpectrum\Analyzers\PaginationAnalyzer;
+use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\Support\PaginationDetector;
 use LaravelSpectrum\Tests\Fixtures\Controllers\PaginatedController;
 use PhpParser\Parser;
@@ -29,10 +30,10 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'lengthAwarePagination');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('User', $result['model']);
-        $this->assertNull($result['resource'] ?? null);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('User', $result->model);
+        $this->assertNull($result->resource);
     }
 
     public function test_detects_simple_paginate_method(): void
@@ -40,9 +41,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'simplePagination');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('simplePaginate', $result['type']);
-        $this->assertEquals('Post', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('simplePaginate', $result->type);
+        $this->assertEquals('Post', $result->model);
     }
 
     public function test_detects_cursor_paginate_method(): void
@@ -50,9 +51,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'cursorPagination');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('cursorPaginate', $result['type']);
-        $this->assertEquals('Comment', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('cursorPaginate', $result->type);
+        $this->assertEquals('Comment', $result->model);
     }
 
     public function test_detects_pagination_with_resource(): void
@@ -60,10 +61,10 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'withResource');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('User', $result['model']);
-        $this->assertEquals('UserResource', $result['resource']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('User', $result->model);
+        $this->assertEquals('UserResource', $result->resource);
     }
 
     public function test_detects_pagination_with_query_builder(): void
@@ -71,9 +72,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'withQueryBuilder');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('User', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('User', $result->model);
     }
 
     public function test_detects_pagination_with_custom_per_page(): void
@@ -81,9 +82,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'withCustomPerPage');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('User', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('User', $result->model);
     }
 
     public function test_detects_pagination_from_return_type(): void
@@ -91,8 +92,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'withReturnType');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
     }
 
     public function test_detects_simple_paginator_return_type(): void
@@ -100,8 +101,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'withSimplePaginatorReturnType');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('simplePaginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('simplePaginate', $result->type);
     }
 
     public function test_detects_cursor_paginator_return_type(): void
@@ -109,8 +110,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'withCursorPaginatorReturnType');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('cursorPaginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('cursorPaginate', $result->type);
     }
 
     public function test_returns_null_for_non_paginated_methods(): void
@@ -126,9 +127,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'conditionalPagination');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('User', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('User', $result->model);
     }
 
     public function test_detects_relation_pagination(): void
@@ -136,9 +137,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'relationPagination');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('posts', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('posts', $result->model);
     }
 
     #[Test]
@@ -176,8 +177,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginationReturnTypeFixture::class, 'nullableLengthAware');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
     }
 
     #[Test]
@@ -186,8 +187,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginationReturnTypeFixture::class, 'concreteLengthAware');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
     }
 
     #[Test]
@@ -196,8 +197,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginationReturnTypeFixture::class, 'concreteSimple');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('simplePaginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('simplePaginate', $result->type);
     }
 
     #[Test]
@@ -206,8 +207,8 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginationReturnTypeFixture::class, 'concreteCursor');
         $result = $this->analyzer->analyzeReturnType($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('cursorPaginate', $result['type']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('cursorPaginate', $result->type);
     }
 
     #[Test]
@@ -257,9 +258,9 @@ class PaginationAnalyzerTest extends TestCase
         $method = new ReflectionMethod(PaginatedController::class, 'customPaginationResponse');
         $result = $this->analyzer->analyzeMethod($method);
 
-        $this->assertNotNull($result);
-        $this->assertEquals('paginate', $result['type']);
-        $this->assertEquals('User', $result['model']);
+        $this->assertInstanceOf(PaginationInfo::class, $result);
+        $this->assertEquals('paginate', $result->type);
+        $this->assertEquals('User', $result->model);
     }
 }
 

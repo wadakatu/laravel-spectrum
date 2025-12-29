@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Analyzers;
 
+use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\Support\PaginationDetector;
 use PhpParser\Error;
 use PhpParser\Parser;
@@ -22,11 +23,9 @@ class PaginationAnalyzer
     }
 
     /**
-     * Analyze a controller method for pagination usage
-     *
-     * @return array|null ['type' => 'paginate'|'simplePaginate'|'cursorPaginate', 'model' => string, 'resource' => string|null]
+     * Analyze a controller method for pagination usage.
      */
-    public function analyzeMethod(ReflectionMethod $method): ?array
+    public function analyzeMethod(ReflectionMethod $method): ?PaginationInfo
     {
         try {
             $methodContent = $this->getMethodContent($method);
@@ -43,7 +42,11 @@ class PaginationAnalyzer
 
             $paginationInfo = $this->paginationDetector->detectPaginationCalls($ast);
 
-            return ! empty($paginationInfo) ? $paginationInfo[0] : null;
+            if (empty($paginationInfo)) {
+                return null;
+            }
+
+            return PaginationInfo::fromArray($paginationInfo[0]);
         } catch (Error $e) {
             // Log parsing error
             return null;
@@ -51,11 +54,9 @@ class PaginationAnalyzer
     }
 
     /**
-     * Analyze method return type for pagination interfaces
-     *
-     * @return array|null ['type' => 'paginate'|'simplePaginate'|'cursorPaginate']
+     * Analyze method return type for pagination interfaces.
      */
-    public function analyzeReturnType(ReflectionMethod $method): ?array
+    public function analyzeReturnType(ReflectionMethod $method): ?PaginationInfo
     {
         $returnType = $method->getReturnType();
 
@@ -65,15 +66,21 @@ class PaginationAnalyzer
 
         $typeName = ltrim((string) $returnType, '?');
 
-        return match ($typeName) {
-            'Illuminate\Contracts\Pagination\LengthAwarePaginator' => ['type' => 'paginate'],
-            'Illuminate\Pagination\LengthAwarePaginator' => ['type' => 'paginate'],
-            'Illuminate\Contracts\Pagination\Paginator' => ['type' => 'simplePaginate'],
-            'Illuminate\Pagination\Paginator' => ['type' => 'simplePaginate'],
-            'Illuminate\Contracts\Pagination\CursorPaginator' => ['type' => 'cursorPaginate'],
-            'Illuminate\Pagination\CursorPaginator' => ['type' => 'cursorPaginate'],
+        $type = match ($typeName) {
+            'Illuminate\Contracts\Pagination\LengthAwarePaginator' => 'paginate',
+            'Illuminate\Pagination\LengthAwarePaginator' => 'paginate',
+            'Illuminate\Contracts\Pagination\Paginator' => 'simplePaginate',
+            'Illuminate\Pagination\Paginator' => 'simplePaginate',
+            'Illuminate\Contracts\Pagination\CursorPaginator' => 'cursorPaginate',
+            'Illuminate\Pagination\CursorPaginator' => 'cursorPaginate',
             default => null
         };
+
+        if ($type === null) {
+            return null;
+        }
+
+        return new PaginationInfo(type: $type);
     }
 
     /**
