@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Support;
 
+use LaravelSpectrum\DTO\DiagnosticReport;
 use LaravelSpectrum\DTO\ErrorEntry;
 
 class ErrorCollector
@@ -99,20 +100,20 @@ class ErrorCollector
     }
 
     /**
-     * Generate a report with all errors and warnings.
+     * Generate a diagnostic report with all errors and warnings.
+     */
+    public function generateDiagnosticReport(): DiagnosticReport
+    {
+        return DiagnosticReport::create($this->errors, $this->warnings);
+    }
+
+    /**
+     * Generate a report with all errors and warnings as an array.
      *
      * @return array{summary: array{total_errors: int, total_warnings: int, generated_at: string}, errors: array<int, array<string, mixed>>, warnings: array<int, array<string, mixed>>}
      */
     public function generateReport(): array
     {
-        return [
-            'summary' => [
-                'total_errors' => count($this->errors),
-                'total_warnings' => count($this->warnings),
-                'generated_at' => now()->toIso8601String(),
-            ],
-            'errors' => $this->getErrorsAsArray(),
-            'warnings' => $this->getWarningsAsArray(),
-        ];
+        return $this->generateDiagnosticReport()->toArray();
     }
 }

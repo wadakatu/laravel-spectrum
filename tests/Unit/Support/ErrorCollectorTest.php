@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Support;
 
+use LaravelSpectrum\DTO\DiagnosticReport;
 use LaravelSpectrum\DTO\ErrorEntry;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\TestCase;
@@ -118,5 +119,46 @@ class ErrorCollectorTest extends TestCase
 
         $this->assertFalse($warnings[0]->isError());
         $this->assertTrue($warnings[0]->isWarning());
+    }
+
+    public function test_generates_diagnostic_report_dto(): void
+    {
+        $collector = new ErrorCollector;
+
+        $collector->addError('Context1', 'Error 1', ['type' => 'parse']);
+        $collector->addError('Context2', 'Error 2', ['type' => 'validation']);
+        $collector->addWarning('Context3', 'Warning 1', ['level' => 'info']);
+
+        $report = $collector->generateDiagnosticReport();
+
+        $this->assertInstanceOf(DiagnosticReport::class, $report);
+        $this->assertEquals(2, $report->totalErrors);
+        $this->assertEquals(1, $report->totalWarnings);
+        $this->assertTrue($report->hasErrors());
+        $this->assertTrue($report->hasWarnings());
+        $this->assertTrue($report->hasIssues());
+
+        $this->assertCount(2, $report->errors);
+        $this->assertCount(1, $report->warnings);
+
+        $this->assertInstanceOf(ErrorEntry::class, $report->errors[0]);
+        $this->assertEquals('Context1', $report->errors[0]->context);
+    }
+
+    public function test_generate_report_uses_diagnostic_report_internally(): void
+    {
+        $collector = new ErrorCollector;
+
+        $collector->addError('Context1', 'Error 1');
+        $collector->addWarning('Context2', 'Warning 1');
+
+        $arrayReport = $collector->generateReport();
+        $dtoReport = $collector->generateDiagnosticReport();
+
+        // Array report should match DTO report's toArray output structure
+        $this->assertEquals($dtoReport->totalErrors, $arrayReport['summary']['total_errors']);
+        $this->assertEquals($dtoReport->totalWarnings, $arrayReport['summary']['total_warnings']);
+        $this->assertCount(count($dtoReport->errors), $arrayReport['errors']);
+        $this->assertCount(count($dtoReport->warnings), $arrayReport['warnings']);
     }
 }
