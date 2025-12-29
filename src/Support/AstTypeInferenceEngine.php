@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Support;
 
+use LaravelSpectrum\DTO\TypeInfo;
 use PhpParser\Node;
 
 /**
@@ -22,7 +23,92 @@ final class AstTypeInferenceEngine
     }
 
     /**
-     * Infer type information from an AST node.
+     * Infer type information from an AST node as a TypeInfo DTO.
+     *
+     * Returns a TypeInfo with OpenAPI-compatible type information:
+     * - type: The OpenAPI type (string, integer, number, boolean, array, object, null)
+     * - properties: For objects, a map of property names to their TypeInfo (recursive structure)
+     * - format: Optional format hint (date-time, email, uri, uuid, etc.)
+     *
+     * @param  Node  $node  The AST node to analyze
+     */
+    public function infer(Node $node): TypeInfo
+    {
+        // Scalar types
+        if ($node instanceof Node\Scalar\String_) {
+            return TypeInfo::string();
+        }
+
+        if ($node instanceof Node\Scalar\Int_) {
+            return TypeInfo::integer();
+        }
+
+        if ($node instanceof Node\Scalar\Float_) {
+            return TypeInfo::number();
+        }
+
+        // Cast expressions
+        if ($node instanceof Node\Expr\Cast\Int_) {
+            return TypeInfo::integer();
+        }
+
+        if ($node instanceof Node\Expr\Cast\String_) {
+            return TypeInfo::string();
+        }
+
+        if ($node instanceof Node\Expr\Cast\Bool_) {
+            return TypeInfo::boolean();
+        }
+
+        if ($node instanceof Node\Expr\Cast\Double) {
+            return TypeInfo::number();
+        }
+
+        if ($node instanceof Node\Expr\Cast\Array_) {
+            return TypeInfo::array();
+        }
+
+        // Boolean/null constants
+        if ($node instanceof Node\Expr\ConstFetch) {
+            return $this->inferFromConstFetchToDto($node);
+        }
+
+        // Arrays
+        if ($node instanceof Node\Expr\Array_) {
+            return $this->inferFromArrayToDto($node);
+        }
+
+        // Property access
+        if ($node instanceof Node\Expr\PropertyFetch) {
+            return $this->inferFromPropertyFetchToDto($node);
+        }
+
+        // Method calls
+        if ($node instanceof Node\Expr\MethodCall) {
+            return $this->inferFromMethodCallToDto($node);
+        }
+
+        // Function calls
+        if ($node instanceof Node\Expr\FuncCall) {
+            return $this->inferFromFuncCallToDto($node);
+        }
+
+        // Ternary expressions
+        if ($node instanceof Node\Expr\Ternary) {
+            return $this->inferFromTernaryToDto($node);
+        }
+
+        // Null coalesce
+        if ($node instanceof Node\Expr\BinaryOp\Coalesce) {
+            return $this->infer($node->left);
+        }
+
+        // Default to string
+        return TypeInfo::string();
+    }
+
+    /**
+     * Infer type information from an AST node (backward compatible).
      *
      * Returns an array with OpenAPI-compatible type information:
      * - 'type': The OpenAPI type (string, integer, number, boolean, array, object, null)
@@ -34,77 +120,7 @@ final class AstTypeInferenceEngine
      */
     public function inferFromNode(Node $node): array
     {
-        // Scalar types
-        if ($node instanceof Node\Scalar\String_) {
-            return ['type' => 'string'];
-        }
-
-        if ($node instanceof Node\Scalar\Int_) {
-            return ['type' => 'integer'];
-        }
-
-        if ($node instanceof Node\Scalar\Float_) {
-            return ['type' => 'number'];
-        }
-
-        // Cast expressions
-        if ($node instanceof Node\Expr\Cast\Int_) {
-            return ['type' => 'integer'];
-        }
-
-        if ($node instanceof Node\Expr\Cast\String_) {
-            return ['type' => 'string'];
-        }
-
-        if ($node instanceof Node\Expr\Cast\Bool_) {
-            return ['type' => 'boolean'];
-        }
-
-        if ($node instanceof Node\Expr\Cast\Double) {
-            return ['type' => 'number'];
-        }
-
-        if ($node instanceof Node\Expr\Cast\Array_) {
-            return ['type' => 'array'];
-        }
-
-        // Boolean/null constants
-        if ($node instanceof Node\Expr\ConstFetch) {
-            return $this->inferFromConstFetch($node);
-        }
-
-        // Arrays
-        if ($node instanceof Node\Expr\Array_) {
-            return $this->inferFromArray($node);
-        }
-
-        // Property access
-        if ($node instanceof Node\Expr\PropertyFetch) {
-            return $this->inferFromPropertyFetch($node);
-        }
-
-        // Method calls
-        if ($node instanceof Node\Expr\MethodCall) {
-            return $this->inferFromMethodCall($node);
-        }
-
-        // Function calls
-        if ($node instanceof Node\Expr\FuncCall) {
-            return $this->inferFromFuncCall($node);
-        }
-
-        // Ternary expressions
-        if ($node instanceof Node\Expr\Ternary) {
-            return $this->inferFromTernary($node);
-        }
-
-        // Null coalesce
-        if ($node instanceof Node\Expr\BinaryOp\Coalesce) {
-            return $this->inferFromNode($node->left);
-        }
-
-        // Default to string
-        return ['type' => 'string'];
+        return $this->infer($node)->toArray();
     }
 
     /**
@@ -114,31 +130,31 @@ final class AstTypeInferenceEngine
      */
     public function inferTypeString(Node $node): string
     {
-        return $this->inferFromNode($node)['type'];
+        return $this->infer($node)->type;
     }
 
     /**
-     * Infer type from a constant fetch (true, false, null).
+     * Infer type from a constant fetch (true, false, null) - returns TypeInfo.
      */
-    private function inferFromConstFetch(Node\Expr\ConstFetch $node): array
+    private function inferFromConstFetchToDto(Node\Expr\ConstFetch $node): TypeInfo
     {
         $name = $node->name->toLowerString();
 
         if ($name === 'true' || $name === 'false') {
-            return ['type' => 'boolean'];
+            return TypeInfo::boolean();
         }
 
         if ($name === 'null') {
-            return ['type' => 'null'];
+            return TypeInfo::null();
         }
 
-        return ['type' => 'string'];
+        return TypeInfo::string();
     }
 
     /**
-     * Infer type from an array expression.
+     * Infer type from an array expression - returns TypeInfo.
      */
-    private function inferFromArray(Node\Expr\Array_ $node): array
+    private function inferFromArrayToDto(Node\Expr\Array_ $node): TypeInfo
     {
         // Check if it's an associative array (object) or sequential array
         $hasStringKeys = false;
@@ -152,28 +168,28 @@ final class AstTypeInferenceEngine
             if ($item->key instanceof Node\Scalar\String_) {
                 $hasStringKeys = true;
                 $key = $item->key->value;
-                $properties[$key] = $this->inferFromNode($item->value);
+                $properties[$key] = $this->infer($item->value);
             } elseif ($item->key instanceof Node\Scalar\Int_) {
                 // Numeric key - could still be associative
                 $key = (string) $item->key->value;
-                $properties[$key] = $this->inferFromNode($item->value);
+                $properties[$key] = $this->infer($item->value);
             }
         }
 
         if ($hasStringKeys && ! empty($properties)) {
-            return ['type' => 'object', 'properties' => $properties];
+            return TypeInfo::object($properties);
         }
 
-        return ['type' => 'array'];
+        return TypeInfo::array();
     }
 
     /**
-     * Infer type from a property fetch expression.
+     * Infer type from a property fetch expression - returns TypeInfo.
      */
-    private function inferFromPropertyFetch(Node\Expr\PropertyFetch $node): array
+    private function inferFromPropertyFetchToDto(Node\Expr\PropertyFetch $node): TypeInfo
     {
         if (! $node->name instanceof Node\Identifier) {
-            return ['type' => 'string'];
+            return TypeInfo::string();
         }
 
         $propertyName = $node->name->toString();
@@ -181,52 +197,52 @@ final class AstTypeInferenceEngine
         // Use field name inference for common patterns
         $inference = $this->fieldNameInference->inferFieldType($propertyName);
 
-        return $this->convertFieldInferenceToType($inference);
+        return $this->convertFieldInferenceToTypeInfo($inference);
     }
 
     /**
-     * Infer type from a method call expression.
+     * Infer type from a method call expression - returns TypeInfo.
      */
-    private function inferFromMethodCall(Node\Expr\MethodCall $node): array
+    private function inferFromMethodCallToDto(Node\Expr\MethodCall $node): TypeInfo
     {
         if (! $node->name instanceof Node\Identifier) {
-            return ['type' => 'string'];
+            return TypeInfo::string();
         }
 
         $methodName = $node->name->toString();
 
         // Special handling for only() method
         if ($methodName === 'only') {
-            return $this->inferFromOnlyMethod($node);
+            return $this->inferFromOnlyMethodToDto($node);
         }
 
         // Date/time methods
         if (in_array($methodName, ['toIso8601String', 'toString', 'toDateTimeString', 'toDateString', 'toTimeString', 'format'], true)) {
-            return ['type' => 'string', 'format' => 'date-time'];
+            return TypeInfo::stringWithFormat('date-time');
         }
 
         // Array conversion methods
         if (in_array($methodName, ['toArray', 'all', 'values', 'keys'], true)) {
-            return ['type' => 'array'];
+            return TypeInfo::array();
         }
 
         // Count methods
         if (in_array($methodName, ['count', 'sum', 'avg', 'average', 'max', 'min'], true)) {
-            return ['type' => 'integer'];
+            return TypeInfo::integer();
         }
 
         // Boolean methods
         if (str_starts_with($methodName, 'is') || str_starts_with($methodName, 'has') || str_starts_with($methodName, 'can')) {
-            return ['type' => 'boolean'];
+            return TypeInfo::boolean();
         }
 
-        return ['type' => 'string'];
+        return TypeInfo::string();
     }
 
     /**
-     * Infer type from only() method call.
+     * Infer type from only() method call - returns TypeInfo.
      */
-    private function inferFromOnlyMethod(Node\Expr\MethodCall $node): array
+    private function inferFromOnlyMethodToDto(Node\Expr\MethodCall $node): TypeInfo
     {
         $properties = [];
 
@@ -235,76 +251,74 @@ final class AstTypeInferenceEngine
                 if ($item && $item->value instanceof Node\Scalar\String_) {
                     $fieldName = $item->value->value;
                     $inference = $this->fieldNameInference->inferFieldType($fieldName);
-                    $properties[$fieldName] = $this->convertFieldInferenceToType($inference);
+                    $properties[$fieldName] = $this->convertFieldInferenceToTypeInfo($inference);
                 }
             }
         }
 
-        if (! empty($properties)) {
-            return ['type' => 'object', 'properties' => $properties];
-        }
-
-        return ['type' => 'object', 'properties' => []];
+        return TypeInfo::object($properties);
     }
 
     /**
-     * Infer type from a function call expression.
+     * Infer type from a function call expression - returns TypeInfo.
      */
-    private function inferFromFuncCall(Node\Expr\FuncCall $node): array
+    private function inferFromFuncCallToDto(Node\Expr\FuncCall $node): TypeInfo
     {
         if (! $node->name instanceof Node\Name) {
-            return ['type' => 'string'];
+            return TypeInfo::string();
         }
 
         $funcName = $node->name->toString();
 
         // JSON functions
         if ($funcName === 'json_decode') {
-            return ['type' => 'array'];
+            return TypeInfo::array();
         }
 
         if ($funcName === 'json_encode') {
-            return ['type' => 'string'];
+            return TypeInfo::string();
         }
 
         // Array functions
         if (in_array($funcName, ['array_values', 'array_keys', 'array_merge', 'array_filter', 'array_map'], true)) {
-            return ['type' => 'array'];
+            return TypeInfo::array();
         }
 
         // Count functions
         if (in_array($funcName, ['count', 'sizeof'], true)) {
-            return ['type' => 'integer'];
+            return TypeInfo::integer();
         }
 
         // String functions
         if (in_array($funcName, ['strtolower', 'strtoupper', 'trim', 'substr', 'sprintf'], true)) {
-            return ['type' => 'string'];
+            return TypeInfo::string();
         }
 
-        return ['type' => 'string'];
+        return TypeInfo::string();
     }
 
     /**
-     * Infer type from a ternary expression.
+     * Infer type from a ternary expression - returns TypeInfo.
      */
-    private function inferFromTernary(Node\Expr\Ternary $node): array
+    private function inferFromTernaryToDto(Node\Expr\Ternary $node): TypeInfo
     {
         // If the 'if' part is present (normal ternary), use it
         if ($node->if !== null) {
-            return $this->inferFromNode($node->if);
+            return $this->infer($node->if);
         }
 
         // Short ternary (Elvis operator) - use the condition
-        return $this->inferFromNode($node->cond);
+        return $this->infer($node->cond);
     }
 
     /**
-     * Convert field name inference result to standard type array.
+     * Convert field name inference result to TypeInfo.
      *
      * Maps semantic types from FieldNameInference to OpenAPI-compatible types.
+     *
+     * @param  array{type?: string, format?: string|null}  $inference
      */
-    private function convertFieldInferenceToType(array $inference): array
+    private function convertFieldInferenceToTypeInfo(array $inference): TypeInfo
     {
         $type = $inference['type'] ?? 'string';
         $format = $inference['format'] ?? null;
@@ -347,9 +361,8 @@ final class AstTypeInferenceEngine
 
         $openApiType = $typeMapping[$type] ?? 'string';
 
-        $result = ['type' => $openApiType];
-
-        // Add format if relevant
+        // Determine format if relevant
+        $openApiFormat = null;
         if ($format !== null && $format !== 'text') {
             $formatMapping = [
                 'datetime' => 'date-time',
@@ -364,11 +377,19 @@ final class AstTypeInferenceEngine
                 'decimal' => 'double',
             ];
 
-            if (isset($formatMapping[$format])) {
-                $result['format'] = $formatMapping[$format];
-            }
+            $openApiFormat = $formatMapping[$format] ?? null;
         }
 
-        return $result;
+        // Only apply format when base type is 'string'
+        if ($openApiFormat !== null && $openApiType === 'string') {
+            return TypeInfo::stringWithFormat($openApiFormat);
+        }
+
+        return match ($openApiType) {
+            'integer' => TypeInfo::integer(),
+            'number' => TypeInfo::number(),
+            'boolean' => TypeInfo::boolean(),
+            default => TypeInfo::string(),
+        };
     }
 }
