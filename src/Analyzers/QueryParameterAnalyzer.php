@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Contracts\Analyzers\ReflectionMethodAnalyzer;
+use LaravelSpectrum\DTO\DetectedQueryParameter;
 use LaravelSpectrum\DTO\QueryParameterAnalysisResult;
 use LaravelSpectrum\DTO\QueryParameterInfo;
 use LaravelSpectrum\Support\QueryParameterDetector;
@@ -43,15 +46,15 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
 
         foreach ($detectedParams as $param) {
             $parameters[] = new QueryParameterInfo(
-                name: $param['name'],
+                name: $param->name,
                 type: $this->inferType($param),
                 required: $this->isRequired($param),
-                default: $param['default'] ?? null,
-                source: $param['method'],
-                description: $this->generateDescription($param['name']),
+                default: $param->default,
+                source: $param->method,
+                description: $this->generateDescription($param->name),
                 enum: $this->detectEnumValues($param),
-                validationRules: $param['context']['validation'] ?? null,
-                context: $param['context'] ?? [],
+                validationRules: $param->context['validation'] ?? null,
+                context: $param->context,
             );
         }
 
@@ -88,22 +91,22 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
     }
 
     /**
-     * Infer type from parameter information
+     * Infer type from parameter information.
      */
-    private function inferType(array $param): string
+    private function inferType(DetectedQueryParameter $param): string
     {
         // 1. Method-based type inference
-        if ($type = $this->typeInference->inferFromMethod($param['method'])) {
+        if ($type = $this->typeInference->inferFromMethod($param->method)) {
             return $type;
         }
 
         // 2. Default value type inference
-        if (isset($param['default'])) {
-            return $this->typeInference->inferFromDefaultValue($param['default']);
+        if ($param->hasDefault()) {
+            return $this->typeInference->inferFromDefaultValue($param->default);
         }
 
         // 3. Context-based type inference
-        if (isset($param['context']) && $type = $this->typeInference->inferFromContext($param['context'])) {
+        if ($type = $this->typeInference->inferFromContext($param->context)) {
             return $type;
         }
 
@@ -112,17 +115,17 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
     }
 
     /**
-     * Determine if parameter is required based on usage
+     * Determine if parameter is required based on usage.
      */
-    private function isRequired(array $param): bool
+    private function isRequired(DetectedQueryParameter $param): bool
     {
         // If has() is used, it suggests the parameter might be required
-        if (isset($param['context']['has_check']) && $param['context']['has_check']) {
+        if ($param->hasContextFlag('has_check') && $param->context['has_check']) {
             return true;
         }
 
         // If filled() is used, parameter is optional but expected to have value
-        if (isset($param['context']['filled_check']) && $param['context']['filled_check']) {
+        if ($param->hasContextFlag('filled_check') && $param->context['filled_check']) {
             return false;
         }
 
@@ -131,15 +134,17 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
     }
 
     /**
-     * Detect enum values from parameter context
+     * Detect enum values from parameter context.
+     *
+     * @return array<mixed>|null
      */
-    private function detectEnumValues(array $param): ?array
+    private function detectEnumValues(DetectedQueryParameter $param): ?array
     {
-        if (! isset($param['context']['enum_values'])) {
+        if (! $param->hasContextFlag('enum_values')) {
             return null;
         }
 
-        return $param['context']['enum_values'];
+        return $param->context['enum_values'];
     }
 
     /**

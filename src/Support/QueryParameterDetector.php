@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Support;
 
 use LaravelSpectrum\Analyzers\Support\AstNodeValueExtractor;
+use LaravelSpectrum\DTO\DetectedQueryParameter;
 use PhpParser\Node;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Match_;
@@ -17,6 +20,7 @@ use PhpParser\Parser;
 
 class QueryParameterDetector
 {
+    /** @var array<int, DetectedQueryParameter> */
     private array $detectedParams = [];
 
     private array $variableAssignments = [];
@@ -77,7 +81,10 @@ class QueryParameterDetector
     }
 
     /**
-     * Detect Request method calls from AST
+     * Detect Request method calls from AST.
+     *
+     * @param  array<Node>  $ast
+     * @return array<int, DetectedQueryParameter>
      */
     public function detectRequestCalls(array $ast): array
     {
@@ -113,19 +120,19 @@ class QueryParameterDetector
             return;
         }
 
-        $param = [
-            'name' => $paramName,
-            'method' => $methodName,
-            'default' => isset($args[1]) ? $this->valueExtractor->extractValue($args[1]->value) : null,
-            'context' => [],
-        ];
+        $context = [];
 
         // Special handling for has() and filled()
         if (in_array($methodName, ['has', 'filled'])) {
-            $param['context'][$methodName.'_check'] = true;
+            $context[$methodName.'_check'] = true;
         }
 
-        $this->detectedParams[] = $param;
+        $this->detectedParams[] = DetectedQueryParameter::create(
+            name: $paramName,
+            method: $methodName,
+            default: isset($args[1]) ? $this->valueExtractor->extractValue($args[1]->value) : null,
+            context: $context
+        );
     }
 
     /**
@@ -149,12 +156,12 @@ class QueryParameterDetector
             return;
         }
 
-        $this->detectedParams[] = [
-            'name' => $paramName,
-            'method' => $methodName,
-            'default' => isset($args[1]) ? $this->valueExtractor->extractValue($args[1]->value) : null,
-            'context' => [],
-        ];
+        $this->detectedParams[] = DetectedQueryParameter::create(
+            name: $paramName,
+            method: $methodName,
+            default: isset($args[1]) ? $this->valueExtractor->extractValue($args[1]->value) : null,
+            context: []
+        );
     }
 
     /**
@@ -168,12 +175,12 @@ class QueryParameterDetector
             return;
         }
 
-        $this->detectedParams[] = [
-            'name' => $propName,
-            'method' => 'magic',
-            'default' => null,
-            'context' => [],
-        ];
+        $this->detectedParams[] = DetectedQueryParameter::create(
+            name: $propName,
+            method: 'magic',
+            default: null,
+            context: []
+        );
     }
 
     /**
@@ -187,24 +194,32 @@ class QueryParameterDetector
             $propName = $node->left->name->toString();
             $default = $this->valueExtractor->extractValue($node->right);
 
-            // Check if we already have this parameter
-            $found = false;
-            foreach ($this->detectedParams as &$param) {
-                if ($param['name'] === $propName && $param['method'] === 'magic') {
-                    $param['default'] = $default;
-                    $found = true;
+            // Check if we already have this parameter and update it
+            $foundIndex = null;
+            foreach ($this->detectedParams as $index => $param) {
+                if ($param->name === $propName && $param->method === 'magic') {
+                    $foundIndex = $index;
                     break;
                 }
             }
 
-            // If not found, add it
-            if (! $found) {
-                $this->detectedParams[] = [
-                    'name' => $propName,
-                    'method' => 'magic',
-                    'default' => $default,
-                    'context' => [],
-                ];
+            if ($foundIndex !== null) {
+                // Replace with updated parameter
+                $existingParam = $this->detectedParams[$foundIndex];
+                $this->detectedParams[$foundIndex] = DetectedQueryParameter::create(
+                    name: $existingParam->name,
+                    method: $existingParam->method,
+                    default: $default,
+                    context: $existingParam->context
+                );
+            } else {
+                // Add new parameter
+                $this->detectedParams[] = DetectedQueryParameter::create(
+                    name: $propName,
+                    method: 'magic',
+                    default: $default,
+                    context: []
+                );
             }
         }
     }
@@ -270,8 +285,8 @@ class QueryParameterDetector
                 // Get existing enum values if any
                 $existingEnumValues = [];
                 foreach ($this->detectedParams as $param) {
-                    if ($param['name'] === $paramName && isset($param['context']['enum_values'])) {
-                        $existingEnumValues = $param['context']['enum_values'];
+                    if ($param->name === $paramName && isset($param->context['enum_values'])) {
+                        $existingEnumValues = $param->context['enum_values'];
                         break;
                     }
                 }
@@ -298,8 +313,8 @@ class QueryParameterDetector
                 // Get existing enum values if any
                 $existingEnumValues = [];
                 foreach ($this->detectedParams as $param) {
-                    if ($param['name'] === $paramName && isset($param['context']['enum_values'])) {
-                        $existingEnumValues = $param['context']['enum_values'];
+                    if ($param->name === $paramName && isset($param->context['enum_values'])) {
+                        $existingEnumValues = $param->context['enum_values'];
                         break;
                     }
                 }
@@ -387,54 +402,64 @@ class QueryParameterDetector
     }
 
     /**
-     * Update parameter context
+     * Update parameter context.
+     *
+     * @param  array<string, mixed>  $context
      */
     private function updateParameterContext(string $paramName, array $context): void
     {
-        foreach ($this->detectedParams as &$param) {
-            if ($param['name'] === $paramName) {
-                $param['context'] = array_merge($param['context'], $context);
+        foreach ($this->detectedParams as $index => $param) {
+            if ($param->name === $paramName) {
+                $this->detectedParams[$index] = DetectedQueryParameter::create(
+                    name: $param->name,
+                    method: $param->method,
+                    default: $param->default,
+                    context: array_merge($param->context, $context)
+                );
             }
         }
     }
 
     /**
-     * Consolidate detected parameters
+     * Consolidate detected parameters.
+     *
+     * @return array<int, DetectedQueryParameter>
      */
     private function consolidateParameters(): array
     {
-        $consolidated = [];
+        /** @var array<string, DetectedQueryParameter> $seen */
         $seen = [];
 
         foreach ($this->detectedParams as $param) {
-            $key = $param['name'];
+            $key = $param->name;
 
             if (! isset($seen[$key])) {
                 $seen[$key] = $param;
             } else {
-                // Merge contexts and keep most specific type
-                $seen[$key]['context'] = array_merge($seen[$key]['context'], $param['context']);
+                $existing = $seen[$key];
 
-                // Prefer typed methods over generic ones
-                if ($this->isTypedMethod($param['method']) && ! $this->isTypedMethod($seen[$key]['method'])) {
-                    $seen[$key]['method'] = $param['method'];
+                // Determine the best method (prefer typed methods)
+                $method = $existing->method;
+                if ($param->isTypedMethod() && ! $existing->isTypedMethod()) {
+                    $method = $param->method;
                 }
 
                 // Keep default value if one exists
-                if ($param['default'] !== null && $seen[$key]['default'] === null) {
-                    $seen[$key]['default'] = $param['default'];
+                $default = $existing->default;
+                if ($param->default !== null && $existing->default === null) {
+                    $default = $param->default;
                 }
+
+                // Merge contexts
+                $seen[$key] = DetectedQueryParameter::create(
+                    name: $existing->name,
+                    method: $method,
+                    default: $default,
+                    context: array_merge($existing->context, $param->context)
+                );
             }
         }
 
         return array_values($seen);
-    }
-
-    /**
-     * Check if method is a typed method (returns specific type)
-     */
-    private function isTypedMethod(string $method): bool
-    {
-        return in_array($method, ['boolean', 'bool', 'integer', 'int', 'float', 'double', 'string', 'array', 'date']);
     }
 }
