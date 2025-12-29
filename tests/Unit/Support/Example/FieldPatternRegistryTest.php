@@ -507,5 +507,38 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('image_url', $config->format);
         $this->assertEquals('imageUrl', $config->fakerMethod);
         $this->assertEquals([1200, 400], $config->fakerArgs);
+
+        // cover pattern - cover image dimensions
+        $config = $this->registry->getConfig('cover');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([1200, 600], $config->fakerArgs);
+    }
+
+    public function test_handles_company_fields(): void
+    {
+        // company pattern
+        $config = $this->registry->getConfig('company');
+        $this->assertNotNull($config);
+        $this->assertEquals('company', $config->type);
+        $this->assertEquals('text', $config->format);
+        $this->assertEquals('company', $config->fakerMethod);
+
+        // jobtitle pattern
+        $config = $this->registry->getConfig('jobtitle');
+        $this->assertNotNull($config);
+        $this->assertEquals('job', $config->type);
+        $this->assertEquals('text', $config->format);
+        $this->assertEquals('jobTitle', $config->fakerMethod);
+
+        // department pattern with fakerArgs
+        $config = $this->registry->getConfig('department');
+        $this->assertNotNull($config);
+        $this->assertEquals('department', $config->type);
+        $this->assertEquals('text', $config->format);
+        $this->assertEquals('randomElement', $config->fakerMethod);
+        $this->assertEquals([['Sales', 'Marketing', 'Engineering', 'HR', 'Finance']], $config->fakerArgs);
     }
 }
