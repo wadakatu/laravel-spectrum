@@ -121,6 +121,11 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertNotNull($config);
         $this->assertEquals('address', $config->type);
 
+        // country pattern
+        $config = $this->registry->getConfig('country');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
+
         // countrycode pattern
         $config = $this->registry->getConfig('countrycode');
         $this->assertNotNull($config);
