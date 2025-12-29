@@ -130,6 +130,11 @@ class FieldPatternRegistryTest extends TestCase
         $config = $this->registry->getConfig('countrycode');
         $this->assertNotNull($config);
         $this->assertEquals('address', $config->type);
+
+        // zipcode pattern
+        $config = $this->registry->getConfig('zipcode');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
     }
 
     public function test_handles_location_pattern_variations(): void
@@ -142,6 +147,12 @@ class FieldPatternRegistryTest extends TestCase
 
         // lng pattern
         $config = $this->registry->getConfig('lng');
+        $this->assertNotNull($config);
+        $this->assertEquals('location', $config->type);
+        $this->assertEquals('decimal', $config->format);
+
+        // lon pattern
+        $config = $this->registry->getConfig('lon');
         $this->assertNotNull($config);
         $this->assertEquals('location', $config->type);
         $this->assertEquals('decimal', $config->format);
@@ -392,6 +403,14 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertNotNull($config);
         $this->assertEquals('url', $config->type);
         $this->assertEquals('url', $config->format);
+
+        // avatar pattern - an image URL variant
+        $config = $this->registry->getConfig('avatar');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('avatar_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([200, 200], $config->fakerArgs);
     }
 
     public function test_handles_date_suffix_fields(): void
