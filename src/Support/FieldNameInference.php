@@ -30,8 +30,8 @@ class FieldNameInference
 
         if ($config !== null) {
             return [
-                'type' => $config['type'],
-                'format' => $config['format'] ?? 'text',
+                'type' => $config->type,
+                'format' => $config->format ?? 'text',
             ];
         }
 

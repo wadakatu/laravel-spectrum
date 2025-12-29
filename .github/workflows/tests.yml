@@ -32,8 +32,8 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
-          coverage: pcov
-          ini-values: memory_limit=-1
+          coverage: ${{ (matrix.php == '8.2' && matrix.laravel == '12.*') && 'pcov' || 'none' }}
+          ini-values: memory_limit=512M
 
       - name: Setup problem matchers
         run: |

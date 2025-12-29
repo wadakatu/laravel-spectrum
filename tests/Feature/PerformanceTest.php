@@ -26,6 +26,11 @@ class PerformanceTest extends TestCase
 
     public function test_memory_manager_prevents_excessive_usage()
     {
+        // Skip when running with coverage extensions as they increase memory usage
+        if (extension_loaded('pcov') || extension_loaded('xdebug')) {
+            $this->markTestSkipped('This test is skipped when coverage extensions are enabled due to memory overhead');
+        }
+
         // メモリ制限を低く設定
         $this->artisan('spectrum:generate:optimized', [
             '--memory-limit' => '128M',

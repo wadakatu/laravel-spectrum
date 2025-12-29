@@ -2,8 +2,10 @@
 
 namespace LaravelSpectrum\Tests\Unit\Support\Example;
 
+use LaravelSpectrum\DTO\FieldPatternConfig;
 use LaravelSpectrum\Support\Example\FieldPatternRegistry;
 use LaravelSpectrum\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class FieldPatternRegistryTest extends TestCase
 {
@@ -16,53 +18,510 @@ class FieldPatternRegistryTest extends TestCase
         $this->registry = new FieldPatternRegistry;
     }
 
-    public function test_get_config_returns_pattern_for_exact_match(): void
+    /**
+     * @return array<string, array{field: string, type: string, format: ?string, fakerMethod: ?string, fakerArgs: ?array<mixed>, staticValue: mixed}>
+     */
+    public static function patternProvider(): array
     {
-        $config = $this->registry->getConfig('email');
+        return [
+            // ID patterns
+            'id' => [
+                'field' => 'id',
+                'type' => 'id',
+                'format' => 'integer',
+                'fakerMethod' => 'unique->numberBetween',
+                'fakerArgs' => [1, 10000],
+                'staticValue' => 1,
+            ],
+            'user_id suffix' => [
+                'field' => 'user_id',
+                'type' => 'id',
+                'format' => 'integer',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
 
-        $this->assertNotNull($config);
-        // Registry uses domain-specific types, not OpenAPI types
-        $this->assertEquals('email', $config['type']);
-        $this->assertEquals('email', $config['format']);
-        $this->assertEquals('safeEmail', $config['fakerMethod']);
+            // Email patterns
+            'email' => [
+                'field' => 'email',
+                'type' => 'email',
+                'format' => 'email',
+                'fakerMethod' => 'safeEmail',
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'emailaddress normalized' => [
+                'field' => 'emailaddress',
+                'type' => 'email',
+                'format' => 'email',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'user_email compound' => [
+                'field' => 'user_email',
+                'type' => 'email',
+                'format' => 'email',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Name patterns
+            'name' => [
+                'field' => 'name',
+                'type' => 'name',
+                'format' => 'full_name',
+                'fakerMethod' => 'name',
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'first_name normalized' => [
+                'field' => 'first_name',
+                'type' => 'name',
+                'format' => 'first_name',
+                'fakerMethod' => 'firstName',
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'last_name normalized' => [
+                'field' => 'last_name',
+                'type' => 'name',
+                'format' => 'last_name',
+                'fakerMethod' => 'lastName',
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'fullname' => [
+                'field' => 'fullname',
+                'type' => 'name',
+                'format' => 'full_name',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Phone patterns
+            'phone' => [
+                'field' => 'phone',
+                'type' => 'phone',
+                'format' => 'phone',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'phonenumber' => [
+                'field' => 'phonenumber',
+                'type' => 'phone',
+                'format' => 'phone',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'fax' => [
+                'field' => 'fax',
+                'type' => 'phone',
+                'format' => 'phone',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Address patterns
+            'street' => [
+                'field' => 'street',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'city' => [
+                'field' => 'city',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'state with fakerArgs' => [
+                'field' => 'state',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => 'randomElement',
+                'fakerArgs' => [['CA', 'NY', 'TX', 'FL', 'IL']],
+                'staticValue' => null,
+            ],
+            'postalcode normalized' => [
+                'field' => 'postalcode',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'postal_code with underscore' => [
+                'field' => 'postal_code',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'country' => [
+                'field' => 'country',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'countrycode' => [
+                'field' => 'countrycode',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'zipcode' => [
+                'field' => 'zipcode',
+                'type' => 'address',
+                'format' => null,
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'address' => [
+                'field' => 'address',
+                'type' => 'address',
+                'format' => 'text',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Location patterns
+            'latitude' => [
+                'field' => 'latitude',
+                'type' => 'location',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'longitude' => [
+                'field' => 'longitude',
+                'type' => 'location',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'lat' => [
+                'field' => 'lat',
+                'type' => 'location',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'lng' => [
+                'field' => 'lng',
+                'type' => 'location',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'lon' => [
+                'field' => 'lon',
+                'type' => 'location',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // URL patterns
+            'url' => [
+                'field' => 'url',
+                'type' => 'url',
+                'format' => 'url',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'website' => [
+                'field' => 'website',
+                'type' => 'url',
+                'format' => 'url',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Image/Avatar patterns
+            'avatar' => [
+                'field' => 'avatar',
+                'type' => 'url',
+                'format' => 'avatar_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [200, 200],
+                'staticValue' => null,
+            ],
+            'thumbnail' => [
+                'field' => 'thumbnail',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [150, 150],
+                'staticValue' => null,
+            ],
+            'photo' => [
+                'field' => 'photo',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [640, 480],
+                'staticValue' => null,
+            ],
+            'picture' => [
+                'field' => 'picture',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [640, 480],
+                'staticValue' => null,
+            ],
+            'icon' => [
+                'field' => 'icon',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [64, 64],
+                'staticValue' => null,
+            ],
+            'logo' => [
+                'field' => 'logo',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [200, 200],
+                'staticValue' => null,
+            ],
+            'banner' => [
+                'field' => 'banner',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [1200, 400],
+                'staticValue' => null,
+            ],
+            'cover' => [
+                'field' => 'cover',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [1200, 600],
+                'staticValue' => null,
+            ],
+            'profile_image compound' => [
+                'field' => 'profile_image',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [640, 480],
+                'staticValue' => 'https://example.com/image.jpg',
+            ],
+            'featured_image_data contains' => [
+                'field' => 'featured_image_data',
+                'type' => 'url',
+                'format' => 'image_url',
+                'fakerMethod' => 'imageUrl',
+                'fakerArgs' => [640, 480],
+                'staticValue' => 'https://example.com/image.jpg',
+            ],
+
+            // Password pattern
+            'password' => [
+                'field' => 'password',
+                'type' => 'password',
+                'format' => 'password',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => '********',
+            ],
+
+            // UUID pattern
+            'uuid' => [
+                'field' => 'uuid',
+                'type' => 'uuid',
+                'format' => 'uuid',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Monetary patterns
+            'price' => [
+                'field' => 'price',
+                'type' => 'money',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'amount' => [
+                'field' => 'amount',
+                'type' => 'money',
+                'format' => 'decimal',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+
+            // Date/Time patterns
+            'published_at suffix' => [
+                'field' => 'published_at',
+                'type' => 'timestamp',
+                'format' => 'datetime',
+                'fakerMethod' => null,
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'expiry_date suffix' => [
+                'field' => 'expiry_date',
+                'type' => 'date',
+                'format' => 'date',
+                'fakerMethod' => 'date',
+                'fakerArgs' => ['Y-m-d'],
+                'staticValue' => '2024-01-15',
+            ],
+
+            // Boolean patterns (exact matches from PATTERNS)
+            'is_active exact' => [
+                'field' => 'is_active',
+                'type' => 'boolean',
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => true,
+            ],
+            'is_admin exact' => [
+                'field' => 'is_admin',
+                'type' => 'boolean',
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => false,
+            ],
+            'has_children exact' => [
+                'field' => 'has_children',
+                'type' => 'boolean',
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => false,
+            ],
+            'has_access prefix pattern' => [
+                'field' => 'has_access',
+                'type' => 'boolean',
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => true,
+            ],
+
+            // Color patterns
+            'color exact' => [
+                'field' => 'color',
+                'type' => 'color',
+                'format' => 'hex',
+                'fakerMethod' => 'hexColor',
+                'fakerArgs' => [],
+                'staticValue' => '#FF5733',
+            ],
+            'hexcolor exact' => [
+                'field' => 'hexcolor',
+                'type' => 'color',
+                'format' => 'hex',
+                'fakerMethod' => 'hexColor',
+                'fakerArgs' => [],
+                'staticValue' => '#FF5733',
+            ],
+            // Gender pattern
+            'gender exact' => [
+                'field' => 'gender',
+                'type' => 'gender',
+                'format' => 'string',
+                'fakerMethod' => 'randomElement',
+                'fakerArgs' => [['male', 'female', 'other']],
+                'staticValue' => 'male',
+            ],
+
+            // Company patterns
+            'company' => [
+                'field' => 'company',
+                'type' => 'company',
+                'format' => 'text',
+                'fakerMethod' => 'company',
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'jobtitle' => [
+                'field' => 'jobtitle',
+                'type' => 'job',
+                'format' => 'text',
+                'fakerMethod' => 'jobTitle',
+                'fakerArgs' => null,
+                'staticValue' => null,
+            ],
+            'department with fakerArgs' => [
+                'field' => 'department',
+                'type' => 'department',
+                'format' => 'text',
+                'fakerMethod' => 'randomElement',
+                'fakerArgs' => [['Sales', 'Marketing', 'Engineering', 'HR', 'Finance']],
+                'staticValue' => null,
+            ],
+        ];
     }
 
-    public function test_get_config_returns_pattern_for_compound_field(): void
-    {
-        $config = $this->registry->getConfig('user_email');
+    /**
+     * @param  array<mixed>|null  $fakerArgs
+     */
+    #[DataProvider('patternProvider')]
+    public function test_pattern_returns_correct_config(
+        string $field,
+        string $type,
+        ?string $format,
+        ?string $fakerMethod,
+        ?array $fakerArgs,
+        mixed $staticValue
+    ): void {
+        $config = $this->registry->getConfig($field);
 
-        $this->assertNotNull($config);
-        // Registry uses domain-specific types, not OpenAPI types
-        $this->assertEquals('email', $config['type']);
-        $this->assertEquals('email', $config['format']);
-    }
+        $this->assertNotNull($config, "Config should not be null for field: {$field}");
+        $this->assertInstanceOf(FieldPatternConfig::class, $config);
+        $this->assertEquals($type, $config->type, "Type mismatch for field: {$field}");
 
-    public function test_get_config_returns_pattern_for_suffix_match(): void
-    {
-        // _id suffix - uses domain-specific type
-        $config = $this->registry->getConfig('user_id');
-        $this->assertNotNull($config);
-        $this->assertEquals('id', $config['type']);
-        $this->assertEquals('integer', $config['format']);
+        if ($format !== null) {
+            $this->assertEquals($format, $config->format, "Format mismatch for field: {$field}");
+        }
 
-        // _at suffix - uses domain-specific type
-        $config = $this->registry->getConfig('published_at');
-        $this->assertNotNull($config);
-        $this->assertEquals('timestamp', $config['type']);
-        $this->assertEquals('datetime', $config['format']);
-    }
+        if ($fakerMethod !== null) {
+            $this->assertEquals($fakerMethod, $config->fakerMethod, "FakerMethod mismatch for field: {$field}");
+        }
 
-    public function test_get_config_returns_pattern_for_prefix_match(): void
-    {
-        // is_ prefix
-        $config = $this->registry->getConfig('is_active');
-        $this->assertNotNull($config);
-        $this->assertEquals('boolean', $config['type']);
+        if ($fakerArgs !== null) {
+            $this->assertEquals($fakerArgs, $config->fakerArgs, "FakerArgs mismatch for field: {$field}");
+        }
 
-        // has_ prefix
-        $config = $this->registry->getConfig('has_access');
-        $this->assertNotNull($config);
-        $this->assertEquals('boolean', $config['type']);
+        if ($staticValue !== null) {
+            $this->assertEquals($staticValue, $config->staticValue, "StaticValue mismatch for field: {$field}");
+        }
     }
 
     public function test_get_config_returns_null_for_unknown_field(): void
@@ -92,10 +551,10 @@ class FieldPatternRegistryTest extends TestCase
         $config = $this->registry->getConfig('custom_field');
 
         $this->assertNotNull($config);
-        $this->assertEquals('string', $config['type']);
-        $this->assertEquals('custom', $config['format']);
-        $this->assertEquals('word', $config['fakerMethod']);
-        $this->assertEquals('custom_value', $config['staticValue']);
+        $this->assertEquals('string', $config->type);
+        $this->assertEquals('custom', $config->format);
+        $this->assertEquals('word', $config->fakerMethod);
+        $this->assertEquals('custom_value', $config->staticValue);
     }
 
     public function test_register_pattern_custom_takes_priority(): void
@@ -110,50 +569,79 @@ class FieldPatternRegistryTest extends TestCase
 
         $config = $this->registry->getConfig('email');
 
-        $this->assertEquals('custom-email', $config['format']);
-        $this->assertEquals('custom@example.com', $config['staticValue']);
+        $this->assertEquals('custom-email', $config->format);
+        $this->assertEquals('custom@example.com', $config->staticValue);
     }
 
-    public function test_register_pattern_throws_on_empty_pattern(): void
+    public function test_register_pattern_accepts_field_pattern_config_directly(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Pattern name cannot be empty');
+        $config = new FieldPatternConfig(
+            type: 'custom',
+            format: 'custom_format',
+            fakerMethod: 'word',
+            fakerArgs: ['arg1', 'arg2'],
+            staticValue: 'dto_value',
+        );
 
-        $this->registry->registerPattern('', [
-            'type' => 'string',
-            'staticValue' => 'test',
-        ]);
+        $this->registry->registerPattern('dto_field', $config);
+
+        $result = $this->registry->getConfig('dto_field');
+
+        // Should return the exact same object (no conversion needed)
+        $this->assertSame($config, $result);
+        $this->assertEquals('custom', $result->type);
+        $this->assertEquals('custom_format', $result->format);
+        $this->assertEquals(['arg1', 'arg2'], $result->fakerArgs);
+        $this->assertEquals('dto_value', $result->staticValue);
     }
 
-    public function test_register_pattern_throws_on_missing_type(): void
+    /**
+     * @return array<string, array{pattern: string, config: array<string, mixed>, expectedException: string, expectedMessage: string}>
+     */
+    public static function invalidPatternProvider(): array
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("must have a non-empty 'type' field");
-
-        $this->registry->registerPattern('test', [
-            'staticValue' => 'test',
-        ]);
+        return [
+            'empty pattern name' => [
+                'pattern' => '',
+                'config' => ['type' => 'string', 'staticValue' => 'test'],
+                'expectedException' => \InvalidArgumentException::class,
+                'expectedMessage' => 'Pattern name cannot be empty',
+            ],
+            'missing type' => [
+                'pattern' => 'test',
+                'config' => ['staticValue' => 'test'],
+                'expectedException' => \InvalidArgumentException::class,
+                'expectedMessage' => "must have a non-empty 'type' field",
+            ],
+            'empty type' => [
+                'pattern' => 'test',
+                'config' => ['type' => '', 'staticValue' => 'test'],
+                'expectedException' => \InvalidArgumentException::class,
+                'expectedMessage' => "must have a non-empty 'type' field",
+            ],
+            'missing staticValue' => [
+                'pattern' => 'test',
+                'config' => ['type' => 'string'],
+                'expectedException' => \InvalidArgumentException::class,
+                'expectedMessage' => "must have a 'staticValue' field",
+            ],
+        ];
     }
 
-    public function test_register_pattern_throws_on_empty_type(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("must have a non-empty 'type' field");
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    #[DataProvider('invalidPatternProvider')]
+    public function test_register_pattern_throws_on_invalid_input(
+        string $pattern,
+        array $config,
+        string $expectedException,
+        string $expectedMessage
+    ): void {
+        $this->expectException($expectedException);
+        $this->expectExceptionMessage($expectedMessage);
 
-        $this->registry->registerPattern('test', [
-            'type' => '',
-            'staticValue' => 'test',
-        ]);
-    }
-
-    public function test_register_pattern_throws_on_missing_static_value(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("must have a 'staticValue' field");
-
-        $this->registry->registerPattern('test', [
-            'type' => 'string',
-        ]);
+        $this->registry->registerPattern($pattern, $config);
     }
 
     public function test_register_pattern_allows_null_static_value(): void
@@ -166,7 +654,7 @@ class FieldPatternRegistryTest extends TestCase
         $config = $this->registry->getConfig('nullable_field');
 
         $this->assertNotNull($config);
-        $this->assertNull($config['staticValue']);
+        $this->assertNull($config->staticValue);
     }
 
     public function test_get_all_patterns_returns_merged_patterns(): void
@@ -182,73 +670,5 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertArrayHasKey('custom', $patterns);
         $this->assertArrayHasKey('email', $patterns);
         $this->assertArrayHasKey('id', $patterns);
-    }
-
-    public function test_handles_password_field(): void
-    {
-        $config = $this->registry->getConfig('password');
-
-        $this->assertNotNull($config);
-        // Registry uses domain-specific type
-        $this->assertEquals('password', $config['type']);
-        $this->assertEquals('password', $config['format']);
-        $this->assertEquals('********', $config['staticValue']);
-    }
-
-    public function test_handles_uuid_field(): void
-    {
-        $config = $this->registry->getConfig('uuid');
-
-        $this->assertNotNull($config);
-        // Registry uses domain-specific type
-        $this->assertEquals('uuid', $config['type']);
-        $this->assertEquals('uuid', $config['format']);
-    }
-
-    public function test_handles_monetary_fields(): void
-    {
-        $config = $this->registry->getConfig('price');
-        $this->assertNotNull($config);
-        // Registry uses domain-specific type 'money'
-        $this->assertEquals('money', $config['type']);
-        $this->assertEquals('decimal', $config['format']);
-
-        $config = $this->registry->getConfig('amount');
-        $this->assertNotNull($config);
-        $this->assertEquals('money', $config['type']);
-        $this->assertEquals('decimal', $config['format']);
-    }
-
-    public function test_handles_location_fields(): void
-    {
-        $config = $this->registry->getConfig('latitude');
-        $this->assertNotNull($config);
-        // Registry uses domain-specific type 'location'
-        $this->assertEquals('location', $config['type']);
-        $this->assertEquals('decimal', $config['format']);
-
-        $config = $this->registry->getConfig('longitude');
-        $this->assertNotNull($config);
-        $this->assertEquals('location', $config['type']);
-        $this->assertEquals('decimal', $config['format']);
-
-        $config = $this->registry->getConfig('address');
-        $this->assertNotNull($config);
-        $this->assertEquals('address', $config['type']);
-        $this->assertEquals('text', $config['format']);
-    }
-
-    public function test_handles_url_fields(): void
-    {
-        $config = $this->registry->getConfig('url');
-        $this->assertNotNull($config);
-        // Registry uses domain-specific type 'url'
-        $this->assertEquals('url', $config['type']);
-        $this->assertEquals('url', $config['format']);
-
-        $config = $this->registry->getConfig('website');
-        $this->assertNotNull($config);
-        $this->assertEquals('url', $config['type']);
-        $this->assertEquals('url', $config['format']);
     }
 }
