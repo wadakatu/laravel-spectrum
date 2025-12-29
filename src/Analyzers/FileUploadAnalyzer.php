@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Validation\Rules\File;
+use LaravelSpectrum\DTO\FileDimensions;
+use LaravelSpectrum\DTO\FileUploadInfo;
 
 class FileUploadAnalyzer
 {
@@ -47,22 +49,41 @@ class FileUploadAnalyzer
     ];
 
     /**
+     * Analyze validation rules and return FileUploadInfo DTOs.
+     *
+     * @param  array<string, mixed>  $rules
+     * @return array<string, FileUploadInfo>
+     */
+    public function analyzeRulesToResult(array $rules): array
+    {
+        $fileFields = [];
+
+        foreach ($rules as $field => $fieldRules) {
+            $info = $this->analyzeFieldRulesToDto($field, $fieldRules);
+
+            if ($info !== null) {
+                $fileFields[$field] = $info;
+            }
+        }
+
+        return $fileFields;
+    }
+
+    /**
+     * Analyze validation rules and return arrays (backward compatible).
+     *
      * @param  array<string, mixed>  $rules
      * @return array<string, array<string, mixed>>
      */
     public function analyzeRules(array $rules): array
     {
-        $fileFields = [];
+        $result = [];
 
-        foreach ($rules as $field => $fieldRules) {
-            $analysis = $this->analyzeFieldRules($field, $fieldRules);
-
-            if ($analysis !== null) {
-                $fileFields[$field] = $analysis;
-            }
+        foreach ($this->analyzeRulesToResult($rules) as $field => $info) {
+            $result[$field] = $info->toArray();
         }
 
-        return $fileFields;
+        return $result;
     }
 
     /**
@@ -95,9 +116,9 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @return array<string, mixed>|null
+     * Analyze field rules and return FileUploadInfo DTO.
      */
-    private function analyzeFieldRules(string $field, mixed $fieldRules): ?array
+    private function analyzeFieldRulesToDto(string $field, mixed $fieldRules): ?FileUploadInfo
     {
         $rulesArray = $this->normalizeRules($fieldRules);
 
@@ -106,7 +127,6 @@ class FileUploadAnalyzer
         }
 
         $analysis = [
-            'type' => 'file',
             'is_image' => false,
             'mimes' => [],
             'mime_types' => [],
@@ -126,7 +146,21 @@ class FileUploadAnalyzer
             $analysis['mime_types'] = self::IMAGE_MIME_TYPES;
         }
 
-        return $analysis;
+        // Convert dimensions array to FileDimensions DTO
+        $dimensions = null;
+        if (! empty($analysis['dimensions'])) {
+            $dimensions = FileDimensions::fromArray($analysis['dimensions']);
+        }
+
+        return new FileUploadInfo(
+            isImage: $analysis['is_image'],
+            mimes: $analysis['mimes'],
+            mimeTypes: $analysis['mime_types'],
+            maxSize: $analysis['max_size'],
+            minSize: $analysis['min_size'],
+            dimensions: $dimensions,
+            multiple: $analysis['multiple'],
+        );
     }
 
     /**

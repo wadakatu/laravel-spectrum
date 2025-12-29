@@ -40,8 +40,8 @@ class ParameterBuilder
     {
         $parameters = [];
 
-        // Analyze file upload fields
-        $fileFields = $this->fileUploadAnalyzer->analyzeRules($rules);
+        // Analyze file upload fields (returns FileUploadInfo DTOs)
+        $fileFields = $this->fileUploadAnalyzer->analyzeRulesToResult($rules);
 
         foreach ($rules as $field => $rule) {
             // Skip special fields (like _notice)
@@ -164,14 +164,11 @@ class ParameterBuilder
     /**
      * Build a file upload parameter.
      *
-     * @param  array<string, mixed>  $fileInfo
      * @param  array<string>  $ruleArray
      * @param  array<string, string>  $attributes
      */
-    protected function buildFileParameter(string $field, array $fileInfo, array $ruleArray, array $attributes): ParameterDefinition
+    protected function buildFileParameter(string $field, FileUploadInfo $fileInfo, array $ruleArray, array $attributes): ParameterDefinition
     {
-        $fileUploadInfo = FileUploadInfo::fromArray($fileInfo);
-
         return new ParameterDefinition(
             name: $field,
             in: 'body',
@@ -179,13 +176,13 @@ class ParameterBuilder
             type: 'file',
             description: $this->descriptionGenerator->generateFileDescriptionWithAttribute(
                 $field,
-                $fileInfo,
+                $fileInfo->toArray(),
                 $attributes[$field] ?? null
             ),
             example: null,
             validation: $ruleArray,
             format: 'binary',
-            fileInfo: $fileUploadInfo,
+            fileInfo: $fileInfo,
         );
     }
 

@@ -60,35 +60,14 @@ final readonly class FileUploadInfo
     {
         $result = [
             'type' => 'file',
+            'is_image' => $this->isImage,
+            'mimes' => $this->mimes,
+            'mime_types' => $this->mimeTypes,
+            'max_size' => $this->maxSize,
+            'min_size' => $this->minSize,
+            'dimensions' => $this->dimensions !== null ? $this->dimensions->toArray() : [],
+            'multiple' => $this->multiple,
         ];
-
-        if ($this->isImage) {
-            $result['is_image'] = $this->isImage;
-        }
-
-        if (count($this->mimes) > 0) {
-            $result['mimes'] = $this->mimes;
-        }
-
-        if (count($this->mimeTypes) > 0) {
-            $result['mime_types'] = $this->mimeTypes;
-        }
-
-        if ($this->maxSize !== null) {
-            $result['max_size'] = $this->maxSize;
-        }
-
-        if ($this->minSize !== null) {
-            $result['min_size'] = $this->minSize;
-        }
-
-        if ($this->dimensions !== null && ! $this->dimensions->isEmpty()) {
-            $result['dimensions'] = $this->dimensions->toArray();
-        }
-
-        if ($this->multiple) {
-            $result['multiple'] = $this->multiple;
-        }
 
         return $result;
     }

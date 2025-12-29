@@ -10,6 +10,8 @@ namespace LaravelSpectrum\DTO;
 final readonly class FileDimensions
 {
     public function __construct(
+        public ?int $width = null,
+        public ?int $height = null,
         public ?int $minWidth = null,
         public ?int $maxWidth = null,
         public ?int $minHeight = null,
@@ -25,6 +27,8 @@ final readonly class FileDimensions
     public static function fromArray(array $data): self
     {
         return new self(
+            width: $data['width'] ?? null,
+            height: $data['height'] ?? null,
             minWidth: $data['min_width'] ?? null,
             maxWidth: $data['max_width'] ?? null,
             minHeight: $data['min_height'] ?? null,
@@ -41,6 +45,14 @@ final readonly class FileDimensions
     public function toArray(): array
     {
         $result = [];
+
+        if ($this->width !== null) {
+            $result['width'] = $this->width;
+        }
+
+        if ($this->height !== null) {
+            $result['height'] = $this->height;
+        }
 
         if ($this->minWidth !== null) {
             $result['min_width'] = $this->minWidth;
@@ -78,7 +90,9 @@ final readonly class FileDimensions
      */
     public function isEmpty(): bool
     {
-        return $this->minWidth === null
+        return $this->width === null
+            && $this->height === null
+            && $this->minWidth === null
             && $this->maxWidth === null
             && $this->minHeight === null
             && $this->maxHeight === null
@@ -90,7 +104,7 @@ final readonly class FileDimensions
      */
     public function hasWidthConstraints(): bool
     {
-        return $this->minWidth !== null || $this->maxWidth !== null;
+        return $this->width !== null || $this->minWidth !== null || $this->maxWidth !== null;
     }
 
     /**
@@ -98,7 +112,7 @@ final readonly class FileDimensions
      */
     public function hasHeightConstraints(): bool
     {
-        return $this->minHeight !== null || $this->maxHeight !== null;
+        return $this->height !== null || $this->minHeight !== null || $this->maxHeight !== null;
     }
 
     /**

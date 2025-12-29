@@ -132,20 +132,23 @@ class FileUploadInfoTest extends TestCase
     }
 
     #[Test]
-    public function it_converts_to_array_without_optional_fields_when_empty(): void
+    public function it_converts_to_array_with_all_fields(): void
     {
         $info = new FileUploadInfo;
 
         $array = $info->toArray();
 
-        $this->assertEquals(['type' => 'file'], $array);
-        $this->assertArrayNotHasKey('is_image', $array);
-        $this->assertArrayNotHasKey('mimes', $array);
-        $this->assertArrayNotHasKey('mime_types', $array);
-        $this->assertArrayNotHasKey('max_size', $array);
-        $this->assertArrayNotHasKey('min_size', $array);
-        $this->assertArrayNotHasKey('dimensions', $array);
-        $this->assertArrayNotHasKey('multiple', $array);
+        // All fields are always included for backward compatibility with FileUploadAnalyzer
+        $this->assertEquals([
+            'type' => 'file',
+            'is_image' => false,
+            'mimes' => [],
+            'mime_types' => [],
+            'max_size' => null,
+            'min_size' => null,
+            'dimensions' => [],
+            'multiple' => false,
+        ], $array);
     }
 
     #[Test]
@@ -312,7 +315,7 @@ class FileUploadInfoTest extends TestCase
     }
 
     #[Test]
-    public function it_excludes_false_boolean_fields_from_array(): void
+    public function it_includes_all_fields_in_array(): void
     {
         $info = new FileUploadInfo(
             isImage: false,
@@ -322,8 +325,12 @@ class FileUploadInfoTest extends TestCase
 
         $array = $info->toArray();
 
-        $this->assertArrayNotHasKey('is_image', $array);
-        $this->assertArrayNotHasKey('multiple', $array);
+        // All fields are always included for backward compatibility
+        $this->assertArrayHasKey('is_image', $array);
+        $this->assertArrayHasKey('multiple', $array);
         $this->assertArrayHasKey('mimes', $array);
+        $this->assertFalse($array['is_image']);
+        $this->assertFalse($array['multiple']);
+        $this->assertEquals(['pdf'], $array['mimes']);
     }
 }
