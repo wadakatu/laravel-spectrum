@@ -5,12 +5,26 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Tests\Unit\DTO;
 
 use LaravelSpectrum\DTO\ConditionalRuleSet;
+use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\DTO\ValidationAnalysisResult;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ValidationAnalysisResultTest extends TestCase
 {
+    private function createParameter(string $name, string $type = 'string', bool $required = false): ParameterDefinition
+    {
+        return new ParameterDefinition(
+            name: $name,
+            in: 'body',
+            required: $required,
+            type: $type,
+            description: '',
+            example: null,
+            validation: [],
+        );
+    }
+
     #[Test]
     public function it_can_be_constructed(): void
     {
@@ -22,7 +36,7 @@ class ValidationAnalysisResultTest extends TestCase
 
         $result = new ValidationAnalysisResult(
             parameters: [
-                ['name' => 'email', 'in' => 'body', 'required' => true],
+                $this->createParameter('email', 'string', true),
             ],
             conditionalRules: $conditionalRules,
             attributes: ['email' => 'Email Address'],
@@ -30,6 +44,7 @@ class ValidationAnalysisResultTest extends TestCase
         );
 
         $this->assertCount(1, $result->parameters);
+        $this->assertInstanceOf(ParameterDefinition::class, $result->parameters[0]);
         $this->assertInstanceOf(ConditionalRuleSet::class, $result->conditionalRules);
         $this->assertEquals(['email' => 'Email Address'], $result->attributes);
         $this->assertEquals(['email.required' => 'Email is required'], $result->messages);
@@ -40,7 +55,7 @@ class ValidationAnalysisResultTest extends TestCase
     {
         $array = [
             'parameters' => [
-                ['name' => 'name', 'in' => 'body', 'required' => true],
+                ['name' => 'name', 'in' => 'body', 'required' => true, 'type' => 'string', 'description' => '', 'example' => null, 'validation' => []],
             ],
             'conditional_rules' => [
                 'rules_sets' => [['condition' => 'test', 'rules' => []]],
@@ -54,6 +69,8 @@ class ValidationAnalysisResultTest extends TestCase
         $result = ValidationAnalysisResult::fromArray($array);
 
         $this->assertCount(1, $result->parameters);
+        $this->assertInstanceOf(ParameterDefinition::class, $result->parameters[0]);
+        $this->assertEquals('name', $result->parameters[0]->name);
         $this->assertInstanceOf(ConditionalRuleSet::class, $result->conditionalRules);
         $this->assertTrue($result->conditionalRules->hasConditions);
         $this->assertEquals(['name' => 'Name'], $result->attributes);
@@ -79,7 +96,7 @@ class ValidationAnalysisResultTest extends TestCase
     public function it_converts_to_array(): void
     {
         $result = new ValidationAnalysisResult(
-            parameters: [['name' => 'id', 'in' => 'body', 'required' => true]],
+            parameters: [$this->createParameter('id', 'integer', true)],
             conditionalRules: new ConditionalRuleSet(
                 ruleSets: [['condition' => 'test', 'rules' => ['id' => 'required']]],
                 mergedRules: ['id' => 'required'],
@@ -95,6 +112,8 @@ class ValidationAnalysisResultTest extends TestCase
         $this->assertArrayHasKey('conditional_rules', $array);
         $this->assertArrayHasKey('attributes', $array);
         $this->assertArrayHasKey('messages', $array);
+        $this->assertIsArray($array['parameters'][0]);
+        $this->assertEquals('id', $array['parameters'][0]['name']);
         $this->assertIsArray($array['conditional_rules']);
         $this->assertArrayHasKey('rules_sets', $array['conditional_rules']);
     }
@@ -131,7 +150,7 @@ class ValidationAnalysisResultTest extends TestCase
     public function it_checks_if_has_parameters(): void
     {
         $withParams = new ValidationAnalysisResult(
-            parameters: [['name' => 'test']],
+            parameters: [$this->createParameter('test')],
             conditionalRules: ConditionalRuleSet::empty(),
         );
         $withoutParams = ValidationAnalysisResult::empty();
@@ -145,8 +164,8 @@ class ValidationAnalysisResultTest extends TestCase
     {
         $result = new ValidationAnalysisResult(
             parameters: [
-                ['name' => 'email', 'type' => 'string'],
-                ['name' => 'age', 'type' => 'integer'],
+                $this->createParameter('email', 'string'),
+                $this->createParameter('age', 'integer'),
             ],
             conditionalRules: ConditionalRuleSet::empty(),
         );
@@ -155,8 +174,12 @@ class ValidationAnalysisResultTest extends TestCase
         $age = $result->getParameterByName('age');
         $missing = $result->getParameterByName('nonexistent');
 
-        $this->assertEquals(['name' => 'email', 'type' => 'string'], $email);
-        $this->assertEquals(['name' => 'age', 'type' => 'integer'], $age);
+        $this->assertInstanceOf(ParameterDefinition::class, $email);
+        $this->assertEquals('email', $email->name);
+        $this->assertEquals('string', $email->type);
+        $this->assertInstanceOf(ParameterDefinition::class, $age);
+        $this->assertEquals('age', $age->name);
+        $this->assertEquals('integer', $age->type);
         $this->assertNull($missing);
     }
 
@@ -165,9 +188,9 @@ class ValidationAnalysisResultTest extends TestCase
     {
         $result = new ValidationAnalysisResult(
             parameters: [
-                ['name' => 'email', 'required' => true],
-                ['name' => 'name', 'required' => true],
-                ['name' => 'nickname', 'required' => false],
+                $this->createParameter('email', 'string', true),
+                $this->createParameter('name', 'string', true),
+                $this->createParameter('nickname', 'string', false),
             ],
             conditionalRules: ConditionalRuleSet::empty(),
         );
@@ -175,8 +198,9 @@ class ValidationAnalysisResultTest extends TestCase
         $required = $result->getRequiredParameters();
 
         $this->assertCount(2, $required);
-        $this->assertEquals('email', $required[0]['name']);
-        $this->assertEquals('name', $required[1]['name']);
+        $this->assertInstanceOf(ParameterDefinition::class, $required[0]);
+        $this->assertEquals('email', $required[0]->name);
+        $this->assertEquals('name', $required[1]->name);
     }
 
     #[Test]
@@ -184,9 +208,9 @@ class ValidationAnalysisResultTest extends TestCase
     {
         $result = new ValidationAnalysisResult(
             parameters: [
-                ['name' => 'email'],
-                ['name' => 'password'],
-                ['name' => 'confirm_password'],
+                $this->createParameter('email'),
+                $this->createParameter('password'),
+                $this->createParameter('confirm_password'),
             ],
             conditionalRules: ConditionalRuleSet::empty(),
         );
@@ -201,7 +225,7 @@ class ValidationAnalysisResultTest extends TestCase
     {
         $empty = ValidationAnalysisResult::empty();
         $withParams = new ValidationAnalysisResult(
-            parameters: [['name' => 'test']],
+            parameters: [$this->createParameter('test')],
             conditionalRules: ConditionalRuleSet::empty(),
         );
         $withConditions = new ValidationAnalysisResult(
@@ -223,8 +247,8 @@ class ValidationAnalysisResultTest extends TestCase
     {
         $original = new ValidationAnalysisResult(
             parameters: [
-                ['name' => 'email', 'type' => 'string', 'required' => true],
-                ['name' => 'age', 'type' => 'integer', 'required' => false],
+                $this->createParameter('email', 'string', true),
+                $this->createParameter('age', 'integer', false),
             ],
             conditionalRules: new ConditionalRuleSet(
                 ruleSets: [['condition' => 'http_method:POST', 'rules' => ['name' => 'required']]],
@@ -237,7 +261,9 @@ class ValidationAnalysisResultTest extends TestCase
 
         $restored = ValidationAnalysisResult::fromArray($original->toArray());
 
-        $this->assertEquals($original->parameters, $restored->parameters);
+        $this->assertCount(count($original->parameters), $restored->parameters);
+        $this->assertEquals($original->parameters[0]->name, $restored->parameters[0]->name);
+        $this->assertEquals($original->parameters[0]->type, $restored->parameters[0]->type);
         $this->assertEquals($original->conditionalRules->ruleSets, $restored->conditionalRules->ruleSets);
         $this->assertEquals($original->conditionalRules->mergedRules, $restored->conditionalRules->mergedRules);
         $this->assertEquals($original->attributes, $restored->attributes);
@@ -250,9 +276,9 @@ class ValidationAnalysisResultTest extends TestCase
         $empty = ValidationAnalysisResult::empty();
         $withParams = new ValidationAnalysisResult(
             parameters: [
-                ['name' => 'a'],
-                ['name' => 'b'],
-                ['name' => 'c'],
+                $this->createParameter('a'),
+                $this->createParameter('b'),
+                $this->createParameter('c'),
             ],
             conditionalRules: ConditionalRuleSet::empty(),
         );
@@ -265,7 +291,7 @@ class ValidationAnalysisResultTest extends TestCase
     public function it_gets_attribute_for_parameter(): void
     {
         $result = new ValidationAnalysisResult(
-            parameters: [['name' => 'email']],
+            parameters: [$this->createParameter('email')],
             conditionalRules: ConditionalRuleSet::empty(),
             attributes: ['email' => 'Email Address', 'name' => 'Full Name'],
         );

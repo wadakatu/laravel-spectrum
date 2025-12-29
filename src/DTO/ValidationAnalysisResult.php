@@ -10,7 +10,7 @@ namespace LaravelSpectrum\DTO;
 final readonly class ValidationAnalysisResult
 {
     /**
-     * @param  array<int, array<string, mixed>>  $parameters  Extracted parameters
+     * @param  array<ParameterDefinition>  $parameters  Extracted parameters as DTOs
      * @param  ConditionalRuleSet  $conditionalRules  Conditional validation rules
      * @param  array<string, string>  $attributes  Custom attribute names
      * @param  array<string, string>  $messages  Custom validation messages
@@ -30,9 +30,18 @@ final readonly class ValidationAnalysisResult
     public static function fromArray(array $data): self
     {
         $conditionalRules = $data['conditional_rules'] ?? [];
+        $parameters = $data['parameters'] ?? [];
+
+        // Convert parameter arrays to ParameterDefinition DTOs
+        $parameterDtos = array_map(
+            fn (array|ParameterDefinition $param) => $param instanceof ParameterDefinition
+                ? $param
+                : ParameterDefinition::fromArray($param),
+            $parameters
+        );
 
         return new self(
-            parameters: $data['parameters'] ?? [],
+            parameters: $parameterDtos,
             conditionalRules: $conditionalRules instanceof ConditionalRuleSet
                 ? $conditionalRules
                 : ConditionalRuleSet::fromArray($conditionalRules),
@@ -49,7 +58,10 @@ final readonly class ValidationAnalysisResult
     public function toArray(): array
     {
         return [
-            'parameters' => $this->parameters,
+            'parameters' => array_map(
+                fn (ParameterDefinition $param) => $param->toArray(),
+                $this->parameters
+            ),
             'conditional_rules' => $this->conditionalRules->toArray(),
             'attributes' => $this->attributes,
             'messages' => $this->messages,
@@ -87,13 +99,11 @@ final readonly class ValidationAnalysisResult
 
     /**
      * Get a parameter by name.
-     *
-     * @return array<string, mixed>|null
      */
-    public function getParameterByName(string $name): ?array
+    public function getParameterByName(string $name): ?ParameterDefinition
     {
         foreach ($this->parameters as $parameter) {
-            if (($parameter['name'] ?? null) === $name) {
+            if ($parameter->name === $name) {
                 return $parameter;
             }
         }
@@ -104,13 +114,13 @@ final readonly class ValidationAnalysisResult
     /**
      * Get all required parameters.
      *
-     * @return array<int, array<string, mixed>>
+     * @return array<ParameterDefinition>
      */
     public function getRequiredParameters(): array
     {
         return array_values(array_filter(
             $this->parameters,
-            fn (array $param) => ($param['required'] ?? false) === true
+            fn (ParameterDefinition $param) => $param->required === true
         ));
     }
 
@@ -122,7 +132,7 @@ final readonly class ValidationAnalysisResult
     public function getParameterNames(): array
     {
         return array_map(
-            fn (array $param) => $param['name'],
+            fn (ParameterDefinition $param) => $param->name,
             $this->parameters
         );
     }

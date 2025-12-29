@@ -9,6 +9,7 @@ use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
 use LaravelSpectrum\Analyzers\Support\FormRequestAstExtractor;
 use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -728,7 +729,15 @@ class FormRequestAnalyzerTest extends TestCase
 
         $mockParameterBuilder = $this->createMock(ParameterBuilder::class);
         $mockParameterBuilder->method('buildFromRules')->willReturn([
-            ['name' => 'name', 'type' => 'string', 'required' => true, 'validation' => ['required', 'string']],
+            new ParameterDefinition(
+                name: 'name',
+                in: 'body',
+                required: true,
+                type: 'string',
+                description: '',
+                example: null,
+                validation: ['required', 'string'],
+            ),
         ]);
 
         $analyzer = new FormRequestAnalyzer(
