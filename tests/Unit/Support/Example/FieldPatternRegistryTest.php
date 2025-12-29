@@ -483,5 +483,29 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('image_url', $config->format);
         $this->assertEquals('imageUrl', $config->fakerMethod);
         $this->assertEquals([640, 480], $config->fakerArgs);
+
+        // icon pattern - small square dimensions
+        $config = $this->registry->getConfig('icon');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([64, 64], $config->fakerArgs);
+
+        // logo pattern - medium square dimensions
+        $config = $this->registry->getConfig('logo');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([200, 200], $config->fakerArgs);
+
+        // banner pattern - wide image dimensions
+        $config = $this->registry->getConfig('banner');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([1200, 400], $config->fakerArgs);
     }
 }

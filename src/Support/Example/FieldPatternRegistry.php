@@ -406,21 +406,7 @@ final class FieldPatternRegistry
                     'fakerArgs' => [],
                     'staticValue' => '12345',
                 ],
-                'postal_code' => [
-                    'type' => 'address',
-                    'format' => 'text',
-                    'fakerMethod' => 'postcode',
-                    'fakerArgs' => [],
-                    'staticValue' => '12345',
-                ],
                 'zipcode' => [
-                    'type' => 'address',
-                    'format' => 'text',
-                    'fakerMethod' => 'postcode',
-                    'fakerArgs' => [],
-                    'staticValue' => '12345',
-                ],
-                'zip_code' => [
                     'type' => 'address',
                     'format' => 'text',
                     'fakerMethod' => 'postcode',
