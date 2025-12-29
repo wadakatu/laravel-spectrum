@@ -60,6 +60,9 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * Fractal Transformerクラスを解析してDTOを返す
+     *
+     * @param  string  $transformerClass  The fully qualified class name of the transformer
+     * @return FractalTransformerResult The analysis result (use isValid to check success)
      */
     public function analyzeToResult(string $transformerClass): FractalTransformerResult
     {

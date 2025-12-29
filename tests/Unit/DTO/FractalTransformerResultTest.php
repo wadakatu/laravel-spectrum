@@ -128,6 +128,18 @@ class FractalTransformerResultTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_false_when_no_available_includes(): void
+    {
+        $result = new FractalTransformerResult(
+            properties: ['id' => ['type' => 'integer', 'example' => 1, 'nullable' => false]],
+            availableIncludes: [],
+        );
+
+        $this->assertFalse($result->hasAvailableIncludes());
+        $this->assertFalse($result->hasInclude('posts'));
+    }
+
+    #[Test]
     public function it_can_check_for_default_includes(): void
     {
         $result = new FractalTransformerResult(
@@ -138,6 +150,18 @@ class FractalTransformerResultTest extends TestCase
         $this->assertTrue($result->hasDefaultIncludes());
         $this->assertTrue($result->isDefaultInclude('author'));
         $this->assertFalse($result->isDefaultInclude('tags'));
+    }
+
+    #[Test]
+    public function it_returns_false_when_no_default_includes(): void
+    {
+        $result = new FractalTransformerResult(
+            properties: ['id' => ['type' => 'integer', 'example' => 1, 'nullable' => false]],
+            defaultIncludes: [],
+        );
+
+        $this->assertFalse($result->hasDefaultIncludes());
+        $this->assertFalse($result->isDefaultInclude('author'));
     }
 
     #[Test]
