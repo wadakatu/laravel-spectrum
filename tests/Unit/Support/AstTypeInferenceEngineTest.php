@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Support;
 
+use LaravelSpectrum\DTO\TypeInfo;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Tests\TestCase;
 use PhpParser\Node;
@@ -451,5 +452,59 @@ class AstTypeInferenceEngineTest extends TestCase
         $result = $this->engine->inferFromNode($node);
 
         $this->assertSame(['type' => 'string'], $result);
+    }
+
+    public function test_infer_returns_type_info_instance(): void
+    {
+        $node = new Node\Scalar\String_('hello');
+
+        $result = $this->engine->infer($node);
+
+        $this->assertInstanceOf(TypeInfo::class, $result);
+        $this->assertSame('string', $result->type);
+    }
+
+    public function test_infer_returns_type_info_with_properties_for_associative_array(): void
+    {
+        $node = new Node\Expr\Array_([
+            new Node\Expr\ArrayItem(
+                new Node\Scalar\Int_(42),
+                new Node\Scalar\String_('id')
+            ),
+        ]);
+
+        $result = $this->engine->infer($node);
+
+        $this->assertInstanceOf(TypeInfo::class, $result);
+        $this->assertTrue($result->isObject());
+        $this->assertTrue($result->hasProperties());
+        $this->assertArrayHasKey('id', $result->properties);
+        $this->assertSame('integer', $result->properties['id']->type);
+    }
+
+    public function test_infer_returns_type_info_for_integer(): void
+    {
+        $node = new Node\Scalar\Int_(123);
+
+        $result = $this->engine->infer($node);
+
+        $this->assertInstanceOf(TypeInfo::class, $result);
+        $this->assertSame('integer', $result->type);
+        $this->assertTrue($result->isScalar());
+    }
+
+    public function test_infer_returns_type_info_with_format(): void
+    {
+        $node = new Node\Expr\MethodCall(
+            new Node\Expr\Variable('date'),
+            new Node\Identifier('toIso8601String')
+        );
+
+        $result = $this->engine->infer($node);
+
+        $this->assertInstanceOf(TypeInfo::class, $result);
+        $this->assertSame('string', $result->type);
+        $this->assertTrue($result->hasFormat());
+        $this->assertSame('date-time', $result->format);
     }
 }

@@ -351,4 +351,45 @@ class TypeInfoTest extends TestCase
 
         $this->assertEquals('string', $info->type);
     }
+
+    #[Test]
+    public function it_creates_from_array_with_mixed_type_info_and_arrays(): void
+    {
+        $data = [
+            'type' => 'object',
+            'properties' => [
+                'id' => TypeInfo::integer(),
+                'name' => ['type' => 'string'],
+            ],
+        ];
+
+        $info = TypeInfo::fromArray($data);
+
+        $this->assertEquals('object', $info->type);
+        $this->assertCount(2, $info->properties);
+        $this->assertEquals('integer', $info->properties['id']->type);
+        $this->assertEquals('string', $info->properties['name']->type);
+    }
+
+    #[Test]
+    public function it_ignores_non_array_properties_in_from_array(): void
+    {
+        $data = [
+            'type' => 'object',
+            'properties' => 'invalid',
+        ];
+
+        $info = TypeInfo::fromArray($data);
+
+        $this->assertEquals('object', $info->type);
+        $this->assertNull($info->properties);
+    }
+
+    #[Test]
+    public function it_checks_null_type_is_not_scalar(): void
+    {
+        $null = TypeInfo::null();
+
+        $this->assertFalse($null->isScalar());
+    }
 }
