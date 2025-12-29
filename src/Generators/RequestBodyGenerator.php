@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Generators;
 
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 
 /**
@@ -26,30 +27,30 @@ class RequestBodyGenerator
     /**
      * Generate request body for an API operation.
      *
-     * @param  array{formRequest?: string, inlineValidation?: array}  $controllerInfo  Controller analysis result
+     * @param  ControllerInfo  $controllerInfo  Controller analysis result
      * @param  array  $route  Route information
      * @return OpenApiRequestBody|null Request body DTO or null if no validation
      */
-    public function generate(array $controllerInfo, array $route): ?OpenApiRequestBody
+    public function generate(ControllerInfo $controllerInfo, array $route): ?OpenApiRequestBody
     {
         $parameters = [];
         $conditionalRules = null;
 
         // FormRequest validation
-        if (! empty($controllerInfo['formRequest'])) {
-            $analysisResult = $this->requestAnalyzer->analyzeWithConditionalRules($controllerInfo['formRequest']);
+        if ($controllerInfo->hasFormRequest()) {
+            $analysisResult = $this->requestAnalyzer->analyzeWithConditionalRules($controllerInfo->formRequest);
 
             if (! empty($analysisResult['conditional_rules']['rules_sets'])) {
                 $conditionalRules = $analysisResult['conditional_rules'];
                 $parameters = $analysisResult['parameters'] ?? [];
             } else {
-                $parameters = $this->requestAnalyzer->analyze($controllerInfo['formRequest']);
+                $parameters = $this->requestAnalyzer->analyze($controllerInfo->formRequest);
             }
         }
         // Inline validation
-        elseif (! empty($controllerInfo['inlineValidation'])) {
+        elseif ($controllerInfo->hasInlineValidation()) {
             $parameters = $this->inlineValidationAnalyzer->generateParameters(
-                $controllerInfo['inlineValidation']
+                $controllerInfo->inlineValidation->toArray()
             );
         }
 

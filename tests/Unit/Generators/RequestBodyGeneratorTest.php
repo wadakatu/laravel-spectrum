@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\Generators\RequestBodyGenerator;
 use LaravelSpectrum\Generators\SchemaGenerator;
@@ -44,7 +45,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_returns_null_when_no_validation(): void
     {
-        $controllerInfo = [];
+        $controllerInfo = ControllerInfo::empty();
         $route = ['uri' => 'api/users'];
 
         $result = $this->generator->generate($controllerInfo, $route);
@@ -55,7 +56,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_generates_request_body_from_form_request(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\StoreUserRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\StoreUserRequest']);
         $route = ['uri' => 'api/users'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
@@ -93,13 +94,13 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_generates_request_body_from_inline_validation(): void
     {
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'inlineValidation' => [
                 'rules' => [
                     'name' => ['required', 'string'],
                 ],
             ],
-        ];
+        ]);
         $route = ['uri' => 'api/users'];
 
         $this->mockInlineValidationAnalyzer->shouldReceive('generateParameters')
@@ -127,7 +128,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_generates_request_body_with_conditional_rules(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\ConditionalRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\ConditionalRequest']);
         $route = ['uri' => 'api/users'];
 
         $conditionalRules = [
@@ -163,7 +164,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_generates_multipart_request_body_for_file_uploads(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\UploadRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\UploadRequest']);
         $route = ['uri' => 'api/upload'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
@@ -204,7 +205,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_includes_multiple_files_info_in_description(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\MultiUploadRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\MultiUploadRequest']);
         $route = ['uri' => 'api/upload'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
@@ -246,7 +247,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_handles_schema_with_existing_content_structure(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\SpecialRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\SpecialRequest']);
         $route = ['uri' => 'api/special'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
@@ -279,12 +280,12 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_prefers_form_request_over_inline_validation(): void
     {
-        $controllerInfo = [
+        $controllerInfo = ControllerInfo::fromArray([
             'formRequest' => 'App\Http\Requests\StoreUserRequest',
             'inlineValidation' => [
                 'rules' => ['ignored' => ['required']],
             ],
-        ];
+        ]);
         $route = ['uri' => 'api/users'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
@@ -317,7 +318,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_returns_null_when_form_request_has_no_parameters(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\EmptyRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\EmptyRequest']);
         $route = ['uri' => 'api/users'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')
@@ -336,7 +337,7 @@ class RequestBodyGeneratorTest extends TestCase
     #[Test]
     public function it_returns_null_when_file_upload_schema_has_no_content(): void
     {
-        $controllerInfo = ['formRequest' => 'App\Http\Requests\UploadRequest'];
+        $controllerInfo = ControllerInfo::fromArray(['formRequest' => 'App\Http\Requests\UploadRequest']);
         $route = ['uri' => 'api/upload'];
 
         $this->mockRequestAnalyzer->shouldReceive('analyzeWithConditionalRules')

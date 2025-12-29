@@ -11,6 +11,7 @@ use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\DTO\AuthenticationResult;
 use LaravelSpectrum\DTO\AuthenticationScheme;
 use LaravelSpectrum\DTO\AuthenticationType;
+use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\DTO\OpenApiResponse;
@@ -270,13 +271,13 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'index',
                 'responseType' => 'json',
                 'hasValidation' => false,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
             ->once()
@@ -345,14 +346,14 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'store',
                 'responseType' => 'json',
                 'hasValidation' => true,
                 'formRequest' => 'App\Http\Requests\StoreUserRequest',
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
             ->once()
@@ -495,13 +496,13 @@ class OpenApiGeneratorTest extends TestCase
                 ['bearerAuth' => []],
             ]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'show',
                 'responseType' => 'json',
                 'hasValidation' => false,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
             ->once()
@@ -590,13 +591,13 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'show',
                 'responseType' => 'json',
                 'hasValidation' => false,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
             ->once()
@@ -854,15 +855,15 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'index',
                 'responseType' => 'json',
                 'hasValidation' => false,
                 'resource' => 'App\Http\Resources\UserResource',
                 'returnsCollection' => true,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users');
         $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('List all User');
@@ -947,15 +948,15 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'show',
                 'responseType' => 'json',
                 'hasValidation' => false,
                 'resource' => 'App\Http\Resources\UserResource',
                 'returnsCollection' => false,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users/{user}');
         $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('Get User by ID');
@@ -1019,15 +1020,15 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->once()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'index',
                 'responseType' => 'json',
                 'hasValidation' => false,
                 'resource' => 'App\Http\Resources\PostResource',
                 'returnsCollection' => true,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/posts');
         $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('List all Post');
@@ -1110,15 +1111,15 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
             ->twice()
-            ->andReturn([
+            ->andReturn(ControllerInfo::fromArray([
                 'method' => 'index',
                 'responseType' => 'json',
                 'hasValidation' => false,
                 'resource' => 'App\Http\Resources\UserResource',
                 'returnsCollection' => false,
-            ]);
+            ]));
 
         $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
             ->twice()
@@ -1200,7 +1201,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')->andReturn(ControllerInfo::empty());
 
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         // Verify that getDefaultErrorResponses is called with requiresAuth=true
@@ -1255,7 +1256,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')->andReturn(ControllerInfo::empty());
 
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         // Verify that getDefaultErrorResponses is called with requiresAuth=false
@@ -1296,7 +1297,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')->andReturn(ControllerInfo::empty());
 
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         // auth:api should be detected as requiring auth
@@ -1408,7 +1409,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')->andReturn(ControllerInfo::empty());
 
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
@@ -1481,7 +1482,7 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([]);
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')->andReturn(ControllerInfo::empty());
 
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
@@ -1582,10 +1583,10 @@ class OpenApiGeneratorTest extends TestCase
 
         $this->parameterGenerator->shouldReceive('generate')->andReturn([]);
 
-        $this->controllerAnalyzer->shouldReceive('analyze')->andReturn([
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')->andReturn(ControllerInfo::fromArray([
             'resource' => 'App\Http\Resources\UserResource',
             'returnsCollection' => false,
-        ]);
+        ]));
 
         $this->resourceAnalyzer->shouldReceive('analyze')
             ->with('App\Http\Resources\UserResource')
