@@ -135,6 +135,11 @@ class FieldPatternRegistryTest extends TestCase
         $config = $this->registry->getConfig('zipcode');
         $this->assertNotNull($config);
         $this->assertEquals('address', $config->type);
+
+        // postal_code pattern (with underscore, before normalization)
+        $config = $this->registry->getConfig('postal_code');
+        $this->assertNotNull($config);
+        $this->assertEquals('address', $config->type);
     }
 
     public function test_handles_location_pattern_variations(): void
@@ -451,5 +456,32 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('imageUrl', $config->fakerMethod);
         $this->assertEquals([640, 480], $config->fakerArgs);
         $this->assertEquals('https://example.com/image.jpg', $config->staticValue);
+    }
+
+    public function test_handles_image_related_patterns(): void
+    {
+        // thumbnail pattern - smaller image dimensions
+        $config = $this->registry->getConfig('thumbnail');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([150, 150], $config->fakerArgs);
+
+        // photo pattern - standard image dimensions
+        $config = $this->registry->getConfig('photo');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([640, 480], $config->fakerArgs);
+
+        // picture pattern - standard image dimensions
+        $config = $this->registry->getConfig('picture');
+        $this->assertNotNull($config);
+        $this->assertEquals('url', $config->type);
+        $this->assertEquals('image_url', $config->format);
+        $this->assertEquals('imageUrl', $config->fakerMethod);
+        $this->assertEquals([640, 480], $config->fakerArgs);
     }
 }
