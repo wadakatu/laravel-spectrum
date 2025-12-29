@@ -281,21 +281,7 @@ final class FieldPatternRegistry
                     'fakerArgs' => [],
                     'staticValue' => 'John',
                 ],
-                'first_name' => [
-                    'type' => 'name',
-                    'format' => 'first_name',
-                    'fakerMethod' => 'firstName',
-                    'fakerArgs' => [],
-                    'staticValue' => 'John',
-                ],
                 'lastname' => [
-                    'type' => 'name',
-                    'format' => 'last_name',
-                    'fakerMethod' => 'lastName',
-                    'fakerArgs' => [],
-                    'staticValue' => 'Doe',
-                ],
-                'last_name' => [
                     'type' => 'name',
                     'format' => 'last_name',
                     'fakerMethod' => 'lastName',
