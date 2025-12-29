@@ -28,6 +28,10 @@ final readonly class EnumInfo
     public static function fromArray(array $data): self
     {
         $typeString = $data['type'] ?? 'string';
+        // Handle both OpenAPI format ('integer') and raw enum value ('int')
+        if ($typeString === 'integer') {
+            $typeString = 'int';
+        }
         $backingType = EnumBackingType::tryFrom($typeString) ?? EnumBackingType::STRING;
 
         return new self(
@@ -47,7 +51,7 @@ final readonly class EnumInfo
         return [
             'class' => $this->class,
             'values' => $this->values,
-            'type' => $this->backingType->value,
+            'type' => $this->backingType->toOpenApiType(),
         ];
     }
 

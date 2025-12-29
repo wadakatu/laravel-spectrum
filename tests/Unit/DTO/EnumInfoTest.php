@@ -112,7 +112,8 @@ class EnumInfoTest extends TestCase
 
         $array = $info->toArray();
 
-        $this->assertEquals('int', $array['type']);
+        // toArray() returns OpenAPI-compatible type ('integer', not 'int')
+        $this->assertEquals('integer', $array['type']);
     }
 
     #[Test]

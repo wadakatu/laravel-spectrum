@@ -136,7 +136,7 @@ final readonly class ParameterDefinition
         }
 
         if ($this->enum !== null) {
-            $result['enum'] = $this->enum;
+            $result['enum'] = $this->enum->toArray();
         }
 
         if ($this->fileInfo !== null) {
