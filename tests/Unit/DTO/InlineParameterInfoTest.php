@@ -366,7 +366,8 @@ class InlineParameterInfoTest extends TestCase
         $array = $param->toArray();
 
         $this->assertArrayHasKey('enum', $array);
-        $this->assertSame($enumInfo, $array['enum']);
+        $this->assertIsArray($array['enum']);
+        $this->assertEquals($enumInfo->toArray(), $array['enum']);
     }
 
     #[Test]
@@ -510,5 +511,79 @@ class InlineParameterInfoTest extends TestCase
 
             $this->assertEquals($format, $param->format);
         }
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_file_info_as_array(): void
+    {
+        $data = [
+            'name' => 'document',
+            'type' => 'file',
+            'required' => true,
+            'rules' => 'required|file|max:5120',
+            'description' => 'Document upload',
+            'format' => 'binary',
+            'file_info' => [
+                'is_image' => false,
+                'mimes' => ['pdf', 'doc'],
+                'max_size' => 5120,
+            ],
+        ];
+
+        $param = InlineParameterInfo::fromArray($data);
+
+        $this->assertInstanceOf(FileUploadInfo::class, $param->fileInfo);
+        $this->assertFalse($param->fileInfo->isImage);
+        $this->assertEquals(['pdf', 'doc'], $param->fileInfo->mimes);
+        $this->assertEquals(5120, $param->fileInfo->maxSize);
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_length_constraints(): void
+    {
+        $param = new InlineParameterInfo(
+            name: 'username',
+            type: 'string',
+            required: true,
+            rules: 'required|string|min:3|max:20',
+            description: 'Username',
+            minLength: 3,
+            maxLength: 20,
+        );
+
+        $array = $param->toArray();
+
+        $this->assertArrayHasKey('minLength', $array);
+        $this->assertArrayHasKey('maxLength', $array);
+        $this->assertEquals(3, $array['minLength']);
+        $this->assertEquals(20, $array['maxLength']);
+    }
+
+    #[Test]
+    public function it_survives_round_trip_with_file_info(): void
+    {
+        $fileInfo = new FileUploadInfo(
+            isImage: true,
+            mimes: ['jpeg', 'png'],
+            maxSize: 2048
+        );
+
+        $original = new InlineParameterInfo(
+            name: 'avatar',
+            type: 'file',
+            required: true,
+            rules: 'required|image|max:2048',
+            description: 'User avatar',
+            format: 'binary',
+            fileInfo: $fileInfo,
+        );
+
+        $restored = InlineParameterInfo::fromArray($original->toArray());
+
+        $this->assertTrue($restored->isFileUpload());
+        $this->assertInstanceOf(FileUploadInfo::class, $restored->fileInfo);
+        $this->assertEquals($original->fileInfo->isImage, $restored->fileInfo->isImage);
+        $this->assertEquals($original->fileInfo->mimes, $restored->fileInfo->mimes);
+        $this->assertEquals($original->fileInfo->maxSize, $restored->fileInfo->maxSize);
     }
 }

@@ -189,11 +189,11 @@ final readonly class InlineParameterInfo
             $result['maximum'] = $this->maximum;
         }
 
-        // Output enum as either inline values or EnumInfo object (for backward compatibility)
+        // Output enum as either inline values or EnumInfo serialized to array
         if ($this->inlineEnum !== null) {
             $result['enum'] = $this->inlineEnum;
         } elseif ($this->enumInfo !== null) {
-            $result['enum'] = $this->enumInfo;
+            $result['enum'] = $this->enumInfo->toArray();
         }
 
         if ($this->fileInfo !== null) {
