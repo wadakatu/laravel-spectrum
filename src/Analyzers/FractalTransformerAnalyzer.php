@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Contracts\Analyzers\ClassAnalyzer;
 use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\DTO\FractalTransformerResult;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -49,8 +50,21 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * Fractal Transformerクラスを解析
+     *
+     * @return array<string, mixed>
      */
     public function analyze(string $transformerClass): array
+    {
+        return $this->analyzeToResult($transformerClass)->toArray();
+    }
+
+    /**
+     * Fractal Transformerクラスを解析してDTOを返す
+     *
+     * @param  string  $transformerClass  The fully qualified class name of the transformer
+     * @return FractalTransformerResult The analysis result (use isValid to check success)
+     */
+    public function analyzeToResult(string $transformerClass): FractalTransformerResult
     {
         if (! class_exists($transformerClass)) {
             $this->logWarning(
@@ -59,7 +73,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                 ['class' => $transformerClass]
             );
 
-            return [];
+            return FractalTransformerResult::empty();
         }
 
         try {
@@ -73,7 +87,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                     ['class' => $transformerClass]
                 );
 
-                return [];
+                return FractalTransformerResult::empty();
             }
 
             $filePath = $reflection->getFileName();
@@ -84,13 +98,13 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                     ['class' => $transformerClass]
                 );
 
-                return [];
+                return FractalTransformerResult::empty();
             }
 
             $ast = $this->astHelper->parseFile($filePath);
             if (! $ast) {
                 // AstHelper already logs parse errors
-                return [];
+                return FractalTransformerResult::empty();
             }
 
             $classNode = $this->astHelper->findClassNode($ast, $reflection->getShortName());
@@ -105,28 +119,27 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                     ]
                 );
 
-                return [];
+                return FractalTransformerResult::empty();
             }
 
-            return [
-                'type' => 'fractal',
-                'properties' => $this->extractTransformMethod($classNode),
-                'availableIncludes' => $this->extractAvailableIncludes($classNode),
-                'defaultIncludes' => $this->extractDefaultIncludes($classNode),
-                'meta' => $this->extractMetaData($classNode),
-            ];
+            return new FractalTransformerResult(
+                properties: $this->extractTransformMethod($classNode),
+                availableIncludes: $this->extractAvailableIncludes($classNode),
+                defaultIncludes: $this->extractDefaultIncludes($classNode),
+                meta: $this->extractMetaData($classNode),
+            );
         } catch (\ReflectionException $e) {
             $this->logException($e, AnalyzerErrorType::ReflectionError, [
                 'class' => $transformerClass,
             ]);
 
-            return [];
+            return FractalTransformerResult::empty();
         } catch (\Exception $e) {
             $this->logException($e, AnalyzerErrorType::UnexpectedError, [
                 'class' => $transformerClass,
             ]);
 
-            return [];
+            return FractalTransformerResult::empty();
         }
     }
 
