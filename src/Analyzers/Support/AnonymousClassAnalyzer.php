@@ -53,7 +53,7 @@ class AnonymousClassAnalyzer
      * Falls back to reflection-based extraction if AST parsing fails.
      *
      * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
-     * @return array<int, array<string, mixed>> The built parameters
+     * @return array<ParameterDefinition> The built parameters as DTOs
      */
     public function analyze(\ReflectionClass $reflection): array
     {
@@ -161,11 +161,11 @@ class AnonymousClassAnalyzer
                 );
             }
 
-            // Fallback to standard analysis
-            $result = $this->analyze($reflection);
+            // Fallback to standard analysis - convert DTOs to arrays for backward compatibility
+            $parameters = $this->analyze($reflection);
 
             return [
-                'parameters' => $result,
+                'parameters' => $this->convertParametersToArrays($parameters),
                 'conditional_rules' => [
                     'rules_sets' => [],
                     'merged_rules' => [],
@@ -199,7 +199,7 @@ class AnonymousClassAnalyzer
      *
      * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
      * @param  string  $filePath  Path to the file containing the class
-     * @return array<int, array<string, mixed>>|null Returns the parameters if successful, null if AST parsing fails
+     * @return array<ParameterDefinition>|null Returns the parameters as DTOs if successful, null if AST parsing fails
      */
     protected function tryAstBasedAnalysis(\ReflectionClass $reflection, string $filePath): ?array
     {
@@ -244,9 +244,7 @@ class AnonymousClassAnalyzer
             $namespace = $reflection->getNamespaceName();
             $useStatements = $this->astExtractor->extractUseStatements($ast);
 
-            $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
-
-            return $this->convertParametersToArrays($parameters);
+            return $this->parameterBuilder->buildFromRules($rules, $attributes, $namespace, $useStatements);
         } catch (Error $e) {
             $this->errorCollector->addWarning(
                 'AnonymousClassAnalyzer',
@@ -395,7 +393,7 @@ class AnonymousClassAnalyzer
      * Falls back to this approach when AST parsing is not possible.
      *
      * @param  \ReflectionClass<object>  $reflection  The reflection of the anonymous class
-     * @return array<int, array<string, mixed>> The built parameters or empty array on failure
+     * @return array<ParameterDefinition> The built parameters as DTOs or empty array on failure
      *
      * @throws \ReflectionException If instance creation fails
      */
@@ -411,9 +409,7 @@ class AnonymousClassAnalyzer
         $attributes = $this->invokeMethodSafely($reflection, $instance, 'attributes', [], false);
         $namespace = $reflection->getNamespaceName();
 
-        $parameters = $this->parameterBuilder->buildFromRules($rules, $attributes ?? [], $namespace);
-
-        return $this->convertParametersToArrays($parameters);
+        return $this->parameterBuilder->buildFromRules($rules, $attributes ?? [], $namespace);
     }
 
     /**

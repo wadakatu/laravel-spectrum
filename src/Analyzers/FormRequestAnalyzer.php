@@ -173,13 +173,8 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
             }
 
             if ($context->isAnonymous()) {
-                // AnonymousClassAnalyzer returns arrays, convert to DTOs
-                $arrays = $this->anonymousClassAnalyzer->analyze($context->reflection);
-
-                return array_map(
-                    fn (array $data) => ParameterDefinition::fromArray($data),
-                    $arrays
-                );
+                // AnonymousClassAnalyzer now returns ParameterDefinition[] directly
+                return $this->anonymousClassAnalyzer->analyze($context->reflection);
             }
 
             // Extract rules and attributes from AST
