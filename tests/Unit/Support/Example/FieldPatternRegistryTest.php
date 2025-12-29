@@ -56,6 +56,13 @@ class FieldPatternRegistryTest extends TestCase
         $this->assertEquals('first_name', $config->format);
         $this->assertEquals('firstName', $config->fakerMethod);
 
+        // lastname pattern (with underscore)
+        $config = $this->registry->getConfig('last_name');
+        $this->assertNotNull($config);
+        $this->assertEquals('name', $config->type);
+        $this->assertEquals('last_name', $config->format);
+        $this->assertEquals('lastName', $config->fakerMethod);
+
         // fullname pattern
         $config = $this->registry->getConfig('fullname');
         $this->assertNotNull($config);
