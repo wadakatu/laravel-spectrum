@@ -583,25 +583,25 @@ parameters:
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:258\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:260\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:46\:\:extractArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractReturnedArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:46\:\:extractReturnedArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
 
 		-
-			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:44\:\:extractRulesArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method PhpParser\\NodeVisitorAbstract@anonymous/src/Analyzers/InlineValidationAnalyzer\.php\:46\:\:extractRulesArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/InlineValidationAnalyzer.php
