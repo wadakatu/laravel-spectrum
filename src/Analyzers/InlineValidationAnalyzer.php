@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use LaravelSpectrum\Contracts\HasErrors;
+use LaravelSpectrum\DTO\FileUploadInfo;
+use LaravelSpectrum\DTO\InlineParameterInfo;
 use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -531,11 +533,34 @@ class InlineValidationAnalyzer implements HasErrors
     }
 
     /**
-     * バリデーションルールからパラメータ情報を生成
+     * バリデーションルールからパラメータ情報を生成（配列を返す - 後方互換性のため）
+     *
+     * @param  array<string, mixed>  $validation
+     * @param  array<string, string>  $useStatements
+     * @return array<array<string, mixed>>
      */
     public function generateParameters(array $validation, ?string $namespace = null, array $useStatements = []): array
     {
+        return array_map(
+            fn (InlineParameterInfo $param) => $param->toArray(),
+            $this->generateParametersToResult($validation, $namespace, $useStatements)
+        );
+    }
+
+    /**
+     * バリデーションルールからInlineParameterInfo DTOの配列を生成
+     *
+     * @param  array<string, mixed>  $validation
+     * @param  array<string, string>  $useStatements
+     * @return array<InlineParameterInfo>
+     */
+    public function generateParametersToResult(array $validation, ?string $namespace = null, array $useStatements = []): array
+    {
         $parameters = [];
+
+        if (! isset($validation['rules']) || ! is_array($validation['rules'])) {
+            return [];
+        }
 
         // Analyze file upload fields
         $fileFields = $this->fileUploadAnalyzer->analyzeRules($validation['rules']);
@@ -543,20 +568,19 @@ class InlineValidationAnalyzer implements HasErrors
         foreach ($validation['rules'] as $field => $rules) {
             // Check if this is a file upload field
             if (isset($fileFields[$field])) {
-                $fileInfo = $fileFields[$field];
+                $fileInfoArray = $fileFields[$field];
+                $fileInfoDto = FileUploadInfo::fromArray($fileInfoArray);
                 $rulesList = is_array($rules) ? $rules : explode('|', $rules);
 
-                $parameter = [
-                    'name' => $field,
-                    'type' => 'file',
-                    'format' => 'binary',
-                    'file_info' => $fileInfo,
-                    'required' => in_array('required', $rulesList) || $this->hasRequiredIf($rulesList),
-                    'rules' => $rules,
-                    'description' => $this->generateFileDescription($field, $fileInfo, $validation['attributes'] ?? []),
-                ];
-
-                $parameters[] = $parameter;
+                $parameters[] = new InlineParameterInfo(
+                    name: $field,
+                    type: 'file',
+                    required: in_array('required', $rulesList) || $this->hasRequiredIf($rulesList),
+                    rules: $rules,
+                    description: $this->generateFileDescription($field, $fileInfoArray, $validation['attributes'] ?? []),
+                    format: 'binary',
+                    fileInfo: $fileInfoDto,
+                );
 
                 continue;
             }
@@ -596,69 +620,91 @@ class InlineValidationAnalyzer implements HasErrors
                 $rulesList = is_array($rules) ? $rules : explode('|', $rules);
             }
 
-            $parameter = [
-                'name' => $field,
-                'type' => $this->typeInference->inferFromRules($rulesList),
-                'required' => in_array('required', $rulesList) || $this->hasRequiredIf($rulesList),
-                'rules' => $rules,
-                'description' => $this->generateDescription($field, $rulesList, $validation['attributes'] ?? [], $namespace, $useStatements),
-            ];
+            $type = $this->typeInference->inferFromRules($rulesList);
+            $format = $this->inferFormat($rulesList);
 
-            // Add format for special validation rules
-            if (in_array('email', $rulesList)) {
-                $parameter['format'] = 'email';
-            } elseif (in_array('url', $rulesList)) {
-                $parameter['format'] = 'uri';
-            } elseif (in_array('uuid', $rulesList)) {
-                $parameter['format'] = 'uuid';
-            } elseif (in_array('date', $rulesList)) {
-                $parameter['format'] = 'date';
-            } elseif (in_array('datetime', $rulesList)) {
-                $parameter['format'] = 'date-time';
-            }
+            // Build constraints from validation rules
+            $minLength = null;
+            $maxLength = null;
+            $minimum = null;
+            $maximum = null;
+            $inlineEnum = null;
 
-            // バリデーションルールから追加情報を抽出
             foreach ($rulesList as $rule) {
                 if (is_string($rule) && strpos($rule, ':') !== false) {
                     [$ruleName, $ruleValue] = explode(':', $rule, 2);
 
                     switch ($ruleName) {
                         case 'min':
-                            if ($parameter['type'] === 'string') {
-                                $parameter['minLength'] = (int) $ruleValue;
+                            if ($type === 'string') {
+                                $minLength = (int) $ruleValue;
                             } else {
-                                $parameter['minimum'] = (int) $ruleValue;
+                                $minimum = (int) $ruleValue;
                             }
                             break;
                         case 'max':
-                            if ($parameter['type'] === 'string') {
-                                $parameter['maxLength'] = (int) $ruleValue;
+                            if ($type === 'string') {
+                                $maxLength = (int) $ruleValue;
                             } else {
-                                $parameter['maximum'] = (int) $ruleValue;
+                                $maximum = (int) $ruleValue;
                             }
                             break;
                         case 'in':
-                            $parameter['enum'] = explode(',', $ruleValue);
+                            $inlineEnum = explode(',', $ruleValue);
                             break;
                         case 'size':
-                            if ($parameter['type'] === 'string') {
-                                $parameter['minLength'] = (int) $ruleValue;
-                                $parameter['maxLength'] = (int) $ruleValue;
+                            if ($type === 'string') {
+                                $minLength = (int) $ruleValue;
+                                $maxLength = (int) $ruleValue;
                             }
                             break;
                     }
                 }
             }
 
-            // Add enum information if found
-            if ($enumInfo) {
-                $parameter['enum'] = $enumInfo;
-            }
-
-            $parameters[] = $parameter;
+            $parameters[] = new InlineParameterInfo(
+                name: $field,
+                type: $type,
+                required: in_array('required', $rulesList) || $this->hasRequiredIf($rulesList),
+                rules: $rules,
+                description: $this->generateDescription($field, $rulesList, $validation['attributes'] ?? [], $namespace, $useStatements),
+                format: $format,
+                minLength: $minLength,
+                maxLength: $maxLength,
+                minimum: $minimum,
+                maximum: $maximum,
+                inlineEnum: $enumInfo ? null : $inlineEnum,
+                enumInfo: $enumInfo,
+            );
         }
 
         return $parameters;
+    }
+
+    /**
+     * Infer format from validation rules.
+     *
+     * @param  array<string>  $rulesList
+     */
+    protected function inferFormat(array $rulesList): ?string
+    {
+        if (in_array('email', $rulesList)) {
+            return 'email';
+        }
+        if (in_array('url', $rulesList)) {
+            return 'uri';
+        }
+        if (in_array('uuid', $rulesList)) {
+            return 'uuid';
+        }
+        if (in_array('date', $rulesList)) {
+            return 'date';
+        }
+        if (in_array('datetime', $rulesList)) {
+            return 'date-time';
+        }
+
+        return null;
     }
 
     /**
