@@ -14,6 +14,7 @@ use LaravelSpectrum\DTO\FractalInfo;
 use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
+use LaravelSpectrum\DTO\ResourceDetectionResult;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\HasErrorCollection;
@@ -117,7 +118,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
         // メソッドのソースコードからResourceを検出
         $source = $this->methodSourceExtractor->extractSource($methodReflection);
-        [$resource, $returnsCollection] = $this->detectResource($source, $reflection);
+        $resourceDetection = $this->detectResource($source, $reflection);
 
         // Fractal使用を検出
         $fractal = $this->detectFractalUsageToDto($source, $reflection);
@@ -144,8 +145,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         return new ControllerInfo(
             formRequest: $formRequest,
             inlineValidation: $inlineValidation,
-            resource: $resource,
-            returnsCollection: $returnsCollection,
+            resource: $resourceDetection->resourceClass,
+            returnsCollection: $resourceDetection->isCollection,
             fractal: $fractal,
             pagination: $pagination,
             queryParameters: $queryParameters,
@@ -192,23 +193,22 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
      * Resourceクラスを検出
      *
      * @param  \ReflectionClass<object>  $reflection
-     * @return array{0: string|null, 1: bool}
      */
-    protected function detectResource(string $source, ReflectionClass $reflection): array
+    protected function detectResource(string $source, ReflectionClass $reflection): ResourceDetectionResult
     {
         if (preg_match('/(\w+Resource)::collection/', $source, $matches)) {
             $resourceClass = $this->resolveClassName($matches[1], $reflection);
             if ($resourceClass && class_exists($resourceClass)) {
-                return [$resourceClass, true];
+                return ResourceDetectionResult::collection($resourceClass);
             }
         } elseif (preg_match('/new\s+(\w+Resource)/', $source, $matches)) {
             $resourceClass = $this->resolveClassName($matches[1], $reflection);
             if ($resourceClass && class_exists($resourceClass)) {
-                return [$resourceClass, false];
+                return ResourceDetectionResult::single($resourceClass);
             }
         }
 
-        return [null, false];
+        return ResourceDetectionResult::notFound();
     }
 
     /**
