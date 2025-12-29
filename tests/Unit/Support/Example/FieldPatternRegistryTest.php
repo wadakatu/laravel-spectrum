@@ -400,22 +400,74 @@ class FieldPatternRegistryTest extends TestCase
                 'staticValue' => '2024-01-15',
             ],
 
-            // Boolean patterns
-            'is_active prefix' => [
+            // Boolean patterns (exact matches from PATTERNS)
+            'is_active exact' => [
                 'field' => 'is_active',
                 'type' => 'boolean',
-                'format' => null,
-                'fakerMethod' => null,
-                'fakerArgs' => null,
-                'staticValue' => null,
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => true,
             ],
-            'has_access prefix' => [
+            'is_admin exact' => [
+                'field' => 'is_admin',
+                'type' => 'boolean',
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => false,
+            ],
+            'has_children exact' => [
+                'field' => 'has_children',
+                'type' => 'boolean',
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => false,
+            ],
+            'has_access prefix pattern' => [
                 'field' => 'has_access',
                 'type' => 'boolean',
-                'format' => null,
-                'fakerMethod' => null,
-                'fakerArgs' => null,
-                'staticValue' => null,
+                'format' => 'boolean',
+                'fakerMethod' => 'boolean',
+                'fakerArgs' => [],
+                'staticValue' => true,
+            ],
+
+            // Color patterns
+            'color exact' => [
+                'field' => 'color',
+                'type' => 'color',
+                'format' => 'hex',
+                'fakerMethod' => 'hexColor',
+                'fakerArgs' => [],
+                'staticValue' => '#FF5733',
+            ],
+            'hexcolor exact' => [
+                'field' => 'hexcolor',
+                'type' => 'color',
+                'format' => 'hex',
+                'fakerMethod' => 'hexColor',
+                'fakerArgs' => [],
+                'staticValue' => '#FF5733',
+            ],
+            'hex_color normalized' => [
+                'field' => 'hex_color',
+                'type' => 'color',
+                'format' => 'hex',
+                'fakerMethod' => 'hexColor',
+                'fakerArgs' => [],
+                'staticValue' => '#FF5733',
+            ],
+
+            // Gender pattern
+            'gender exact' => [
+                'field' => 'gender',
+                'type' => 'gender',
+                'format' => 'string',
+                'fakerMethod' => 'randomElement',
+                'fakerArgs' => [['male', 'female', 'other']],
+                'staticValue' => 'male',
             ],
 
             // Company patterns
