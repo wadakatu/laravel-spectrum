@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\DTO;
 
+use LaravelSpectrum\DTO\ConditionalRule;
 use LaravelSpectrum\DTO\ConditionalRuleSet;
+use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\DTO\ValidationAnalysisResult;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,6 +24,15 @@ class ValidationAnalysisResultTest extends TestCase
             description: '',
             example: null,
             validation: [],
+        );
+    }
+
+    private function createRule(array $conditions, array $rules = [], float $probability = 1.0): ConditionalRule
+    {
+        return new ConditionalRule(
+            conditions: $conditions,
+            rules: $rules,
+            probability: $probability,
         );
     }
 
@@ -58,7 +69,7 @@ class ValidationAnalysisResultTest extends TestCase
                 ['name' => 'name', 'in' => 'body', 'required' => true, 'type' => 'string', 'description' => '', 'example' => null, 'validation' => []],
             ],
             'conditional_rules' => [
-                'rules_sets' => [['condition' => 'test', 'rules' => []]],
+                'rules_sets' => [['conditions' => [['type' => 'http_method', 'method' => 'POST', 'expression' => 'isMethod("POST")']], 'rules' => [], 'probability' => 1.0]],
                 'merged_rules' => ['name' => 'required'],
                 'has_conditions' => true,
             ],
@@ -98,7 +109,7 @@ class ValidationAnalysisResultTest extends TestCase
         $result = new ValidationAnalysisResult(
             parameters: [$this->createParameter('id', 'integer', true)],
             conditionalRules: new ConditionalRuleSet(
-                ruleSets: [['condition' => 'test', 'rules' => ['id' => 'required']]],
+                ruleSets: [$this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['id' => 'required'])],
                 mergedRules: ['id' => 'required'],
                 hasConditions: true,
             ),
@@ -135,7 +146,7 @@ class ValidationAnalysisResultTest extends TestCase
         $withConditions = new ValidationAnalysisResult(
             parameters: [],
             conditionalRules: new ConditionalRuleSet(
-                ruleSets: [['condition' => 'test', 'rules' => []]],
+                ruleSets: [$this->createRule([], [])],
                 mergedRules: [],
                 hasConditions: true,
             ),
@@ -231,7 +242,7 @@ class ValidationAnalysisResultTest extends TestCase
         $withConditions = new ValidationAnalysisResult(
             parameters: [],
             conditionalRules: new ConditionalRuleSet(
-                ruleSets: [['condition' => 'test', 'rules' => []]],
+                ruleSets: [$this->createRule([], [])],
                 mergedRules: [],
                 hasConditions: true,
             ),
@@ -251,7 +262,7 @@ class ValidationAnalysisResultTest extends TestCase
                 $this->createParameter('age', 'integer', false),
             ],
             conditionalRules: new ConditionalRuleSet(
-                ruleSets: [['condition' => 'http_method:POST', 'rules' => ['name' => 'required']]],
+                ruleSets: [$this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['name' => 'required'])],
                 mergedRules: ['name' => 'required', 'email' => 'required|email'],
                 hasConditions: true,
             ),
@@ -264,7 +275,9 @@ class ValidationAnalysisResultTest extends TestCase
         $this->assertCount(count($original->parameters), $restored->parameters);
         $this->assertEquals($original->parameters[0]->name, $restored->parameters[0]->name);
         $this->assertEquals($original->parameters[0]->type, $restored->parameters[0]->type);
-        $this->assertEquals($original->conditionalRules->ruleSets, $restored->conditionalRules->ruleSets);
+        $this->assertCount(1, $restored->conditionalRules->ruleSets);
+        $this->assertInstanceOf(ConditionalRule::class, $restored->conditionalRules->ruleSets[0]);
+        $this->assertEquals($original->conditionalRules->ruleSets[0]->rules, $restored->conditionalRules->ruleSets[0]->rules);
         $this->assertEquals($original->conditionalRules->mergedRules, $restored->conditionalRules->mergedRules);
         $this->assertEquals($original->attributes, $restored->attributes);
         $this->assertEquals($original->messages, $restored->messages);

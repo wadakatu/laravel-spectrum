@@ -4,24 +4,39 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\DTO;
 
+use LaravelSpectrum\DTO\ConditionalRule;
 use LaravelSpectrum\DTO\ConditionalRuleSet;
+use LaravelSpectrum\DTO\ConditionResult;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ConditionalRuleSetTest extends TestCase
 {
+    private function createRule(array $conditions, array $rules = [], float $probability = 1.0): ConditionalRule
+    {
+        return new ConditionalRule(
+            conditions: $conditions,
+            rules: $rules,
+            probability: $probability,
+        );
+    }
+
     #[Test]
     public function it_can_be_constructed(): void
     {
         $ruleSet = new ConditionalRuleSet(
             ruleSets: [
-                ['condition' => 'http_method:POST', 'rules' => ['name' => 'required']],
+                $this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['name' => 'required']),
             ],
             mergedRules: ['name' => 'required|string'],
             hasConditions: true,
         );
 
-        $this->assertEquals([['condition' => 'http_method:POST', 'rules' => ['name' => 'required']]], $ruleSet->ruleSets);
+        $this->assertCount(1, $ruleSet->ruleSets);
+        $this->assertInstanceOf(ConditionalRule::class, $ruleSet->ruleSets[0]);
+        $this->assertTrue($ruleSet->ruleSets[0]->conditions[0]->isHttpMethod());
+        $this->assertEquals('POST', $ruleSet->ruleSets[0]->conditions[0]->method);
+        $this->assertEquals(['name' => 'required'], $ruleSet->ruleSets[0]->rules);
         $this->assertEquals(['name' => 'required|string'], $ruleSet->mergedRules);
         $this->assertTrue($ruleSet->hasConditions);
     }
@@ -31,7 +46,7 @@ class ConditionalRuleSetTest extends TestCase
     {
         $array = [
             'rules_sets' => [
-                ['condition' => 'http_method:PUT', 'rules' => ['id' => 'required']],
+                ['conditions' => [['type' => 'http_method', 'method' => 'PUT', 'expression' => 'isMethod("PUT")']], 'rules' => ['id' => 'required'], 'probability' => 0.5],
             ],
             'merged_rules' => ['id' => 'required|integer'],
             'has_conditions' => true,
@@ -40,6 +55,8 @@ class ConditionalRuleSetTest extends TestCase
         $ruleSet = ConditionalRuleSet::fromArray($array);
 
         $this->assertCount(1, $ruleSet->ruleSets);
+        $this->assertInstanceOf(ConditionalRule::class, $ruleSet->ruleSets[0]);
+        $this->assertInstanceOf(ConditionResult::class, $ruleSet->ruleSets[0]->conditions[0]);
         $this->assertEquals(['id' => 'required|integer'], $ruleSet->mergedRules);
         $this->assertTrue($ruleSet->hasConditions);
     }
@@ -60,7 +77,7 @@ class ConditionalRuleSetTest extends TestCase
     public function it_converts_to_array(): void
     {
         $ruleSet = new ConditionalRuleSet(
-            ruleSets: [['condition' => 'test', 'rules' => ['field' => 'required']]],
+            ruleSets: [$this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['field' => 'required'], 0.8)],
             mergedRules: ['field' => 'required'],
             hasConditions: true,
         );
@@ -70,7 +87,15 @@ class ConditionalRuleSetTest extends TestCase
         $this->assertArrayHasKey('rules_sets', $array);
         $this->assertArrayHasKey('merged_rules', $array);
         $this->assertArrayHasKey('has_conditions', $array);
-        $this->assertEquals([['condition' => 'test', 'rules' => ['field' => 'required']]], $array['rules_sets']);
+        $this->assertCount(1, $array['rules_sets']);
+        $this->assertArrayHasKey('conditions', $array['rules_sets'][0]);
+        $this->assertArrayHasKey('rules', $array['rules_sets'][0]);
+        $this->assertArrayHasKey('probability', $array['rules_sets'][0]);
+        // ConditionResult objects are preserved for backward compatibility
+        $this->assertInstanceOf(ConditionResult::class, $array['rules_sets'][0]['conditions'][0]);
+        $this->assertTrue($array['rules_sets'][0]['conditions'][0]->isHttpMethod());
+        $this->assertEquals(['field' => 'required'], $array['rules_sets'][0]['rules']);
+        $this->assertEquals(0.8, $array['rules_sets'][0]['probability']);
         $this->assertEquals(['field' => 'required'], $array['merged_rules']);
         $this->assertTrue($array['has_conditions']);
     }
@@ -90,7 +115,7 @@ class ConditionalRuleSetTest extends TestCase
     {
         $empty = ConditionalRuleSet::empty();
         $notEmpty = new ConditionalRuleSet(
-            ruleSets: [['condition' => 'test', 'rules' => []]],
+            ruleSets: [$this->createRule([], [])],
             mergedRules: [],
             hasConditions: true,
         );
@@ -104,9 +129,9 @@ class ConditionalRuleSetTest extends TestCase
     {
         $ruleSet = new ConditionalRuleSet(
             ruleSets: [
-                ['condition' => 'http_method:POST', 'rules' => ['name' => 'required']],
-                ['condition' => 'http_method:PUT', 'rules' => ['id' => 'required']],
-                ['condition' => 'request_field:type=admin', 'rules' => ['role' => 'required']],
+                $this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['name' => 'required']),
+                $this->createRule([ConditionResult::httpMethod('PUT', 'isMethod("PUT")')], ['id' => 'required']),
+                $this->createRule([ConditionResult::requestField('type=admin', 'type', 'admin')], ['role' => 'required']),
             ],
             mergedRules: [],
             hasConditions: true,
@@ -115,26 +140,26 @@ class ConditionalRuleSetTest extends TestCase
         $conditions = $ruleSet->getAllConditions();
 
         $this->assertCount(3, $conditions);
-        $this->assertContains('http_method:POST', $conditions);
-        $this->assertContains('http_method:PUT', $conditions);
-        $this->assertContains('request_field:type=admin', $conditions);
+        $this->assertInstanceOf(ConditionResult::class, $conditions[0]);
+        $this->assertInstanceOf(ConditionResult::class, $conditions[1]);
+        $this->assertInstanceOf(ConditionResult::class, $conditions[2]);
     }
 
     #[Test]
-    public function it_gets_rules_for_condition(): void
+    public function it_gets_rules_for_http_method(): void
     {
         $ruleSet = new ConditionalRuleSet(
             ruleSets: [
-                ['condition' => 'http_method:POST', 'rules' => ['name' => 'required', 'email' => 'required|email']],
-                ['condition' => 'http_method:PUT', 'rules' => ['id' => 'required|integer']],
+                $this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['name' => 'required', 'email' => 'required|email']),
+                $this->createRule([ConditionResult::httpMethod('PUT', 'isMethod("PUT")')], ['id' => 'required|integer']),
             ],
             mergedRules: [],
             hasConditions: true,
         );
 
-        $postRules = $ruleSet->getRulesForCondition('http_method:POST');
-        $putRules = $ruleSet->getRulesForCondition('http_method:PUT');
-        $deleteRules = $ruleSet->getRulesForCondition('http_method:DELETE');
+        $postRules = $ruleSet->getRulesForHttpMethod('POST');
+        $putRules = $ruleSet->getRulesForHttpMethod('PUT');
+        $deleteRules = $ruleSet->getRulesForHttpMethod('DELETE');
 
         $this->assertEquals(['name' => 'required', 'email' => 'required|email'], $postRules);
         $this->assertEquals(['id' => 'required|integer'], $putRules);
@@ -147,8 +172,8 @@ class ConditionalRuleSetTest extends TestCase
         $empty = ConditionalRuleSet::empty();
         $withRules = new ConditionalRuleSet(
             ruleSets: [
-                ['condition' => 'a', 'rules' => []],
-                ['condition' => 'b', 'rules' => []],
+                $this->createRule([], []),
+                $this->createRule([], []),
             ],
             mergedRules: [],
             hasConditions: true,
@@ -163,8 +188,8 @@ class ConditionalRuleSetTest extends TestCase
     {
         $original = new ConditionalRuleSet(
             ruleSets: [
-                ['condition' => 'http_method:POST', 'rules' => ['name' => 'required']],
-                ['condition' => 'http_method:PUT', 'rules' => ['id' => 'required']],
+                $this->createRule([ConditionResult::httpMethod('POST', 'isMethod("POST")')], ['name' => 'required'], 0.8),
+                $this->createRule([ConditionResult::httpMethod('PUT', 'isMethod("PUT")')], ['id' => 'required'], 0.6),
             ],
             mergedRules: ['name' => 'required', 'id' => 'required'],
             hasConditions: true,
@@ -172,7 +197,12 @@ class ConditionalRuleSetTest extends TestCase
 
         $restored = ConditionalRuleSet::fromArray($original->toArray());
 
-        $this->assertEquals($original->ruleSets, $restored->ruleSets);
+        $this->assertCount(2, $restored->ruleSets);
+        $this->assertInstanceOf(ConditionalRule::class, $restored->ruleSets[0]);
+        $this->assertInstanceOf(ConditionResult::class, $restored->ruleSets[0]->conditions[0]);
+        $this->assertEquals('POST', $restored->ruleSets[0]->conditions[0]->method);
+        $this->assertEquals($original->ruleSets[0]->rules, $restored->ruleSets[0]->rules);
+        $this->assertEquals($original->ruleSets[0]->probability, $restored->ruleSets[0]->probability);
         $this->assertEquals($original->mergedRules, $restored->mergedRules);
         $this->assertEquals($original->hasConditions, $restored->hasConditions);
     }

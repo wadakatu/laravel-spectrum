@@ -10,7 +10,7 @@ namespace LaravelSpectrum\DTO;
 final readonly class ConditionalRuleSet
 {
     /**
-     * @param  array<int, array{condition: string, rules: array<string, mixed>}>  $ruleSets  Individual rule sets with conditions
+     * @param  array<int, ConditionalRule>  $ruleSets  Individual rule sets with conditions, rules, and probability
      * @param  array<string, mixed>  $mergedRules  All rules merged together
      * @param  bool  $hasConditions  Whether any conditional rules exist
      */
@@ -27,8 +27,15 @@ final readonly class ConditionalRuleSet
      */
     public static function fromArray(array $data): self
     {
+        $ruleSets = [];
+        foreach ($data['rules_sets'] ?? [] as $ruleSet) {
+            $ruleSets[] = $ruleSet instanceof ConditionalRule
+                ? $ruleSet
+                : ConditionalRule::fromArray($ruleSet);
+        }
+
         return new self(
-            ruleSets: $data['rules_sets'] ?? [],
+            ruleSets: $ruleSets,
             mergedRules: $data['merged_rules'] ?? [],
             hasConditions: $data['has_conditions'] ?? false,
         );
@@ -41,8 +48,13 @@ final readonly class ConditionalRuleSet
      */
     public function toArray(): array
     {
+        $ruleSets = array_map(
+            fn (ConditionalRule $ruleSet) => $ruleSet->toArray(),
+            $this->ruleSets
+        );
+
         return [
-            'rules_sets' => $this->ruleSets,
+            'rules_sets' => $ruleSets,
             'merged_rules' => $this->mergedRules,
             'has_conditions' => $this->hasConditions,
         ];
@@ -69,28 +81,35 @@ final readonly class ConditionalRuleSet
     }
 
     /**
-     * Get all conditions from rule sets.
+     * Get the first condition from each rule set.
      *
-     * @return array<int, string>
+     * Returns the first ConditionResult from each ConditionalRule,
+     * useful for iterating over all primary conditions.
+     *
+     * @return array<int, ConditionResult>
      */
     public function getAllConditions(): array
     {
-        return array_map(
-            fn (array $ruleSet) => $ruleSet['condition'],
-            $this->ruleSets
-        );
+        $conditions = [];
+        foreach ($this->ruleSets as $ruleSet) {
+            if (! empty($ruleSet->conditions)) {
+                $conditions[] = $ruleSet->conditions[0];
+            }
+        }
+
+        return $conditions;
     }
 
     /**
-     * Get rules for a specific condition.
+     * Get rules for a specific HTTP method condition.
      *
      * @return array<string, mixed>
      */
-    public function getRulesForCondition(string $condition): array
+    public function getRulesForHttpMethod(string $method): array
     {
         foreach ($this->ruleSets as $ruleSet) {
-            if ($ruleSet['condition'] === $condition) {
-                return $ruleSet['rules'];
+            if ($ruleSet->isHttpMethodCondition() && $ruleSet->getHttpMethod() === $method) {
+                return $ruleSet->rules;
             }
         }
 
