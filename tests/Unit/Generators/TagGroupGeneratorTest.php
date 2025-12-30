@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\DTO\TagDefinition;
+use LaravelSpectrum\DTO\TagGroup;
 use LaravelSpectrum\Generators\TagGroupGenerator;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -41,10 +45,12 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(2, $result);
-        $this->assertEquals('User Management', $result[0]['name']);
-        $this->assertEquals(['User', 'Profile'], $result[0]['tags']);
-        $this->assertEquals('Content', $result[1]['name']);
-        $this->assertEquals(['Post', 'Comment'], $result[1]['tags']);
+        $this->assertInstanceOf(TagGroup::class, $result[0]);
+        $this->assertInstanceOf(TagGroup::class, $result[1]);
+        $this->assertEquals('User Management', $result[0]->name);
+        $this->assertEquals(['User', 'Profile'], $result[0]->tags);
+        $this->assertEquals('Content', $result[1]->name);
+        $this->assertEquals(['Post', 'Comment'], $result[1]->tags);
     }
 
     #[Test]
@@ -62,10 +68,10 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(2, $result);
-        $this->assertEquals('User Management', $result[0]['name']);
-        $this->assertEquals(['User'], $result[0]['tags']);
-        $this->assertEquals('Other', $result[1]['name']);
-        $this->assertEqualsCanonicalizing(['Comment', 'Post'], $result[1]['tags']);
+        $this->assertEquals('User Management', $result[0]->name);
+        $this->assertEquals(['User'], $result[0]->tags);
+        $this->assertEquals('Other', $result[1]->name);
+        $this->assertEqualsCanonicalizing(['Comment', 'Post'], $result[1]->tags);
     }
 
     #[Test]
@@ -83,8 +89,8 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(2, $result);
-        $this->assertEquals(['User'], $result[0]['tags']);
-        $this->assertEquals(['Post'], $result[1]['tags']);
+        $this->assertEquals(['User'], $result[0]->tags);
+        $this->assertEquals(['Post'], $result[1]->tags);
     }
 
     #[Test]
@@ -102,7 +108,7 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(1, $result);
-        $this->assertEquals('User Management', $result[0]['name']);
+        $this->assertEquals('User Management', $result[0]->name);
     }
 
     #[Test]
@@ -116,8 +122,8 @@ class TagGroupGeneratorTest extends TestCase
 
         // Should still create "Other" group for ungrouped tags
         $this->assertCount(1, $result);
-        $this->assertEquals('Other', $result[0]['name']);
-        $this->assertEqualsCanonicalizing(['Post', 'User'], $result[0]['tags']);
+        $this->assertEquals('Other', $result[0]->name);
+        $this->assertEqualsCanonicalizing(['Post', 'User'], $result[0]->tags);
     }
 
     #[Test]
@@ -151,9 +157,9 @@ class TagGroupGeneratorTest extends TestCase
 
         $result = $this->generator->generateTagGroups($usedTags);
 
-        $this->assertEquals('Zebra', $result[0]['name']);
-        $this->assertEquals('Alpha', $result[1]['name']);
-        $this->assertEquals('Middle', $result[2]['name']);
+        $this->assertEquals('Zebra', $result[0]->name);
+        $this->assertEquals('Alpha', $result[1]->name);
+        $this->assertEquals('Middle', $result[2]->name);
     }
 
     #[Test]
@@ -171,7 +177,7 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(1, $result);
-        $this->assertEquals('User Management', $result[0]['name']);
+        $this->assertEquals('User Management', $result[0]->name);
     }
 
     #[Test]
@@ -189,9 +195,15 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagDefinitions($usedTags);
 
         $this->assertCount(3, $result);
-        $this->assertEquals(['name' => 'User', 'description' => 'User management endpoints'], $result[0]);
-        $this->assertEquals(['name' => 'Post', 'description' => 'Blog post operations'], $result[1]);
-        $this->assertEquals(['name' => 'Comment'], $result[2]);
+        $this->assertInstanceOf(TagDefinition::class, $result[0]);
+        $this->assertInstanceOf(TagDefinition::class, $result[1]);
+        $this->assertInstanceOf(TagDefinition::class, $result[2]);
+        $this->assertEquals('User', $result[0]->name);
+        $this->assertEquals('User management endpoints', $result[0]->description);
+        $this->assertEquals('Post', $result[1]->name);
+        $this->assertEquals('Blog post operations', $result[1]->description);
+        $this->assertEquals('Comment', $result[2]->name);
+        $this->assertNull($result[2]->description);
     }
 
     #[Test]
@@ -204,8 +216,10 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagDefinitions($usedTags);
 
         $this->assertCount(2, $result);
-        $this->assertEquals(['name' => 'User'], $result[0]);
-        $this->assertEquals(['name' => 'Post'], $result[1]);
+        $this->assertEquals('User', $result[0]->name);
+        $this->assertNull($result[0]->description);
+        $this->assertEquals('Post', $result[1]->name);
+        $this->assertNull($result[1]->description);
     }
 
     #[Test]
@@ -230,8 +244,10 @@ class TagGroupGeneratorTest extends TestCase
 
         $result = $this->generator->generateTagDefinitions($usedTags);
 
-        $this->assertEquals(['name' => 'User', 'description' => 'User management endpoints'], $result[0]);
-        $this->assertEquals(['name' => 'Post'], $result[1]);
+        $this->assertEquals('User', $result[0]->name);
+        $this->assertEquals('User management endpoints', $result[0]->description);
+        $this->assertEquals('Post', $result[1]->name);
+        $this->assertNull($result[1]->description);
     }
 
     #[Test]
@@ -263,7 +279,7 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(2, $result);
-        $this->assertEquals('Miscellaneous', $result[1]['name']);
+        $this->assertEquals('Miscellaneous', $result[1]->name);
     }
 
     #[Test]
@@ -296,10 +312,10 @@ class TagGroupGeneratorTest extends TestCase
 
         // Only valid group should be included, Post goes to Other
         $this->assertCount(2, $result);
-        $this->assertEquals('Valid Group', $result[0]['name']);
-        $this->assertEquals(['User'], $result[0]['tags']);
-        $this->assertEquals('Other', $result[1]['name']);
-        $this->assertEquals(['Post'], $result[1]['tags']);
+        $this->assertEquals('Valid Group', $result[0]->name);
+        $this->assertEquals(['User'], $result[0]->tags);
+        $this->assertEquals('Other', $result[1]->name);
+        $this->assertEquals(['Post'], $result[1]->tags);
     }
 
     #[Test]
@@ -317,8 +333,8 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(2, $result);
-        $this->assertEquals(['User'], $result[0]['tags']);
-        $this->assertEquals(['Post'], $result[1]['tags']);
+        $this->assertEquals(['User'], $result[0]->tags);
+        $this->assertEquals(['Post'], $result[1]->tags);
     }
 
     #[Test]
@@ -335,7 +351,7 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagGroups($usedTags);
 
         $this->assertCount(1, $result);
-        $this->assertEquals(['User', 'Profile'], $result[0]['tags']);
+        $this->assertEquals(['User', 'Profile'], $result[0]->tags);
     }
 
     #[Test]
@@ -354,7 +370,7 @@ class TagGroupGeneratorTest extends TestCase
 
         // Only the configured group should be present, ungrouped tags are ignored
         $this->assertCount(1, $result);
-        $this->assertEquals('Main', $result[0]['name']);
+        $this->assertEquals('Main', $result[0]->name);
     }
 
     #[Test]
@@ -373,7 +389,7 @@ class TagGroupGeneratorTest extends TestCase
 
         // Only the configured group should be present
         $this->assertCount(1, $result);
-        $this->assertEquals('Main', $result[0]['name']);
+        $this->assertEquals('Main', $result[0]->name);
     }
 
     #[Test]
@@ -387,8 +403,10 @@ class TagGroupGeneratorTest extends TestCase
 
         // Should still return tag definitions without descriptions
         $this->assertCount(2, $result);
-        $this->assertEquals(['name' => 'User'], $result[0]);
-        $this->assertEquals(['name' => 'Post'], $result[1]);
+        $this->assertEquals('User', $result[0]->name);
+        $this->assertNull($result[0]->description);
+        $this->assertEquals('Post', $result[1]->name);
+        $this->assertNull($result[1]->description);
     }
 
     #[Test]
@@ -407,9 +425,12 @@ class TagGroupGeneratorTest extends TestCase
         $result = $this->generator->generateTagDefinitions($usedTags);
 
         $this->assertCount(3, $result);
-        $this->assertEquals(['name' => 'User', 'description' => 'Valid description'], $result[0]);
-        $this->assertEquals(['name' => 'Post'], $result[1]);
-        $this->assertEquals(['name' => 'Comment'], $result[2]);
+        $this->assertEquals('User', $result[0]->name);
+        $this->assertEquals('Valid description', $result[0]->description);
+        $this->assertEquals('Post', $result[1]->name);
+        $this->assertNull($result[1]->description);
+        $this->assertEquals('Comment', $result[2]->name);
+        $this->assertNull($result[2]->description);
     }
 
     #[Test]
@@ -424,7 +445,8 @@ class TagGroupGeneratorTest extends TestCase
 
         // Only 'User' should remain (123 and null and '' are filtered out)
         $this->assertCount(1, $result);
-        $this->assertEquals(['name' => 'User'], $result[0]);
+        $this->assertEquals('User', $result[0]->name);
+        $this->assertNull($result[0]->description);
     }
 
     #[Test]

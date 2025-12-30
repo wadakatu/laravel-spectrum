@@ -1,6 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Generators;
+
+use LaravelSpectrum\DTO\TagDefinition;
+use LaravelSpectrum\DTO\TagGroup;
 
 /**
  * Generates OpenAPI tag groups and tag definitions.
@@ -20,7 +25,7 @@ class TagGroupGenerator
      * Generate x-tagGroups structure for OpenAPI specification.
      *
      * @param  array<string>  $usedTags  List of tags actually used in the specification
-     * @return array<array{name: string, tags: array<string>}>
+     * @return array<TagGroup>
      */
     public function generateTagGroups(array $usedTags): array
     {
@@ -53,10 +58,10 @@ class TagGroupGenerator
             $filteredTags = array_values(array_intersect($tags, $usedTags));
 
             if (! empty($filteredTags)) {
-                $result[] = [
-                    'name' => $groupName,
-                    'tags' => $filteredTags,
-                ];
+                $result[] = new TagGroup(
+                    name: $groupName,
+                    tags: $filteredTags,
+                );
                 $groupedTags = array_merge($groupedTags, $filteredTags);
             }
         }
@@ -67,10 +72,10 @@ class TagGroupGenerator
             $ungroupedTags = array_values(array_diff($usedTags, $groupedTags));
 
             if (! empty($ungroupedTags)) {
-                $result[] = [
-                    'name' => $ungroupedGroupName,
-                    'tags' => $ungroupedTags,
-                ];
+                $result[] = new TagGroup(
+                    name: $ungroupedGroupName,
+                    tags: $ungroupedTags,
+                );
             }
         }
 
@@ -81,7 +86,7 @@ class TagGroupGenerator
      * Generate OpenAPI tags section with descriptions.
      *
      * @param  array<string>  $usedTags  List of tags actually used in the specification
-     * @return array<array{name: string, description?: string}>
+     * @return array<TagDefinition>
      */
     public function generateTagDefinitions(array $usedTags): array
     {
@@ -101,13 +106,15 @@ class TagGroupGenerator
 
         $result = [];
         foreach ($usedTags as $tag) {
-            $tagDefinition = ['name' => $tag];
-
+            $description = null;
             if (isset($descriptions[$tag]) && is_string($descriptions[$tag]) && $descriptions[$tag] !== '') {
-                $tagDefinition['description'] = $descriptions[$tag];
+                $description = $descriptions[$tag];
             }
 
-            $result[] = $tagDefinition;
+            $result[] = new TagDefinition(
+                name: $tag,
+                description: $description,
+            );
         }
 
         return $result;

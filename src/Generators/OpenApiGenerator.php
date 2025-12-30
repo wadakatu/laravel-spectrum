@@ -100,13 +100,13 @@ class OpenApiGenerator
         // Generate tags section with descriptions
         $tagDefinitions = $this->tagGroupGenerator->generateTagDefinitions($usedTags);
         if (! empty($tagDefinitions)) {
-            $openapi['tags'] = $tagDefinitions;
+            $openapi['tags'] = array_map(fn ($def) => $def->toArray(), $tagDefinitions);
         }
 
         // Generate x-tagGroups if configured
         $tagGroups = $this->tagGroupGenerator->generateTagGroups($usedTags);
         if (! empty($tagGroups)) {
-            $openapi['x-tagGroups'] = $tagGroups;
+            $openapi['x-tagGroups'] = array_map(fn ($group) => $group->toArray(), $tagGroups);
         }
 
         // Populate components.schemas with registered resource schemas
