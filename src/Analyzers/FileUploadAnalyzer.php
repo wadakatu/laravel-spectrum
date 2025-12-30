@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Analyzers;
 
 use Illuminate\Validation\Rules\File;
+use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\DTO\FileDimensions;
 use LaravelSpectrum\DTO\FileUploadInfo;
 
 class FileUploadAnalyzer
 {
-    private const FILE_RULES = ['file', 'image', 'mimes', 'mimetypes'];
-
     private const IMAGE_MIME_TYPES = [
         'image/jpeg',
         'image/png',
@@ -117,12 +116,14 @@ class FileUploadAnalyzer
 
     /**
      * Analyze field rules and return FileUploadInfo DTO.
+     *
+     * @param  string|array<mixed>  $fieldRules
      */
-    private function analyzeFieldRulesToDto(string $field, mixed $fieldRules): ?FileUploadInfo
+    private function analyzeFieldRulesToDto(string $field, string|array $fieldRules): ?FileUploadInfo
     {
-        $rulesArray = $this->normalizeRules($fieldRules);
+        $collection = ValidationRuleCollection::from($fieldRules);
 
-        if (! $this->hasFileRule($rulesArray)) {
+        if (! $collection->hasFileRule()) {
             return null;
         }
 
@@ -136,7 +137,7 @@ class FileUploadAnalyzer
             'multiple' => $this->isMultipleFiles($field),
         ];
 
-        foreach ($rulesArray as $rule) {
+        foreach ($collection as $rule) {
             $this->processRule($rule, $analysis);
         }
 
@@ -164,51 +165,6 @@ class FileUploadAnalyzer
     }
 
     /**
-     * @return array<mixed>
-     */
-    private function normalizeRules(mixed $rules): array
-    {
-        if (is_string($rules)) {
-            return explode('|', $rules);
-        }
-
-        if (is_array($rules)) {
-            return $rules;
-        }
-
-        return [];
-    }
-
-    /**
-     * @param  array<mixed>  $rules
-     */
-    private function hasFileRule(array $rules): bool
-    {
-        foreach ($rules as $rule) {
-            if ($this->isFileRule($rule)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isFileRule(mixed $rule): bool
-    {
-        if (is_string($rule)) {
-            $ruleName = explode(':', $rule)[0];
-
-            return in_array($ruleName, self::FILE_RULES, true);
-        }
-
-        if ($rule instanceof File) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * @param  array<string, mixed>  $analysis
      */
     private function processRule(mixed $rule, array &$analysis): void
@@ -218,6 +174,7 @@ class FileUploadAnalyzer
         } elseif ($rule instanceof File) {
             $this->processFileRuleObject($rule, $analysis);
         }
+        // Ignore other rule types (Enum, arrays, etc.)
     }
 
     /**

@@ -43,7 +43,8 @@ class FakerIntegrationTest extends TestCase
 
         $phone = $valueFactory->create('phone_number', ['type' => 'string']);
 
-        $this->assertMatchesRegularExpression('/^0[789]0-\d{4}-\d{4}$/', $phone);
+        // Japanese phone numbers: mobile (0[789]0-xxxx-xxxx) or landline (0xx-xxx-xxxx)
+        $this->assertMatchesRegularExpression('/^0\d{1,3}-\d{3,4}-\d{4}$/', $phone);
     }
 
     #[Test]
