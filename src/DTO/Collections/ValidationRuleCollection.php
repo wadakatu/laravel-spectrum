@@ -57,12 +57,16 @@ final readonly class ValidationRuleCollection extends AbstractCollection
     }
 
     /**
-     * Create a collection from either string or array input.
+     * Create a collection from string, array, or null input.
      *
-     * @param  string|array<mixed>  $rules
+     * @param  string|array<mixed>|null  $rules
      */
-    public static function from(string|array $rules): self
+    public static function from(string|array|null $rules): self
     {
+        if ($rules === null) {
+            return self::empty();
+        }
+
         return is_string($rules)
             ? self::fromString($rules)
             : self::fromArray($rules);

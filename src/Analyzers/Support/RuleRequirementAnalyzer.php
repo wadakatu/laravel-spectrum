@@ -149,10 +149,6 @@ class RuleRequirementAnalyzer
      */
     private function normalizeRules(string|array|null $rules): array
     {
-        if ($rules === null) {
-            return [];
-        }
-
         return ValidationRuleCollection::from($rules)->all();
     }
 }

@@ -79,6 +79,15 @@ class ValidationRuleCollectionTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_empty_from_null_using_from(): void
+    {
+        $collection = ValidationRuleCollection::from(null);
+
+        $this->assertTrue($collection->isEmpty());
+        $this->assertCount(0, $collection);
+    }
+
+    #[Test]
     public function it_detects_file_rule_in_string_rules(): void
     {
         $collection = ValidationRuleCollection::fromString('required|file|max:1024');
