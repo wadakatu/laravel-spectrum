@@ -8,4 +8,6 @@ parameters:
         - config
     tmpDir: build/phpstan
     treatPhpDocTypesAsCertain: false
+    # Required for cross-PHP version compatibility (8.1-8.4)
+    # Some errors only occur on specific PHP versions
     reportUnmatchedIgnoredErrors: false
