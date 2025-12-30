@@ -22,7 +22,7 @@ final readonly class ValidationRuleCollection extends AbstractCollection
      *
      * @var array<int, string>
      */
-    private const array FILE_RULES = ['file', 'image', 'mimes', 'mimetypes'];
+    private const FILE_RULES = ['file', 'image', 'mimes', 'mimetypes'];
 
     /**
      * Create an empty collection.
