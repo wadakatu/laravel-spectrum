@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace LaravelSpectrum\Support;
 
 use Illuminate\Validation\Rules\File;
+use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 
 class FileUploadDetector
 {
-    private const FILE_RULES = ['file', 'image', 'mimes', 'mimetypes'];
-
     private const MIME_TYPE_MAPPING = [
         'jpg' => 'image/jpeg',
         'jpeg' => 'image/jpeg',
@@ -38,7 +37,7 @@ class FileUploadDetector
     ];
 
     /**
-     * @param  array<string, mixed>  $rules
+     * @param  array<string, string|array<mixed>>  $rules
      * @return array<string, array<mixed>>
      */
     public function extractFileRules(array $rules): array
@@ -46,15 +45,10 @@ class FileUploadDetector
         $fileRules = [];
 
         foreach ($rules as $field => $fieldRules) {
-            if ($this->hasFileRule($fieldRules)) {
-                $fileRules[$field] = $this->normalizeRules($fieldRules);
-            }
+            $collection = ValidationRuleCollection::from($fieldRules);
 
-            // Check for nested array patterns (e.g., variants.*.image)
-            if (preg_match('/^(.+)\.\*\.(.+)$/', $field, $matches)) {
-                if ($this->hasFileRule($fieldRules)) {
-                    $fileRules[$field] = $this->normalizeRules($fieldRules);
-                }
+            if ($collection->hasFileRule()) {
+                $fileRules[$field] = $collection->all();
             }
         }
 
@@ -128,50 +122,6 @@ class FileUploadDetector
         return $dimensions;
     }
 
-    private function hasFileRule(mixed $rules): bool
-    {
-        $normalizedRules = $this->normalizeRules($rules);
-
-        foreach ($normalizedRules as $rule) {
-            if ($this->isFileRule($rule)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isFileRule(mixed $rule): bool
-    {
-        if (is_string($rule)) {
-            $ruleName = explode(':', $rule)[0];
-
-            return in_array($ruleName, self::FILE_RULES, true);
-        }
-
-        if ($rule instanceof File) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    private function normalizeRules(mixed $rules): array
-    {
-        if (is_string($rules)) {
-            return explode('|', $rules);
-        }
-
-        if (is_array($rules)) {
-            return $rules;
-        }
-
-        return [];
-    }
-
     /**
      * @param  array<mixed>  $rules
      * @return array<mixed>
@@ -194,7 +144,7 @@ class FileUploadDetector
     /**
      * Detect complex file upload patterns
      *
-     * @param  array<string, mixed>  $rules
+     * @param  array<string, string|array<mixed>>  $rules
      * @return array<string, array<string>>
      */
     public function detectFilePatterns(array $rules): array
@@ -206,7 +156,9 @@ class FileUploadDetector
         ];
 
         foreach ($rules as $field => $fieldRules) {
-            if (! $this->hasFileRule($fieldRules)) {
+            $collection = ValidationRuleCollection::from($fieldRules);
+
+            if (! $collection->hasFileRule()) {
                 continue;
             }
 
