@@ -7,6 +7,7 @@ namespace LaravelSpectrum\Tests\Unit\DTO;
 use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
+use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiSchema;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -418,5 +419,130 @@ class OpenApiOperationTest extends TestCase
         $this->assertEquals($original->description, $restored->description);
         $this->assertEquals($original->deprecated, $restored->deprecated);
         $this->assertInstanceOf(OpenApiRequestBody::class, $restored->requestBody);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_responses_as_arrays(): void
+    {
+        $data = [
+            'operationId' => 'getUsers',
+            'summary' => 'Get users',
+            'tags' => ['Users'],
+            'parameters' => [],
+            'responses' => [
+                '200' => [
+                    'description' => 'Successful response',
+                    'content' => ['application/json' => ['schema' => ['type' => 'array']]],
+                ],
+                '404' => [
+                    'description' => 'User not found',
+                ],
+            ],
+        ];
+
+        $operation = OpenApiOperation::fromArray($data);
+
+        $this->assertCount(2, $operation->responses);
+        $this->assertArrayHasKey('200', $operation->responses);
+        $this->assertArrayHasKey('404', $operation->responses);
+        $this->assertInstanceOf(OpenApiResponse::class, $operation->responses['200']);
+        $this->assertInstanceOf(OpenApiResponse::class, $operation->responses['404']);
+        $this->assertEquals('Successful response', $operation->responses['200']->description);
+        $this->assertEquals('User not found', $operation->responses['404']->description);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_existing_response_dtos(): void
+    {
+        $response = new OpenApiResponse(
+            statusCode: '200',
+            description: 'OK',
+            content: ['application/json' => ['schema' => ['type' => 'object']]],
+        );
+
+        $data = [
+            'operationId' => 'getUser',
+            'responses' => [
+                '200' => $response,
+            ],
+        ];
+
+        $operation = OpenApiOperation::fromArray($data);
+
+        $this->assertCount(1, $operation->responses);
+        $this->assertSame($response, $operation->responses['200']);
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_responses(): void
+    {
+        $response200 = new OpenApiResponse(
+            statusCode: '200',
+            description: 'Success',
+            content: ['application/json' => ['schema' => ['type' => 'object']]],
+        );
+        $response422 = new OpenApiResponse(
+            statusCode: '422',
+            description: 'Validation error',
+        );
+
+        $operation = new OpenApiOperation(
+            operationId: 'createUser',
+            summary: 'Create user',
+            tags: ['Users'],
+            parameters: [],
+            responses: [
+                '200' => $response200,
+                '422' => $response422,
+            ],
+        );
+
+        $array = $operation->toArray();
+
+        $this->assertArrayHasKey('responses', $array);
+        $this->assertCount(2, $array['responses']);
+        $this->assertArrayHasKey('200', $array['responses']);
+        $this->assertArrayHasKey('422', $array['responses']);
+        // Verify responses are converted to arrays (not DTO instances)
+        $this->assertIsArray($array['responses']['200']);
+        $this->assertIsArray($array['responses']['422']);
+        $this->assertEquals('Success', $array['responses']['200']['description']);
+        $this->assertEquals('Validation error', $array['responses']['422']['description']);
+    }
+
+    #[Test]
+    public function it_survives_full_round_trip_with_responses(): void
+    {
+        $original = new OpenApiOperation(
+            operationId: 'fullOp',
+            summary: 'Full operation with responses',
+            tags: ['Test'],
+            parameters: [],
+            responses: [
+                '200' => new OpenApiResponse(
+                    statusCode: '200',
+                    description: 'Success',
+                    content: ['application/json' => ['schema' => ['type' => 'object']]],
+                ),
+                '400' => new OpenApiResponse(
+                    statusCode: '400',
+                    description: 'Bad Request',
+                ),
+                '500' => new OpenApiResponse(
+                    statusCode: '500',
+                    description: 'Server Error',
+                ),
+            ],
+        );
+
+        $restored = OpenApiOperation::fromArray($original->toArray());
+
+        $this->assertCount(3, $restored->responses);
+        $this->assertInstanceOf(OpenApiResponse::class, $restored->responses['200']);
+        $this->assertInstanceOf(OpenApiResponse::class, $restored->responses['400']);
+        $this->assertInstanceOf(OpenApiResponse::class, $restored->responses['500']);
+        $this->assertEquals('Success', $restored->responses['200']->description);
+        $this->assertTrue($restored->responses['200']->hasContent());
+        $this->assertFalse($restored->responses['400']->hasContent());
     }
 }

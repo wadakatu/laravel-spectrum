@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\DTO;
 
+use LaravelSpectrum\DTO\ConditionalRuleDetail;
 use LaravelSpectrum\DTO\EnumBackingType;
 use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\DTO\FileUploadInfo;
@@ -479,5 +480,209 @@ class ParameterDefinitionTest extends TestCase
 
         $this->assertEquals('array', $param->type);
         $this->assertEquals(['tag1', 'tag2'], $param->example);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_enum_as_array(): void
+    {
+        $data = [
+            'name' => 'status',
+            'in' => 'body',
+            'required' => true,
+            'type' => 'string',
+            'description' => 'Status field',
+            'example' => 'active',
+            'validation' => ['required'],
+            'enum' => [
+                'class' => 'App\\Enums\\Status',
+                'values' => ['active', 'inactive', 'pending'],
+                'backing_type' => 'string',
+            ],
+        ];
+
+        $param = ParameterDefinition::fromArray($data);
+
+        $this->assertInstanceOf(EnumInfo::class, $param->enum);
+        $this->assertEquals('App\\Enums\\Status', $param->enum->class);
+        $this->assertEquals(['active', 'inactive', 'pending'], $param->enum->values);
+        $this->assertTrue($param->hasEnum());
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_file_info_as_array(): void
+    {
+        $data = [
+            'name' => 'document',
+            'in' => 'body',
+            'required' => true,
+            'type' => 'file',
+            'description' => 'Document upload',
+            'example' => null,
+            'validation' => ['required', 'file'],
+            'format' => 'binary',
+            'file_info' => [
+                'is_image' => false,
+                'mimes' => ['pdf', 'doc', 'docx'],
+                'max_size' => 5120,
+            ],
+        ];
+
+        $param = ParameterDefinition::fromArray($data);
+
+        $this->assertInstanceOf(FileUploadInfo::class, $param->fileInfo);
+        $this->assertFalse($param->fileInfo->isImage);
+        $this->assertEquals(['pdf', 'doc', 'docx'], $param->fileInfo->mimes);
+        $this->assertEquals(5120, $param->fileInfo->maxSize);
+        $this->assertTrue($param->isFileUpload());
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_conditional_rules_as_arrays(): void
+    {
+        $data = [
+            'name' => 'password',
+            'in' => 'body',
+            'required' => false,
+            'type' => 'string',
+            'description' => 'Password field',
+            'example' => 'secret123',
+            'validation' => ['sometimes', 'string'],
+            'conditional_required' => true,
+            'conditional_rules' => [
+                [
+                    'type' => 'required_if',
+                    'parameters' => 'action,create',
+                    'full_rule' => 'required_if:action,create',
+                ],
+                [
+                    'type' => 'required_unless',
+                    'parameters' => 'action,update',
+                    'full_rule' => 'required_unless:action,update',
+                ],
+            ],
+        ];
+
+        $param = ParameterDefinition::fromArray($data);
+
+        $this->assertTrue($param->conditionalRequired);
+        $this->assertCount(2, $param->conditionalRules);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $param->conditionalRules[0]);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $param->conditionalRules[1]);
+        $this->assertEquals('required_if', $param->conditionalRules[0]->type);
+        $this->assertEquals('action,create', $param->conditionalRules[0]->parameters);
+        $this->assertTrue($param->hasConditionalRules());
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_conditional_rule_detail_dtos(): void
+    {
+        $conditionalRules = [
+            new ConditionalRuleDetail(
+                type: 'required_if',
+                parameters: 'type,premium',
+                fullRule: 'required_if:type,premium',
+            ),
+            new ConditionalRuleDetail(
+                type: 'prohibited_if',
+                parameters: 'type,basic',
+                fullRule: 'prohibited_if:type,basic',
+            ),
+        ];
+
+        $param = new ParameterDefinition(
+            name: 'discount',
+            in: 'body',
+            required: false,
+            type: 'integer',
+            description: 'Discount amount',
+            example: 10,
+            validation: ['sometimes', 'integer'],
+            conditionalRequired: true,
+            conditionalRules: $conditionalRules,
+        );
+
+        $array = $param->toArray();
+
+        $this->assertArrayHasKey('conditional_rules', $array);
+        $this->assertCount(2, $array['conditional_rules']);
+        // Verify DTOs were converted to arrays
+        $this->assertIsArray($array['conditional_rules'][0]);
+        $this->assertIsArray($array['conditional_rules'][1]);
+        $this->assertEquals('required_if', $array['conditional_rules'][0]['type']);
+        $this->assertEquals('type,premium', $array['conditional_rules'][0]['parameters']);
+        $this->assertEquals('prohibited_if', $array['conditional_rules'][1]['type']);
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_file_info(): void
+    {
+        $fileInfo = new FileUploadInfo(
+            isImage: true,
+            mimes: ['jpeg', 'png', 'gif'],
+            maxSize: 2048,
+        );
+
+        $param = new ParameterDefinition(
+            name: 'avatar',
+            in: 'body',
+            required: true,
+            type: 'file',
+            description: 'User avatar',
+            example: null,
+            validation: ['required', 'image'],
+            format: 'binary',
+            fileInfo: $fileInfo,
+        );
+
+        $array = $param->toArray();
+
+        $this->assertArrayHasKey('file_info', $array);
+        $this->assertIsArray($array['file_info']);
+        $this->assertTrue($array['file_info']['is_image']);
+        $this->assertEquals(['jpeg', 'png', 'gif'], $array['file_info']['mimes']);
+        $this->assertEquals(2048, $array['file_info']['max_size']);
+    }
+
+    #[Test]
+    public function it_survives_full_round_trip_with_all_optional_fields(): void
+    {
+        $original = new ParameterDefinition(
+            name: 'status',
+            in: 'body',
+            required: true,
+            type: 'string',
+            description: 'Status field',
+            example: 'active',
+            validation: ['required'],
+            format: 'string',
+            conditionalRequired: true,
+            conditionalRules: [
+                new ConditionalRuleDetail(
+                    type: 'required_if',
+                    parameters: 'type,special',
+                    fullRule: 'required_if:type,special',
+                ),
+            ],
+            enum: new EnumInfo(
+                class: 'App\\Enums\\Status',
+                values: ['active', 'inactive'],
+                backingType: EnumBackingType::STRING,
+            ),
+            fileInfo: null,
+        );
+
+        $array = $original->toArray();
+        $restored = ParameterDefinition::fromArray($array);
+
+        $this->assertEquals($original->name, $restored->name);
+        $this->assertEquals($original->in, $restored->in);
+        $this->assertEquals($original->required, $restored->required);
+        $this->assertEquals($original->type, $restored->type);
+        $this->assertEquals($original->conditionalRequired, $restored->conditionalRequired);
+        $this->assertCount(1, $restored->conditionalRules);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $restored->conditionalRules[0]);
+        $this->assertEquals('required_if', $restored->conditionalRules[0]->type);
+        $this->assertInstanceOf(EnumInfo::class, $restored->enum);
+        $this->assertEquals($original->enum->class, $restored->enum->class);
     }
 }
