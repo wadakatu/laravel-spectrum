@@ -20,6 +20,13 @@ class SchemaRegistry
     private array $schemas = [];
 
     /**
+     * Pending references (schemas referenced but may not be registered yet).
+     *
+     * @var array<string, bool>
+     */
+    private array $pendingReferences = [];
+
+    /**
      * Register a schema with the given name.
      *
      * @param  string  $name  Schema name (e.g., "UserResource")
@@ -49,13 +56,45 @@ class SchemaRegistry
     }
 
     /**
-     * Get a $ref reference for a registered schema.
+     * Get a $ref reference for a schema.
+     *
+     * Tracks the reference for later validation.
      *
      * @return array<string, string> Reference array with '$ref' key
      */
     public function getRef(string $name): array
     {
+        $this->pendingReferences[$name] = true;
+
         return ['$ref' => '#/components/schemas/'.$name];
+    }
+
+    /**
+     * Get all pending references.
+     *
+     * @return array<int, string>
+     */
+    public function getPendingReferences(): array
+    {
+        return array_keys($this->pendingReferences);
+    }
+
+    /**
+     * Validate that all referenced schemas are registered.
+     *
+     * @return array<int, string> List of broken (unregistered) references
+     */
+    public function validateReferences(): array
+    {
+        $brokenRefs = [];
+
+        foreach ($this->pendingReferences as $name => $referenced) {
+            if (! $this->has($name)) {
+                $brokenRefs[] = $name;
+            }
+        }
+
+        return $brokenRefs;
     }
 
     /**
@@ -69,11 +108,12 @@ class SchemaRegistry
     }
 
     /**
-     * Clear all registered schemas.
+     * Clear all registered schemas and pending references.
      */
     public function clear(): void
     {
         $this->schemas = [];
+        $this->pendingReferences = [];
     }
 
     /**
