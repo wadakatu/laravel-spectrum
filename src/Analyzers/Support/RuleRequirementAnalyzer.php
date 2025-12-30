@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Analyzers\Support;
 
+use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\DTO\ConditionalRuleDetail;
 
 /**
@@ -143,18 +144,15 @@ class RuleRequirementAnalyzer
     /**
      * Normalize rules to array format.
      *
-     * @param  string|array|null  $rules
+     * @param  string|array<mixed>|null  $rules
+     * @return array<mixed>
      */
-    private function normalizeRules($rules): array
+    private function normalizeRules(string|array|null $rules): array
     {
-        if (is_string($rules)) {
-            return $rules === '' ? [] : explode('|', $rules);
+        if ($rules === null) {
+            return [];
         }
 
-        if (is_array($rules)) {
-            return $rules;
-        }
-
-        return [];
+        return ValidationRuleCollection::from($rules)->all();
     }
 }

@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
@@ -349,7 +350,7 @@ class SchemaGenerator
         $required = [];
 
         foreach ($ruleSet['rules'] as $field => $rules) {
-            $rulesList = is_string($rules) ? explode('|', $rules) : $rules;
+            $rulesList = ValidationRuleCollection::from($rules)->all();
 
             $property = [
                 'type' => $this->typeInference->inferFromRules($rulesList),
