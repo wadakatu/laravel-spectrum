@@ -18,6 +18,7 @@ use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\DTO\RouteAuthentication;
+use LaravelSpectrum\DTO\TagDefinition;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -1336,8 +1337,8 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->with(['Posts', 'Users'])
             ->andReturn([
-                ['name' => 'Posts'],
-                ['name' => 'Users'],
+                new TagDefinition(name: 'Posts'),
+                new TagDefinition(name: 'Users'),
             ]);
         $this->tagGroupGenerator->shouldReceive('generateTagGroups')->andReturn([]);
 
@@ -1433,7 +1434,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->tagGroupGenerator->shouldReceive('generateTagDefinitions')
             ->once()
             ->with(['Users'])
-            ->andReturn([['name' => 'Users']]);
+            ->andReturn([new TagDefinition(name: 'Users')]);
         $this->tagGroupGenerator->shouldReceive('generateTagGroups')->andReturn([]);
 
         // Recreate generator with updated mock
