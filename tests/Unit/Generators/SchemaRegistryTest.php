@@ -171,4 +171,83 @@ class SchemaRegistryTest extends TestCase
     {
         $this->assertNull($this->registry->get('NonExistentResource'));
     }
+
+    #[Test]
+    public function it_tracks_pending_references(): void
+    {
+        // Get a reference without registering the schema first
+        $this->registry->getRef('UnregisteredResource');
+
+        $pendingRefs = $this->registry->getPendingReferences();
+
+        $this->assertContains('UnregisteredResource', $pendingRefs);
+    }
+
+    #[Test]
+    public function it_validates_all_references_are_resolved(): void
+    {
+        // Register a schema
+        $this->registry->register('UserResource', ['type' => 'object']);
+
+        // Get refs for both registered and unregistered
+        $this->registry->getRef('UserResource');
+        $this->registry->getRef('UnregisteredResource');
+
+        $brokenRefs = $this->registry->validateReferences();
+
+        $this->assertCount(1, $brokenRefs);
+        $this->assertContains('UnregisteredResource', $brokenRefs);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_when_all_references_are_valid(): void
+    {
+        $this->registry->register('UserResource', ['type' => 'object']);
+        $this->registry->register('PostResource', ['type' => 'object']);
+
+        $this->registry->getRef('UserResource');
+        $this->registry->getRef('PostResource');
+
+        $brokenRefs = $this->registry->validateReferences();
+
+        $this->assertEmpty($brokenRefs);
+    }
+
+    #[Test]
+    public function it_clears_pending_references_on_clear(): void
+    {
+        $this->registry->getRef('SomeResource');
+        $this->assertNotEmpty($this->registry->getPendingReferences());
+
+        $this->registry->clear();
+
+        $this->assertEmpty($this->registry->getPendingReferences());
+    }
+
+    #[Test]
+    public function it_does_not_duplicate_pending_references(): void
+    {
+        $this->registry->getRef('SameResource');
+        $this->registry->getRef('SameResource');
+        $this->registry->getRef('SameResource');
+
+        $pendingRefs = $this->registry->getPendingReferences();
+
+        $this->assertCount(1, $pendingRefs);
+    }
+
+    #[Test]
+    public function it_validates_forward_references_when_schema_registered_later(): void
+    {
+        // First get a reference (forward reference)
+        $this->registry->getRef('LateRegisteredResource');
+
+        // Then register the schema
+        $this->registry->register('LateRegisteredResource', ['type' => 'object']);
+
+        // Validation should pass
+        $brokenRefs = $this->registry->validateReferences();
+
+        $this->assertEmpty($brokenRefs);
+    }
 }
