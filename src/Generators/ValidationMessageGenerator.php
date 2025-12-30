@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Generators;
 
 use Illuminate\Support\Str;
+use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\Support\ValidationRules;
 
 class ValidationMessageGenerator
@@ -29,14 +30,12 @@ class ValidationMessageGenerator
         $messages = [];
 
         // ルールを配列に正規化
-        if (is_string($rules)) {
-            $rules = explode('|', $rules);
-        }
+        $ruleCollection = ValidationRuleCollection::from($rules);
 
-        $fieldType = ValidationRules::inferFieldType($rules);
+        $fieldType = ValidationRules::inferFieldType($ruleCollection->all());
         $humanField = $this->humanizeFieldName($field);
 
-        foreach ($rules as $rule) {
+        foreach ($ruleCollection as $rule) {
             // Rule::unique() のようなオブジェクトの場合はスキップ
             if (! is_string($rule)) {
                 continue;

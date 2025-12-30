@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
+use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\DTO\FileUploadInfo;
 use LaravelSpectrum\DTO\ParameterDefinition;
@@ -49,7 +50,7 @@ class ParameterBuilder
                 continue;
             }
 
-            $ruleArray = is_array($rule) ? $rule : explode('|', $rule);
+            $ruleArray = ValidationRuleCollection::from($rule)->all();
 
             // Check if this is a file upload field
             if (isset($fileFields[$field])) {
@@ -127,7 +128,7 @@ class ParameterBuilder
 
                 $processedFields[$field]['rules_by_condition'][] = [
                     'conditions' => $ruleSet['conditions'] ?? [],
-                    'rules' => is_array($rule) ? $rule : explode('|', $rule),
+                    'rules' => ValidationRuleCollection::from($rule)->all(),
                 ];
             }
         }
