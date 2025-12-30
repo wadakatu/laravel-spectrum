@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Tests\Unit\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
+use LaravelSpectrum\DTO\ConditionalRuleDetail;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -64,9 +67,10 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
 
         $this->assertCount(1, $details);
-        $this->assertEquals('required_if', $details[0]['type']);
-        $this->assertEquals('status,active', $details[0]['parameters']);
-        $this->assertEquals('required_if:status,active', $details[0]['full_rule']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertEquals('required_if', $details[0]->type);
+        $this->assertEquals('status,active', $details[0]->parameters);
+        $this->assertEquals('required_if:status,active', $details[0]->fullRule);
     }
 
     #[Test]
@@ -76,8 +80,9 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
 
         $this->assertCount(1, $details);
-        $this->assertEquals('prohibited_if', $details[0]['type']);
-        $this->assertEquals('status,inactive', $details[0]['parameters']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertEquals('prohibited_if', $details[0]->type);
+        $this->assertEquals('status,inactive', $details[0]->parameters);
     }
 
     #[Test]
@@ -87,8 +92,9 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
 
         $this->assertCount(1, $details);
-        $this->assertEquals('exclude_if', $details[0]['type']);
-        $this->assertEquals('role,guest', $details[0]['parameters']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertEquals('exclude_if', $details[0]->type);
+        $this->assertEquals('role,guest', $details[0]->parameters);
     }
 
     #[Test]
@@ -98,8 +104,10 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
 
         $this->assertCount(2, $details);
-        $this->assertEquals('required_if', $details[0]['type']);
-        $this->assertEquals('prohibited_unless', $details[1]['type']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[1]);
+        $this->assertEquals('required_if', $details[0]->type);
+        $this->assertEquals('prohibited_unless', $details[1]->type);
     }
 
     #[Test]
@@ -141,7 +149,8 @@ class RuleRequirementAnalyzerTest extends TestCase
 
         $details = $this->analyzer->extractConditionalRuleDetails('required_with:email|string');
         $this->assertCount(1, $details);
-        $this->assertEquals('required_with', $details[0]['type']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertEquals('required_with', $details[0]->type);
     }
 
     #[Test]
@@ -183,8 +192,10 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
 
         $this->assertCount(2, $details);
-        $this->assertEquals('prohibited_with', $details[0]['type']);
-        $this->assertEquals('prohibited_without', $details[1]['type']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[1]);
+        $this->assertEquals('prohibited_with', $details[0]->type);
+        $this->assertEquals('prohibited_without', $details[1]->type);
     }
 
     #[Test]
@@ -194,9 +205,12 @@ class RuleRequirementAnalyzerTest extends TestCase
         $details = $this->analyzer->extractConditionalRuleDetails($rules);
 
         $this->assertCount(3, $details);
-        $this->assertEquals('exclude_unless', $details[0]['type']);
-        $this->assertEquals('exclude_with', $details[1]['type']);
-        $this->assertEquals('exclude_without', $details[2]['type']);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[0]);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[1]);
+        $this->assertInstanceOf(ConditionalRuleDetail::class, $details[2]);
+        $this->assertEquals('exclude_unless', $details[0]->type);
+        $this->assertEquals('exclude_with', $details[1]->type);
+        $this->assertEquals('exclude_without', $details[2]->type);
     }
 
     #[Test]

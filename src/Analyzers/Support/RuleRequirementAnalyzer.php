@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers\Support;
+
+use LaravelSpectrum\DTO\ConditionalRuleDetail;
 
 /**
  * Analyzes validation rules for requirement conditions.
@@ -84,7 +88,8 @@ class RuleRequirementAnalyzer
     /**
      * Extract details of conditional rules.
      *
-     * @param  string|array  $rules
+     * @param  string|array<mixed>  $rules
+     * @return array<int, ConditionalRuleDetail>
      */
     public function extractConditionalRuleDetails($rules): array
     {
@@ -107,11 +112,11 @@ class RuleRequirementAnalyzer
             );
 
             if (in_array($ruleName, $allConditionalRules)) {
-                $conditionalRules[] = [
-                    'type' => $ruleName,
-                    'parameters' => $ruleParams,
-                    'full_rule' => $rule,
-                ];
+                $conditionalRules[] = new ConditionalRuleDetail(
+                    type: $ruleName,
+                    parameters: $ruleParams,
+                    fullRule: $rule,
+                );
             }
         }
 

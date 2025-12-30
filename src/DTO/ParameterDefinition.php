@@ -22,7 +22,7 @@ final readonly class ParameterDefinition
      * @param  array<string>  $validation  Validation rules from Laravel
      * @param  string|null  $format  OpenAPI format (email, date, date-time, uuid, binary, etc.)
      * @param  bool|null  $conditionalRequired  Whether conditionally required (only set when true)
-     * @param  array<array<string, mixed>>|null  $conditionalRules  Conditional rule details
+     * @param  array<int, ConditionalRuleDetail|array<string, mixed>>|null  $conditionalRules  Conditional rule details
      * @param  EnumInfo|null  $enum  Enum information if this is an enum field
      * @param  FileUploadInfo|null  $fileInfo  File upload metadata if this is a file field
      */
@@ -90,6 +90,16 @@ final readonly class ParameterDefinition
             }
         }
 
+        $conditionalRules = null;
+        if (isset($data['conditional_rules']) && is_array($data['conditional_rules'])) {
+            $conditionalRules = [];
+            foreach ($data['conditional_rules'] as $rule) {
+                $conditionalRules[] = $rule instanceof ConditionalRuleDetail
+                    ? $rule
+                    : ConditionalRuleDetail::fromArray($rule);
+            }
+        }
+
         return new self(
             name: $data['name'],
             in: $data['in'] ?? 'body',
@@ -100,7 +110,7 @@ final readonly class ParameterDefinition
             validation: $data['validation'] ?? [],
             format: $data['format'] ?? null,
             conditionalRequired: $data['conditional_required'] ?? null,
-            conditionalRules: $data['conditional_rules'] ?? null,
+            conditionalRules: $conditionalRules,
             enum: $enum,
             fileInfo: $fileInfo,
         );
@@ -132,7 +142,12 @@ final readonly class ParameterDefinition
         }
 
         if ($this->conditionalRules !== null) {
-            $result['conditional_rules'] = $this->conditionalRules;
+            $result['conditional_rules'] = array_map(
+                fn (ConditionalRuleDetail|array $rule) => $rule instanceof ConditionalRuleDetail
+                    ? $rule->toArray()
+                    : $rule,
+                $this->conditionalRules
+            );
         }
 
         if ($this->enum !== null) {
