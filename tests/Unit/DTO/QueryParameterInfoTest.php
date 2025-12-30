@@ -104,6 +104,69 @@ class QueryParameterInfoTest extends TestCase
     }
 
     #[Test]
+    public function it_converts_to_array_with_enum(): void
+    {
+        $info = new QueryParameterInfo(
+            name: 'status',
+            type: 'string',
+            required: true,
+            default: 'active',
+            source: 'input',
+            description: 'Filter by status',
+            enum: ['active', 'inactive', 'pending'],
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayHasKey('enum', $array);
+        $this->assertEquals(['active', 'inactive', 'pending'], $array['enum']);
+        $this->assertEquals('Filter by status', $array['description']);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_enum(): void
+    {
+        $data = [
+            'name' => 'status',
+            'type' => 'string',
+            'enum' => ['pending', 'approved', 'rejected'],
+        ];
+
+        $info = QueryParameterInfo::fromArray($data);
+
+        $this->assertEquals('status', $info->name);
+        $this->assertEquals(['pending', 'approved', 'rejected'], $info->enum);
+    }
+
+    #[Test]
+    public function it_survives_serialization_round_trip(): void
+    {
+        $original = new QueryParameterInfo(
+            name: 'filter',
+            type: 'string',
+            required: true,
+            default: null,
+            source: 'input',
+            description: 'Filter parameter',
+            enum: ['all', 'active', 'inactive'],
+            validationRules: ['required', 'in:all,active,inactive'],
+            context: ['method' => 'index'],
+        );
+
+        $restored = QueryParameterInfo::fromArray($original->toArray());
+
+        $this->assertEquals($original->name, $restored->name);
+        $this->assertEquals($original->type, $restored->type);
+        $this->assertEquals($original->required, $restored->required);
+        $this->assertEquals($original->default, $restored->default);
+        $this->assertEquals($original->source, $restored->source);
+        $this->assertEquals($original->description, $restored->description);
+        $this->assertEquals($original->enum, $restored->enum);
+        $this->assertEquals($original->validationRules, $restored->validationRules);
+        $this->assertEquals($original->context, $restored->context);
+    }
+
+    #[Test]
     public function it_creates_immutable_copy_with_validation_rules(): void
     {
         $original = new QueryParameterInfo(

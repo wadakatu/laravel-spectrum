@@ -528,4 +528,101 @@ class AuthenticationSchemeTest extends TestCase
         $this->assertArrayHasKey('openIdConnectUrl', $array);
         $this->assertEquals('https://example.com/.well-known/openid-configuration', $array['openIdConnectUrl']);
     }
+
+    #[Test]
+    public function it_converts_to_array_with_api_key_fields(): void
+    {
+        $scheme = new AuthenticationScheme(
+            type: AuthenticationType::API_KEY,
+            name: 'apiKeyAuth',
+            in: 'header',
+            headerName: 'X-API-Key',
+            description: 'API Key authentication',
+        );
+
+        $array = $scheme->toArray();
+
+        $this->assertArrayHasKey('in', $array);
+        $this->assertArrayHasKey('headerName', $array);
+        $this->assertEquals('header', $array['in']);
+        $this->assertEquals('X-API-Key', $array['headerName']);
+        $this->assertEquals('apiKey', $array['type']);
+        $this->assertEquals('apiKeyAuth', $array['name']);
+        $this->assertEquals('API Key authentication', $array['description']);
+    }
+
+    #[Test]
+    public function it_converts_to_array_with_oauth2_flows(): void
+    {
+        $flows = [
+            'authorizationCode' => [
+                'authorizationUrl' => 'https://example.com/oauth/authorize',
+                'tokenUrl' => 'https://example.com/oauth/token',
+                'scopes' => [
+                    'read' => 'Read access',
+                    'write' => 'Write access',
+                ],
+            ],
+        ];
+
+        $scheme = new AuthenticationScheme(
+            type: AuthenticationType::OAUTH2,
+            name: 'oauth2Auth',
+            flows: $flows,
+            description: 'OAuth2 authentication',
+        );
+
+        $array = $scheme->toArray();
+
+        $this->assertArrayHasKey('flows', $array);
+        $this->assertEquals($flows, $array['flows']);
+        $this->assertEquals('oauth2', $array['type']);
+        $this->assertEquals('oauth2Auth', $array['name']);
+        $this->assertEquals('OAuth2 authentication', $array['description']);
+    }
+
+    #[Test]
+    public function it_survives_serialization_round_trip_for_api_key(): void
+    {
+        $original = new AuthenticationScheme(
+            type: AuthenticationType::API_KEY,
+            name: 'apiKeyAuth',
+            in: 'header',
+            headerName: 'X-Custom-Key',
+            description: 'Custom API key auth',
+        );
+
+        $restored = AuthenticationScheme::fromArray($original->toArray());
+
+        $this->assertEquals($original->type, $restored->type);
+        $this->assertEquals($original->name, $restored->name);
+        $this->assertEquals($original->in, $restored->in);
+        $this->assertEquals($original->headerName, $restored->headerName);
+        $this->assertEquals($original->description, $restored->description);
+    }
+
+    #[Test]
+    public function it_survives_serialization_round_trip_for_oauth2(): void
+    {
+        $flows = [
+            'password' => [
+                'tokenUrl' => '/oauth/token',
+                'scopes' => ['read' => 'Read access'],
+            ],
+        ];
+
+        $original = new AuthenticationScheme(
+            type: AuthenticationType::OAUTH2,
+            name: 'oauth2Auth',
+            flows: $flows,
+            description: 'OAuth2 password flow',
+        );
+
+        $restored = AuthenticationScheme::fromArray($original->toArray());
+
+        $this->assertEquals($original->type, $restored->type);
+        $this->assertEquals($original->name, $restored->name);
+        $this->assertEquals($original->flows, $restored->flows);
+        $this->assertEquals($original->description, $restored->description);
+    }
 }
