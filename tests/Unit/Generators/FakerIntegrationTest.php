@@ -43,11 +43,13 @@ class FakerIntegrationTest extends TestCase
 
         $phone = $valueFactory->create('phone_number', ['type' => 'string']);
 
-        // Japanese phone numbers have various formats:
-        // - Mobile: 0[789]0-XXXX-XXXX
-        // - Landline: 0X-XXXX-XXXX, 0XX-XXX-XXXX, 0XXX-XX-XXXX
-        // Just verify it starts with 0 and contains digits with dashes
-        $this->assertMatchesRegularExpression('/^0\d{1,4}-\d{2,4}-\d{3,4}$/', $phone);
+        // Japanese phone numbers have highly variable formats:
+        // - Mobile: 0[789]0-XXXX-XXXX (e.g., 090-1234-5678)
+        // - Urban landline: 0X-XXXX-XXXX (e.g., 03-1234-5678)
+        // - Regional: 0XX-XXX-XXXX (e.g., 045-123-4567)
+        // - Rural: 0XXXX-X-XXXX (e.g., 09792-9-4944)
+        // Just verify it starts with 0 and follows digit-dash pattern
+        $this->assertMatchesRegularExpression('/^0\d{1,4}-\d{1,4}-\d{3,4}$/', $phone);
     }
 
     #[Test]
