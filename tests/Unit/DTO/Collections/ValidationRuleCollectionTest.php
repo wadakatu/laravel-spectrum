@@ -277,4 +277,28 @@ class ValidationRuleCollectionTest extends TestCase
 
         $this->assertFalse($collection->hasFileRule());
     }
+
+    #[Test]
+    public function it_maintains_sequential_indexes_after_get_non_file_rules(): void
+    {
+        $collection = ValidationRuleCollection::fromString('file|required|image|email');
+
+        $nonFileRules = $collection->getNonFileRules();
+
+        // Verify first() and last() work correctly (would fail if indexes not resequenced)
+        $this->assertEquals('required', $nonFileRules->first());
+        $this->assertEquals('email', $nonFileRules->last());
+        $this->assertEquals(['required', 'email'], $nonFileRules->all());
+    }
+
+    #[Test]
+    public function it_does_not_misidentify_rules_with_colon_as_file_rules(): void
+    {
+        // Specifically test rules that have colons but are NOT file rules
+        $collection = ValidationRuleCollection::fromString('max:1024|min:1|regex:/^[a-z]+$/|in:foo,bar');
+
+        $this->assertFalse($collection->hasFileRule());
+        $this->assertCount(0, $collection->getFileRules());
+        $this->assertCount(4, $collection->getNonFileRules());
+    }
 }

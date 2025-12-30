@@ -205,4 +205,17 @@ class AbstractCollectionTest extends TestCase
 
         $this->assertEquals(17, $result);
     }
+
+    #[Test]
+    public function it_returns_initial_value_when_reducing_empty_collection(): void
+    {
+        $collection = StringCollection::empty();
+
+        $result = $collection->reduce(
+            fn (int $carry, string $item): int => $carry + strlen($item),
+            42
+        );
+
+        $this->assertEquals(42, $result);
+    }
 }
