@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Tests\Fixtures\Controllers\CommentController;
+use LaravelSpectrum\Tests\Fixtures\Controllers\InvokableTestController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\PageController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\ProfileController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\SearchController;
@@ -131,5 +132,22 @@ class RouteAnalyzerTest extends TestCase
         // Assert
         $this->assertCount(1, $routes);
         $this->assertEquals('api/users', $routes[0]['uri']);
+    }
+
+    #[Test]
+    public function it_handles_invokable_controller_with_invoke_method(): void
+    {
+        // Arrange - Register an invokable controller route
+        Route::post('api/invokable', InvokableTestController::class);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(1, $routes);
+        $this->assertEquals('api/invokable', $routes[0]['uri']);
+        $this->assertEquals(InvokableTestController::class, $routes[0]['controller']);
+        // The method should be __invoke, not the class name
+        $this->assertEquals('__invoke', $routes[0]['method']);
     }
 }

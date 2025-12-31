@@ -202,6 +202,23 @@ class RouteAnalyzer implements HasErrors
                     continue;
                 }
 
+                // For invokable controllers, getActionMethod() returns the class name
+                // We need to extract the actual method name
+                $controllerClass = get_class($controller);
+                if ($method === $controllerClass) {
+                    // Check if this is an invokable controller
+                    if (method_exists($controller, '__invoke')) {
+                        $method = '__invoke';
+                    } else {
+                        // Extract method from 'uses' (e.g., "Controller@method")
+                        $uses = $action['uses'] ?? null;
+                        if (is_string($uses) && str_contains($uses, '@')) {
+                            $parts = explode('@', $uses);
+                            $method = $parts[1] ?? $method;
+                        }
+                    }
+                }
+
                 $routes[] = new RouteInfo(
                     uri: $route->uri(),
                     httpMethods: $route->methods(),
