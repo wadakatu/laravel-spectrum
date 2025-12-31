@@ -742,4 +742,118 @@ class ResourceStructureVisitorTest extends TestCase
         $this->assertEquals('string', $structure['properties']['iso_formatted']['type']);
         $this->assertTrue($structure['properties']['iso_formatted']['nullable']);
     }
+
+    #[Test]
+    public function it_handles_merge_when_pattern_without_crashing()
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'name' => $this->name,
+                    $this->mergeWhen($request->has('full'), [
+                        'created_at' => $this->created_at,
+                        'updated_at' => $this->updated_at,
+                    ]),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+
+        // This should not throw an exception
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Basic properties should still be extracted
+        $this->assertArrayHasKey('id', $structure['properties']);
+        $this->assertArrayHasKey('name', $structure['properties']);
+
+        // mergeWhen properties should be extracted as conditional
+        $this->assertArrayHasKey('created_at', $structure['properties']);
+        $this->assertArrayHasKey('updated_at', $structure['properties']);
+        $this->assertTrue($structure['properties']['created_at']['conditional']);
+        $this->assertTrue($structure['properties']['updated_at']['conditional']);
+        $this->assertEquals('mergeWhen', $structure['properties']['created_at']['condition']);
+        $this->assertEquals('mergeWhen', $structure['properties']['updated_at']['condition']);
+    }
+
+    #[Test]
+    public function it_handles_merge_pattern_without_crashing()
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    $this->merge([
+                        'extra_field' => $this->extra,
+                        'another_field' => $this->another,
+                    ]),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+
+        // This should not throw an exception
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Basic properties should still be extracted
+        $this->assertArrayHasKey('id', $structure['properties']);
+
+        // merge properties should be extracted
+        $this->assertArrayHasKey('extra_field', $structure['properties']);
+        $this->assertArrayHasKey('another_field', $structure['properties']);
+    }
+
+    #[Test]
+    public function it_handles_keyless_array_items_gracefully()
+    {
+        // Test that keyless array items (like spread operator results) don't crash
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    ...$this->getExtraFields(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+
+        // This should not throw an exception
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Basic properties should still be extracted
+        $this->assertArrayHasKey('id', $structure['properties']);
+    }
 }
