@@ -203,20 +203,11 @@ class RouteAnalyzer implements HasErrors
                 }
 
                 // For invokable controllers, getActionMethod() returns the class name
-                // We need to extract the actual method name
+                // We need to use '__invoke' as the method name
+                // Laravel ensures invokable controllers have __invoke method
                 $controllerClass = get_class($controller);
-                if ($method === $controllerClass) {
-                    // Check if this is an invokable controller
-                    if (method_exists($controller, '__invoke')) {
-                        $method = '__invoke';
-                    } else {
-                        // Extract method from 'uses' (e.g., "Controller@method")
-                        $uses = $action['uses'] ?? null;
-                        if (is_string($uses) && str_contains($uses, '@')) {
-                            $parts = explode('@', $uses);
-                            $method = $parts[1] ?? $method;
-                        }
-                    }
+                if ($method === $controllerClass && method_exists($controller, '__invoke')) {
+                    $method = '__invoke';
                 }
 
                 $routes[] = new RouteInfo(
