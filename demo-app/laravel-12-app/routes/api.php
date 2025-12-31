@@ -101,9 +101,9 @@ Route::prefix('anonymous-form-request')->group(function () {
 // Comprehensive OpenAPI Generation Tests
 // ============================================
 
+use App\Http\Controllers\Api\V2\UserController as V2UserController;
 use App\Http\Controllers\ComprehensiveTestController;
 use App\Http\Controllers\InvokableController;
-use App\Http\Controllers\Api\V2\UserController as V2UserController;
 
 // 1. Nested Resources
 Route::prefix('nested')->group(function () {
@@ -188,8 +188,8 @@ Route::prefix('v2')->group(function () {
 // OSS Pattern Tests (from real Laravel projects)
 // ============================================
 
-use App\Http\Controllers\OssPatternController;
 use App\Http\Controllers\ConditionalResourceController;
+use App\Http\Controllers\OssPatternController;
 
 Route::prefix('oss')->group(function () {
     // JSON API style filtering (Spatie Query Builder pattern)

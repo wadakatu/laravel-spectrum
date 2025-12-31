@@ -17,8 +17,9 @@ class UserService
     /**
      * Create a user with internal validation.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
+     *
      * @throws ValidationException
      */
     public function createUser(array $data): array
@@ -44,8 +45,7 @@ class UserService
     /**
      * Update a user.
      *
-     * @param int $id
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     public function updateUser(int $id, array $data): array

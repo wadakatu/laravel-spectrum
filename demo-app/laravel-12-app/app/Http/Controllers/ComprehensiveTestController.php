@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\UserResource;
 use App\Http\Resources\PostResource;
-use App\Models\User;
+use App\Http\Resources\UserResource;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -65,6 +65,7 @@ class ComprehensiveTestController extends Controller
     public function findByUuid(string $uuid): UserResource
     {
         $user = User::where('uuid', $uuid)->firstOrFail();
+
         return new UserResource($user);
     }
 
@@ -74,6 +75,7 @@ class ComprehensiveTestController extends Controller
     public function findBySlug(string $slug): UserResource
     {
         $user = User::where('slug', $slug)->firstOrFail();
+
         return new UserResource($user);
     }
 
@@ -118,7 +120,7 @@ class ComprehensiveTestController extends Controller
 
         return response()->json([
             'message' => 'Job queued for processing',
-            'job_id' => 'job_' . uniqid(),
+            'job_id' => 'job_'.uniqid(),
         ], 202);
     }
 
@@ -239,6 +241,7 @@ class ComprehensiveTestController extends Controller
     public function downloadFile(int $id): BinaryFileResponse
     {
         $path = storage_path('app/files/document.pdf');
+
         return response()->download($path, 'document.pdf');
     }
 
@@ -262,6 +265,7 @@ class ComprehensiveTestController extends Controller
     public function getImage(string $filename): Response
     {
         $content = file_get_contents(storage_path("app/images/{$filename}"));
+
         return response($content, 200, [
             'Content-Type' => 'image/png',
         ]);
@@ -277,6 +281,7 @@ class ComprehensiveTestController extends Controller
     public function xmlResponse(): Response
     {
         $xml = '<?xml version="1.0"?><root><item>test</item></root>';
+
         return response($xml, 200, [
             'Content-Type' => 'application/xml',
         ]);
@@ -324,7 +329,7 @@ class ComprehensiveTestController extends Controller
             return response()->json(['item' => ['id' => $ids['ids'][0]]]);
         }
 
-        return response()->json(['items' => array_map(fn($id) => ['id' => $id], $ids['ids'])]);
+        return response()->json(['items' => array_map(fn ($id) => ['id' => $id], $ids['ids'])]);
     }
 
     // ========================================

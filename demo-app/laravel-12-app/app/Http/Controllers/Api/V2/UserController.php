@@ -49,6 +49,7 @@ class UserController extends Controller
         // If fields specified, return filtered response
         if (isset($validated['fields'])) {
             $fields = explode(',', $validated['fields']);
+
             return response()->json([
                 'data' => collect($user->toArray())->only($fields),
             ]);

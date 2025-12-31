@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
-use App\Http\Resources\PostResource;
 use App\Models\User;
-use App\Models\Post;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,7 +89,7 @@ class OssPatternController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $id,
+            'email' => 'sometimes|email|unique:users,email,'.$id,
             'settings' => 'nullable|array',
         ]);
 
@@ -260,7 +258,7 @@ class OssPatternController extends Controller
         return response()->json(['data' => 'test'])
             ->header('X-RateLimit-Limit', '60')
             ->header('X-RateLimit-Remaining', '59')
-            ->header('X-RateLimit-Reset', (string)(time() + 3600));
+            ->header('X-RateLimit-Reset', (string) (time() + 3600));
     }
 
     // ========================================
@@ -301,7 +299,7 @@ class OssPatternController extends Controller
         ]);
 
         return response()->json([
-            'id' => 'txn_' . uniqid(),
+            'id' => 'txn_'.uniqid(),
             'idempotency_key' => $idempotencyKey,
             'data' => $validated,
         ], 201);

@@ -33,7 +33,7 @@ class ConditionalResourceController extends Controller
             $allowedIncludes = ['posts', 'comments', 'profile'];
             $validIncludes = array_intersect($includes, $allowedIncludes);
 
-            if (!empty($validIncludes)) {
+            if (! empty($validIncludes)) {
                 $query->with($validIncludes);
             }
         }
@@ -62,7 +62,7 @@ class ConditionalResourceController extends Controller
             $allowedCounts = ['posts', 'comments'];
             $validCounts = array_intersect($counts, $allowedCounts);
 
-            if (!empty($validCounts)) {
+            if (! empty($validCounts)) {
                 $query->withCount($validCounts);
             }
         }
