@@ -50,7 +50,32 @@ class SchemaGenerator
             return $this->generateMultipartSchema($normalFields, $fileFields);
         }
 
-        // Otherwise, generate normal JSON schema
+        // Check if we have nested parameters (dot notation)
+        $hasNestedParams = false;
+        foreach ($parameters as $parameter) {
+            if (isset($parameter['name']) && str_contains($parameter['name'], '.')) {
+                $hasNestedParams = true;
+                break;
+            }
+        }
+
+        // If we have nested parameters, build nested schema
+        if ($hasNestedParams) {
+            return $this->buildNestedSchema($parameters);
+        }
+
+        // Otherwise, generate flat JSON schema
+        return $this->buildFlatSchema($parameters);
+    }
+
+    /**
+     * Build a flat schema from parameters (no nesting)
+     *
+     * @param  array<array<string, mixed>>  $parameters
+     * @return array<string, mixed>
+     */
+    private function buildFlatSchema(array $parameters): array
+    {
         $properties = [];
         $required = [];
 
@@ -79,6 +104,272 @@ class SchemaGenerator
         }
 
         return $schema;
+    }
+
+    /**
+     * Build a nested schema from parameters with dot notation
+     *
+     * @param  array<array<string, mixed>>  $parameters
+     * @return array<string, mixed>
+     */
+    private function buildNestedSchema(array $parameters): array
+    {
+        // Build a tree structure from flat parameters
+        $tree = $this->buildParameterTree($parameters);
+
+        // Convert tree to OpenAPI schema
+        return $this->convertTreeToSchema($tree);
+    }
+
+    /**
+     * Build a tree structure from flat parameters
+     *
+     * @param  array<array<string, mixed>>  $parameters
+     * @return array<string, mixed>
+     */
+    private function buildParameterTree(array $parameters): array
+    {
+        $tree = [];
+
+        foreach ($parameters as $parameter) {
+            if (! isset($parameter['name'])) {
+                continue;
+            }
+
+            $name = $parameter['name'];
+            $parts = $this->parseFieldPath($name);
+
+            $this->insertIntoTree($tree, $parts, $parameter);
+        }
+
+        return $tree;
+    }
+
+    /**
+     * Parse field path into parts, handling .* notation
+     *
+     * @return array<array{name: string, isArray: bool}>
+     */
+    private function parseFieldPath(string $name): array
+    {
+        $parts = [];
+        $segments = explode('.', $name);
+
+        foreach ($segments as $segment) {
+            if ($segment === '*') {
+                // Mark previous segment as array
+                if (! empty($parts)) {
+                    $parts[count($parts) - 1]['isArray'] = true;
+                }
+            } else {
+                $parts[] = [
+                    'name' => $segment,
+                    'isArray' => false,
+                ];
+            }
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Insert parameter into tree structure
+     *
+     * @param  array<string, mixed>  $tree
+     * @param  array<array{name: string, isArray: bool}>  $parts
+     * @param  array<string, mixed>  $parameter
+     */
+    private function insertIntoTree(array &$tree, array $parts, array $parameter): void
+    {
+        if (empty($parts)) {
+            return;
+        }
+
+        $current = &$tree;
+        $lastIndex = count($parts) - 1;
+
+        foreach ($parts as $index => $part) {
+            $name = $part['name'];
+            $isArray = $part['isArray'];
+            $isLast = ($index === $lastIndex);
+
+            if (! isset($current[$name])) {
+                $current[$name] = [
+                    '_isArray' => false,
+                    '_parameter' => null,
+                    '_children' => [],
+                    '_required' => false,
+                ];
+            }
+
+            // Update array flag
+            if ($isArray) {
+                $current[$name]['_isArray'] = true;
+            }
+
+            if ($isLast) {
+                // This is the leaf node - store the parameter
+                $current[$name]['_parameter'] = $parameter;
+                if ($parameter['required'] ?? false) {
+                    $current[$name]['_required'] = true;
+                }
+            } else {
+                // Navigate deeper
+                $current = &$current[$name]['_children'];
+            }
+        }
+    }
+
+    /**
+     * Convert tree structure to OpenAPI schema
+     *
+     * @param  array<string, mixed>  $tree
+     * @return array<string, mixed>
+     */
+    private function convertTreeToSchema(array $tree): array
+    {
+        $properties = [];
+        $required = [];
+
+        foreach ($tree as $name => $node) {
+            $schema = $this->convertNodeToSchema($node);
+            $properties[$name] = $schema;
+
+            // Check if this field is required at this level
+            if ($node['_required'] && ! $node['_isArray']) {
+                $required[] = $name;
+            } elseif ($node['_isArray'] && $node['_parameter'] !== null && ($node['_parameter']['required'] ?? false)) {
+                // Array parent is required
+                $required[] = $name;
+            }
+        }
+
+        $schema = [
+            'type' => 'object',
+            'properties' => $properties,
+        ];
+
+        if (! empty($required)) {
+            $schema['required'] = $required;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Convert a tree node to OpenAPI schema
+     *
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>
+     */
+    private function convertNodeToSchema(array $node): array
+    {
+        $isArray = $node['_isArray'];
+        $parameter = $node['_parameter'];
+        $children = $node['_children'];
+        $hasChildren = ! empty($children);
+
+        if ($isArray) {
+            // This is an array field
+            $schema = ['type' => 'array'];
+
+            if ($hasChildren) {
+                // Array with object items
+                $itemProperties = [];
+                $itemRequired = [];
+
+                foreach ($children as $childName => $childNode) {
+                    $itemProperties[$childName] = $this->convertNodeToSchema($childNode);
+                    if ($childNode['_required']) {
+                        $itemRequired[] = $childName;
+                    }
+                }
+
+                $items = [
+                    'type' => 'object',
+                    'properties' => $itemProperties,
+                ];
+
+                if (! empty($itemRequired)) {
+                    $items['required'] = $itemRequired;
+                }
+
+                $schema['items'] = $items;
+            } elseif ($parameter !== null) {
+                // Simple array without children - use parameter info for item type
+                $itemType = $this->inferArrayItemType($parameter);
+                $schema['items'] = ['type' => $itemType];
+            }
+
+            // Add description if available
+            if ($parameter !== null && isset($parameter['description'])) {
+                $schema['description'] = $parameter['description'];
+            }
+
+            return $schema;
+        }
+
+        if ($hasChildren) {
+            // This is a nested object
+            $properties = [];
+            $required = [];
+
+            foreach ($children as $childName => $childNode) {
+                $properties[$childName] = $this->convertNodeToSchema($childNode);
+                if ($childNode['_required']) {
+                    $required[] = $childName;
+                }
+            }
+
+            $schema = [
+                'type' => 'object',
+                'properties' => $properties,
+            ];
+
+            if (! empty($required)) {
+                $schema['required'] = $required;
+            }
+
+            // Add description if available
+            if ($parameter !== null && isset($parameter['description'])) {
+                $schema['description'] = $parameter['description'];
+            }
+
+            return $schema;
+        }
+
+        // Leaf node - just a simple field
+        if ($parameter !== null) {
+            $schema = $this->propertyMapper->mapType($parameter);
+
+            return $this->propertyMapper->mapAll($parameter, $schema);
+        }
+
+        // Fallback for nodes without parameter info
+        return ['type' => 'string'];
+    }
+
+    /**
+     * Infer the item type for array parameters
+     *
+     * @param  array<string, mixed>  $parameter
+     */
+    private function inferArrayItemType(array $parameter): string
+    {
+        // If validation includes specific item rules, use them
+        $validation = $parameter['validation'] ?? [];
+        foreach ($validation as $rule) {
+            if (is_string($rule)) {
+                if (str_contains($rule, 'integer') || str_contains($rule, 'numeric')) {
+                    return 'integer';
+                }
+                if (str_contains($rule, 'boolean')) {
+                    return 'boolean';
+                }
+            }
+        }
+
+        return 'string';
     }
 
     /**

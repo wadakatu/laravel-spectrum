@@ -644,9 +644,11 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateFromParameters($parameters);
 
-        // Array notation is kept as-is in property names
-        $this->assertArrayHasKey('items.*', $schema['properties']);
-        $this->assertEquals('string', $schema['properties']['items.*']['type']);
+        // items.* should be converted to proper array schema
+        $this->assertArrayHasKey('items', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['items']['type']);
+        $this->assertArrayHasKey('items', $schema['properties']['items']);
+        $this->assertEquals('string', $schema['properties']['items']['items']['type']);
     }
 
     #[Test]
@@ -673,6 +675,12 @@ class SchemaGeneratorTest extends TestCase
     {
         $parameters = [
             [
+                'name' => 'users',
+                'type' => 'array',
+                'required' => true,
+                'description' => 'User list',
+            ],
+            [
                 'name' => 'users.*.email',
                 'type' => 'string',
                 'required' => true,
@@ -682,8 +690,148 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateFromParameters($parameters);
 
-        // Nested array notation is kept as-is
-        $this->assertArrayHasKey('users.*.email', $schema['properties']);
+        // Nested array should generate proper nested schema
+        $this->assertArrayHasKey('users', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['users']['type']);
+        $this->assertArrayHasKey('items', $schema['properties']['users']);
+        $this->assertEquals('object', $schema['properties']['users']['items']['type']);
+        $this->assertArrayHasKey('email', $schema['properties']['users']['items']['properties']);
+        $this->assertEquals('string', $schema['properties']['users']['items']['properties']['email']['type']);
+    }
+
+    #[Test]
+    public function it_handles_deeply_nested_array_validation(): void
+    {
+        $parameters = [
+            [
+                'name' => 'users',
+                'type' => 'array',
+                'required' => true,
+                'description' => 'User list',
+            ],
+            [
+                'name' => 'users.*.name',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'User name',
+            ],
+            [
+                'name' => 'users.*.email',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'User email',
+                'format' => 'email',
+            ],
+            [
+                'name' => 'users.*.profile',
+                'type' => 'array',
+                'required' => false,
+                'description' => 'User profile',
+            ],
+            [
+                'name' => 'users.*.profile.bio',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'User bio',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Top level users array
+        $this->assertArrayHasKey('users', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['users']['type']);
+
+        // users.* items
+        $userItems = $schema['properties']['users']['items'];
+        $this->assertEquals('object', $userItems['type']);
+        $this->assertArrayHasKey('name', $userItems['properties']);
+        $this->assertArrayHasKey('email', $userItems['properties']);
+        $this->assertArrayHasKey('profile', $userItems['properties']);
+
+        // users.*.profile nested object
+        $profile = $userItems['properties']['profile'];
+        $this->assertEquals('object', $profile['type']);
+        $this->assertArrayHasKey('bio', $profile['properties']);
+        $this->assertEquals('string', $profile['properties']['bio']['type']);
+
+        // Required fields - name and email are required at users.* level
+        $this->assertContains('name', $userItems['required']);
+        $this->assertContains('email', $userItems['required']);
+    }
+
+    #[Test]
+    public function it_handles_nested_array_without_parent_definition(): void
+    {
+        // When only child fields are defined (common pattern)
+        $parameters = [
+            [
+                'name' => 'items.*.name',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Item name',
+            ],
+            [
+                'name' => 'items.*.quantity',
+                'type' => 'integer',
+                'required' => true,
+                'description' => 'Item quantity',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Should infer items as array with object items
+        $this->assertArrayHasKey('items', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['items']['type']);
+        $this->assertArrayHasKey('items', $schema['properties']['items']);
+
+        $itemSchema = $schema['properties']['items']['items'];
+        $this->assertEquals('object', $itemSchema['type']);
+        $this->assertArrayHasKey('name', $itemSchema['properties']);
+        $this->assertArrayHasKey('quantity', $itemSchema['properties']);
+    }
+
+    #[Test]
+    public function it_handles_simple_dot_notation_for_nested_objects(): void
+    {
+        // Nested object without array (no .*)
+        $parameters = [
+            [
+                'name' => 'address.street',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Street address',
+            ],
+            [
+                'name' => 'address.city',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'City',
+            ],
+            [
+                'name' => 'address.zip',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'ZIP code',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Should create nested object structure
+        $this->assertArrayHasKey('address', $schema['properties']);
+        $this->assertEquals('object', $schema['properties']['address']['type']);
+
+        $addressProps = $schema['properties']['address']['properties'];
+        $this->assertArrayHasKey('street', $addressProps);
+        $this->assertArrayHasKey('city', $addressProps);
+        $this->assertArrayHasKey('zip', $addressProps);
+
+        // Required fields
+        $this->assertContains('street', $schema['properties']['address']['required']);
+        $this->assertContains('city', $schema['properties']['address']['required']);
+        $this->assertNotContains('zip', $schema['properties']['address']['required'] ?? []);
     }
 
     #[Test]
