@@ -243,7 +243,7 @@ class ParameterBuilder
      * @param  array<string, string>  $attributes
      * @param  array<string, string>  $useStatements
      */
-    protected function buildConditionalParameter(
+    private function buildConditionalParameter(
         string $field,
         array $mergedRules,
         array $processedField,
@@ -253,6 +253,9 @@ class ParameterBuilder
     ): ParameterDefinition {
         // Check for enum rules
         $enumInfo = $this->findEnumInfo($mergedRules, $namespace, $useStatements);
+
+        // Determine format
+        $format = $this->formatInferrer->inferFormat($mergedRules);
 
         // Extract rules_by_condition with fallback for safety
         $rulesByCondition = $processedField['rules_by_condition'] ?? [];
@@ -268,6 +271,7 @@ class ParameterBuilder
             ),
             example: $this->typeInference->generateExample($field, $mergedRules),
             validation: $mergedRules,
+            format: $format,
             conditionalRules: $rulesByCondition,
             enum: $enumInfo,
         );

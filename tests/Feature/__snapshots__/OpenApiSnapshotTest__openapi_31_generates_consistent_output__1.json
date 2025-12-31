@@ -14,7 +14,6 @@
     "paths": {
         "/api/snapshot/users": {
             "get": {
-                "summary": "List all User",
                 "operationId": "getApiSnapshotUsers",
                 "tags": [
                     "Snapshot",
@@ -63,10 +62,10 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "List all User"
             },
             "head": {
-                "summary": "Head User",
                 "operationId": "headApiSnapshotUsers",
                 "tags": [
                     "Snapshot",
@@ -115,10 +114,10 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head User"
             },
             "post": {
-                "summary": "Create a new User",
                 "operationId": "postApiSnapshotUsers",
                 "tags": [
                     "Snapshot",
@@ -223,6 +222,7 @@
                         }
                     }
                 },
+                "summary": "Create a new User",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -238,7 +238,8 @@
                                     "email": {
                                         "type": "string",
                                         "description": "メールアドレス",
-                                        "example": "user@example.com"
+                                        "example": "user@example.com",
+                                        "format": "email"
                                     },
                                     "password": {
                                         "type": "string",
