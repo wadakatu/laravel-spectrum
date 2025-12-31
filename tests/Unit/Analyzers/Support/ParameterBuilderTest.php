@@ -208,6 +208,43 @@ class ParameterBuilderTest extends TestCase
         $this->assertIsInt($age->example);
     }
 
+    #[Test]
+    public function it_generates_boolean_example_for_accepted_rule(): void
+    {
+        $rules = [
+            'terms' => 'required|accepted',
+            'terms_if' => 'accepted_if:other_field,value',
+            'decline_test' => 'declined',
+            'decline_if_test' => 'declined_if:other_field,value',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // accepted should generate true
+        $terms = $this->findParameter($parameters, 'terms');
+        $this->assertNotNull($terms);
+        $this->assertEquals('boolean', $terms->type);
+        $this->assertTrue($terms->example, 'accepted rule should generate example: true');
+
+        // accepted_if should also generate true
+        $termsIf = $this->findParameter($parameters, 'terms_if');
+        $this->assertNotNull($termsIf);
+        $this->assertEquals('boolean', $termsIf->type);
+        $this->assertTrue($termsIf->example, 'accepted_if rule should generate example: true');
+
+        // declined should generate false
+        $decline = $this->findParameter($parameters, 'decline_test');
+        $this->assertNotNull($decline);
+        $this->assertEquals('boolean', $decline->type);
+        $this->assertFalse($decline->example, 'declined rule should generate example: false');
+
+        // declined_if should also generate false
+        $declineIf = $this->findParameter($parameters, 'decline_if_test');
+        $this->assertNotNull($declineIf);
+        $this->assertEquals('boolean', $declineIf->type);
+        $this->assertFalse($declineIf->example, 'declined_if rule should generate example: false');
+    }
+
     // ========== File upload tests ==========
 
     #[Test]

@@ -54,6 +54,14 @@ class TypeInference
             if ($rule === 'boolean' || $rule === 'bool') {
                 return true;
             }
+            // accepted/accepted_if rules should return true as they validate truthy values
+            if ($rule === 'accepted' || Str::startsWith($rule, 'accepted_if:')) {
+                return true;
+            }
+            // declined/declined_if rules should return false as they validate falsy values
+            if ($rule === 'declined' || Str::startsWith($rule, 'declined_if:')) {
+                return false;
+            }
             if ($rule === 'array') {
                 return [];
             }
