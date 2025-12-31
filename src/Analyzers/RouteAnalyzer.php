@@ -202,6 +202,14 @@ class RouteAnalyzer implements HasErrors
                     continue;
                 }
 
+                // For invokable controllers, getActionMethod() returns the class name
+                // We need to use '__invoke' as the method name
+                // Laravel ensures invokable controllers have __invoke method
+                $controllerClass = get_class($controller);
+                if ($method === $controllerClass && method_exists($controller, '__invoke')) {
+                    $method = '__invoke';
+                }
+
                 $routes[] = new RouteInfo(
                     uri: $route->uri(),
                     httpMethods: $route->methods(),

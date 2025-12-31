@@ -247,6 +247,19 @@ class ControllerAnalyzerTest extends TestCase
         $this->assertSame(TestUserResource::class, $result['resourceClasses'][0]);
         $this->assertSame(TestUserResource::class, $result['resource']);
     }
+
+    #[Test]
+    public function it_detects_inline_validation_in_invokable_controller(): void
+    {
+        $result = $this->analyzer->analyze(TestInvokableController::class, '__invoke');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('inlineValidation', $result);
+        $this->assertNotNull($result['inlineValidation'], 'Inline validation should be detected in __invoke()');
+        $this->assertArrayHasKey('rules', $result['inlineValidation']);
+        $this->assertArrayHasKey('message', $result['inlineValidation']['rules']);
+        $this->assertArrayHasKey('priority', $result['inlineValidation']['rules']);
+    }
 }
 
 // テスト用のコントローラークラス
@@ -446,5 +459,21 @@ class TestUnionReturnController
     public function regularReturn(): TestUserResource
     {
         return new TestUserResource(new \stdClass);
+    }
+}
+
+/**
+ * Invokable controller for testing issue #300
+ */
+class TestInvokableController
+{
+    public function __invoke()
+    {
+        $validated = request()->validate([
+            'message' => 'required|string|max:500',
+            'priority' => 'nullable|integer|in:1,2,3,4,5',
+        ]);
+
+        return response()->json($validated);
     }
 }
