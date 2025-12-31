@@ -118,7 +118,14 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
         // メソッドのソースコードからResourceを検出
         $source = $this->methodSourceExtractor->extractSource($methodReflection);
-        $resourceDetection = $this->detectResource($source, $reflection);
+
+        // First try to detect from return type (supports union types)
+        $resourceDetection = $this->detectResourceFromReturnType($methodReflection);
+
+        // Fall back to source code detection if return type detection failed
+        if (! $resourceDetection->hasResource()) {
+            $resourceDetection = $this->detectResource($source, $reflection);
+        }
 
         // Fractal使用を検出
         $fractal = $this->detectFractalUsageToDto($source, $reflection);
@@ -146,6 +153,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             formRequest: $formRequest,
             inlineValidation: $inlineValidation,
             resource: $resourceDetection->resourceClass,
+            resourceClasses: $resourceDetection->resourceClasses,
             returnsCollection: $resourceDetection->isCollection,
             fractal: $fractal,
             pagination: $pagination,
@@ -205,6 +213,53 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             $resourceClass = $this->resolveClassName($matches[1], $reflection);
             if ($resourceClass && class_exists($resourceClass)) {
                 return ResourceDetectionResult::single($resourceClass);
+            }
+        }
+
+        return ResourceDetectionResult::notFound();
+    }
+
+    /**
+     * Detect resource classes from method return type hint.
+     *
+     * This method analyzes the return type declaration of a controller method
+     * to detect Resource class(es), including union types like UserResource|PostResource.
+     */
+    protected function detectResourceFromReturnType(ReflectionMethod $methodReflection): ResourceDetectionResult
+    {
+        $returnType = $methodReflection->getReturnType();
+
+        if ($returnType === null) {
+            return ResourceDetectionResult::notFound();
+        }
+
+        // Handle union types (PHP 8+)
+        if ($returnType instanceof ReflectionUnionType) {
+            $resourceClasses = [];
+            foreach ($returnType->getTypes() as $type) {
+                if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
+                    $className = $type->getName();
+                    // Check if class ends with 'Resource' (common Laravel convention)
+                    if (class_exists($className) && str_ends_with($className, 'Resource')) {
+                        $resourceClasses[] = $className;
+                    }
+                }
+            }
+
+            if (count($resourceClasses) > 1) {
+                return ResourceDetectionResult::union($resourceClasses);
+            } elseif (count($resourceClasses) === 1) {
+                return ResourceDetectionResult::single($resourceClasses[0]);
+            }
+
+            return ResourceDetectionResult::notFound();
+        }
+
+        // Handle single named type
+        if ($returnType instanceof ReflectionNamedType && ! $returnType->isBuiltin()) {
+            $className = $returnType->getName();
+            if (class_exists($className) && str_ends_with($className, 'Resource')) {
+                return ResourceDetectionResult::single($className);
             }
         }
 

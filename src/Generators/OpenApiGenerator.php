@@ -362,6 +362,62 @@ class OpenApiGenerator
 
         // Resource class response
         if ($controllerInfo->hasResource()) {
+            // Handle union types (multiple resource classes)
+            if ($controllerInfo->hasMultipleResources()) {
+                $schemaRefs = [];
+                $examples = [];
+
+                // Register all resource schemas
+                foreach ($controllerInfo->resourceClasses as $resourceClass) {
+                    $schemaName = $this->schemaRegistry->extractSchemaName($resourceClass);
+
+                    if (! $this->schemaRegistry->has($schemaName)) {
+                        $resourceInfo = $this->resourceAnalyzer->analyze($resourceClass);
+
+                        if (! $resourceInfo->isEmpty()) {
+                            $schema = $this->schemaGenerator->generateFromResource($resourceInfo);
+                            $this->schemaRegistry->register($schemaName, $schema);
+
+                            $example = $this->exampleGenerator->generateFromResource(
+                                $resourceInfo,
+                                $resourceClass
+                            );
+                            $this->resourceExamples[$schemaName] = $example;
+                        }
+                    }
+
+                    // Collect $refs for successfully registered schemas
+                    if ($this->schemaRegistry->has($schemaName)) {
+                        $schemaRefs[] = $this->schemaRegistry->getRef($schemaName);
+                        if (isset($this->resourceExamples[$schemaName])) {
+                            $examples[$schemaName] = $this->resourceExamples[$schemaName];
+                        }
+                    }
+                }
+
+                // Generate oneOf schema if we have multiple refs
+                if (count($schemaRefs) > 1) {
+                    $response['content'] = [
+                        'application/json' => [
+                            'schema' => [
+                                'oneOf' => $schemaRefs,
+                            ],
+                            'examples' => array_map(
+                                fn ($example) => ['value' => $example],
+                                $examples
+                            ),
+                        ],
+                    ];
+
+                    return [
+                        'code' => $statusCode,
+                        'response' => $response,
+                    ];
+                }
+                // Fall through to single resource handling if only one schema was registered
+            }
+
+            // Single resource class handling
             $resourceClass = $controllerInfo->resource;
             $schemaName = $this->schemaRegistry->extractSchemaName($resourceClass);
 

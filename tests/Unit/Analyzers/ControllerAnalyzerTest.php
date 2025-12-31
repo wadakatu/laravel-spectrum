@@ -219,6 +219,34 @@ class ControllerAnalyzerTest extends TestCase
         $this->assertArrayHasKey('resource', $result);
         $this->assertArrayHasKey('returnsCollection', $result);
     }
+
+    #[Test]
+    public function it_detects_union_return_type_resources(): void
+    {
+        $result = $this->analyzer->analyze(TestUnionReturnController::class, 'conditionalReturn');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('resourceClasses', $result);
+        $this->assertIsArray($result['resourceClasses']);
+        $this->assertCount(2, $result['resourceClasses']);
+        $this->assertContains(TestUserResource::class, $result['resourceClasses']);
+        $this->assertContains(TestPostResource::class, $result['resourceClasses']);
+        // Backward compatibility: resource should be first class
+        $this->assertSame(TestUserResource::class, $result['resource']);
+    }
+
+    #[Test]
+    public function it_detects_single_return_type_resource(): void
+    {
+        $result = $this->analyzer->analyze(TestUnionReturnController::class, 'regularReturn');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('resourceClasses', $result);
+        $this->assertIsArray($result['resourceClasses']);
+        $this->assertCount(1, $result['resourceClasses']);
+        $this->assertSame(TestUserResource::class, $result['resourceClasses'][0]);
+        $this->assertSame(TestUserResource::class, $result['resource']);
+    }
 }
 
 // テスト用のコントローラークラス
@@ -389,4 +417,34 @@ enum TestStatusEnum: string
 {
     case Active = 'active';
     case Inactive = 'inactive';
+}
+
+/**
+ * Second Resource for union return type testing
+ */
+class TestPostResource
+{
+    public function __construct($resource) {}
+
+    public static function collection($resource)
+    {
+        return new static($resource);
+    }
+}
+
+/**
+ * Controller with union return type for testing issue #299
+ */
+class TestUnionReturnController
+{
+    public function conditionalReturn(): TestUserResource|TestPostResource
+    {
+        // Actual logic would return based on condition
+        return new TestUserResource(new \stdClass);
+    }
+
+    public function regularReturn(): TestUserResource
+    {
+        return new TestUserResource(new \stdClass);
+    }
 }

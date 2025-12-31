@@ -345,4 +345,76 @@ class ControllerInfoTest extends TestCase
         $this->assertInstanceOf(ResponseInfo::class, $info->response);
         $this->assertEquals(['id' => ['type' => 'integer']], $info->response->properties);
     }
+
+    #[Test]
+    public function it_can_be_constructed_with_resource_classes(): void
+    {
+        $info = new ControllerInfo(
+            resource: 'App\Http\Resources\UserResource',
+            resourceClasses: [
+                'App\Http\Resources\UserResource',
+                'App\Http\Resources\PostResource',
+            ],
+        );
+
+        $this->assertEquals('App\Http\Resources\UserResource', $info->resource);
+        $this->assertCount(2, $info->resourceClasses);
+        $this->assertContains('App\Http\Resources\UserResource', $info->resourceClasses);
+        $this->assertContains('App\Http\Resources\PostResource', $info->resourceClasses);
+    }
+
+    #[Test]
+    public function it_detects_multiple_resources(): void
+    {
+        $withMultiple = new ControllerInfo(
+            resource: 'App\Http\Resources\UserResource',
+            resourceClasses: [
+                'App\Http\Resources\UserResource',
+                'App\Http\Resources\PostResource',
+            ],
+        );
+        $withSingle = new ControllerInfo(
+            resource: 'App\Http\Resources\UserResource',
+            resourceClasses: ['App\Http\Resources\UserResource'],
+        );
+        $withNone = ControllerInfo::empty();
+
+        $this->assertTrue($withMultiple->hasMultipleResources());
+        $this->assertFalse($withSingle->hasMultipleResources());
+        $this->assertFalse($withNone->hasMultipleResources());
+    }
+
+    #[Test]
+    public function it_converts_resource_classes_to_array(): void
+    {
+        $info = new ControllerInfo(
+            resource: 'App\Http\Resources\UserResource',
+            resourceClasses: [
+                'App\Http\Resources\UserResource',
+                'App\Http\Resources\PostResource',
+            ],
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayHasKey('resourceClasses', $array);
+        $this->assertCount(2, $array['resourceClasses']);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_resource_classes(): void
+    {
+        $array = [
+            'resource' => 'App\Http\Resources\UserResource',
+            'resourceClasses' => [
+                'App\Http\Resources\UserResource',
+                'App\Http\Resources\PostResource',
+            ],
+        ];
+
+        $info = ControllerInfo::fromArray($array);
+
+        $this->assertEquals('App\Http\Resources\UserResource', $info->resource);
+        $this->assertCount(2, $info->resourceClasses);
+    }
 }
