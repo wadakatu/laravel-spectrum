@@ -245,6 +245,36 @@ class ParameterBuilderTest extends TestCase
         $this->assertFalse($declineIf->example, 'declined_if rule should generate example: false');
     }
 
+    #[Test]
+    public function it_generates_numeric_example_for_decimal_rule_with_parameters(): void
+    {
+        $rules = [
+            'price' => 'required|decimal:2',
+            'weight' => 'nullable|decimal:0,3',
+            'precise' => 'decimal:4',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // decimal:2 should generate example with exactly 2 decimal places
+        $price = $this->findParameter($parameters, 'price');
+        $this->assertNotNull($price);
+        $this->assertEquals('number', $price->type);
+        $this->assertEquals(19.99, $price->example, 'decimal:2 should generate 19.99');
+
+        // decimal:0,3 should generate example with max (3) decimal places
+        $weight = $this->findParameter($parameters, 'weight');
+        $this->assertNotNull($weight);
+        $this->assertEquals('number', $weight->type);
+        $this->assertEquals(19.999, $weight->example, 'decimal:0,3 should generate 19.999');
+
+        // decimal:4 should generate example with exactly 4 decimal places
+        $precise = $this->findParameter($parameters, 'precise');
+        $this->assertNotNull($precise);
+        $this->assertEquals('number', $precise->type);
+        $this->assertEquals(19.9999, $precise->example, 'decimal:4 should generate 19.9999');
+    }
+
     // ========== File upload tests ==========
 
     #[Test]

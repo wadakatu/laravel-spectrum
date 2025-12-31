@@ -51,6 +51,9 @@ class TypeInference
             if ($rule === 'numeric' || $rule === 'decimal') {
                 return 19.99;
             }
+            if (Str::startsWith($rule, 'decimal:')) {
+                return $this->generateDecimalExample($rule);
+            }
             if ($rule === 'boolean' || $rule === 'bool') {
                 return true;
             }
@@ -165,6 +168,28 @@ class TypeInference
         }
 
         return min($min + 1, $max);
+    }
+
+    /**
+     * Generate a decimal example based on the decimal rule.
+     *
+     * @param  string  $rule  The decimal rule (e.g., 'decimal:2', 'decimal:0,3')
+     */
+    private function generateDecimalExample(string $rule): float
+    {
+        $params = Str::after($rule, 'decimal:');
+        $parts = explode(',', $params);
+
+        // decimal:2 means exactly 2 decimal places
+        // decimal:0,3 means 0-3 decimal places (use max)
+        $decimalPlaces = count($parts) === 1
+            ? (int) $parts[0]
+            : (int) $parts[1];
+
+        // Generate 19.99... with correct number of decimal places
+        $nines = str_repeat('9', $decimalPlaces);
+
+        return (float) "19.{$nines}";
     }
 
     /**
