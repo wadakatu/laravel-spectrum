@@ -81,12 +81,18 @@ final readonly class ResourceDetectionResult
     /**
      * Create a result for a union of multiple resource types.
      *
-     * @param  array<int, string>  $resourceClasses  The resource class names in the union
+     * @param  array<int, string>  $resourceClasses  The resource class names in the union (must have at least 2 elements)
+     *
+     * @throws \InvalidArgumentException if less than 2 resource classes provided
      */
     public static function union(array $resourceClasses): self
     {
+        if (count($resourceClasses) < 2) {
+            throw new \InvalidArgumentException('Union requires at least 2 resource classes');
+        }
+
         return new self(
-            resourceClass: $resourceClasses[0] ?? null,
+            resourceClass: $resourceClasses[0],
             resourceClasses: $resourceClasses,
             isCollection: false,
         );

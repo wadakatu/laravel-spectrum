@@ -205,4 +205,22 @@ class ResourceDetectionResultTest extends TestCase
         $this->assertSame('App\Http\Resources\UserResource', $result->resourceClass);
         $this->assertTrue($result->hasMultipleResources());
     }
+
+    #[Test]
+    public function it_throws_exception_for_union_with_single_resource(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Union requires at least 2 resource classes');
+
+        ResourceDetectionResult::union(['App\Http\Resources\UserResource']);
+    }
+
+    #[Test]
+    public function it_throws_exception_for_union_with_empty_array(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Union requires at least 2 resource classes');
+
+        ResourceDetectionResult::union([]);
+    }
 }
