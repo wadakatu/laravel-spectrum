@@ -86,6 +86,7 @@ class ResourceDetectionResultTest extends TestCase
 
         $this->assertEquals([
             'resourceClass' => 'App\Http\Resources\UserResource',
+            'resourceClasses' => ['App\Http\Resources\UserResource'],
             'isCollection' => true,
         ], $array);
     }
@@ -99,6 +100,7 @@ class ResourceDetectionResultTest extends TestCase
 
         $this->assertEquals([
             'resourceClass' => null,
+            'resourceClasses' => [],
             'isCollection' => false,
         ], $array);
     }
@@ -135,5 +137,72 @@ class ResourceDetectionResultTest extends TestCase
 
         $this->assertEquals($original->resourceClass, $restored->resourceClass);
         $this->assertEquals($original->isCollection, $restored->isCollection);
+    }
+
+    #[Test]
+    public function it_creates_union_result_with_multiple_resources(): void
+    {
+        $result = ResourceDetectionResult::union([
+            'App\Http\Resources\UserResource',
+            'App\Http\Resources\PostResource',
+        ]);
+
+        $this->assertCount(2, $result->resourceClasses);
+        $this->assertContains('App\Http\Resources\UserResource', $result->resourceClasses);
+        $this->assertContains('App\Http\Resources\PostResource', $result->resourceClasses);
+        // Backward compatibility: resourceClass returns first
+        $this->assertSame('App\Http\Resources\UserResource', $result->resourceClass);
+        $this->assertFalse($result->isCollection);
+        $this->assertTrue($result->hasResource());
+        $this->assertTrue($result->hasMultipleResources());
+    }
+
+    #[Test]
+    public function it_returns_false_for_has_multiple_resources_with_single(): void
+    {
+        $result = ResourceDetectionResult::single('App\Http\Resources\UserResource');
+
+        $this->assertFalse($result->hasMultipleResources());
+        // resourceClasses should still have one element
+        $this->assertCount(1, $result->resourceClasses);
+        $this->assertSame('App\Http\Resources\UserResource', $result->resourceClasses[0]);
+    }
+
+    #[Test]
+    public function it_converts_union_to_array(): void
+    {
+        $result = ResourceDetectionResult::union([
+            'App\Http\Resources\UserResource',
+            'App\Http\Resources\PostResource',
+        ]);
+
+        $array = $result->toArray();
+
+        $this->assertEquals([
+            'resourceClass' => 'App\Http\Resources\UserResource',
+            'resourceClasses' => [
+                'App\Http\Resources\UserResource',
+                'App\Http\Resources\PostResource',
+            ],
+            'isCollection' => false,
+        ], $array);
+    }
+
+    #[Test]
+    public function it_creates_union_from_array(): void
+    {
+        $data = [
+            'resourceClasses' => [
+                'App\Http\Resources\UserResource',
+                'App\Http\Resources\PostResource',
+            ],
+            'isCollection' => false,
+        ];
+
+        $result = ResourceDetectionResult::fromArray($data);
+
+        $this->assertCount(2, $result->resourceClasses);
+        $this->assertSame('App\Http\Resources\UserResource', $result->resourceClass);
+        $this->assertTrue($result->hasMultipleResources());
     }
 }
