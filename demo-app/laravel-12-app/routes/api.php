@@ -96,3 +96,184 @@ Route::prefix('anonymous-form-request')->group(function () {
     Route::post('/product', [AnonymousFormRequestController::class, 'createProduct']);
     Route::post('/register', [AnonymousFormRequestController::class, 'register']);
 });
+
+// ============================================
+// Comprehensive OpenAPI Generation Tests
+// ============================================
+
+use App\Http\Controllers\Api\V2\UserController as V2UserController;
+use App\Http\Controllers\ComprehensiveTestController;
+use App\Http\Controllers\InvokableController;
+
+// 1. Nested Resources
+Route::prefix('nested')->group(function () {
+    Route::get('/users/{user}/posts', [ComprehensiveTestController::class, 'userPosts']);
+    Route::get('/users/{user}/posts/{post}', [ComprehensiveTestController::class, 'showUserPost']);
+    Route::get('/users/{userId}/posts/{postId}/comments', [ComprehensiveTestController::class, 'userPostComments']);
+});
+
+// 2. Custom Route Model Binding Keys
+Route::get('/users/uuid/{uuid}', [ComprehensiveTestController::class, 'findByUuid'])
+    ->where('uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+Route::get('/users/slug/{slug}', [ComprehensiveTestController::class, 'findBySlug'])
+    ->where('slug', '[a-z0-9-]+');
+
+// 3. Multiple Response Status Codes
+Route::post('/resources', [ComprehensiveTestController::class, 'createWithStatus']);
+Route::delete('/resources/{id}', [ComprehensiveTestController::class, 'deleteResource']);
+Route::post('/async/process', [ComprehensiveTestController::class, 'asyncProcess']);
+
+// 4. Complex Array/Nested Validation
+Route::post('/bulk/users', [ComprehensiveTestController::class, 'nestedArrayValidation']);
+Route::post('/matrix', [ComprehensiveTestController::class, 'matrixValidation']);
+
+// 5. UUID and Special Parameters
+Route::get('/items/{uuid}', [ComprehensiveTestController::class, 'getByUuid'])
+    ->where('uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+Route::get('/reports/date-range', [ComprehensiveTestController::class, 'dateRangeQuery']);
+Route::get('/events/datetime', [ComprehensiveTestController::class, 'datetimeQuery']);
+
+// 6. Optional Parameters
+Route::get('/search/advanced', [ComprehensiveTestController::class, 'optionalParams']);
+
+// 7. Binary/File Responses
+Route::get('/files/{id}/download', [ComprehensiveTestController::class, 'downloadFile']);
+Route::get('/files/{id}/stream', [ComprehensiveTestController::class, 'streamFile']);
+Route::get('/images/{filename}', [ComprehensiveTestController::class, 'getImage']);
+
+// 8. Different Content Types
+Route::get('/export/xml', [ComprehensiveTestController::class, 'xmlResponse']);
+Route::get('/export/text', [ComprehensiveTestController::class, 'textResponse']);
+
+// 9. Conditional/Polymorphic Returns
+Route::get('/mixed/resource', [ComprehensiveTestController::class, 'conditionalReturn']);
+Route::get('/mixed/items', [ComprehensiveTestController::class, 'flexibleReturn']);
+
+// 10. Custom Headers
+Route::get('/with-headers', [ComprehensiveTestController::class, 'withCustomHeaders']);
+Route::get('/cacheable/{id}', [ComprehensiveTestController::class, 'cacheableResponse']);
+
+// 11. Deprecated Endpoints
+Route::get('/v1/legacy', [ComprehensiveTestController::class, 'deprecatedEndpoint']);
+
+// 12. Array Query Parameters
+Route::get('/filter/array', [ComprehensiveTestController::class, 'arrayQueryParams']);
+Route::get('/filter/boolean', [ComprehensiveTestController::class, 'booleanParams']);
+
+// 13. Numeric Constraints
+Route::post('/orders', [ComprehensiveTestController::class, 'numericConstraints']);
+
+// 14. String Formats
+Route::post('/validate/formats', [ComprehensiveTestController::class, 'stringFormats']);
+
+// 15. Conditional Required Fields
+Route::post('/payments', [ComprehensiveTestController::class, 'conditionalRequired']);
+
+// 16. Mutually Exclusive Fields
+Route::post('/lookup', [ComprehensiveTestController::class, 'mutuallyExclusive']);
+
+// 17. Invokable Controller
+Route::post('/invoke', InvokableController::class);
+
+// 18. API Versioning (v2)
+Route::prefix('v2')->group(function () {
+    Route::get('/users', [V2UserController::class, 'index']);
+    Route::get('/users/{user}', [V2UserController::class, 'show']);
+    Route::post('/users/bulk', [V2UserController::class, 'bulkCreate']);
+    Route::patch('/users/bulk', [V2UserController::class, 'bulkUpdate']);
+    Route::delete('/users/bulk', [V2UserController::class, 'bulkDelete']);
+});
+
+// ============================================
+// OSS Pattern Tests (from real Laravel projects)
+// ============================================
+
+use App\Http\Controllers\ConditionalResourceController;
+use App\Http\Controllers\OssPatternController;
+
+Route::prefix('oss')->group(function () {
+    // JSON API style filtering (Spatie Query Builder pattern)
+    Route::get('/filter', [OssPatternController::class, 'jsonApiFilter']);
+    Route::get('/sparse-fields', [OssPatternController::class, 'sparseFieldsets']);
+
+    // Service class patterns
+    Route::post('/service/users', [OssPatternController::class, 'createViaService']);
+    Route::put('/service/users/{id}', [OssPatternController::class, 'updateViaService']);
+
+    // Cursor pagination
+    Route::get('/cursor-paginate', [OssPatternController::class, 'cursorPaginated']);
+
+    // Polymorphic patterns
+    Route::post('/comments', [OssPatternController::class, 'polymorphicComments']);
+
+    // Batch operations
+    Route::delete('/batch', [OssPatternController::class, 'batchDelete']);
+    Route::patch('/batch', [OssPatternController::class, 'batchUpdate']);
+
+    // Multi-tenancy
+    Route::get('/tenants/{tenant}/resources', [OssPatternController::class, 'tenantResource']);
+
+    // Advanced search
+    Route::get('/search', [OssPatternController::class, 'advancedSearch']);
+
+    // Webhook receiver
+    Route::post('/webhooks', [OssPatternController::class, 'receiveWebhook']);
+
+    // Rate limit info
+    Route::get('/rate-limited', [OssPatternController::class, 'withRateLimitInfo']);
+
+    // GraphQL-like selection
+    Route::get('/select', [OssPatternController::class, 'selectFields']);
+
+    // Idempotency pattern (Stripe-style)
+    Route::post('/idempotent', [OssPatternController::class, 'idempotentCreate']);
+
+    // Soft delete patterns
+    Route::get('/trashed', [OssPatternController::class, 'listWithTrashed']);
+    Route::post('/restore/{id}', [OssPatternController::class, 'restore']);
+
+    // Timezone-aware queries
+    Route::get('/timezone-query', [OssPatternController::class, 'timezoneQuery']);
+});
+
+// Conditional Resource patterns (whenLoaded, when, etc.)
+Route::prefix('conditional-resource')->group(function () {
+    Route::get('/users', [ConditionalResourceController::class, 'index']);
+    Route::get('/users/{id}', [ConditionalResourceController::class, 'show']);
+});
+
+// ============================================
+// Advanced Validation Patterns
+// ============================================
+
+use App\Http\Controllers\AdvancedUserController;
+
+Route::prefix('advanced')->group(function () {
+    // Complex FormRequest with Rule objects, Password rules, Enum rules
+    Route::post('/users', [AdvancedUserController::class, 'store']);
+    Route::put('/users/{id}', [AdvancedUserController::class, 'update']);
+});
+
+// ============================================
+// Custom Validation Rules
+// ============================================
+
+use App\Http\Controllers\CustomRuleController;
+use App\Http\Controllers\ModernValidationController;
+
+Route::prefix('custom-rules')->group(function () {
+    // Custom Rule class implementing ValidationRule
+    Route::post('/register', [CustomRuleController::class, 'register']);
+});
+
+// Modern Laravel validation patterns (Laravel 9+)
+Route::prefix('modern')->group(function () {
+    Route::post('/content', [ModernValidationController::class, 'store']);
+});
+
+// Sometimes and conditional validation patterns
+use App\Http\Controllers\SometimesController;
+
+Route::prefix('conditional-validation')->group(function () {
+    Route::post('/order', [SometimesController::class, 'process']);
+});
