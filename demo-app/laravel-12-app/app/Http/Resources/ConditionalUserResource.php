@@ -33,13 +33,14 @@ class ConditionalUserResource extends JsonResource
             'comments_count' => $this->whenCounted('comments'),
 
             // Conditional attributes based on request
-            // Note: when() and mergeWhen() patterns cause ResourceStructureVisitor to crash
-            // See issue #306
-            // 'secret_field' => $this->when($request->user()?->isAdmin(), 'secret-value'),
+            // Fixed in issue #306 - when() and mergeWhen() now work correctly
+            'secret_field' => $this->when($request->user()?->isAdmin(), 'secret-value'),
 
-            // Always included timestamps for testing
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            // mergeWhen pattern - conditionally merge additional fields
+            $this->mergeWhen($request->has('full'), [
+                'created_at' => $this->created_at,
+                'updated_at' => $this->updated_at,
+            ]),
 
             // Always included
             'links' => [

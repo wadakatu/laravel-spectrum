@@ -274,6 +274,29 @@ final readonly class ResourceFieldInfo
     }
 
     /**
+     * Create a copy with conditional set to true and a condition type.
+     */
+    public function withConditional(string $condition): self
+    {
+        return new self(
+            type: $this->type,
+            nullable: $this->nullable,
+            source: $this->source,
+            property: $this->property,
+            example: $this->example,
+            format: $this->format,
+            conditional: true,
+            condition: $condition,
+            relation: $this->relation,
+            hasTransformation: $this->hasTransformation,
+            properties: $this->properties,
+            items: $this->items,
+            resource: $this->resource,
+            expression: $this->expression,
+        );
+    }
+
+    /**
      * Create a copy with properties.
      *
      * @param  array<string, mixed>  $properties

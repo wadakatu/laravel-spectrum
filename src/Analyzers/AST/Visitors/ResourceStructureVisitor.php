@@ -86,6 +86,30 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         $structure = [];
 
         foreach ($array->items as $item) {
+            // Skip null items
+            if ($item === null) {
+                continue;
+            }
+
+            // Handle keyless items (like mergeWhen, merge, or spread operator)
+            if ($item->key === null) {
+                // Check for spread operator
+                if ($item->unpack) {
+                    // Skip spread operators - we can't determine the structure statically
+                    continue;
+                }
+
+                // Check for $this->mergeWhen() or $this->merge() pattern
+                $mergedProperties = $this->analyzeMergeMethod($item->value);
+                if ($mergedProperties !== null) {
+                    foreach ($mergedProperties as $key => $value) {
+                        $structure[$key] = $value;
+                    }
+                }
+
+                continue;
+            }
+
             $key = $this->getKeyName($item->key);
             if (! $key) {
                 continue;
@@ -95,6 +119,85 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         }
 
         return $structure;
+    }
+
+    /**
+     * Analyze $this->mergeWhen() or $this->merge() method calls
+     *
+     * @return array<string, ResourceFieldInfo>|null
+     */
+    private function analyzeMergeMethod(Node $expr): ?array
+    {
+        // Must be a method call on $this
+        if (! $expr instanceof Node\Expr\MethodCall) {
+            return null;
+        }
+
+        if (! $expr->var instanceof Node\Expr\Variable || $expr->var->name !== 'this') {
+            return null;
+        }
+
+        // Get method name
+        if (! $expr->name instanceof Node\Identifier) {
+            return null;
+        }
+
+        $methodName = $expr->name->name;
+
+        // Handle mergeWhen($condition, $array)
+        if ($methodName === 'mergeWhen') {
+            // Second argument should be the array to merge
+            if (count($expr->args) >= 2 && $expr->args[1]->value instanceof Node\Expr\Array_) {
+                return $this->extractMergeProperties($expr->args[1]->value, 'mergeWhen');
+            }
+
+            return null;
+        }
+
+        // Handle merge($array)
+        if ($methodName === 'merge') {
+            // First argument should be the array to merge
+            if (count($expr->args) >= 1 && $expr->args[0]->value instanceof Node\Expr\Array_) {
+                return $this->extractMergeProperties($expr->args[0]->value, 'merge');
+            }
+
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract properties from a merge/mergeWhen array argument
+     *
+     * @return array<string, ResourceFieldInfo>
+     */
+    private function extractMergeProperties(Node\Expr\Array_ $array, string $conditionType): array
+    {
+        $properties = [];
+
+        foreach ($array->items as $item) {
+            if ($item === null || $item->key === null) {
+                continue;
+            }
+
+            $key = $this->getKeyName($item->key);
+            if (! $key) {
+                continue;
+            }
+
+            $fieldInfo = $this->analyzeValue($item->value);
+
+            // Mark as conditional for mergeWhen (always conditional)
+            // For merge(), it's not conditional but still merged
+            if ($conditionType === 'mergeWhen') {
+                $fieldInfo = $fieldInfo->withConditional('mergeWhen');
+            }
+
+            $properties[$key] = $fieldInfo;
+        }
+
+        return $properties;
     }
 
     /**
