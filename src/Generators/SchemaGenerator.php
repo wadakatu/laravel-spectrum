@@ -264,9 +264,10 @@ class SchemaGenerator
      */
     private function convertNodeToSchema(array $node): array
     {
-        $isArray = $node['_isArray'];
-        $parameter = $node['_parameter'];
-        $children = $node['_children'];
+        // Use null coalescing for defensive programming
+        $isArray = $node['_isArray'] ?? false;
+        $parameter = $node['_parameter'] ?? null;
+        $children = $node['_children'] ?? [];
         $hasChildren = ! empty($children);
 
         if ($isArray) {
@@ -299,6 +300,9 @@ class SchemaGenerator
                 // Simple array without children - use parameter info for item type
                 $itemType = $this->inferArrayItemType($parameter);
                 $schema['items'] = ['type' => $itemType];
+            } else {
+                // Fallback: array without children or parameter info
+                $schema['items'] = ['type' => 'string'];
             }
 
             // Add description if available
