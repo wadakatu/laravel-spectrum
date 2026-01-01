@@ -251,7 +251,9 @@
                                     "age": {
                                         "type": "integer",
                                         "description": "年齢",
-                                        "example": 25
+                                        "example": 25,
+                                        "minimum": 0,
+                                        "maximum": 150
                                     }
                                 },
                                 "required": [

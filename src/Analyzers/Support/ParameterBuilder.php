@@ -227,6 +227,9 @@ class ParameterBuilder
         // Extract string length constraints (only for string types)
         [$minLength, $maxLength] = $this->extractStringLengthConstraints($ruleArray, $type);
 
+        // Extract numeric constraints (only for integer/number types)
+        [$minimum, $maximum, $exclusiveMinimum, $exclusiveMaximum] = $this->extractNumericConstraints($ruleArray, $type);
+
         // Determine conditional rule information
         $conditionalRequired = null;
         $conditionalRules = null;
@@ -252,6 +255,10 @@ class ParameterBuilder
             pattern: $pattern,
             minLength: $minLength,
             maxLength: $maxLength,
+            minimum: $minimum,
+            maximum: $maximum,
+            exclusiveMinimum: $exclusiveMinimum,
+            exclusiveMaximum: $exclusiveMaximum,
             conditionalRequired: $conditionalRequired,
             conditionalRules: $conditionalRules,
             enum: $enumInfo,
@@ -289,6 +296,9 @@ class ParameterBuilder
         // Extract string length constraints (only for string types)
         [$minLength, $maxLength] = $this->extractStringLengthConstraints($mergedRules, $type);
 
+        // Extract numeric constraints (only for integer/number types)
+        [$minimum, $maximum, $exclusiveMinimum, $exclusiveMaximum] = $this->extractNumericConstraints($mergedRules, $type);
+
         // Extract rules_by_condition with fallback for safety
         $rulesByCondition = $processedField['rules_by_condition'] ?? [];
 
@@ -307,6 +317,10 @@ class ParameterBuilder
             pattern: $pattern,
             minLength: $minLength,
             maxLength: $maxLength,
+            minimum: $minimum,
+            maximum: $maximum,
+            exclusiveMinimum: $exclusiveMinimum,
+            exclusiveMaximum: $exclusiveMaximum,
             conditionalRules: $rulesByCondition,
             enum: $enumInfo,
         );
@@ -431,5 +445,83 @@ class ParameterBuilder
         }
 
         return [$minLength, $maxLength];
+    }
+
+    /**
+     * Extract numeric constraints from validation rules.
+     *
+     * Converts Laravel's min/max/between/gte/gt/lte/lt rules to OpenAPI minimum/maximum.
+     * Only applies when the type is 'integer' or 'number'.
+     *
+     * @param  array<int|string, mixed>  $rules
+     * @return array{0: int|float|null, 1: int|float|null, 2: int|float|null, 3: int|float|null} [minimum, maximum, exclusiveMinimum, exclusiveMaximum]
+     */
+    private function extractNumericConstraints(array $rules, string $type): array
+    {
+        // Only extract numeric constraints for integer/number types
+        if ($type !== 'integer' && $type !== 'number') {
+            return [null, null, null, null];
+        }
+
+        $minimum = null;
+        $maximum = null;
+        $exclusiveMinimum = null;
+        $exclusiveMaximum = null;
+
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            // Handle min:n and gte:n (both set minimum)
+            if (str_starts_with($rule, 'min:') || str_starts_with($rule, 'gte:')) {
+                $colonPos = strpos($rule, ':');
+                $value = substr($rule, $colonPos + 1);
+                if (is_numeric($value)) {
+                    $minimum = str_contains($value, '.') ? (float) $value : (int) $value;
+                }
+            }
+
+            // Handle max:n and lte:n (both set maximum)
+            if (str_starts_with($rule, 'max:') || str_starts_with($rule, 'lte:')) {
+                $colonPos = strpos($rule, ':');
+                $value = substr($rule, $colonPos + 1);
+                if (is_numeric($value)) {
+                    $maximum = str_contains($value, '.') ? (float) $value : (int) $value;
+                }
+            }
+
+            // Handle gt:n (sets exclusiveMinimum)
+            if (str_starts_with($rule, 'gt:')) {
+                $value = substr($rule, 3);
+                if (is_numeric($value)) {
+                    $exclusiveMinimum = str_contains($value, '.') ? (float) $value : (int) $value;
+                }
+            }
+
+            // Handle lt:n (sets exclusiveMaximum)
+            if (str_starts_with($rule, 'lt:')) {
+                $value = substr($rule, 3);
+                if (is_numeric($value)) {
+                    $exclusiveMaximum = str_contains($value, '.') ? (float) $value : (int) $value;
+                }
+            }
+
+            // Handle between:a,b (sets both minimum and maximum)
+            if (str_starts_with($rule, 'between:')) {
+                $params = substr($rule, 8);
+                $parts = explode(',', $params);
+                if (count($parts) === 2) {
+                    if (is_numeric($parts[0])) {
+                        $minimum = str_contains($parts[0], '.') ? (float) $parts[0] : (int) $parts[0];
+                    }
+                    if (is_numeric($parts[1])) {
+                        $maximum = str_contains($parts[1], '.') ? (float) $parts[1] : (int) $parts[1];
+                    }
+                }
+            }
+        }
+
+        return [$minimum, $maximum, $exclusiveMinimum, $exclusiveMaximum];
     }
 }

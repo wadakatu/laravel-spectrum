@@ -1023,6 +1023,207 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals(16, $cardNumber->maxLength);
     }
 
+    // ========== Numeric Constraints (Issue #314) ==========
+
+    #[Test]
+    public function it_extracts_minimum_for_integer_type(): void
+    {
+        $rules = [
+            'age' => 'required|integer|min:18',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $age = $this->findParameter($parameters, 'age');
+        $this->assertNotNull($age);
+        $this->assertEquals('integer', $age->type);
+        $this->assertEquals(18, $age->minimum);
+    }
+
+    #[Test]
+    public function it_extracts_maximum_for_integer_type(): void
+    {
+        $rules = [
+            'age' => 'required|integer|max:120',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $age = $this->findParameter($parameters, 'age');
+        $this->assertNotNull($age);
+        $this->assertEquals('integer', $age->type);
+        $this->assertEquals(120, $age->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_both_minimum_and_maximum_for_numeric_type(): void
+    {
+        $rules = [
+            'salary' => 'required|numeric|min:0|max:10000000',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $salary = $this->findParameter($parameters, 'salary');
+        $this->assertNotNull($salary);
+        $this->assertEquals('number', $salary->type);
+        $this->assertEquals(0, $salary->minimum);
+        $this->assertEquals(10000000, $salary->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_between_as_minimum_and_maximum_for_integer_type(): void
+    {
+        $rules = [
+            'quantity' => 'required|integer|between:1,100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $quantity = $this->findParameter($parameters, 'quantity');
+        $this->assertNotNull($quantity);
+        $this->assertEquals('integer', $quantity->type);
+        $this->assertEquals(1, $quantity->minimum);
+        $this->assertEquals(100, $quantity->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_gte_as_minimum_for_numeric_type(): void
+    {
+        $rules = [
+            'price' => 'required|numeric|gte:0',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $price = $this->findParameter($parameters, 'price');
+        $this->assertNotNull($price);
+        $this->assertEquals('number', $price->type);
+        $this->assertEquals(0, $price->minimum);
+    }
+
+    #[Test]
+    public function it_extracts_lte_as_maximum_for_numeric_type(): void
+    {
+        $rules = [
+            'discount' => 'required|numeric|lte:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $discount = $this->findParameter($parameters, 'discount');
+        $this->assertNotNull($discount);
+        $this->assertEquals('number', $discount->type);
+        $this->assertEquals(100, $discount->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_gt_as_exclusive_minimum_for_integer_type(): void
+    {
+        $rules = [
+            'count' => 'required|integer|gt:0',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $count = $this->findParameter($parameters, 'count');
+        $this->assertNotNull($count);
+        $this->assertEquals('integer', $count->type);
+        $this->assertEquals(0, $count->exclusiveMinimum);
+    }
+
+    #[Test]
+    public function it_extracts_lt_as_exclusive_maximum_for_integer_type(): void
+    {
+        $rules = [
+            'index' => 'required|integer|lt:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $index = $this->findParameter($parameters, 'index');
+        $this->assertNotNull($index);
+        $this->assertEquals('integer', $index->type);
+        $this->assertEquals(100, $index->exclusiveMaximum);
+    }
+
+    #[Test]
+    public function it_does_not_extract_min_max_as_numeric_constraints_for_string_types(): void
+    {
+        $rules = [
+            'name' => 'required|string|min:5|max:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $name = $this->findParameter($parameters, 'name');
+        $this->assertNotNull($name);
+        $this->assertEquals('string', $name->type);
+        // For string types, min/max should become minLength/maxLength, NOT minimum/maximum
+        $this->assertNull($name->minimum);
+        $this->assertNull($name->maximum);
+        $this->assertEquals(5, $name->minLength);
+        $this->assertEquals(100, $name->maxLength);
+    }
+
+    #[Test]
+    public function it_extracts_numeric_constraints_for_conditional_parameters(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['type' => 'premium'],
+                    'rules' => [
+                        'price' => ['required', 'numeric', 'min:100', 'max:10000'],
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'price' => ['required', 'numeric', 'min:100', 'max:10000'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $price = $this->findParameter($parameters, 'price');
+        $this->assertNotNull($price);
+        $this->assertEquals('number', $price->type);
+        $this->assertEquals(100, $price->minimum);
+        $this->assertEquals(10000, $price->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_float_minimum_and_maximum_for_number_type(): void
+    {
+        $rules = [
+            'price' => 'required|numeric|min:0.01|max:999.99',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $price = $this->findParameter($parameters, 'price');
+        $this->assertNotNull($price);
+        $this->assertEquals('number', $price->type);
+        $this->assertSame(0.01, $price->minimum);
+        $this->assertSame(999.99, $price->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_float_between_as_minimum_and_maximum(): void
+    {
+        $rules = [
+            'rate' => 'required|numeric|between:0.5,100.5',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $rate = $this->findParameter($parameters, 'rate');
+        $this->assertNotNull($rate);
+        $this->assertEquals('number', $rate->type);
+        $this->assertSame(0.5, $rate->minimum);
+        $this->assertSame(100.5, $rate->maximum);
+    }
+
     // ========== Helper methods ==========
 
     /**
