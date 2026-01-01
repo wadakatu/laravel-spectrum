@@ -248,6 +248,12 @@
                                         "example": "password123",
                                         "minLength": 8
                                     },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "description": "Password Confirmation",
+                                        "example": "password123",
+                                        "minLength": 8
+                                    },
                                     "age": {
                                         "type": "integer",
                                         "description": "年齢",
@@ -259,7 +265,8 @@
                                 "required": [
                                     "name",
                                     "email",
-                                    "password"
+                                    "password",
+                                    "password_confirmation"
                                 ]
                             }
                         }

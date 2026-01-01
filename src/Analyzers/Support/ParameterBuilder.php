@@ -65,7 +65,13 @@ class ParameterBuilder
                 continue;
             }
 
-            $parameters[] = $this->buildStandardParameter($field, $ruleArray, $attributes, $namespace, $useStatements);
+            $parameter = $this->buildStandardParameter($field, $ruleArray, $attributes, $namespace, $useStatements);
+            $parameters[] = $parameter;
+
+            // Generate confirmation field if 'confirmed' rule is present
+            if ($this->hasConfirmedRule($ruleArray)) {
+                $parameters[] = $this->buildConfirmationField($field, $parameter, $attributes);
+            }
         }
 
         return $parameters;
@@ -160,7 +166,7 @@ class ParameterBuilder
                 continue;
             }
 
-            $parameters[] = $this->buildConditionalParameter(
+            $parameter = $this->buildConditionalParameter(
                 $field,
                 $mergedRules,
                 $processedFields[$field],
@@ -168,6 +174,13 @@ class ParameterBuilder
                 $namespace,
                 $useStatements
             );
+            $parameters[] = $parameter;
+
+            // Generate confirmation field if 'confirmed' rule is present
+            $normalizedRules = ValidationRuleCollection::from($mergedRules)->all();
+            if ($this->hasConfirmedRule($normalizedRules)) {
+                $parameters[] = $this->buildConfirmationField($field, $parameter, $attributes);
+            }
         }
 
         return $parameters;
@@ -377,6 +390,66 @@ class ParameterBuilder
         }
 
         return false;
+    }
+
+    /**
+     * Check if rules contain a 'confirmed' rule.
+     *
+     * @param  array<int|string, mixed>  $rules
+     */
+    private function hasConfirmedRule(array $rules): bool
+    {
+        foreach ($rules as $rule) {
+            if (is_string($rule) && $rule === 'confirmed') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Build a confirmation field for a field with 'confirmed' rule.
+     *
+     * The confirmation field copies the original field's type and constraints,
+     * with '_confirmation' suffix added to the name.
+     *
+     * @param  string  $field  The original field name
+     * @param  ParameterDefinition  $original  The original field's parameter definition
+     * @param  array<string, string>  $attributes  Custom field attributes/descriptions
+     * @return ParameterDefinition The generated confirmation field parameter
+     */
+    private function buildConfirmationField(string $field, ParameterDefinition $original, array $attributes): ParameterDefinition
+    {
+        $confirmationField = $field.'_confirmation';
+
+        $fieldLabel = $attributes[$confirmationField]
+            ?? ucwords(str_replace('_', ' ', $field)).' Confirmation';
+
+        $validation = $original->required
+            ? ['required', 'same:'.$field]
+            : ['nullable', 'same:'.$field];
+
+        return new ParameterDefinition(
+            name: $confirmationField,
+            in: $original->in,
+            required: $original->required,
+            type: $original->type,
+            description: $fieldLabel,
+            example: $original->example,
+            validation: $validation,
+            format: $original->format,
+            pattern: $original->pattern,
+            minLength: $original->minLength,
+            maxLength: $original->maxLength,
+            minimum: $original->minimum,
+            maximum: $original->maximum,
+            exclusiveMinimum: $original->exclusiveMinimum,
+            exclusiveMaximum: $original->exclusiveMaximum,
+            minItems: $original->minItems,
+            maxItems: $original->maxItems,
+            enum: $original->enum,
+        );
     }
 
     /**

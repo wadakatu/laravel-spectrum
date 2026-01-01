@@ -1437,6 +1437,90 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals(100, $quantity->maximum);
     }
 
+    // ========== Confirmed Rule (Issue #325) ==========
+
+    #[Test]
+    public function it_generates_confirmation_field_for_confirmed_rule(): void
+    {
+        $rules = [
+            'password' => 'required|string|min:8|confirmed',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // Should have both password and password_confirmation
+        $password = $this->findParameter($parameters, 'password');
+        $this->assertNotNull($password);
+        $this->assertEquals('string', $password->type);
+        $this->assertTrue($password->required);
+
+        $passwordConfirmation = $this->findParameter($parameters, 'password_confirmation');
+        $this->assertNotNull($passwordConfirmation, 'Confirmation field should be generated');
+        $this->assertEquals('string', $passwordConfirmation->type);
+        $this->assertTrue($passwordConfirmation->required);
+    }
+
+    #[Test]
+    public function it_generates_confirmation_field_with_same_constraints(): void
+    {
+        $rules = [
+            'secret' => 'required|string|min:6|max:50|confirmed',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $secret = $this->findParameter($parameters, 'secret');
+        $secretConfirmation = $this->findParameter($parameters, 'secret_confirmation');
+
+        $this->assertNotNull($secretConfirmation);
+        // Confirmation field should have same type and length constraints
+        $this->assertEquals($secret->type, $secretConfirmation->type);
+        $this->assertEquals($secret->minLength, $secretConfirmation->minLength);
+        $this->assertEquals($secret->maxLength, $secretConfirmation->maxLength);
+    }
+
+    #[Test]
+    public function it_generates_optional_confirmation_field_for_optional_field(): void
+    {
+        $rules = [
+            'password' => 'nullable|string|confirmed',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $passwordConfirmation = $this->findParameter($parameters, 'password_confirmation');
+        $this->assertNotNull($passwordConfirmation);
+        $this->assertFalse($passwordConfirmation->required);
+        $this->assertEquals(['nullable', 'same:password'], $passwordConfirmation->validation);
+    }
+
+    #[Test]
+    public function it_generates_confirmation_field_in_conditional_rules(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['is_register' => true],
+                    'rules' => [
+                        'password' => 'required|string|min:8|confirmed',
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $password = $this->findParameter($parameters, 'password');
+        $this->assertNotNull($password);
+
+        $passwordConfirmation = $this->findParameter($parameters, 'password_confirmation');
+        $this->assertNotNull($passwordConfirmation, 'Confirmation field should be generated in conditional rules');
+        $this->assertEquals($password->type, $passwordConfirmation->type);
+    }
+
     // ========== Helper methods ==========
 
     /**
