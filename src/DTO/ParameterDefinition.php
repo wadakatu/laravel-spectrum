@@ -24,6 +24,10 @@ final readonly class ParameterDefinition
      * @param  string|null  $pattern  Regex pattern for string validation (without PCRE delimiters)
      * @param  int|null  $minLength  Minimum string length (for string types only)
      * @param  int|null  $maxLength  Maximum string length (for string types only)
+     * @param  int|float|null  $minimum  Minimum numeric value (for integer/number types only)
+     * @param  int|float|null  $maximum  Maximum numeric value (for integer/number types only)
+     * @param  int|float|null  $exclusiveMinimum  Exclusive minimum numeric value (for integer/number types only)
+     * @param  int|float|null  $exclusiveMaximum  Exclusive maximum numeric value (for integer/number types only)
      * @param  bool|null  $conditionalRequired  Whether conditionally required (only set when true)
      * @param  array<int, ConditionalRuleDetail|array<string, mixed>>|null  $conditionalRules  Conditional rule details
      * @param  EnumInfo|null  $enum  Enum information if this is an enum field
@@ -41,6 +45,10 @@ final readonly class ParameterDefinition
         public ?string $pattern = null,
         public ?int $minLength = null,
         public ?int $maxLength = null,
+        public int|float|null $minimum = null,
+        public int|float|null $maximum = null,
+        public int|float|null $exclusiveMinimum = null,
+        public int|float|null $exclusiveMaximum = null,
         public ?bool $conditionalRequired = null,
         public ?array $conditionalRules = null,
         public ?EnumInfo $enum = null,
@@ -118,6 +126,10 @@ final readonly class ParameterDefinition
             pattern: $data['pattern'] ?? null,
             minLength: $data['minLength'] ?? null,
             maxLength: $data['maxLength'] ?? null,
+            minimum: $data['minimum'] ?? null,
+            maximum: $data['maximum'] ?? null,
+            exclusiveMinimum: $data['exclusiveMinimum'] ?? null,
+            exclusiveMaximum: $data['exclusiveMaximum'] ?? null,
             conditionalRequired: $data['conditional_required'] ?? null,
             conditionalRules: $conditionalRules,
             enum: $enum,
@@ -156,6 +168,22 @@ final readonly class ParameterDefinition
 
         if ($this->maxLength !== null) {
             $result['maxLength'] = $this->maxLength;
+        }
+
+        if ($this->minimum !== null) {
+            $result['minimum'] = $this->minimum;
+        }
+
+        if ($this->maximum !== null) {
+            $result['maximum'] = $this->maximum;
+        }
+
+        if ($this->exclusiveMinimum !== null) {
+            $result['exclusiveMinimum'] = $this->exclusiveMinimum;
+        }
+
+        if ($this->exclusiveMaximum !== null) {
+            $result['exclusiveMaximum'] = $this->exclusiveMaximum;
         }
 
         if ($this->conditionalRequired !== null) {
