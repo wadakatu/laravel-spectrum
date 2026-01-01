@@ -52,6 +52,11 @@ class ParameterBuilder
 
             $ruleArray = ValidationRuleCollection::from($rule)->all();
 
+            // Skip fields with exclude rules (they are never included in validated data)
+            if ($this->hasExcludeRule($ruleArray)) {
+                continue;
+            }
+
             // Check if this is a file upload field
             if (isset($fileFields[$field])) {
                 $parameters[] = $this->buildFileParameter($field, $fileFields[$field], $ruleArray, $attributes);
@@ -146,6 +151,11 @@ class ParameterBuilder
                     ]
                 );
 
+                continue;
+            }
+
+            // Skip fields with exclude rules (they are never included in validated data)
+            if ($this->hasExcludeRule($mergedRules)) {
                 continue;
             }
 
@@ -293,5 +303,30 @@ class ParameterBuilder
         }
 
         return null;
+    }
+
+    /**
+     * Check if rules contain an unconditional exclude rule.
+     *
+     * Only the plain 'exclude' rule always excludes the field.
+     * Conditional excludes (exclude_if, exclude_unless, exclude_with, exclude_without)
+     * may still include the field depending on conditions, so they should remain in the schema.
+     *
+     * @param  array<int|string, mixed>  $rules
+     */
+    private function hasExcludeRule(array $rules): bool
+    {
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            // Only check for plain 'exclude' rule (no parameters)
+            if ($rule === 'exclude') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
