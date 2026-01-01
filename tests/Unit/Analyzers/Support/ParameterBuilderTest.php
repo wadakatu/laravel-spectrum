@@ -1224,6 +1224,150 @@ class ParameterBuilderTest extends TestCase
         $this->assertSame(100.5, $rate->maximum);
     }
 
+    // ========== Array Items Constraints (Issue #315) ==========
+
+    #[Test]
+    public function it_extracts_min_items_for_array_type(): void
+    {
+        $rules = [
+            'items' => 'required|array|min:1',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $items = $this->findParameter($parameters, 'items');
+        $this->assertNotNull($items);
+        $this->assertEquals('array', $items->type);
+        $this->assertEquals(1, $items->minItems);
+    }
+
+    #[Test]
+    public function it_extracts_max_items_for_array_type(): void
+    {
+        $rules = [
+            'tags' => 'nullable|array|max:10',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $tags = $this->findParameter($parameters, 'tags');
+        $this->assertNotNull($tags);
+        $this->assertEquals('array', $tags->type);
+        $this->assertEquals(10, $tags->maxItems);
+    }
+
+    #[Test]
+    public function it_extracts_both_min_and_max_items_for_array_type(): void
+    {
+        $rules = [
+            'addresses' => 'required|array|min:1|max:5',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $addresses = $this->findParameter($parameters, 'addresses');
+        $this->assertNotNull($addresses);
+        $this->assertEquals('array', $addresses->type);
+        $this->assertEquals(1, $addresses->minItems);
+        $this->assertEquals(5, $addresses->maxItems);
+    }
+
+    #[Test]
+    public function it_extracts_size_as_both_min_and_max_items_for_array_type(): void
+    {
+        $rules = [
+            'coordinates' => 'required|array|size:2',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $coordinates = $this->findParameter($parameters, 'coordinates');
+        $this->assertNotNull($coordinates);
+        $this->assertEquals('array', $coordinates->type);
+        $this->assertEquals(2, $coordinates->minItems);
+        $this->assertEquals(2, $coordinates->maxItems);
+    }
+
+    #[Test]
+    public function it_does_not_extract_min_max_as_items_for_string_types(): void
+    {
+        $rules = [
+            'name' => 'required|string|min:5|max:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $name = $this->findParameter($parameters, 'name');
+        $this->assertNotNull($name);
+        $this->assertEquals('string', $name->type);
+        // For string types, min/max should become minLength/maxLength, NOT minItems/maxItems
+        $this->assertNull($name->minItems);
+        $this->assertNull($name->maxItems);
+        $this->assertEquals(5, $name->minLength);
+        $this->assertEquals(100, $name->maxLength);
+    }
+
+    #[Test]
+    public function it_extracts_array_items_constraints_for_conditional_parameters(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['type' => 'bulk'],
+                    'rules' => [
+                        'items' => ['required', 'array', 'min:1', 'max:100'],
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'items' => ['required', 'array', 'min:1', 'max:100'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $items = $this->findParameter($parameters, 'items');
+        $this->assertNotNull($items);
+        $this->assertEquals('array', $items->type);
+        $this->assertEquals(1, $items->minItems);
+        $this->assertEquals(100, $items->maxItems);
+    }
+
+    #[Test]
+    public function it_extracts_between_as_min_and_max_items_for_array_type(): void
+    {
+        $rules = [
+            'tags' => 'required|array|between:1,10',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $tags = $this->findParameter($parameters, 'tags');
+        $this->assertNotNull($tags);
+        $this->assertEquals('array', $tags->type);
+        $this->assertEquals(1, $tags->minItems);
+        $this->assertEquals(10, $tags->maxItems);
+    }
+
+    #[Test]
+    public function it_does_not_extract_min_max_as_items_for_integer_types(): void
+    {
+        $rules = [
+            'quantity' => 'required|integer|min:1|max:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $quantity = $this->findParameter($parameters, 'quantity');
+        $this->assertNotNull($quantity);
+        $this->assertEquals('integer', $quantity->type);
+        // For integer types, min/max should become minimum/maximum, NOT minItems/maxItems
+        $this->assertNull($quantity->minItems);
+        $this->assertNull($quantity->maxItems);
+        $this->assertEquals(1, $quantity->minimum);
+        $this->assertEquals(100, $quantity->maximum);
+    }
+
     // ========== Helper methods ==========
 
     /**
