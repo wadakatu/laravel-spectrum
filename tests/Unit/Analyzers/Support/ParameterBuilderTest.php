@@ -332,6 +332,75 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals('date', $birthDate->format, 'date_format:Y-m-d should set format to "date"');
     }
 
+    #[Test]
+    public function it_generates_format_for_ip_rules(): void
+    {
+        $rules = [
+            'ip_address' => 'required|ip',
+            'server_ipv4' => 'required|ipv4',
+            'server_ipv6' => 'required|ipv6',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // ip rule should have format: ipv4
+        $ipAddress = $this->findParameter($parameters, 'ip_address');
+        $this->assertNotNull($ipAddress);
+        $this->assertEquals('string', $ipAddress->type);
+        $this->assertEquals('ipv4', $ipAddress->format, 'ip rule should set format to "ipv4"');
+
+        // ipv4 rule should have format: ipv4
+        $serverIpv4 = $this->findParameter($parameters, 'server_ipv4');
+        $this->assertNotNull($serverIpv4);
+        $this->assertEquals('string', $serverIpv4->type);
+        $this->assertEquals('ipv4', $serverIpv4->format, 'ipv4 rule should set format to "ipv4"');
+
+        // ipv6 rule should have format: ipv6
+        $serverIpv6 = $this->findParameter($parameters, 'server_ipv6');
+        $this->assertNotNull($serverIpv6);
+        $this->assertEquals('string', $serverIpv6->type);
+        $this->assertEquals('ipv6', $serverIpv6->format, 'ipv6 rule should set format to "ipv6"');
+    }
+
+    #[Test]
+    public function it_generates_format_for_ulid_and_uuid_rules(): void
+    {
+        $rules = [
+            'external_id' => 'required|uuid',
+            'tracking_id' => 'required|ulid',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // uuid rule should have format: uuid
+        $externalId = $this->findParameter($parameters, 'external_id');
+        $this->assertNotNull($externalId);
+        $this->assertEquals('string', $externalId->type);
+        $this->assertEquals('uuid', $externalId->format, 'uuid rule should set format to "uuid"');
+
+        // ulid rule should have format: ulid
+        $trackingId = $this->findParameter($parameters, 'tracking_id');
+        $this->assertNotNull($trackingId);
+        $this->assertEquals('string', $trackingId->type);
+        $this->assertEquals('ulid', $trackingId->format, 'ulid rule should set format to "ulid"');
+    }
+
+    #[Test]
+    public function it_generates_format_for_mac_address_rule(): void
+    {
+        $rules = [
+            'device_mac' => 'required|mac_address',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // mac_address rule should have format
+        $deviceMac = $this->findParameter($parameters, 'device_mac');
+        $this->assertNotNull($deviceMac);
+        $this->assertEquals('string', $deviceMac->type);
+        $this->assertEquals('mac', $deviceMac->format, 'mac_address rule should set format to "mac"');
+    }
+
     // ========== File upload tests ==========
 
     #[Test]
