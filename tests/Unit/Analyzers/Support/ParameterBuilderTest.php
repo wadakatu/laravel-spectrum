@@ -865,6 +865,40 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals('App\\Enums\\Status', $status->enum->class);
     }
 
+    #[Test]
+    public function it_extracts_regex_pattern_without_pcre_delimiters(): void
+    {
+        $rules = [
+            'phone' => 'required|regex:/^\\+?[1-9]\\d{1,14}$/',  // E.164 phone format
+            'zip_code' => 'regex:/^\\d{5}(-\\d{4})?$/',  // US zip code
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $phone = $this->findParameter($parameters, 'phone');
+        $this->assertNotNull($phone);
+        // PCRE delimiters should be stripped
+        $this->assertEquals('^\\+?[1-9]\\d{1,14}$', $phone->pattern);
+
+        $zipCode = $this->findParameter($parameters, 'zip_code');
+        $this->assertNotNull($zipCode);
+        $this->assertEquals('^\\d{5}(-\\d{4})?$', $zipCode->pattern);
+    }
+
+    #[Test]
+    public function it_returns_null_pattern_when_no_regex_rule(): void
+    {
+        $rules = [
+            'name' => 'required|string|max:255',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $name = $this->findParameter($parameters, 'name');
+        $this->assertNotNull($name);
+        $this->assertNull($name->pattern);
+    }
+
     // ========== Helper methods ==========
 
     /**

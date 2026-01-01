@@ -159,7 +159,8 @@ class QueryParameterTypeInferenceTest extends TestCase
 
         $rules = ['regex:/^[A-Z]+$/'];
         $constraints = $this->inference->getConstraintsFromRules($rules);
-        $this->assertEquals(['pattern' => '/^[A-Z]+$/'], $constraints);
+        // PCRE delimiters should be stripped for OpenAPI compatibility
+        $this->assertEquals(['pattern' => '^[A-Z]+$'], $constraints);
 
         // For integer type, min/max → minimum/maximum
         $rules = ['integer', 'min:1', 'max:100'];

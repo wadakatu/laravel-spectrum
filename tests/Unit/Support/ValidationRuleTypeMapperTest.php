@@ -236,7 +236,8 @@ class ValidationRuleTypeMapperTest extends TestCase
     {
         $constraints = $this->mapper->extractConstraints(['regex:/^[a-z]+$/']);
 
-        $this->assertEquals('/^[a-z]+$/', $constraints['pattern']);
+        // PCRE delimiters should be stripped for OpenAPI compatibility
+        $this->assertEquals('^[a-z]+$', $constraints['pattern']);
     }
 
     #[Test]

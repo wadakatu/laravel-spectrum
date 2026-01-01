@@ -685,4 +685,78 @@ class ParameterDefinitionTest extends TestCase
         $this->assertInstanceOf(EnumInfo::class, $restored->enum);
         $this->assertEquals($original->enum->class, $restored->enum->class);
     }
+
+    #[Test]
+    public function it_can_create_parameter_with_pattern(): void
+    {
+        $param = new ParameterDefinition(
+            name: 'phone',
+            in: 'body',
+            required: true,
+            type: 'string',
+            description: 'Phone number in E.164 format',
+            example: '+1234567890',
+            validation: ['required', 'regex:/^\\+?[1-9]\\d{1,14}$/'],
+            pattern: '^\\+?[1-9]\\d{1,14}$',
+        );
+
+        $this->assertEquals('^\\+?[1-9]\\d{1,14}$', $param->pattern);
+    }
+
+    #[Test]
+    public function it_includes_pattern_in_to_array(): void
+    {
+        $param = new ParameterDefinition(
+            name: 'zip_code',
+            in: 'body',
+            required: false,
+            type: 'string',
+            description: 'US Zip code',
+            example: '12345',
+            validation: ['regex:/^\\d{5}(-\\d{4})?$/'],
+            pattern: '^\\d{5}(-\\d{4})?$',
+        );
+
+        $array = $param->toArray();
+
+        $this->assertArrayHasKey('pattern', $array);
+        $this->assertEquals('^\\d{5}(-\\d{4})?$', $array['pattern']);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_pattern(): void
+    {
+        $data = [
+            'name' => 'phone',
+            'in' => 'body',
+            'required' => true,
+            'type' => 'string',
+            'description' => 'Phone number',
+            'example' => '+1234567890',
+            'validation' => ['required'],
+            'pattern' => '^\\+?[1-9]\\d{1,14}$',
+        ];
+
+        $param = ParameterDefinition::fromArray($data);
+
+        $this->assertEquals('^\\+?[1-9]\\d{1,14}$', $param->pattern);
+    }
+
+    #[Test]
+    public function it_omits_pattern_when_null_in_to_array(): void
+    {
+        $param = new ParameterDefinition(
+            name: 'simple',
+            in: 'body',
+            required: false,
+            type: 'string',
+            description: 'Simple field',
+            example: null,
+            validation: [],
+        );
+
+        $array = $param->toArray();
+
+        $this->assertArrayNotHasKey('pattern', $array);
+    }
 }
