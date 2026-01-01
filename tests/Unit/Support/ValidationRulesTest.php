@@ -308,4 +308,71 @@ class ValidationRulesTest extends TestCase
             ValidationRules::getMessageTemplate('alpha_dash')
         );
     }
+
+    #[Test]
+    public function it_strips_pcre_delimiters_with_forward_slash(): void
+    {
+        // Standard forward slash delimiter
+        $this->assertEquals(
+            '^\\+?[1-9]\\d{1,14}$',
+            ValidationRules::stripPcreDelimiters('/^\\+?[1-9]\\d{1,14}$/')
+        );
+
+        // Simple pattern
+        $this->assertEquals(
+            '^[a-z]+$',
+            ValidationRules::stripPcreDelimiters('/^[a-z]+$/')
+        );
+
+        // US zip code pattern
+        $this->assertEquals(
+            '^\\d{5}(-\\d{4})?$',
+            ValidationRules::stripPcreDelimiters('/^\\d{5}(-\\d{4})?$/')
+        );
+    }
+
+    #[Test]
+    public function it_strips_pcre_delimiters_with_other_delimiters(): void
+    {
+        // Hash delimiter
+        $this->assertEquals(
+            '^[a-z]+$',
+            ValidationRules::stripPcreDelimiters('#^[a-z]+$#')
+        );
+
+        // Tilde delimiter
+        $this->assertEquals(
+            '^[a-z]+$',
+            ValidationRules::stripPcreDelimiters('~^[a-z]+$~')
+        );
+    }
+
+    #[Test]
+    public function it_returns_pattern_unchanged_if_no_valid_delimiter(): void
+    {
+        // No delimiter (already clean pattern)
+        $this->assertEquals(
+            '^[a-z]+$',
+            ValidationRules::stripPcreDelimiters('^[a-z]+$')
+        );
+
+        // Invalid first character as delimiter
+        $this->assertEquals(
+            '[a-z]+',
+            ValidationRules::stripPcreDelimiters('[a-z]+')
+        );
+    }
+
+    #[Test]
+    public function it_handles_edge_cases_in_pcre_delimiter_stripping(): void
+    {
+        // Very short string
+        $this->assertEquals('a', ValidationRules::stripPcreDelimiters('a'));
+
+        // Empty pattern with delimiters
+        $this->assertEquals('', ValidationRules::stripPcreDelimiters('//'));
+
+        // Single character
+        $this->assertEquals('/', ValidationRules::stripPcreDelimiters('/'));
+    }
 }

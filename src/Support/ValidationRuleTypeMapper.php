@@ -308,7 +308,8 @@ final class ValidationRuleTypeMapper
                     // Handle regex patterns that may contain colons
                     if (isset($parts[1])) {
                         // Rejoin all parts after the first colon to preserve the full pattern
-                        $constraints['pattern'] = implode(':', array_slice($parts, 1));
+                        $rawPattern = implode(':', array_slice($parts, 1));
+                        $constraints['pattern'] = ValidationRules::stripPcreDelimiters($rawPattern);
                     }
                     break;
 

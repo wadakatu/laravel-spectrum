@@ -142,4 +142,36 @@ class ValidationRules
 
         return 'string';
     }
+
+    /**
+     * Strip PCRE delimiters from regex pattern for OpenAPI compatibility.
+     *
+     * Laravel regex rules use PCRE format like /pattern/ or /pattern$/i
+     * OpenAPI expects the pattern without delimiters.
+     */
+    public static function stripPcreDelimiters(string $pattern): string
+    {
+        // PCRE patterns typically start and end with / or other delimiters
+        // Common delimiters: /, #, ~, !, @, ;, %, `
+        if (strlen($pattern) < 2) {
+            return $pattern;
+        }
+
+        $firstChar = $pattern[0];
+        $validDelimiters = ['/', '#', '~', '!', '@', ';', '%', '`'];
+
+        if (! in_array($firstChar, $validDelimiters, true)) {
+            return $pattern;
+        }
+
+        // Find the last occurrence of the delimiter (before any modifiers)
+        $lastDelimiterPos = strrpos($pattern, $firstChar);
+
+        if ($lastDelimiterPos === false || $lastDelimiterPos === 0) {
+            return $pattern;
+        }
+
+        // Extract the pattern between delimiters
+        return substr($pattern, 1, $lastDelimiterPos - 1);
+    }
 }

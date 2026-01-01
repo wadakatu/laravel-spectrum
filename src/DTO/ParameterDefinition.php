@@ -21,6 +21,7 @@ final readonly class ParameterDefinition
      * @param  mixed  $example  Example value for documentation
      * @param  array<string>  $validation  Validation rules from Laravel
      * @param  string|null  $format  OpenAPI format (email, date, date-time, uuid, binary, etc.)
+     * @param  string|null  $pattern  Regex pattern for string validation (without PCRE delimiters)
      * @param  bool|null  $conditionalRequired  Whether conditionally required (only set when true)
      * @param  array<int, ConditionalRuleDetail|array<string, mixed>>|null  $conditionalRules  Conditional rule details
      * @param  EnumInfo|null  $enum  Enum information if this is an enum field
@@ -35,6 +36,7 @@ final readonly class ParameterDefinition
         public mixed $example,
         public array $validation,
         public ?string $format = null,
+        public ?string $pattern = null,
         public ?bool $conditionalRequired = null,
         public ?array $conditionalRules = null,
         public ?EnumInfo $enum = null,
@@ -109,6 +111,7 @@ final readonly class ParameterDefinition
             example: $data['example'] ?? null,
             validation: $data['validation'] ?? [],
             format: $data['format'] ?? null,
+            pattern: $data['pattern'] ?? null,
             conditionalRequired: $data['conditional_required'] ?? null,
             conditionalRules: $conditionalRules,
             enum: $enum,
@@ -135,6 +138,10 @@ final readonly class ParameterDefinition
 
         if ($this->format !== null) {
             $result['format'] = $this->format;
+        }
+
+        if ($this->pattern !== null) {
+            $result['pattern'] = $this->pattern;
         }
 
         if ($this->conditionalRequired !== null) {

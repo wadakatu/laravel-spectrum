@@ -1576,6 +1576,39 @@ class SchemaGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_strips_pcre_delimiters_from_regex_pattern(): void
+    {
+        // Laravel regex rules use PCRE format with delimiters like /pattern/ or /pattern$/
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
+                    'rules' => [
+                        'phone' => 'regex:/^\\+?[1-9]\\d{1,14}$/',  // E.164 phone format with delimiters
+                        'zip_code' => 'regex:/^\\d{5}(-\\d{4})?$/',  // US zip code format
+                    ],
+                ],
+                [
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
+                    'rules' => [
+                        'phone' => 'string',
+                        'zip_code' => 'string',
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // The delimiters should be stripped, leaving only the pattern
+        $this->assertArrayHasKey('pattern', $schema['oneOf'][0]['properties']['phone']);
+        $this->assertEquals('^\\+?[1-9]\\d{1,14}$', $schema['oneOf'][0]['properties']['phone']['pattern']);
+
+        $this->assertArrayHasKey('pattern', $schema['oneOf'][0]['properties']['zip_code']);
+        $this->assertEquals('^\\d{5}(-\\d{4})?$', $schema['oneOf'][0]['properties']['zip_code']['pattern']);
+    }
+
+    #[Test]
     public function it_generates_discriminator_mapping(): void
     {
         $conditionalRules = [

@@ -7,6 +7,7 @@ use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Support\ValidationRules;
 
 class SchemaGenerator
 {
@@ -800,7 +801,7 @@ class SchemaGenerator
                 break;
             case 'regex':
                 if ($ruleValue) {
-                    $property['pattern'] = $ruleValue;
+                    $property['pattern'] = ValidationRules::stripPcreDelimiters($ruleValue);
                 }
                 break;
         }

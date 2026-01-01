@@ -10,6 +10,7 @@ use LaravelSpectrum\DTO\FileUploadInfo;
 use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Support\ValidationRules;
 
 /**
  * Builds parameter arrays from validation rules.
@@ -217,6 +218,9 @@ class ParameterBuilder
         // Determine format
         $format = $this->formatInferrer->inferFormat($ruleArray);
 
+        // Extract regex pattern (without PCRE delimiters)
+        $pattern = $this->extractPattern($ruleArray);
+
         // Determine conditional rule information
         $conditionalRequired = null;
         $conditionalRules = null;
@@ -239,6 +243,7 @@ class ParameterBuilder
             example: $this->typeInference->generateExample($field, $ruleArray),
             validation: $ruleArray,
             format: $format,
+            pattern: $pattern,
             conditionalRequired: $conditionalRequired,
             conditionalRules: $conditionalRules,
             enum: $enumInfo,
@@ -267,6 +272,9 @@ class ParameterBuilder
         // Determine format
         $format = $this->formatInferrer->inferFormat($mergedRules);
 
+        // Extract regex pattern (without PCRE delimiters)
+        $pattern = $this->extractPattern($mergedRules);
+
         // Extract rules_by_condition with fallback for safety
         $rulesByCondition = $processedField['rules_by_condition'] ?? [];
 
@@ -282,6 +290,7 @@ class ParameterBuilder
             example: $this->typeInference->generateExample($field, $mergedRules),
             validation: $mergedRules,
             format: $format,
+            pattern: $pattern,
             conditionalRules: $rulesByCondition,
             enum: $enumInfo,
         );
@@ -328,5 +337,30 @@ class ParameterBuilder
         }
 
         return false;
+    }
+
+    /**
+     * Extract regex pattern from validation rules.
+     *
+     * Returns the pattern without PCRE delimiters for OpenAPI compatibility.
+     *
+     * @param  array<int|string, mixed>  $rules
+     */
+    private function extractPattern(array $rules): ?string
+    {
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            // Check for regex: or pattern: prefix
+            if (str_starts_with($rule, 'regex:') || str_starts_with($rule, 'pattern:')) {
+                $rawPattern = substr($rule, strpos($rule, ':') + 1);
+
+                return ValidationRules::stripPcreDelimiters($rawPattern);
+            }
+        }
+
+        return null;
     }
 }
