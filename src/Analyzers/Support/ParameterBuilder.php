@@ -538,7 +538,7 @@ class ParameterBuilder
     /**
      * Extract array items constraints from validation rules.
      *
-     * Converts Laravel's min/max/size rules to OpenAPI minItems/maxItems.
+     * Converts Laravel's min/max/size/between rules to OpenAPI minItems/maxItems.
      * Only applies when the type is 'array'.
      *
      * @param  array<int|string, mixed>  $rules
@@ -581,6 +581,20 @@ class ParameterBuilder
                 if (is_numeric($value)) {
                     $minItems = (int) $value;
                     $maxItems = (int) $value;
+                }
+            }
+
+            // Handle between:a,b (sets both min and max)
+            if (str_starts_with($rule, 'between:')) {
+                $params = substr($rule, 8);
+                $parts = explode(',', $params);
+                if (count($parts) === 2) {
+                    if (is_numeric($parts[0])) {
+                        $minItems = (int) $parts[0];
+                    }
+                    if (is_numeric($parts[1])) {
+                        $maxItems = (int) $parts[1];
+                    }
                 }
             }
         }

@@ -1333,6 +1333,41 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals(100, $items->maxItems);
     }
 
+    #[Test]
+    public function it_extracts_between_as_min_and_max_items_for_array_type(): void
+    {
+        $rules = [
+            'tags' => 'required|array|between:1,10',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $tags = $this->findParameter($parameters, 'tags');
+        $this->assertNotNull($tags);
+        $this->assertEquals('array', $tags->type);
+        $this->assertEquals(1, $tags->minItems);
+        $this->assertEquals(10, $tags->maxItems);
+    }
+
+    #[Test]
+    public function it_does_not_extract_min_max_as_items_for_integer_types(): void
+    {
+        $rules = [
+            'quantity' => 'required|integer|min:1|max:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $quantity = $this->findParameter($parameters, 'quantity');
+        $this->assertNotNull($quantity);
+        $this->assertEquals('integer', $quantity->type);
+        // For integer types, min/max should become minimum/maximum, NOT minItems/maxItems
+        $this->assertNull($quantity->minItems);
+        $this->assertNull($quantity->maxItems);
+        $this->assertEquals(1, $quantity->minimum);
+        $this->assertEquals(100, $quantity->maximum);
+    }
+
     // ========== Helper methods ==========
 
     /**
