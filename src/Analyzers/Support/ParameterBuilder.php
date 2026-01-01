@@ -65,7 +65,13 @@ class ParameterBuilder
                 continue;
             }
 
-            $parameters[] = $this->buildStandardParameter($field, $ruleArray, $attributes, $namespace, $useStatements);
+            $parameter = $this->buildStandardParameter($field, $ruleArray, $attributes, $namespace, $useStatements);
+            $parameters[] = $parameter;
+
+            // Generate confirmation field if 'confirmed' rule is present
+            if ($this->hasConfirmedRule($ruleArray)) {
+                $parameters[] = $this->buildConfirmationField($field, $parameter, $attributes);
+            }
         }
 
         return $parameters;
@@ -377,6 +383,53 @@ class ParameterBuilder
         }
 
         return false;
+    }
+
+    /**
+     * Check if rules contain a 'confirmed' rule.
+     *
+     * @param  array<int|string, mixed>  $rules
+     */
+    private function hasConfirmedRule(array $rules): bool
+    {
+        foreach ($rules as $rule) {
+            if (is_string($rule) && $rule === 'confirmed') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Build a confirmation field for a field with 'confirmed' rule.
+     *
+     * The confirmation field has the same type and constraints as the original field,
+     * with '_confirmation' suffix added to the name.
+     *
+     * @param  array<string, string>  $attributes
+     */
+    private function buildConfirmationField(string $field, ParameterDefinition $original, array $attributes): ParameterDefinition
+    {
+        $confirmationField = $field.'_confirmation';
+
+        // Generate description for confirmation field
+        $fieldLabel = $attributes[$confirmationField]
+            ?? ucwords(str_replace('_', ' ', $field)).' Confirmation';
+
+        return new ParameterDefinition(
+            name: $confirmationField,
+            in: $original->in,
+            required: $original->required,
+            type: $original->type,
+            description: $fieldLabel,
+            example: $original->example,
+            validation: ['required', 'same:'.$field],
+            format: $original->format,
+            pattern: $original->pattern,
+            minLength: $original->minLength,
+            maxLength: $original->maxLength,
+        );
     }
 
     /**
