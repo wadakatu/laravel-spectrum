@@ -194,15 +194,16 @@ class ConditionalValidationRulesTest extends TestCase
         // Act
         $parameters = $this->analyzer->analyze(get_class($testRequestClass));
 
-        // Assert
+        // Assert - Conditional excludes should be included in the schema
         $metadataParam = $this->findParameterByName($parameters, 'metadata');
         $this->assertContains('exclude_if:include_metadata,false', $metadataParam['validation']);
 
         $xmlOptionsParam = $this->findParameterByName($parameters, 'xml_options');
         $this->assertContains('exclude_unless:format,xml', $xmlOptionsParam['validation']);
 
+        // Plain exclude should NOT appear in the schema
         $tempParam = $this->findParameterByName($parameters, 'temporary_field');
-        $this->assertContains('exclude', $tempParam['validation']);
+        $this->assertNull($tempParam, 'Fields with plain exclude rule should not appear in schema');
     }
 
     #[Test]

@@ -113,6 +113,33 @@ class ParameterBuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_excludes_fields_with_exclude_rule(): void
+    {
+        // Only plain 'exclude' rule should exclude the field from schema.
+        // Conditional excludes (exclude_if, exclude_unless, etc.) should remain
+        // because the field may be included depending on conditions.
+        $rules = [
+            'internal_notes' => ['exclude'],  // Unconditionally excluded - should NOT appear
+            'debug_info' => ['exclude_if:environment,production'],  // Conditionally excluded - should appear
+            'legacy_field' => ['exclude_unless:include_legacy,true'],  // Conditionally excluded - should appear
+            'name' => ['required', 'string'],
+            'email' => ['required', 'email'],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // internal_notes should be excluded, but conditional excludes should remain
+        $this->assertCount(4, $parameters);
+
+        $names = array_map(fn ($p) => $p->name, $parameters);
+        $this->assertContains('name', $names);
+        $this->assertContains('email', $names);
+        $this->assertContains('debug_info', $names);  // Conditional exclude - included
+        $this->assertContains('legacy_field', $names);  // Conditional exclude - included
+        $this->assertNotContains('internal_notes', $names);  // Plain exclude - removed
+    }
+
+    #[Test]
     public function it_uses_custom_attributes_for_descriptions(): void
     {
         $rules = [
@@ -417,6 +444,41 @@ class ParameterBuilderTest extends TestCase
         $publishAtArray = $publishAt->toArray();
         $this->assertArrayHasKey('format', $publishAtArray);
         $this->assertEquals('date', $publishAtArray['format']);
+    }
+
+    #[Test]
+    public function it_excludes_fields_with_exclude_rule_in_conditional_rules(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['mode' => 'debug'],
+                    'rules' => [
+                        'debug_info' => 'required|string',
+                        'internal_notes' => 'exclude',  // Should be excluded
+                        'email' => 'required|email',
+                    ],
+                ],
+                [
+                    'conditions' => ['mode' => 'production'],
+                    'rules' => [
+                        'email' => 'required|email',
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'debug_info' => ['required', 'string'],
+                'internal_notes' => ['exclude'],  // Should be excluded
+                'email' => ['required', 'email'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $names = array_map(fn ($p) => $p->name, $parameters);
+        $this->assertContains('debug_info', $names);
+        $this->assertContains('email', $names);
+        $this->assertNotContains('internal_notes', $names, 'Fields with exclude rule should not appear');
     }
 
     #[Test]
