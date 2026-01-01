@@ -1192,6 +1192,38 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals(10000, $price->maximum);
     }
 
+    #[Test]
+    public function it_extracts_float_minimum_and_maximum_for_number_type(): void
+    {
+        $rules = [
+            'price' => 'required|numeric|min:0.01|max:999.99',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $price = $this->findParameter($parameters, 'price');
+        $this->assertNotNull($price);
+        $this->assertEquals('number', $price->type);
+        $this->assertSame(0.01, $price->minimum);
+        $this->assertSame(999.99, $price->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_float_between_as_minimum_and_maximum(): void
+    {
+        $rules = [
+            'rate' => 'required|numeric|between:0.5,100.5',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $rate = $this->findParameter($parameters, 'rate');
+        $this->assertNotNull($rate);
+        $this->assertEquals('number', $rate->type);
+        $this->assertSame(0.5, $rate->minimum);
+        $this->assertSame(100.5, $rate->maximum);
+    }
+
     // ========== Helper methods ==========
 
     /**
