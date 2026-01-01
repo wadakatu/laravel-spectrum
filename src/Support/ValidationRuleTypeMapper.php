@@ -216,7 +216,7 @@ final class ValidationRuleTypeMapper
     }
 
     /**
-     * Extract enum values from 'in:' rule.
+     * Extract enum values from 'in:' rule or Rule::in() object.
      *
      * @param  array<mixed>  $rules
      * @return array<string>|null
@@ -224,14 +224,46 @@ final class ValidationRuleTypeMapper
     public function extractEnumValues(array $rules): ?array
     {
         foreach ($rules as $rule) {
+            // Handle string 'in:value1,value2' format
             if (is_string($rule) && Str::startsWith($rule, 'in:')) {
                 $values = Str::after($rule, 'in:');
 
-                return explode(',', $values);
+                return $this->parseInRuleValues($values);
+            }
+
+            // Handle Rule::in() object (Illuminate\Validation\Rules\In)
+            if (is_object($rule) && class_basename($rule) === 'In') {
+                $stringRule = (string) $rule;
+                if (Str::startsWith($stringRule, 'in:')) {
+                    $values = Str::after($stringRule, 'in:');
+
+                    return $this->parseInRuleValues($values);
+                }
             }
         }
 
         return null;
+    }
+
+    /**
+     * Parse values from 'in:' rule string.
+     *
+     * Handles both unquoted (in:a,b,c) and quoted (in:"a","b","c") formats.
+     *
+     * @return array<string>
+     */
+    private function parseInRuleValues(string $values): array
+    {
+        // Check if values are quoted (from Rule::in() object)
+        if (Str::contains($values, '"')) {
+            // Extract values between quotes
+            preg_match_all('/"([^"]*)"/', $values, $matches);
+
+            return $matches[1];
+        }
+
+        // Simple comma-separated values
+        return explode(',', $values);
     }
 
     /**

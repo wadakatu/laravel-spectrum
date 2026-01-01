@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\Support;
 
+use Illuminate\Validation\Rule;
 use LaravelSpectrum\Support\ValidationRuleTypeMapper;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -156,6 +157,24 @@ class ValidationRuleTypeMapperTest extends TestCase
     {
         $this->assertNull($this->mapper->extractEnumValues(['required']));
         $this->assertNull($this->mapper->extractEnumValues([]));
+    }
+
+    #[Test]
+    public function it_extracts_enum_values_from_rule_in_object(): void
+    {
+        $rule = Rule::in(['low', 'medium', 'high', 'critical']);
+        $values = $this->mapper->extractEnumValues([$rule]);
+
+        $this->assertEquals(['low', 'medium', 'high', 'critical'], $values);
+    }
+
+    #[Test]
+    public function it_extracts_enum_values_from_rule_in_with_mixed_rules(): void
+    {
+        $rule = Rule::in(['active', 'inactive', 'pending']);
+        $values = $this->mapper->extractEnumValues(['required', 'string', $rule]);
+
+        $this->assertEquals(['active', 'inactive', 'pending'], $values);
     }
 
     #[Test]
