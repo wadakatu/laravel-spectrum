@@ -375,4 +375,79 @@ class ValidationRulesTest extends TestCase
         // Single character
         $this->assertEquals('/', ValidationRules::stripPcreDelimiters('/'));
     }
+
+    #[Test]
+    public function it_strips_pcre_delimiters_with_modifiers(): void
+    {
+        // Case-insensitive modifier
+        $this->assertEquals(
+            '^[a-z]+$',
+            ValidationRules::stripPcreDelimiters('/^[a-z]+$/i')
+        );
+
+        // Multiple modifiers
+        $this->assertEquals(
+            '^[a-z]+$',
+            ValidationRules::stripPcreDelimiters('/^[a-z]+$/ims')
+        );
+
+        // Unicode modifier
+        $this->assertEquals(
+            '^\p{L}+$',
+            ValidationRules::stripPcreDelimiters('/^\p{L}+$/u')
+        );
+    }
+
+    #[Test]
+    public function it_handles_patterns_containing_delimiter_characters(): void
+    {
+        // URL pattern containing slashes - using alternative delimiter
+        $this->assertEquals(
+            'https?://[a-z]+',
+            ValidationRules::stripPcreDelimiters('#https?://[a-z]+#')
+        );
+
+        // Pattern with escaped slashes
+        $this->assertEquals(
+            'https?:\\/\\/[a-z]+',
+            ValidationRules::stripPcreDelimiters('/https?:\\/\\/[a-z]+/')
+        );
+    }
+
+    #[Test]
+    public function it_handles_malformed_patterns_gracefully(): void
+    {
+        // Only opening delimiter - returns unchanged
+        $this->assertEquals(
+            '/pattern',
+            ValidationRules::stripPcreDelimiters('/pattern')
+        );
+
+        // Empty string
+        $this->assertEquals(
+            '',
+            ValidationRules::stripPcreDelimiters('')
+        );
+
+        // Delimiter at start only, no closing delimiter found
+        $this->assertEquals(
+            '/noend',
+            ValidationRules::stripPcreDelimiters('/noend')
+        );
+    }
+
+    #[Test]
+    public function it_strips_all_valid_pcre_delimiters(): void
+    {
+        $delimiters = ['/', '#', '~', '!', '@', ';', '%', '`'];
+
+        foreach ($delimiters as $delimiter) {
+            $pattern = $delimiter.'^[a-z]+$'.$delimiter;
+            $this->assertEquals(
+                '^[a-z]+$',
+                ValidationRules::stripPcreDelimiters($pattern),
+                "Failed for delimiter: $delimiter"
+            );
+        }
+    }
 }
