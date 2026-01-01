@@ -59,6 +59,7 @@ final class ValidationRuleTypeMapper
         'email' => 'email',
         'url' => 'uri',
         'uuid' => 'uuid',
+        'ulid' => 'ulid',
         'ip' => 'ipv4',
         'ipv4' => 'ipv4',
         'ipv6' => 'ipv6',
