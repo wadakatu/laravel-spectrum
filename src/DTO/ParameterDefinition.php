@@ -28,6 +28,8 @@ final readonly class ParameterDefinition
      * @param  int|float|null  $maximum  Maximum numeric value (for integer/number types only)
      * @param  int|float|null  $exclusiveMinimum  Exclusive minimum numeric value (for integer/number types only)
      * @param  int|float|null  $exclusiveMaximum  Exclusive maximum numeric value (for integer/number types only)
+     * @param  int|null  $minItems  Minimum array items (for array types only)
+     * @param  int|null  $maxItems  Maximum array items (for array types only)
      * @param  bool|null  $conditionalRequired  Whether conditionally required (only set when true)
      * @param  array<int, ConditionalRuleDetail|array<string, mixed>>|null  $conditionalRules  Conditional rule details
      * @param  EnumInfo|null  $enum  Enum information if this is an enum field
@@ -49,6 +51,8 @@ final readonly class ParameterDefinition
         public int|float|null $maximum = null,
         public int|float|null $exclusiveMinimum = null,
         public int|float|null $exclusiveMaximum = null,
+        public ?int $minItems = null,
+        public ?int $maxItems = null,
         public ?bool $conditionalRequired = null,
         public ?array $conditionalRules = null,
         public ?EnumInfo $enum = null,
@@ -130,6 +134,8 @@ final readonly class ParameterDefinition
             maximum: $data['maximum'] ?? null,
             exclusiveMinimum: $data['exclusiveMinimum'] ?? null,
             exclusiveMaximum: $data['exclusiveMaximum'] ?? null,
+            minItems: $data['minItems'] ?? null,
+            maxItems: $data['maxItems'] ?? null,
             conditionalRequired: $data['conditional_required'] ?? null,
             conditionalRules: $conditionalRules,
             enum: $enum,
@@ -184,6 +190,14 @@ final readonly class ParameterDefinition
 
         if ($this->exclusiveMaximum !== null) {
             $result['exclusiveMaximum'] = $this->exclusiveMaximum;
+        }
+
+        if ($this->minItems !== null) {
+            $result['minItems'] = $this->minItems;
+        }
+
+        if ($this->maxItems !== null) {
+            $result['maxItems'] = $this->maxItems;
         }
 
         if ($this->conditionalRequired !== null) {

@@ -230,6 +230,9 @@ class ParameterBuilder
         // Extract numeric constraints (only for integer/number types)
         [$minimum, $maximum, $exclusiveMinimum, $exclusiveMaximum] = $this->extractNumericConstraints($ruleArray, $type);
 
+        // Extract array items constraints (only for array types)
+        [$minItems, $maxItems] = $this->extractArrayItemsConstraints($ruleArray, $type);
+
         // Determine conditional rule information
         $conditionalRequired = null;
         $conditionalRules = null;
@@ -259,6 +262,8 @@ class ParameterBuilder
             maximum: $maximum,
             exclusiveMinimum: $exclusiveMinimum,
             exclusiveMaximum: $exclusiveMaximum,
+            minItems: $minItems,
+            maxItems: $maxItems,
             conditionalRequired: $conditionalRequired,
             conditionalRules: $conditionalRules,
             enum: $enumInfo,
@@ -299,6 +304,9 @@ class ParameterBuilder
         // Extract numeric constraints (only for integer/number types)
         [$minimum, $maximum, $exclusiveMinimum, $exclusiveMaximum] = $this->extractNumericConstraints($mergedRules, $type);
 
+        // Extract array items constraints (only for array types)
+        [$minItems, $maxItems] = $this->extractArrayItemsConstraints($mergedRules, $type);
+
         // Extract rules_by_condition with fallback for safety
         $rulesByCondition = $processedField['rules_by_condition'] ?? [];
 
@@ -321,6 +329,8 @@ class ParameterBuilder
             maximum: $maximum,
             exclusiveMinimum: $exclusiveMinimum,
             exclusiveMaximum: $exclusiveMaximum,
+            minItems: $minItems,
+            maxItems: $maxItems,
             conditionalRules: $rulesByCondition,
             enum: $enumInfo,
         );
@@ -523,5 +533,58 @@ class ParameterBuilder
         }
 
         return [$minimum, $maximum, $exclusiveMinimum, $exclusiveMaximum];
+    }
+
+    /**
+     * Extract array items constraints from validation rules.
+     *
+     * Converts Laravel's min/max/size rules to OpenAPI minItems/maxItems.
+     * Only applies when the type is 'array'.
+     *
+     * @param  array<int|string, mixed>  $rules
+     * @return array{0: int|null, 1: int|null} [minItems, maxItems]
+     */
+    private function extractArrayItemsConstraints(array $rules, string $type): array
+    {
+        // Only extract array constraints for array types
+        if ($type !== 'array') {
+            return [null, null];
+        }
+
+        $minItems = null;
+        $maxItems = null;
+
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            // Handle min:n
+            if (str_starts_with($rule, 'min:')) {
+                $value = substr($rule, 4);
+                if (is_numeric($value)) {
+                    $minItems = (int) $value;
+                }
+            }
+
+            // Handle max:n
+            if (str_starts_with($rule, 'max:')) {
+                $value = substr($rule, 4);
+                if (is_numeric($value)) {
+                    $maxItems = (int) $value;
+                }
+            }
+
+            // Handle size:n (sets both min and max)
+            if (str_starts_with($rule, 'size:')) {
+                $value = substr($rule, 5);
+                if (is_numeric($value)) {
+                    $minItems = (int) $value;
+                    $maxItems = (int) $value;
+                }
+            }
+        }
+
+        return [$minItems, $maxItems];
     }
 }
