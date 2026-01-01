@@ -233,7 +233,8 @@
                                     "name": {
                                         "type": "string",
                                         "description": "ユーザー名",
-                                        "example": "John Doe"
+                                        "example": "John Doe",
+                                        "maxLength": 255
                                     },
                                     "email": {
                                         "type": "string",
@@ -244,7 +245,8 @@
                                     "password": {
                                         "type": "string",
                                         "description": "パスワード",
-                                        "example": "password123"
+                                        "example": "password123",
+                                        "minLength": 8
                                     },
                                     "age": {
                                         "type": "integer",

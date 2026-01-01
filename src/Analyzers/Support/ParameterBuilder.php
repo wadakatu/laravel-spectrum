@@ -221,6 +221,12 @@ class ParameterBuilder
         // Extract regex pattern (without PCRE delimiters)
         $pattern = $this->extractPattern($ruleArray);
 
+        // Determine the type first so we can extract type-specific constraints
+        $type = $this->typeInference->inferFromRules($ruleArray);
+
+        // Extract string length constraints (only for string types)
+        [$minLength, $maxLength] = $this->extractStringLengthConstraints($ruleArray, $type);
+
         // Determine conditional rule information
         $conditionalRequired = null;
         $conditionalRules = null;
@@ -233,7 +239,7 @@ class ParameterBuilder
             name: $field,
             in: 'body',
             required: $this->ruleRequirementAnalyzer->isRequired($ruleArray),
-            type: $this->typeInference->inferFromRules($ruleArray),
+            type: $type,
             description: $attributes[$field] ?? $this->descriptionGenerator->generateDescription(
                 $field,
                 $ruleArray,
@@ -244,6 +250,8 @@ class ParameterBuilder
             validation: $ruleArray,
             format: $format,
             pattern: $pattern,
+            minLength: $minLength,
+            maxLength: $maxLength,
             conditionalRequired: $conditionalRequired,
             conditionalRules: $conditionalRules,
             enum: $enumInfo,
@@ -275,6 +283,12 @@ class ParameterBuilder
         // Extract regex pattern (without PCRE delimiters)
         $pattern = $this->extractPattern($mergedRules);
 
+        // Determine the type first so we can extract type-specific constraints
+        $type = $this->typeInference->inferFromRules($mergedRules);
+
+        // Extract string length constraints (only for string types)
+        [$minLength, $maxLength] = $this->extractStringLengthConstraints($mergedRules, $type);
+
         // Extract rules_by_condition with fallback for safety
         $rulesByCondition = $processedField['rules_by_condition'] ?? [];
 
@@ -282,7 +296,7 @@ class ParameterBuilder
             name: $field,
             in: 'body',
             required: $this->ruleRequirementAnalyzer->isRequiredInAnyCondition($rulesByCondition),
-            type: $this->typeInference->inferFromRules($mergedRules),
+            type: $type,
             description: $attributes[$field] ?? $this->descriptionGenerator->generateConditionalDescription(
                 $field,
                 $processedField
@@ -291,6 +305,8 @@ class ParameterBuilder
             validation: $mergedRules,
             format: $format,
             pattern: $pattern,
+            minLength: $minLength,
+            maxLength: $maxLength,
             conditionalRules: $rulesByCondition,
             enum: $enumInfo,
         );
@@ -362,5 +378,58 @@ class ParameterBuilder
         }
 
         return null;
+    }
+
+    /**
+     * Extract string length constraints from validation rules.
+     *
+     * Converts Laravel's min/max/size rules to OpenAPI minLength/maxLength.
+     * Only applies when the type is 'string'.
+     *
+     * @param  array<int|string, mixed>  $rules
+     * @return array{0: int|null, 1: int|null} [minLength, maxLength]
+     */
+    private function extractStringLengthConstraints(array $rules, string $type): array
+    {
+        // Only extract length constraints for string types
+        if ($type !== 'string') {
+            return [null, null];
+        }
+
+        $minLength = null;
+        $maxLength = null;
+
+        foreach ($rules as $rule) {
+            if (! is_string($rule)) {
+                continue;
+            }
+
+            // Handle min:n
+            if (str_starts_with($rule, 'min:')) {
+                $value = substr($rule, 4);
+                if (is_numeric($value)) {
+                    $minLength = (int) $value;
+                }
+            }
+
+            // Handle max:n
+            if (str_starts_with($rule, 'max:')) {
+                $value = substr($rule, 4);
+                if (is_numeric($value)) {
+                    $maxLength = (int) $value;
+                }
+            }
+
+            // Handle size:n (sets both min and max)
+            if (str_starts_with($rule, 'size:')) {
+                $value = substr($rule, 5);
+                if (is_numeric($value)) {
+                    $minLength = (int) $value;
+                    $maxLength = (int) $value;
+                }
+            }
+        }
+
+        return [$minLength, $maxLength];
     }
 }
