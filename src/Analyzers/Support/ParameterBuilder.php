@@ -166,7 +166,7 @@ class ParameterBuilder
                 continue;
             }
 
-            $parameters[] = $this->buildConditionalParameter(
+            $parameter = $this->buildConditionalParameter(
                 $field,
                 $mergedRules,
                 $processedFields[$field],
@@ -174,6 +174,13 @@ class ParameterBuilder
                 $namespace,
                 $useStatements
             );
+            $parameters[] = $parameter;
+
+            // Generate confirmation field if 'confirmed' rule is present
+            $normalizedRules = ValidationRuleCollection::from($mergedRules)->all();
+            if ($this->hasConfirmedRule($normalizedRules)) {
+                $parameters[] = $this->buildConfirmationField($field, $parameter, $attributes);
+            }
         }
 
         return $parameters;
@@ -404,18 +411,24 @@ class ParameterBuilder
     /**
      * Build a confirmation field for a field with 'confirmed' rule.
      *
-     * The confirmation field has the same type and constraints as the original field,
+     * The confirmation field copies the original field's type and constraints,
      * with '_confirmation' suffix added to the name.
      *
-     * @param  array<string, string>  $attributes
+     * @param  string  $field  The original field name
+     * @param  ParameterDefinition  $original  The original field's parameter definition
+     * @param  array<string, string>  $attributes  Custom field attributes/descriptions
+     * @return ParameterDefinition The generated confirmation field parameter
      */
     private function buildConfirmationField(string $field, ParameterDefinition $original, array $attributes): ParameterDefinition
     {
         $confirmationField = $field.'_confirmation';
 
-        // Generate description for confirmation field
         $fieldLabel = $attributes[$confirmationField]
             ?? ucwords(str_replace('_', ' ', $field)).' Confirmation';
+
+        $validation = $original->required
+            ? ['required', 'same:'.$field]
+            : ['nullable', 'same:'.$field];
 
         return new ParameterDefinition(
             name: $confirmationField,
@@ -424,11 +437,18 @@ class ParameterBuilder
             type: $original->type,
             description: $fieldLabel,
             example: $original->example,
-            validation: ['required', 'same:'.$field],
+            validation: $validation,
             format: $original->format,
             pattern: $original->pattern,
             minLength: $original->minLength,
             maxLength: $original->maxLength,
+            minimum: $original->minimum,
+            maximum: $original->maximum,
+            exclusiveMinimum: $original->exclusiveMinimum,
+            exclusiveMaximum: $original->exclusiveMaximum,
+            minItems: $original->minItems,
+            maxItems: $original->maxItems,
+            enum: $original->enum,
         );
     }
 
