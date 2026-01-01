@@ -899,6 +899,87 @@ class ParameterBuilderTest extends TestCase
         $this->assertNull($name->pattern);
     }
 
+    // ========== String Length Constraints (Issue #318) ==========
+
+    #[Test]
+    public function it_extracts_min_length_for_string_type(): void
+    {
+        $rules = [
+            'title' => 'required|string|min:5',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $title = $this->findParameter($parameters, 'title');
+        $this->assertNotNull($title);
+        $this->assertEquals('string', $title->type);
+        $this->assertEquals(5, $title->minLength);
+    }
+
+    #[Test]
+    public function it_extracts_max_length_for_string_type(): void
+    {
+        $rules = [
+            'title' => 'required|string|max:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $title = $this->findParameter($parameters, 'title');
+        $this->assertNotNull($title);
+        $this->assertEquals('string', $title->type);
+        $this->assertEquals(100, $title->maxLength);
+    }
+
+    #[Test]
+    public function it_extracts_both_min_and_max_length_for_string_type(): void
+    {
+        $rules = [
+            'title' => 'required|string|min:5|max:100',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $title = $this->findParameter($parameters, 'title');
+        $this->assertNotNull($title);
+        $this->assertEquals('string', $title->type);
+        $this->assertEquals(5, $title->minLength);
+        $this->assertEquals(100, $title->maxLength);
+    }
+
+    #[Test]
+    public function it_extracts_size_as_both_min_and_max_length_for_string_type(): void
+    {
+        $rules = [
+            'code' => 'required|string|size:6',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $code = $this->findParameter($parameters, 'code');
+        $this->assertNotNull($code);
+        $this->assertEquals('string', $code->type);
+        $this->assertEquals(6, $code->minLength);
+        $this->assertEquals(6, $code->maxLength);
+    }
+
+    #[Test]
+    public function it_does_not_extract_min_max_as_length_for_numeric_types(): void
+    {
+        $rules = [
+            'age' => 'required|integer|min:0|max:120',
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $age = $this->findParameter($parameters, 'age');
+        $this->assertNotNull($age);
+        $this->assertEquals('integer', $age->type);
+        // For numeric types, min/max should NOT become minLength/maxLength
+        $this->assertNull($age->minLength);
+        $this->assertNull($age->maxLength);
+    }
+
     // ========== Helper methods ==========
 
     /**
