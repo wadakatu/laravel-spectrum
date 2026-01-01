@@ -14,7 +14,6 @@
     "paths": {
         "/api/snapshot/users": {
             "get": {
-                "summary": "List all User",
                 "operationId": "getApiSnapshotUsers",
                 "tags": [
                     "Snapshot",
@@ -63,10 +62,10 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "List all User"
             },
             "head": {
-                "summary": "Head User",
                 "operationId": "headApiSnapshotUsers",
                 "tags": [
                     "Snapshot",
@@ -115,10 +114,10 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head User"
             },
             "post": {
-                "summary": "Create a new User",
                 "operationId": "postApiSnapshotUsers",
                 "tags": [
                     "Snapshot",
@@ -223,6 +222,7 @@
                         }
                     }
                 },
+                "summary": "Create a new User",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -238,7 +238,8 @@
                                     "email": {
                                         "type": "string",
                                         "description": "メールアドレス",
-                                        "example": "user@example.com"
+                                        "example": "user@example.com",
+                                        "format": "email"
                                     },
                                     "password": {
                                         "type": "string",
@@ -264,7 +265,6 @@
         },
         "/api/snapshot/users/{user}": {
             "get": {
-                "summary": "Get User by ID",
                 "operationId": "getApiSnapshotUsersUser",
                 "tags": [
                     "Snapshot",
@@ -273,8 +273,8 @@
                 "parameters": [
                     {
                         "name": "user",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -329,10 +329,10 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Get User by ID"
             },
             "head": {
-                "summary": "Head User",
                 "operationId": "headApiSnapshotUsersUser",
                 "tags": [
                     "Snapshot",
@@ -341,8 +341,8 @@
                 "parameters": [
                     {
                         "name": "user",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -397,7 +397,8 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head User"
             }
         }
     },

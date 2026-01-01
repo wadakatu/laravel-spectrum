@@ -275,6 +275,36 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals(19.9999, $precise->example, 'decimal:4 should generate 19.9999');
     }
 
+    #[Test]
+    public function it_generates_date_format_for_date_rules(): void
+    {
+        $rules = [
+            'publish_at' => ['nullable', 'date', 'after:now'],
+            'timestamp' => ['nullable', 'date_format:Y-m-d\TH:i:sP'],
+            'birth_date' => ['required', 'date_format:Y-m-d'],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        // date rule should have format: date
+        $publishAt = $this->findParameter($parameters, 'publish_at');
+        $this->assertNotNull($publishAt);
+        $this->assertEquals('string', $publishAt->type);
+        $this->assertEquals('date', $publishAt->format, 'date rule should set format to "date"');
+
+        // date_format with time should have format: date-time
+        $timestamp = $this->findParameter($parameters, 'timestamp');
+        $this->assertNotNull($timestamp);
+        $this->assertEquals('string', $timestamp->type);
+        $this->assertEquals('date-time', $timestamp->format, 'date_format with time should set format to "date-time"');
+
+        // date_format without time should have format: date
+        $birthDate = $this->findParameter($parameters, 'birth_date');
+        $this->assertNotNull($birthDate);
+        $this->assertEquals('string', $birthDate->type);
+        $this->assertEquals('date', $birthDate->format, 'date_format:Y-m-d should set format to "date"');
+    }
+
     // ========== File upload tests ==========
 
     #[Test]
@@ -344,6 +374,49 @@ class ParameterBuilderTest extends TestCase
 
         $accountNumber = $this->findParameter($parameters, 'account_number');
         $this->assertNotNull($accountNumber);
+    }
+
+    #[Test]
+    public function it_generates_format_for_conditional_parameters_with_date_rules(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['mode' => 'schedule'],
+                    'rules' => [
+                        'publish_at' => 'required|date|after:now',
+                        'email' => 'required|email',
+                    ],
+                ],
+                [
+                    'conditions' => ['mode' => 'immediate'],
+                    'rules' => [
+                        'publish_at' => 'nullable|date',
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'publish_at' => ['required', 'nullable', 'date', 'after:now'],
+                'email' => ['required', 'email'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        // Check publish_at has format: date
+        $publishAt = $this->findParameter($parameters, 'publish_at');
+        $this->assertNotNull($publishAt);
+        $this->assertEquals('date', $publishAt->format, 'date rule should set format to "date"');
+
+        // Check email has format: email
+        $email = $this->findParameter($parameters, 'email');
+        $this->assertNotNull($email);
+        $this->assertEquals('email', $email->format, 'email rule should set format to "email"');
+
+        // Verify format is included in toArray output
+        $publishAtArray = $publishAt->toArray();
+        $this->assertArrayHasKey('format', $publishAtArray);
+        $this->assertEquals('date', $publishAtArray['format']);
     }
 
     #[Test]

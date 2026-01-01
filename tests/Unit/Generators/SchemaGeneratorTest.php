@@ -2,9 +2,16 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
+use LaravelSpectrum\Analyzers\EnumAnalyzer;
+use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
+use LaravelSpectrum\Analyzers\Support\FormatInferrer;
+use LaravelSpectrum\Analyzers\Support\ParameterBuilder;
+use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
+use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\DTO\ConditionResult;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\Generators\SchemaGenerator;
+use LaravelSpectrum\Support\TypeInference;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -422,6 +429,102 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateFromParameters($parameters);
 
+        $this->assertEquals('email', $schema['properties']['email']['format']);
+    }
+
+    #[Test]
+    public function it_handles_date_format_from_parameter_builder_output(): void
+    {
+        // This test simulates the output from ParameterBuilder::buildFromRules()
+        // to ensure format is correctly propagated to the schema
+        $parameters = [
+            [
+                'name' => 'publish_at',
+                'in' => 'body',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Publish At',
+                'example' => '2024-01-01',
+                'validation' => ['nullable', 'date'],
+                'format' => 'date',  // This should be set by ParameterBuilder
+            ],
+            [
+                'name' => 'birth_date',
+                'in' => 'body',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Birth Date',
+                'example' => '2024-01-01',
+                'validation' => ['required', 'date_format:Y-m-d'],
+                'format' => 'date',  // date_format:Y-m-d should set format to 'date'
+            ],
+            [
+                'name' => 'created_at',
+                'in' => 'body',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Created At',
+                'example' => '2024-01-01T14:30:00+00:00',
+                'validation' => ['nullable', 'date_format:Y-m-d\TH:i:sP'],
+                'format' => 'date-time',  // ISO8601 should set format to 'date-time'
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Assert publish_at has format: date
+        $this->assertArrayHasKey('format', $schema['properties']['publish_at']);
+        $this->assertEquals('date', $schema['properties']['publish_at']['format']);
+
+        // Assert birth_date has format: date
+        $this->assertArrayHasKey('format', $schema['properties']['birth_date']);
+        $this->assertEquals('date', $schema['properties']['birth_date']['format']);
+
+        // Assert created_at has format: date-time
+        $this->assertArrayHasKey('format', $schema['properties']['created_at']);
+        $this->assertEquals('date-time', $schema['properties']['created_at']['format']);
+    }
+
+    #[Test]
+    public function it_integrates_parameter_builder_with_schema_generator_for_date_format(): void
+    {
+        // Integration test: ParameterBuilder -> toArray -> SchemaGenerator
+        // This tests the full flow to ensure format is preserved
+        $typeInference = new TypeInference;
+        $ruleRequirementAnalyzer = new RuleRequirementAnalyzer;
+        $formatInferrer = new FormatInferrer;
+        $enumAnalyzer = new EnumAnalyzer;
+        $descriptionGenerator = new ValidationDescriptionGenerator($enumAnalyzer);
+        $fileUploadAnalyzer = new FileUploadAnalyzer;
+
+        $parameterBuilder = new ParameterBuilder(
+            $typeInference,
+            $ruleRequirementAnalyzer,
+            $formatInferrer,
+            $descriptionGenerator,
+            $enumAnalyzer,
+            $fileUploadAnalyzer
+        );
+
+        // Build parameters using ParameterBuilder (same as FormRequestAnalyzer does)
+        $rules = [
+            'publish_at' => ['nullable', 'date'],
+            'email' => ['required', 'email'],
+        ];
+        $parameterDtos = $parameterBuilder->buildFromRules($rules);
+
+        // Convert to arrays (same as FormRequestAnalyzer::convertParametersToArrays does)
+        $parameters = array_map(fn ($dto) => $dto->toArray(), $parameterDtos);
+
+        // Pass through SchemaGenerator
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Assert publish_at has format: date
+        $this->assertArrayHasKey('format', $schema['properties']['publish_at']);
+        $this->assertEquals('date', $schema['properties']['publish_at']['format']);
+
+        // Assert email has format: email
+        $this->assertArrayHasKey('format', $schema['properties']['email']);
         $this->assertEquals('email', $schema['properties']['email']['format']);
     }
 
