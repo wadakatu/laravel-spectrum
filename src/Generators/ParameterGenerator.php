@@ -2,7 +2,6 @@
 
 namespace LaravelSpectrum\Generators;
 
-use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiSchema;
@@ -23,10 +22,7 @@ class ParameterGenerator
 {
     public function __construct(
         protected QueryParameterTypeInference $typeInference,
-        protected ?InlineValidationAnalyzer $inlineValidationAnalyzer = null,
-    ) {
-        $this->inlineValidationAnalyzer = $inlineValidationAnalyzer ?? app(InlineValidationAnalyzer::class);
-    }
+    ) {}
 
     /**
      * Generate parameters for an API operation.

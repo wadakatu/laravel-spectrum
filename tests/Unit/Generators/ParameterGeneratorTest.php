@@ -754,4 +754,149 @@ class ParameterGeneratorTest extends TestCase
         $pageNumberParam = collect($parameters)->firstWhere('name', 'page[number]');
         $this->assertNotNull($pageNumberParam);
     }
+
+    #[Test]
+    public function it_marks_query_parameters_as_required_when_validation_has_required_rule(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['GET'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'inlineValidation' => [
+                'rules' => [
+                    'search' => 'required|string',
+                    'optional_filter' => 'nullable|string',
+                ],
+            ],
+        ]);
+
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->with(['required', 'string'])
+            ->andReturn('string');
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->with(['nullable', 'string'])
+            ->andReturn('string');
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->andReturn([]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'get');
+
+        $this->assertCount(2, $parameters);
+
+        // Required parameter should have required = true
+        $searchParam = collect($parameters)->firstWhere('name', 'search');
+        $this->assertNotNull($searchParam);
+        $this->assertTrue($searchParam->required);
+
+        // Nullable parameter should have required = false
+        $optionalParam = collect($parameters)->firstWhere('name', 'optional_filter');
+        $this->assertNotNull($optionalParam);
+        $this->assertFalse($optionalParam->required);
+    }
+
+    #[Test]
+    public function it_applies_validation_constraints_to_query_parameter_schema(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['GET'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'inlineValidation' => [
+                'rules' => [
+                    'page' => 'nullable|integer|min:1|max:100',
+                    'name' => 'nullable|string|max:255',
+                ],
+            ],
+        ]);
+
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->with(['nullable', 'integer', 'min:1', 'max:100'])
+            ->andReturn('integer');
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->with(['nullable', 'string', 'max:255'])
+            ->andReturn('string');
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->with(['nullable', 'integer', 'min:1', 'max:100'])
+            ->andReturn(['minimum' => 1, 'maximum' => 100]);
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->with(['nullable', 'string', 'max:255'])
+            ->andReturn(['maxLength' => 255]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'get');
+
+        $this->assertCount(2, $parameters);
+
+        // Check integer constraints
+        $pageParam = collect($parameters)->firstWhere('name', 'page');
+        $this->assertNotNull($pageParam);
+        $this->assertEquals('integer', $pageParam->schema->type);
+        $this->assertEquals(1, $pageParam->schema->minimum);
+        $this->assertEquals(100, $pageParam->schema->maximum);
+
+        // Check string constraints
+        $nameParam = collect($parameters)->firstWhere('name', 'name');
+        $this->assertNotNull($nameParam);
+        $this->assertEquals('string', $nameParam->schema->type);
+        $this->assertEquals(255, $nameParam->schema->maxLength);
+    }
+
+    #[Test]
+    public function it_adds_style_and_explode_for_array_type_query_parameters(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['GET'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'inlineValidation' => [
+                'rules' => [
+                    'ids' => 'nullable|array',
+                ],
+            ],
+        ]);
+
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->with(['nullable', 'array'])
+            ->andReturn('array');
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->andReturn([]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'get');
+
+        $this->assertCount(1, $parameters);
+
+        $idsParam = collect($parameters)->first();
+        $this->assertEquals('ids', $idsParam->name);
+        $this->assertEquals('array', $idsParam->schema->type);
+        $this->assertNotNull($idsParam->schema->items);
+        $this->assertEquals('form', $idsParam->style);
+        $this->assertTrue($idsParam->explode);
+    }
+
+    #[Test]
+    public function it_does_not_add_validation_query_parameters_when_http_method_is_null(): void
+    {
+        $route = [
+            'parameters' => [],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'inlineValidation' => [
+                'rules' => [
+                    'filter' => 'nullable|string',
+                ],
+            ],
+        ]);
+
+        // No mock expectations for inferFromValidationRules - it should not be called
+        $parameters = $this->generator->generate($route, $controllerInfo);
+
+        // When httpMethod is null, validation should not be converted to query parameters
+        $this->assertCount(0, $parameters);
+    }
 }
