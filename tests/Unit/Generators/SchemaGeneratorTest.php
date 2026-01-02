@@ -1702,7 +1702,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_if is conditional on another field's value, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
@@ -1723,7 +1724,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_unless is conditional on another field's value, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
@@ -1744,7 +1746,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_with is conditional on another field being present, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
@@ -1765,6 +1768,29 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
+        // required_without is conditional on another field being absent, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
+    }
+
+    #[Test]
+    public function it_marks_field_required_when_both_required_and_conditional_present(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
+                    'rules' => ['name' => 'required|required_if:type,admin'],
+                ],
+                [
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Plain 'required' takes precedence - field should be unconditionally required
         $this->assertContains('name', $schema['oneOf'][0]['required']);
     }
 
