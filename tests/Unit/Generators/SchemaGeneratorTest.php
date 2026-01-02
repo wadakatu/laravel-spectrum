@@ -1773,6 +1773,28 @@ class SchemaGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_marks_field_required_when_both_required_and_conditional_present(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
+                    'rules' => ['name' => 'required|required_if:type,admin'],
+                ],
+                [
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
+                    'rules' => ['name' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        // Plain 'required' takes precedence - field should be unconditionally required
+        $this->assertContains('name', $schema['oneOf'][0]['required']);
+    }
+
+    #[Test]
     public function it_handles_file_upload_with_description_and_constraints(): void
     {
         $parameters = [
