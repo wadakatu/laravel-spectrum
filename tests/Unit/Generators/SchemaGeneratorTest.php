@@ -2282,4 +2282,51 @@ class SchemaGeneratorTest extends TestCase
         $this->assertContains('name', $schema['properties']['settings']['required']);
         $this->assertNotContains('optional_field', $schema['properties']['settings']['required']);
     }
+
+    #[Test]
+    public function it_reflects_required_array_keys_in_array_with_object_items(): void
+    {
+        // Array field with required_array_keys for object items
+        $parameters = [
+            [
+                'name' => 'users',
+                'type' => 'array',
+                'required' => true,
+                'description' => 'User list',
+                'validation' => ['required', 'array', 'required_array_keys:email,name'],
+            ],
+            [
+                'name' => 'users.*.email',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'User email',
+            ],
+            [
+                'name' => 'users.*.name',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'User name',
+            ],
+            [
+                'name' => 'users.*.nickname',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Optional nickname',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Verify users is an array with object items
+        $this->assertArrayHasKey('users', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['users']['type']);
+        $this->assertArrayHasKey('items', $schema['properties']['users']);
+        $this->assertEquals('object', $schema['properties']['users']['items']['type']);
+
+        // Verify required_array_keys are reflected in items required array
+        $this->assertArrayHasKey('required', $schema['properties']['users']['items']);
+        $this->assertContains('email', $schema['properties']['users']['items']['required']);
+        $this->assertContains('name', $schema['properties']['users']['items']['required']);
+        $this->assertNotContains('nickname', $schema['properties']['users']['items']['required']);
+    }
 }
