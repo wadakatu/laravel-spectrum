@@ -223,7 +223,7 @@ class OpenApiGenerator
             operationId: $this->metadataGenerator->generateOperationId($route, $method),
             summary: $this->metadataGenerator->generateSummary($route, $method),
             tags: $this->tagGenerator->generate($route),
-            parameters: $this->parameterGenerator->generate($route, $controllerInfo),
+            parameters: $this->parameterGenerator->generate($route, $controllerInfo, $method),
             responses: $this->generateResponses($route, $controllerInfo),
             requestBody: $requestBody,
             security: $security,
