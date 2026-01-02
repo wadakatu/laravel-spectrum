@@ -147,6 +147,85 @@ class FileUploadDetectionTest extends TestCase
         $this->assertTrue($photo->isFileUpload(), 'photo should be marked as file upload');
     }
 
+    #[Test]
+    public function it_detects_file_uploads_in_conditional_rules(): void
+    {
+        // This is the actual fix for Issue #312: conditional rules now detect file uploads
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['type' => 'photo'],
+                    'rules' => [
+                        'avatar' => ['required', 'image', 'max:2048'],
+                    ],
+                ],
+                [
+                    'conditions' => ['type' => 'document'],
+                    'rules' => [
+                        'document' => ['required', 'file', 'mimes:pdf,doc'],
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'avatar' => ['required', 'image', 'max:2048'],
+                'document' => ['required', 'file', 'mimes:pdf,doc'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $avatar = $this->findParameter($parameters, 'avatar');
+        $this->assertNotNull($avatar, 'avatar parameter should exist');
+        $this->assertEquals('file', $avatar->type, 'avatar should have type=file in conditional rules');
+        $this->assertEquals('binary', $avatar->format, 'avatar should have format=binary');
+        $this->assertTrue($avatar->isFileUpload(), 'avatar should be marked as file upload');
+
+        $document = $this->findParameter($parameters, 'document');
+        $this->assertNotNull($document, 'document parameter should exist');
+        $this->assertEquals('file', $document->type, 'document should have type=file in conditional rules');
+    }
+
+    #[Test]
+    public function it_detects_mixed_file_and_non_file_fields_in_conditional_rules(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [],
+                    'rules' => [
+                        'name' => ['required', 'string', 'max:255'],
+                        'photo' => ['nullable', 'image'],
+                        'resume' => ['nullable', 'mimes:pdf'],
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'name' => ['required', 'string', 'max:255'],
+                'photo' => ['nullable', 'image'],
+                'resume' => ['nullable', 'mimes:pdf'],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        // Non-file field should remain string
+        $name = $this->findParameter($parameters, 'name');
+        $this->assertNotNull($name, 'name parameter should exist');
+        $this->assertEquals('string', $name->type, 'name should remain type=string');
+        $this->assertFalse($name->isFileUpload(), 'name should not be marked as file upload');
+
+        // File fields should be detected
+        $photo = $this->findParameter($parameters, 'photo');
+        $this->assertNotNull($photo, 'photo parameter should exist');
+        $this->assertEquals('file', $photo->type, 'photo should have type=file');
+        $this->assertTrue($photo->isFileUpload(), 'photo should be marked as file upload');
+
+        $resume = $this->findParameter($parameters, 'resume');
+        $this->assertNotNull($resume, 'resume parameter should exist');
+        $this->assertEquals('file', $resume->type, 'resume should have type=file');
+        $this->assertTrue($resume->isFileUpload(), 'resume should be marked as file upload');
+    }
+
     /**
      * @param  array<ParameterDefinition>  $parameters
      */
