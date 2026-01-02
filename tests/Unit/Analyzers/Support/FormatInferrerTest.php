@@ -129,4 +129,49 @@ class FormatInferrerTest extends TestCase
         $this->assertEquals('email', $this->inferrer->inferFormat(['email', 'url']));
         $this->assertEquals('uri', $this->inferrer->inferFormat(['url', 'email']));
     }
+
+    // ========== Password format tests ==========
+
+    #[Test]
+    public function it_infers_password_format_from_password_rule(): void
+    {
+        $this->assertEquals('password', $this->inferrer->inferFormat(['Password::min(8)']));
+        $this->assertEquals('password', $this->inferrer->inferFormat(['required', 'Password::min(8)->mixedCase()']));
+    }
+
+    #[Test]
+    public function it_infers_password_format_from_fully_qualified_class(): void
+    {
+        $this->assertEquals('password', $this->inferrer->inferFormat(['\\Illuminate\\Validation\\Rules\\Password::min(8)']));
+        $this->assertEquals('password', $this->inferrer->inferFormat(['Illuminate\\Validation\\Rules\\Password::min(12)']));
+    }
+
+    #[Test]
+    public function it_infers_password_format_with_chained_methods(): void
+    {
+        $rules = ['Password::min(8)->mixedCase()->numbers()->symbols()->uncompromised()'];
+        $this->assertEquals('password', $this->inferrer->inferFormat($rules));
+    }
+
+    #[Test]
+    public function it_infers_password_format_from_default_method(): void
+    {
+        $this->assertEquals('password', $this->inferrer->inferFormat(['Password::default()']));
+    }
+
+    #[Test]
+    public function it_prioritizes_password_format_over_other_rules(): void
+    {
+        // Password:: should be detected even with other format-related rules
+        $rules = ['required', 'string', 'Password::min(8)'];
+        $this->assertEquals('password', $this->inferrer->inferFormat($rules));
+    }
+
+    #[Test]
+    public function it_does_not_infer_password_from_non_password_rules(): void
+    {
+        // Non-password rules should not return 'password' format
+        $this->assertNull($this->inferrer->inferFormat(['required', 'string', 'min:8']));
+        $this->assertNull($this->inferrer->inferFormat(['confirmed']));
+    }
 }
