@@ -856,4 +856,152 @@ class ResourceStructureVisitorTest extends TestCase
         // Basic properties should still be extracted
         $this->assertArrayHasKey('id', $structure['properties']);
     }
+
+    #[Test]
+    public function it_extracts_when_counted_as_integer_type(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'posts_count' => $this->whenCounted('posts'),
+                    'comments_count' => $this->whenCounted('comments'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // whenCounted should return integer type, not mixed
+        $this->assertArrayHasKey('posts_count', $structure['properties']);
+        $this->assertEquals('integer', $structure['properties']['posts_count']['type']);
+        $this->assertTrue($structure['properties']['posts_count']['conditional']);
+        $this->assertEquals('whenCounted', $structure['properties']['posts_count']['condition']);
+        $this->assertEquals('posts', $structure['properties']['posts_count']['relation']);
+
+        $this->assertArrayHasKey('comments_count', $structure['properties']);
+        $this->assertEquals('integer', $structure['properties']['comments_count']['type']);
+        $this->assertTrue($structure['properties']['comments_count']['conditional']);
+        $this->assertEquals('whenCounted', $structure['properties']['comments_count']['condition']);
+        $this->assertEquals('comments', $structure['properties']['comments_count']['relation']);
+    }
+
+    #[Test]
+    public function it_extracts_when_aggregated_as_number_type(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        class ProductResource extends JsonResource {
+            public function toArray($request)
+            {
+                return [
+                    'id' => $this->id,
+                    'avg_rating' => $this->whenAggregated('reviews', 'rating', 'avg'),
+                    'max_price' => $this->whenAggregated('variants', 'price', 'max'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // whenAggregated should return number type
+        $this->assertArrayHasKey('avg_rating', $structure['properties']);
+        $this->assertEquals('number', $structure['properties']['avg_rating']['type']);
+        $this->assertTrue($structure['properties']['avg_rating']['conditional']);
+        $this->assertEquals('whenAggregated', $structure['properties']['avg_rating']['condition']);
+        $this->assertEquals('reviews', $structure['properties']['avg_rating']['relation']);
+
+        $this->assertArrayHasKey('max_price', $structure['properties']);
+        $this->assertEquals('number', $structure['properties']['max_price']['type']);
+        $this->assertTrue($structure['properties']['max_price']['conditional']);
+    }
+
+    #[Test]
+    public function it_handles_when_counted_with_dynamic_relation(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                $relation = 'posts';
+                return [
+                    'id' => $this->id,
+                    'dynamic_count' => $this->whenCounted($relation),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Dynamic relation should still return integer type
+        $this->assertArrayHasKey('dynamic_count', $structure['properties']);
+        $this->assertEquals('integer', $structure['properties']['dynamic_count']['type']);
+        $this->assertTrue($structure['properties']['dynamic_count']['conditional']);
+        $this->assertEquals('whenCounted', $structure['properties']['dynamic_count']['condition']);
+        // Relation is not set when using variable (fallback path)
+        $this->assertArrayNotHasKey('relation', $structure['properties']['dynamic_count']);
+    }
+
+    #[Test]
+    public function it_handles_when_aggregated_with_dynamic_relation(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        class ProductResource extends JsonResource {
+            public function toArray($request)
+            {
+                $rel = 'reviews';
+                return [
+                    'id' => $this->id,
+                    'dynamic_avg' => $this->whenAggregated($rel, 'rating', 'avg'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Dynamic relation should still return number type
+        $this->assertArrayHasKey('dynamic_avg', $structure['properties']);
+        $this->assertEquals('number', $structure['properties']['dynamic_avg']['type']);
+        $this->assertTrue($structure['properties']['dynamic_avg']['conditional']);
+        $this->assertEquals('whenAggregated', $structure['properties']['dynamic_avg']['condition']);
+        // Relation is not set when using variable (fallback path)
+        $this->assertArrayNotHasKey('relation', $structure['properties']['dynamic_avg']);
+    }
 }

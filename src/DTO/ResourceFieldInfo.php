@@ -163,6 +163,34 @@ final readonly class ResourceFieldInfo
     }
 
     /**
+     * Create a whenCounted conditional field.
+     * Returns integer type since counts are always integers.
+     */
+    public static function whenCounted(string $relation): self
+    {
+        return new self(
+            type: 'integer',
+            conditional: true,
+            condition: 'whenCounted',
+            relation: $relation,
+        );
+    }
+
+    /**
+     * Create a whenAggregated conditional field.
+     * Returns number type since aggregates can be floats (avg, sum, etc.).
+     */
+    public static function whenAggregated(string $relation): self
+    {
+        return new self(
+            type: 'number',
+            conditional: true,
+            condition: 'whenAggregated',
+            relation: $relation,
+        );
+    }
+
+    /**
      * Create a resource collection field.
      *
      * @param  array<string, mixed>|null  $items

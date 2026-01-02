@@ -148,6 +148,28 @@ class ResourceFieldInfoTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_when_counted_field_info(): void
+    {
+        $info = ResourceFieldInfo::whenCounted('posts');
+
+        $this->assertEquals('integer', $info->type);
+        $this->assertTrue($info->conditional);
+        $this->assertEquals('whenCounted', $info->condition);
+        $this->assertEquals('posts', $info->relation);
+    }
+
+    #[Test]
+    public function it_creates_when_aggregated_field_info(): void
+    {
+        $info = ResourceFieldInfo::whenAggregated('reviews');
+
+        $this->assertEquals('number', $info->type);
+        $this->assertTrue($info->conditional);
+        $this->assertEquals('whenAggregated', $info->condition);
+        $this->assertEquals('reviews', $info->relation);
+    }
+
+    #[Test]
     public function it_creates_resource_collection_field_info(): void
     {
         $items = ['type' => 'object', 'resource' => 'UserResource'];
