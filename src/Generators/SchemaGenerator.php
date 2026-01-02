@@ -840,13 +840,17 @@ class SchemaGenerator
     }
 
     /**
-     * Check if field is required based on rules
+     * Check if field is required based on rules.
+     *
+     * Only the 'required' rule marks a field as unconditionally required.
+     * Conditional required rules (required_if, required_unless, required_with, required_without)
+     * do not make a field always required - they depend on other field values.
      */
     private function isFieldRequired(array $rules): bool
     {
         foreach ($rules as $rule) {
             $ruleName = is_string($rule) ? explode(':', $rule)[0] : '';
-            if (in_array($ruleName, ['required', 'required_if', 'required_unless', 'required_with', 'required_without'])) {
+            if ($ruleName === 'required') {
                 return true;
             }
         }

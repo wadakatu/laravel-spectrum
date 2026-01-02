@@ -1702,7 +1702,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_if is conditional on another field's value, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
@@ -1723,7 +1724,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_unless is conditional on another field's value, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
@@ -1744,7 +1746,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_with is conditional on another field being present, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
@@ -1765,7 +1768,8 @@ class SchemaGeneratorTest extends TestCase
 
         $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
 
-        $this->assertContains('name', $schema['oneOf'][0]['required']);
+        // required_without is conditional on another field being absent, not unconditionally required
+        $this->assertNotContains('name', $schema['oneOf'][0]['required'] ?? []);
     }
 
     #[Test]
