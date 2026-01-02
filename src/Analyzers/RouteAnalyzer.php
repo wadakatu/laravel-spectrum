@@ -368,16 +368,26 @@ class RouteAnalyzer implements HasErrors
 
     /**
      * Check if pattern matches UUID format.
+     *
+     * @param  string  $pattern  The regex pattern to check
      */
     protected function isUuidPattern(string $pattern): bool
     {
-        // Standard UUID regex pattern (case-insensitive hex)
-        $uuidPattern = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
+        // UUID regex pattern variants (including Laravel's whereUuid() which uses \d)
+        $uuidPatterns = [
+            '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+            '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}', // Laravel's whereUuid()
+            '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
+            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+        ];
 
-        // Compare normalized patterns
-        return strcasecmp($pattern, $uuidPattern) === 0
-            || strcasecmp($pattern, '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}') === 0
-            || strcasecmp($pattern, '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') === 0;
+        foreach ($uuidPatterns as $uuidPattern) {
+            if (strcasecmp($pattern, $uuidPattern) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

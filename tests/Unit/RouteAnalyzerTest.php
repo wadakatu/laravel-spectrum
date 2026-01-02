@@ -304,4 +304,57 @@ class RouteAnalyzerTest extends TestCase
         // ULID uses pattern since there's no standard OpenAPI format for ULID
         $this->assertArrayHasKey('pattern', $routes[0]['parameters'][0]['schema']);
     }
+
+    #[Test]
+    public function it_detects_uuid_with_laravel_where_uuid_helper(): void
+    {
+        // Arrange - Route with Laravel's native whereUuid helper
+        Route::get('api/orders/{order}', [UserController::class, 'show'])
+            ->whereUuid('order');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have uuid format
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('order', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertEquals('uuid', $routes[0]['parameters'][0]['schema']['format']);
+    }
+
+    #[Test]
+    public function it_detects_integer_with_laravel_where_number_helper(): void
+    {
+        // Arrange - Route with Laravel's native whereNumber helper
+        Route::get('api/users/{user}', [UserController::class, 'show'])
+            ->whereNumber('user');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have integer type
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('user', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('integer', $routes[0]['parameters'][0]['schema']['type']);
+    }
+
+    #[Test]
+    public function it_defaults_to_string_type_when_no_constraint(): void
+    {
+        // Arrange - Route without any where constraint
+        Route::get('api/users/{user}', [UserController::class, 'show']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should default to string type
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('user', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertArrayNotHasKey('format', $routes[0]['parameters'][0]['schema']);
+        $this->assertArrayNotHasKey('pattern', $routes[0]['parameters'][0]['schema']);
+    }
 }
