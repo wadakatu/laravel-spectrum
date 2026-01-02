@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
+use LaravelSpectrum\Analyzers\PasswordRuleAnalyzer;
 use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\DTO\FileUploadInfo;
@@ -19,6 +22,8 @@ use LaravelSpectrum\Support\ValidationRules;
  */
 class ParameterBuilder
 {
+    protected PasswordRuleAnalyzer $passwordRuleAnalyzer;
+
     public function __construct(
         protected TypeInference $typeInference,
         protected RuleRequirementAnalyzer $ruleRequirementAnalyzer,
@@ -26,8 +31,11 @@ class ParameterBuilder
         protected ValidationDescriptionGenerator $descriptionGenerator,
         protected EnumAnalyzer $enumAnalyzer,
         protected FileUploadAnalyzer $fileUploadAnalyzer,
-        protected ?ErrorCollector $errorCollector = null
-    ) {}
+        protected ?ErrorCollector $errorCollector = null,
+        ?PasswordRuleAnalyzer $passwordRuleAnalyzer = null,
+    ) {
+        $this->passwordRuleAnalyzer = $passwordRuleAnalyzer ?? new PasswordRuleAnalyzer;
+    }
 
     /**
      * Build parameters from validation rules.
@@ -490,6 +498,7 @@ class ParameterBuilder
      * Extract string length constraints from validation rules.
      *
      * Converts Laravel's min/max/size rules to OpenAPI minLength/maxLength.
+     * Also handles Password:: rules with min()/max() method chains.
      * Only applies when the type is 'string'.
      *
      * @param  array<int|string, mixed>  $rules
@@ -504,6 +513,15 @@ class ParameterBuilder
 
         $minLength = null;
         $maxLength = null;
+
+        // Check for Password:: rules first
+        $passwordInfo = $this->passwordRuleAnalyzer->analyze($rules);
+        if ($passwordInfo !== null) {
+            $minLength = $passwordInfo->minLength;
+            $maxLength = $passwordInfo->maxLength;
+
+            return [$minLength, $maxLength];
+        }
 
         foreach ($rules as $rule) {
             if (! is_string($rule)) {

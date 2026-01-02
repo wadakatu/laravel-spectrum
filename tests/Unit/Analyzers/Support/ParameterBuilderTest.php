@@ -1521,6 +1521,67 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals($password->type, $passwordConfirmation->type);
     }
 
+    // ========== Password rule tests (Issue #313) ==========
+
+    #[Test]
+    public function it_extracts_min_length_from_password_rule_object(): void
+    {
+        // This is what AST extractor produces for Password::min(8)->mixedCase()
+        $rules = [
+            'password' => ['required', 'confirmed', 'Password::min(8)->mixedCase()->numbers()->symbols()'],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+        $password = $this->findParameter($parameters, 'password');
+
+        $this->assertNotNull($password);
+        $this->assertEquals(8, $password->minLength, 'Password min(8) should set minLength to 8');
+    }
+
+    #[Test]
+    public function it_infers_password_format_from_password_rule_object(): void
+    {
+        $rules = [
+            'password' => ['required', 'Password::min(8)'],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+        $password = $this->findParameter($parameters, 'password');
+
+        $this->assertNotNull($password);
+        $this->assertEquals('password', $password->format, 'Password:: rule should set format to password');
+    }
+
+    #[Test]
+    public function it_extracts_max_length_from_password_rule_object(): void
+    {
+        $rules = [
+            'password' => ['required', 'Password::min(8)->max(32)'],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+        $password = $this->findParameter($parameters, 'password');
+
+        $this->assertNotNull($password);
+        $this->assertEquals(8, $password->minLength, 'Password min(8) should set minLength to 8');
+        $this->assertEquals(32, $password->maxLength, 'Password max(32) should set maxLength to 32');
+    }
+
+    #[Test]
+    public function it_detects_password_rule_with_fully_qualified_class_name(): void
+    {
+        $rules = [
+            'password' => ['required', '\\Illuminate\\Validation\\Rules\\Password::min(12)'],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+        $password = $this->findParameter($parameters, 'password');
+
+        $this->assertNotNull($password);
+        $this->assertEquals('password', $password->format);
+        $this->assertEquals(12, $password->minLength);
+    }
+
     // ========== Helper methods ==========
 
     /**

@@ -493,18 +493,6 @@ parameters:
 			path: src/Analyzers/RouteAnalyzer.php
 
 		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\FormatInferrer\:\:inferDateFormat\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/Support/FormatInferrer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\FormatInferrer\:\:inferFormat\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/Support/FormatInferrer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:hasConditionalRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
