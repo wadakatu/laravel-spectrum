@@ -17,7 +17,17 @@ final readonly class PasswordRuleInfo
         public bool $requiresSymbols = false,
         public bool $requiresLetters = false,
         public bool $requiresUncompromised = false,
-    ) {}
+    ) {
+        if ($minLength !== null && $minLength < 0) {
+            throw new \InvalidArgumentException('minLength must be non-negative');
+        }
+        if ($maxLength !== null && $maxLength < 0) {
+            throw new \InvalidArgumentException('maxLength must be non-negative');
+        }
+        if ($minLength !== null && $maxLength !== null && $minLength > $maxLength) {
+            throw new \InvalidArgumentException('minLength cannot exceed maxLength');
+        }
+    }
 
     /**
      * Check if any password requirements are set.
