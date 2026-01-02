@@ -24,6 +24,7 @@ final readonly class ControllerInfo
      * @param  array<int, QueryParameterInfo>  $queryParameters  Query parameters if detected
      * @param  array<int, EnumParameterInfo>  $enumParameters  Enum parameters from method signature
      * @param  ResponseInfo|null  $response  Response analysis info
+     * @param  bool  $deprecated  Whether the controller method is marked as deprecated
      */
     public function __construct(
         public ?string $formRequest = null,
@@ -36,6 +37,7 @@ final readonly class ControllerInfo
         public array $queryParameters = [],
         public array $enumParameters = [],
         public ?ResponseInfo $response = null,
+        public bool $deprecated = false,
     ) {}
 
     /**
@@ -110,6 +112,7 @@ final readonly class ControllerInfo
             queryParameters: $queryParameters,
             enumParameters: $enumParameters,
             response: $response,
+            deprecated: $data['deprecated'] ?? false,
         );
     }
 
@@ -131,6 +134,7 @@ final readonly class ControllerInfo
             'queryParameters' => array_map(fn (QueryParameterInfo $p) => $p->toArray(), $this->queryParameters),
             'enumParameters' => array_map(fn (EnumParameterInfo $p) => $p->toArray(), $this->enumParameters),
             'response' => $this->response?->toArray(),
+            'deprecated' => $this->deprecated,
         ];
     }
 
@@ -212,6 +216,14 @@ final readonly class ControllerInfo
     public function hasResponse(): bool
     {
         return $this->response !== null;
+    }
+
+    /**
+     * Check if the controller method is marked as deprecated.
+     */
+    public function isDeprecated(): bool
+    {
+        return $this->deprecated;
     }
 
     /**

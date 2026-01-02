@@ -260,6 +260,58 @@ class ControllerAnalyzerTest extends TestCase
         $this->assertArrayHasKey('message', $result['inlineValidation']['rules']);
         $this->assertArrayHasKey('priority', $result['inlineValidation']['rules']);
     }
+
+    #[Test]
+    public function it_detects_deprecated_annotation(): void
+    {
+        $result = $this->analyzer->analyze(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\DeprecatedController::class,
+            'deprecatedMethod'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('deprecated', $result);
+        $this->assertTrue($result['deprecated']);
+    }
+
+    #[Test]
+    public function it_detects_deprecated_annotation_with_reason(): void
+    {
+        $result = $this->analyzer->analyze(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\DeprecatedController::class,
+            'deprecatedWithReason'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('deprecated', $result);
+        $this->assertTrue($result['deprecated']);
+    }
+
+    #[Test]
+    public function it_returns_false_for_non_deprecated_method(): void
+    {
+        $result = $this->analyzer->analyze(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\DeprecatedController::class,
+            'activeMethod'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('deprecated', $result);
+        $this->assertFalse($result['deprecated']);
+    }
+
+    #[Test]
+    public function it_returns_false_for_method_without_docblock(): void
+    {
+        $result = $this->analyzer->analyze(
+            \LaravelSpectrum\Tests\Fixtures\Controllers\DeprecatedController::class,
+            'methodWithoutDocblock'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('deprecated', $result);
+        $this->assertFalse($result['deprecated']);
+    }
 }
 
 // テスト用のコントローラークラス

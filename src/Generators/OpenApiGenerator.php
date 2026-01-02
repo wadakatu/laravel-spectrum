@@ -227,6 +227,7 @@ class OpenApiGenerator
             responses: $this->generateResponses($route, $controllerInfo),
             requestBody: $requestBody,
             security: $security,
+            deprecated: $controllerInfo->isDeprecated(),
         );
     }
 

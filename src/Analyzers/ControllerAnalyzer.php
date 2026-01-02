@@ -149,6 +149,9 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             $response = null;
         }
 
+        // @deprecated アノテーションを検出
+        $deprecated = $this->detectDeprecated($methodReflection);
+
         return new ControllerInfo(
             formRequest: $formRequest,
             inlineValidation: $inlineValidation,
@@ -160,6 +163,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             queryParameters: $queryParameters,
             enumParameters: $enumParameters,
             response: $response,
+            deprecated: $deprecated,
         );
     }
 
@@ -503,5 +507,20 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         }
 
         return null;
+    }
+
+    /**
+     * Detect if a method is marked as deprecated via PHPDoc @deprecated annotation.
+     */
+    protected function detectDeprecated(ReflectionMethod $method): bool
+    {
+        $docComment = $method->getDocComment();
+
+        if ($docComment === false) {
+            return false;
+        }
+
+        // Check for @deprecated annotation (case-insensitive)
+        return (bool) preg_match('/@deprecated\b/i', $docComment);
     }
 }
