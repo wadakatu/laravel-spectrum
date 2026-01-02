@@ -287,6 +287,10 @@ class SchemaGenerator
                     }
                 }
 
+                // Extract required_array_keys from parent's validation rules
+                $requiredArrayKeys = $this->extractRequiredArrayKeys($parameter);
+                $itemRequired = array_values(array_unique(array_merge($itemRequired, $requiredArrayKeys)));
+
                 $items = [
                     'type' => 'object',
                     'properties' => $itemProperties,
@@ -325,6 +329,10 @@ class SchemaGenerator
                     $required[] = $childName;
                 }
             }
+
+            // Extract required_array_keys from parent's validation rules
+            $requiredArrayKeys = $this->extractRequiredArrayKeys($parameter);
+            $required = array_values(array_unique(array_merge($required, $requiredArrayKeys)));
 
             $schema = [
                 'type' => 'object',
@@ -375,6 +383,30 @@ class SchemaGenerator
         }
 
         return 'string';
+    }
+
+    /**
+     * Extract required keys from required_array_keys validation rule
+     *
+     * @param  array<string, mixed>|null  $parameter
+     * @return array<string>
+     */
+    private function extractRequiredArrayKeys(?array $parameter): array
+    {
+        if ($parameter === null) {
+            return [];
+        }
+
+        $validation = $parameter['validation'] ?? [];
+        foreach ($validation as $rule) {
+            if (is_string($rule) && str_starts_with($rule, 'required_array_keys:')) {
+                $keysString = substr($rule, strlen('required_array_keys:'));
+
+                return array_map('trim', explode(',', $keysString));
+            }
+        }
+
+        return [];
     }
 
     /**

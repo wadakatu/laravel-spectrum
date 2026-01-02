@@ -2204,4 +2204,129 @@ class SchemaGeneratorTest extends TestCase
         $this->assertArrayHasKey($expectedKey, $mapping);
         $this->assertArrayHasKey('put', $mapping);
     }
+
+    /**
+     * Test for Issue #323: required_array_keys validation not reflected in OpenAPI schema
+     */
+    #[Test]
+    public function it_reflects_required_array_keys_in_nested_object_schema(): void
+    {
+        // Parent field with required_array_keys rule
+        $parameters = [
+            [
+                'name' => 'config',
+                'type' => 'object',
+                'required' => false,
+                'description' => 'Configuration object',
+                'validation' => ['nullable', 'array', 'required_array_keys:host,port'],
+            ],
+            [
+                'name' => 'config.host',
+                'type' => 'string',
+                'required' => false, // required_with:config, not always required
+                'description' => 'Host',
+            ],
+            [
+                'name' => 'config.port',
+                'type' => 'integer',
+                'required' => false,
+                'description' => 'Port',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Verify config is an object with properties
+        $this->assertArrayHasKey('config', $schema['properties']);
+        $this->assertEquals('object', $schema['properties']['config']['type']);
+        $this->assertArrayHasKey('properties', $schema['properties']['config']);
+        $this->assertArrayHasKey('host', $schema['properties']['config']['properties']);
+        $this->assertArrayHasKey('port', $schema['properties']['config']['properties']);
+
+        // Verify required_array_keys are reflected in required array
+        $this->assertArrayHasKey('required', $schema['properties']['config']);
+        $this->assertContains('host', $schema['properties']['config']['required']);
+        $this->assertContains('port', $schema['properties']['config']['required']);
+    }
+
+    #[Test]
+    public function it_reflects_required_array_keys_with_partial_keys(): void
+    {
+        // Only some keys specified in required_array_keys
+        $parameters = [
+            [
+                'name' => 'settings',
+                'type' => 'object',
+                'required' => true,
+                'description' => 'Settings object',
+                'validation' => ['required', 'array', 'required_array_keys:name'],
+            ],
+            [
+                'name' => 'settings.name',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Name',
+            ],
+            [
+                'name' => 'settings.optional_field',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Optional field',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Verify only 'name' is in required (from required_array_keys), not optional_field
+        $this->assertArrayHasKey('required', $schema['properties']['settings']);
+        $this->assertContains('name', $schema['properties']['settings']['required']);
+        $this->assertNotContains('optional_field', $schema['properties']['settings']['required']);
+    }
+
+    #[Test]
+    public function it_reflects_required_array_keys_in_array_with_object_items(): void
+    {
+        // Array field with required_array_keys for object items
+        $parameters = [
+            [
+                'name' => 'users',
+                'type' => 'array',
+                'required' => true,
+                'description' => 'User list',
+                'validation' => ['required', 'array', 'required_array_keys:email,name'],
+            ],
+            [
+                'name' => 'users.*.email',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'User email',
+            ],
+            [
+                'name' => 'users.*.name',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'User name',
+            ],
+            [
+                'name' => 'users.*.nickname',
+                'type' => 'string',
+                'required' => false,
+                'description' => 'Optional nickname',
+            ],
+        ];
+
+        $schema = $this->generator->generateFromParameters($parameters);
+
+        // Verify users is an array with object items
+        $this->assertArrayHasKey('users', $schema['properties']);
+        $this->assertEquals('array', $schema['properties']['users']['type']);
+        $this->assertArrayHasKey('items', $schema['properties']['users']);
+        $this->assertEquals('object', $schema['properties']['users']['items']['type']);
+
+        // Verify required_array_keys are reflected in items required array
+        $this->assertArrayHasKey('required', $schema['properties']['users']['items']);
+        $this->assertContains('email', $schema['properties']['users']['items']['required']);
+        $this->assertContains('name', $schema['properties']['users']['items']['required']);
+        $this->assertNotContains('nickname', $schema['properties']['users']['items']['required']);
+    }
 }
