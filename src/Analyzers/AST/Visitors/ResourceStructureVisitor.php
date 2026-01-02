@@ -268,6 +268,22 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
             return $this->analyzeWhenLoadedMethod($expr);
         }
 
+        // $this->whenCounted()
+        if ($expr instanceof Node\Expr\MethodCall &&
+            $expr->var instanceof Node\Expr\Variable &&
+            $expr->var->name === 'this' &&
+            $expr->name->toString() === 'whenCounted') {
+            return $this->analyzeWhenCountedMethod($expr);
+        }
+
+        // $this->whenAggregated()
+        if ($expr instanceof Node\Expr\MethodCall &&
+            $expr->var instanceof Node\Expr\Variable &&
+            $expr->var->name === 'this' &&
+            $expr->name->toString() === 'whenAggregated') {
+            return $this->analyzeWhenAggregatedMethod($expr);
+        }
+
         // Resource::collection()
         if ($expr instanceof Node\Expr\StaticCall) {
             return $this->analyzeStaticCall($expr);
@@ -400,6 +416,54 @@ class ResourceStructureVisitor extends NodeVisitorAbstract
         }
 
         return ResourceFieldInfo::conditional('whenLoaded', $type);
+    }
+
+    /**
+     * whenCounted()メソッドを解析
+     * Count values are always integers.
+     */
+    private function analyzeWhenCountedMethod(Node\Expr\MethodCall $call): ResourceFieldInfo
+    {
+        $relation = null;
+
+        if (isset($call->args[0])) {
+            $relationArg = $call->args[0]->value;
+            if ($relationArg instanceof Node\Scalar\String_) {
+                $relation = $relationArg->value;
+            }
+        }
+
+        $this->conditionalFields[] = $this->printer->prettyPrintExpr($call);
+
+        if ($relation !== null) {
+            return ResourceFieldInfo::whenCounted($relation);
+        }
+
+        return ResourceFieldInfo::conditional('whenCounted', 'integer');
+    }
+
+    /**
+     * whenAggregated()メソッドを解析
+     * Aggregated values are numbers (can be floats for avg, sum, etc.).
+     */
+    private function analyzeWhenAggregatedMethod(Node\Expr\MethodCall $call): ResourceFieldInfo
+    {
+        $relation = null;
+
+        if (isset($call->args[0])) {
+            $relationArg = $call->args[0]->value;
+            if ($relationArg instanceof Node\Scalar\String_) {
+                $relation = $relationArg->value;
+            }
+        }
+
+        $this->conditionalFields[] = $this->printer->prettyPrintExpr($call);
+
+        if ($relation !== null) {
+            return ResourceFieldInfo::whenAggregated($relation);
+        }
+
+        return ResourceFieldInfo::conditional('whenAggregated', 'number');
     }
 
     /**
