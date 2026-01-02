@@ -41,10 +41,8 @@ class DeprecatedController
         return response()->json(['status' => 'ok']);
     }
 
-    /**
-     * An endpoint without any documentation.
-     */
-    public function undocumentedMethod(): JsonResponse
+    // Method without PHPDoc - tests handling of methods with no docblock
+    public function methodWithoutDocblock(): JsonResponse
     {
         return response()->json([]);
     }

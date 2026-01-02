@@ -301,11 +301,11 @@ class ControllerAnalyzerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_false_for_undocumented_method(): void
+    public function it_returns_false_for_method_without_docblock(): void
     {
         $result = $this->analyzer->analyze(
             \LaravelSpectrum\Tests\Fixtures\Controllers\DeprecatedController::class,
-            'undocumentedMethod'
+            'methodWithoutDocblock'
         );
 
         $this->assertIsArray($result);
