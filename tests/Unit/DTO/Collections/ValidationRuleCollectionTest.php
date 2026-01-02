@@ -310,4 +310,44 @@ class ValidationRuleCollectionTest extends TestCase
         $this->assertCount(0, $collection->getFileRules());
         $this->assertCount(4, $collection->getNonFileRules());
     }
+
+    /**
+     * Test for Issue #317: File Rule object (File::types(), File::image()) not detected as file upload
+     * When AST extracts validation rules, File:: static calls are converted to string representations.
+     */
+    #[Test]
+    public function it_detects_file_types_static_call_string_as_file_rule(): void
+    {
+        // This is what AST extractor produces for File::types(['pdf', 'docx'])->min(1)->max(10 * 1024)
+        $collection = ValidationRuleCollection::fromArray([
+            'required',
+            'File::types(["pdf", "docx"])->min(1)->max(10 * 1024)',
+        ]);
+
+        $this->assertTrue($collection->hasFileRule());
+    }
+
+    #[Test]
+    public function it_detects_file_image_static_call_string_as_file_rule(): void
+    {
+        // This is what AST extractor produces for File::image()->min(10)->max(5 * 1024)
+        $collection = ValidationRuleCollection::fromArray([
+            'nullable',
+            'File::image()->min(10)->max(5 * 1024)',
+        ]);
+
+        $this->assertTrue($collection->hasFileRule());
+    }
+
+    #[Test]
+    public function it_detects_fully_qualified_file_class_as_file_rule(): void
+    {
+        // Test with fully qualified class name that AST might produce
+        $collection = ValidationRuleCollection::fromArray([
+            'required',
+            '\\Illuminate\\Validation\\Rules\\File::types(["pdf"])',
+        ]);
+
+        $this->assertTrue($collection->hasFileRule());
+    }
 }

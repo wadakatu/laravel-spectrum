@@ -109,8 +109,36 @@ final readonly class ValidationRuleCollection extends AbstractCollection
             return false;
         }
 
+        // Check for File:: static call strings (AST extracted)
+        // e.g., "File::types(['pdf'])->..." or "\Illuminate\Validation\Rules\File::image()"
+        if ($this->isFileStaticCallString($rule)) {
+            return true;
+        }
+
         $ruleName = explode(':', $rule)[0];
 
         return in_array($ruleName, self::FILE_RULES, true);
+    }
+
+    /**
+     * Check if the rule is a File:: static call string (AST extracted).
+     *
+     * When AST extracts validation rules containing File::types() or File::image(),
+     * they are converted to strings like "File::types(['pdf'])->..." or
+     * "\Illuminate\Validation\Rules\File::image()".
+     */
+    private function isFileStaticCallString(string $rule): bool
+    {
+        // Match: File::types(...), File::image(...), etc.
+        if (str_starts_with($rule, 'File::')) {
+            return true;
+        }
+
+        // Match: \Illuminate\Validation\Rules\File::...
+        if (str_contains($rule, '\\Illuminate\\Validation\\Rules\\File::')) {
+            return true;
+        }
+
+        return false;
     }
 }
