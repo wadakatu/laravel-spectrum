@@ -112,6 +112,9 @@ class ParameterBuilder
         $parameters = [];
         $processedFields = [];
 
+        // Analyze file upload fields from merged rules
+        $fileFields = $this->fileUploadAnalyzer->analyzeRulesToResult($conditionalRules['merged_rules']);
+
         // Process all rule sets
         foreach ($conditionalRules['rules_sets'] as $index => $ruleSet) {
             // Skip malformed rule sets
@@ -166,18 +169,24 @@ class ParameterBuilder
                 continue;
             }
 
-            $parameter = $this->buildConditionalParameter(
-                $field,
-                $mergedRules,
-                $processedFields[$field],
-                $attributes,
-                $namespace,
-                $useStatements
-            );
+            $normalizedRules = ValidationRuleCollection::from($mergedRules)->all();
+
+            // Check if this is a file upload field
+            if (isset($fileFields[$field])) {
+                $parameter = $this->buildFileParameter($field, $fileFields[$field], $normalizedRules, $attributes);
+            } else {
+                $parameter = $this->buildConditionalParameter(
+                    $field,
+                    $mergedRules,
+                    $processedFields[$field],
+                    $attributes,
+                    $namespace,
+                    $useStatements
+                );
+            }
             $parameters[] = $parameter;
 
             // Generate confirmation field if 'confirmed' rule is present
-            $normalizedRules = ValidationRuleCollection::from($mergedRules)->all();
             if ($this->hasConfirmedRule($normalizedRules)) {
                 $parameters[] = $this->buildConfirmationField($field, $parameter, $attributes);
             }

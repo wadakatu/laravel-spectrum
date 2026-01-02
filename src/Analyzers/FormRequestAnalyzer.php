@@ -296,10 +296,13 @@ class FormRequestAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * FormRequestクラスを解析して詳細情報を取得
+     *
+     * Note: Uses a separate cache key (with ':details' suffix) to avoid collision
+     * with analyzeToResult() which stores parameter arrays in a different format.
      */
     public function analyzeWithDetails(string $requestClass): array
     {
-        return $this->cache->rememberFormRequest($requestClass, function () use ($requestClass) {
+        return $this->cache->rememberFormRequest($requestClass.':details', function () use ($requestClass) {
             return $this->performAnalysisWithDetails($requestClass);
         });
     }
