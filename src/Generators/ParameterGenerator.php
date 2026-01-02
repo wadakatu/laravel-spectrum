@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiSchema;
@@ -16,21 +17,26 @@ use LaravelSpectrum\Support\QueryParameterTypeInference;
  * - Query parameters from controller analysis
  * - Enum type parameters
  * - Validation constraints (min, max, between)
+ * - Validation rules as query parameters for GET requests
  */
 class ParameterGenerator
 {
     public function __construct(
-        protected QueryParameterTypeInference $typeInference
-    ) {}
+        protected QueryParameterTypeInference $typeInference,
+        protected ?InlineValidationAnalyzer $inlineValidationAnalyzer = null,
+    ) {
+        $this->inlineValidationAnalyzer = $inlineValidationAnalyzer ?? app(InlineValidationAnalyzer::class);
+    }
 
     /**
      * Generate parameters for an API operation.
      *
-     * @param  array{parameters: array}  $route  Route information with parameters
+     * @param  array{parameters: array, methods?: array<string>}  $route  Route information with parameters
      * @param  ControllerInfo  $controllerInfo  Controller analysis result
+     * @param  string|null  $httpMethod  HTTP method (get, post, put, patch, delete)
      * @return array<int, OpenApiParameter> OpenAPI parameter definitions
      */
-    public function generate(array $route, ControllerInfo $controllerInfo): array
+    public function generate(array $route, ControllerInfo $controllerInfo, ?string $httpMethod = null): array
     {
         // Convert route parameters to DTOs
         $parameters = array_map(
@@ -43,6 +49,11 @@ class ParameterGenerator
 
         // Add query parameters
         $parameters = $this->addQueryParameters($parameters, $controllerInfo);
+
+        // Add validation-based query parameters for GET requests
+        if ($httpMethod !== null && strtolower($httpMethod) === 'get') {
+            $parameters = $this->addValidationQueryParameters($parameters, $controllerInfo);
+        }
 
         return $parameters;
     }
@@ -191,6 +202,116 @@ class ParameterGenerator
         }
 
         return $parameters;
+    }
+
+    /**
+     * Add query parameters from inline validation rules for GET requests.
+     *
+     * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
+     * @param  ControllerInfo  $controllerInfo  Controller analysis result
+     * @return array<int, OpenApiParameter> Updated parameters
+     */
+    protected function addValidationQueryParameters(array $parameters, ControllerInfo $controllerInfo): array
+    {
+        if (! $controllerInfo->hasInlineValidation()) {
+            return $parameters;
+        }
+
+        $inlineValidation = $controllerInfo->inlineValidation;
+        if ($inlineValidation === null || ! $inlineValidation->hasRules()) {
+            return $parameters;
+        }
+
+        foreach ($inlineValidation->rules as $fieldName => $rules) {
+            // Convert dot notation to bracket notation (filter.name → filter[name])
+            $parameterName = $this->convertToBracketNotation($fieldName);
+
+            // Normalize rules to array
+            $rulesArray = is_string($rules) ? explode('|', $rules) : $rules;
+
+            // Infer type from validation rules
+            $type = $this->typeInference->inferFromValidationRules($rulesArray) ?? 'string';
+
+            // Check if required
+            $required = in_array('required', $rulesArray, true);
+
+            // Build schema
+            $schema = OpenApiSchema::fromType($type);
+
+            // Add validation constraints
+            $constraints = $this->typeInference->getConstraintsFromRules($rulesArray);
+            if (! empty($constraints)) {
+                $schema = new OpenApiSchema(
+                    type: $schema->type,
+                    format: $schema->format,
+                    default: $schema->default,
+                    enum: $schema->enum,
+                    minimum: $constraints['minimum'] ?? $schema->minimum,
+                    maximum: $constraints['maximum'] ?? $schema->maximum,
+                    minLength: $constraints['minLength'] ?? $schema->minLength,
+                    maxLength: $constraints['maxLength'] ?? $schema->maxLength,
+                    pattern: $constraints['pattern'] ?? $schema->pattern,
+                    items: $type === 'array' ? OpenApiSchema::string() : null,
+                );
+            }
+
+            // Add items for array types
+            if ($type === 'array' && $schema->items === null) {
+                $schema = new OpenApiSchema(
+                    type: 'array',
+                    format: $schema->format,
+                    default: $schema->default,
+                    enum: $schema->enum,
+                    items: OpenApiSchema::string(),
+                );
+            }
+
+            // Create parameter DTO
+            $param = new OpenApiParameter(
+                name: $parameterName,
+                in: OpenApiParameter::IN_QUERY,
+                required: $required,
+                schema: $schema,
+            );
+
+            // Apply style and explode for array types
+            if ($type === 'array') {
+                $includeStyle = config('spectrum.parameters.include_style', true);
+                if ($includeStyle) {
+                    $style = config('spectrum.parameters.array_style', 'form');
+                    $explode = config('spectrum.parameters.array_explode', true);
+                    $param = $param->withStyleAndExplode($style, $explode);
+                }
+            }
+
+            $parameters[] = $param;
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * Convert dot notation field name to bracket notation.
+     *
+     * Examples:
+     * - filter.name → filter[name]
+     * - page.number → page[number]
+     * - data.user.email → data[user][email]
+     */
+    protected function convertToBracketNotation(string $fieldName): string
+    {
+        if (! str_contains($fieldName, '.')) {
+            return $fieldName;
+        }
+
+        $parts = explode('.', $fieldName);
+        $result = array_shift($parts);
+
+        foreach ($parts as $part) {
+            $result .= '['.$part.']';
+        }
+
+        return $result;
     }
 
     /**
