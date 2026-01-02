@@ -350,4 +350,49 @@ class ValidationRuleCollectionTest extends TestCase
 
         $this->assertTrue($collection->hasFileRule());
     }
+
+    #[Test]
+    public function it_detects_fully_qualified_file_class_without_leading_backslash(): void
+    {
+        // Test FQN without leading backslash
+        $collection = ValidationRuleCollection::fromArray([
+            'required',
+            'Illuminate\\Validation\\Rules\\File::image()',
+        ]);
+
+        $this->assertTrue($collection->hasFileRule());
+    }
+
+    #[Test]
+    public function it_correctly_separates_file_static_call_strings_in_get_file_rules(): void
+    {
+        // Test that getFileRules() and getNonFileRules() work correctly with File:: strings
+        $collection = ValidationRuleCollection::fromArray([
+            'required',
+            'File::types(["pdf", "docx"])->max(1024)',
+            'max:255',
+            '\\Illuminate\\Validation\\Rules\\File::image()',
+        ]);
+
+        $fileRules = $collection->getFileRules();
+        $nonFileRules = $collection->getNonFileRules();
+
+        $this->assertCount(2, $fileRules);
+        $this->assertCount(2, $nonFileRules);
+        $this->assertEquals(['required', 'max:255'], $nonFileRules->all());
+    }
+
+    #[Test]
+    public function it_does_not_misidentify_strings_containing_file_in_middle_as_file_rules(): void
+    {
+        // Test that strings containing "File::" in unexpected positions are NOT detected as file rules
+        $collection = ValidationRuleCollection::fromArray([
+            'required',
+            'regex:/^File::.*$/',  // A regex pattern containing File::
+            'in:File::types,Other::method',  // An "in" rule containing File::
+        ]);
+
+        $this->assertFalse($collection->hasFileRule());
+        $this->assertCount(0, $collection->getFileRules());
+    }
 }

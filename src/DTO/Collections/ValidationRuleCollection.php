@@ -134,8 +134,13 @@ final readonly class ValidationRuleCollection extends AbstractCollection
             return true;
         }
 
-        // Match: \Illuminate\Validation\Rules\File::...
-        if (str_contains($rule, '\\Illuminate\\Validation\\Rules\\File::')) {
+        // Match: \Illuminate\Validation\Rules\File::... (with leading backslash)
+        if (str_starts_with($rule, '\\Illuminate\\Validation\\Rules\\File::')) {
+            return true;
+        }
+
+        // Match: Illuminate\Validation\Rules\File::... (without leading backslash)
+        if (str_starts_with($rule, 'Illuminate\\Validation\\Rules\\File::')) {
             return true;
         }
 
