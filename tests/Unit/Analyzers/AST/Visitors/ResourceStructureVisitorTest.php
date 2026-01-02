@@ -934,4 +934,74 @@ class ResourceStructureVisitorTest extends TestCase
         $this->assertEquals('number', $structure['properties']['max_price']['type']);
         $this->assertTrue($structure['properties']['max_price']['conditional']);
     }
+
+    #[Test]
+    public function it_handles_when_counted_with_dynamic_relation(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        class UserResource extends JsonResource {
+            public function toArray($request)
+            {
+                $relation = 'posts';
+                return [
+                    'id' => $this->id,
+                    'dynamic_count' => $this->whenCounted($relation),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Dynamic relation should still return integer type
+        $this->assertArrayHasKey('dynamic_count', $structure['properties']);
+        $this->assertEquals('integer', $structure['properties']['dynamic_count']['type']);
+        $this->assertTrue($structure['properties']['dynamic_count']['conditional']);
+        $this->assertEquals('whenCounted', $structure['properties']['dynamic_count']['condition']);
+        // Relation is not set when using variable (fallback path)
+        $this->assertArrayNotHasKey('relation', $structure['properties']['dynamic_count']);
+    }
+
+    #[Test]
+    public function it_handles_when_aggregated_with_dynamic_relation(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        class ProductResource extends JsonResource {
+            public function toArray($request)
+            {
+                $rel = 'reviews';
+                return [
+                    'id' => $this->id,
+                    'dynamic_avg' => $this->whenAggregated($rel, 'rating', 'avg'),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ResourceStructureVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $structure = $visitor->getStructure();
+
+        // Dynamic relation should still return number type
+        $this->assertArrayHasKey('dynamic_avg', $structure['properties']);
+        $this->assertEquals('number', $structure['properties']['dynamic_avg']['type']);
+        $this->assertTrue($structure['properties']['dynamic_avg']['conditional']);
+        $this->assertEquals('whenAggregated', $structure['properties']['dynamic_avg']['condition']);
+        // Relation is not set when using variable (fallback path)
+        $this->assertArrayNotHasKey('relation', $structure['properties']['dynamic_avg']);
+    }
 }
