@@ -195,4 +195,166 @@ class RouteAnalyzerTest extends TestCase
         // Critical assertion: must NOT be __invoke even though controller has __invoke
         $this->assertNotEquals('__invoke', $routes[0]['method']);
     }
+
+    #[Test]
+    public function it_detects_integer_where_constraint(): void
+    {
+        // Arrange - Route with numeric constraint
+        Route::get('api/users/{user}', [UserController::class, 'show'])
+            ->where('user', '[0-9]+');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have integer type
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('user', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('integer', $routes[0]['parameters'][0]['schema']['type']);
+    }
+
+    #[Test]
+    public function it_detects_uuid_where_constraint(): void
+    {
+        // Arrange - Route with UUID constraint
+        Route::get('api/orders/{order}', [UserController::class, 'show'])
+            ->where('order', '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have uuid format
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('order', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertEquals('uuid', $routes[0]['parameters'][0]['schema']['format']);
+    }
+
+    #[Test]
+    public function it_detects_custom_pattern_constraint(): void
+    {
+        // Arrange - Route with custom pattern
+        Route::get('api/products/{slug}', [UserController::class, 'show'])
+            ->where('slug', '[a-z0-9-]+');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have pattern property
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('slug', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertEquals('^[a-z0-9-]+$', $routes[0]['parameters'][0]['schema']['pattern']);
+    }
+
+    #[Test]
+    public function it_detects_multiple_where_constraints(): void
+    {
+        // Arrange - Route with multiple constraints
+        Route::get('api/posts/{post}/comments/{comment}', [CommentController::class, 'show'])
+            ->where(['post' => '[0-9]+', 'comment' => '[0-9]+']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Both parameters should have integer type
+        $this->assertCount(1, $routes);
+        $this->assertCount(2, $routes[0]['parameters']);
+        $this->assertEquals('post', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('integer', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertEquals('comment', $routes[0]['parameters'][1]['name']);
+        $this->assertEquals('integer', $routes[0]['parameters'][1]['schema']['type']);
+    }
+
+    #[Test]
+    public function it_detects_alpha_where_constraint(): void
+    {
+        // Arrange - Route with alphabetic constraint
+        Route::get('api/categories/{category}', [UserController::class, 'show'])
+            ->whereAlpha('category');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have pattern for alphabetic
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('category', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertArrayHasKey('pattern', $routes[0]['parameters'][0]['schema']);
+    }
+
+    #[Test]
+    public function it_detects_ulid_where_constraint(): void
+    {
+        // Arrange - Route with ULID constraint
+        Route::get('api/items/{item}', [UserController::class, 'show'])
+            ->whereUlid('item');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have ulid format
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('item', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        // ULID uses pattern since there's no standard OpenAPI format for ULID
+        $this->assertArrayHasKey('pattern', $routes[0]['parameters'][0]['schema']);
+    }
+
+    #[Test]
+    public function it_detects_uuid_with_laravel_where_uuid_helper(): void
+    {
+        // Arrange - Route with Laravel's native whereUuid helper
+        Route::get('api/orders/{order}', [UserController::class, 'show'])
+            ->whereUuid('order');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have uuid format
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('order', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertEquals('uuid', $routes[0]['parameters'][0]['schema']['format']);
+    }
+
+    #[Test]
+    public function it_detects_integer_with_laravel_where_number_helper(): void
+    {
+        // Arrange - Route with Laravel's native whereNumber helper
+        Route::get('api/users/{user}', [UserController::class, 'show'])
+            ->whereNumber('user');
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should have integer type
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('user', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('integer', $routes[0]['parameters'][0]['schema']['type']);
+    }
+
+    #[Test]
+    public function it_defaults_to_string_type_when_no_constraint(): void
+    {
+        // Arrange - Route without any where constraint
+        Route::get('api/users/{user}', [UserController::class, 'show']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert - Parameter should default to string type
+        $this->assertCount(1, $routes);
+        $this->assertCount(1, $routes[0]['parameters']);
+        $this->assertEquals('user', $routes[0]['parameters'][0]['name']);
+        $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
+        $this->assertArrayNotHasKey('format', $routes[0]['parameters'][0]['schema']);
+        $this->assertArrayNotHasKey('pattern', $routes[0]['parameters'][0]['schema']);
+    }
 }

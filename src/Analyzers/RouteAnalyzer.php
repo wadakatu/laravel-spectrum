@@ -276,20 +276,118 @@ class RouteAnalyzer implements HasErrors
     {
         preg_match_all('/\{([^}]+)\}/', $route->uri(), $matches);
 
+        // Get where constraints from the route
+        $wheres = $route->wheres;
+
         $parameters = [];
         foreach ($matches[1] as $param) {
             $isOptional = Str::endsWith($param, '?');
             $name = rtrim($param, '?');
 
+            // Build schema based on where constraints
+            $schema = $this->buildSchemaFromWhereConstraint($name, $wheres);
+
             $parameters[] = new RouteParameterInfo(
                 name: $name,
                 required: ! $isOptional,
                 in: 'path',
-                schema: ['type' => 'string'], // デフォルト、後で型推論で上書き可能
+                schema: $schema,
             );
         }
 
         return $parameters;
+    }
+
+    /**
+     * Build OpenAPI schema from where constraint pattern.
+     *
+     * @param  array<string, string>  $wheres
+     * @return array<string, mixed>
+     */
+    protected function buildSchemaFromWhereConstraint(string $paramName, array $wheres): array
+    {
+        // Default schema
+        $schema = ['type' => 'string'];
+
+        // Check if there's a where constraint for this parameter
+        if (! isset($wheres[$paramName])) {
+            return $schema;
+        }
+
+        $pattern = $wheres[$paramName];
+
+        // Check for common patterns and map to OpenAPI types/formats
+        return $this->mapPatternToSchema($pattern);
+    }
+
+    /**
+     * Map regex pattern to OpenAPI schema.
+     *
+     * @return array<string, mixed>
+     */
+    protected function mapPatternToSchema(string $pattern): array
+    {
+        // Integer patterns: [0-9]+, \d+, etc.
+        if ($this->isIntegerPattern($pattern)) {
+            return ['type' => 'integer'];
+        }
+
+        // UUID pattern
+        if ($this->isUuidPattern($pattern)) {
+            return ['type' => 'string', 'format' => 'uuid'];
+        }
+
+        // For other patterns, return string with pattern
+        return [
+            'type' => 'string',
+            'pattern' => '^'.$pattern.'$',
+        ];
+    }
+
+    /**
+     * Check if pattern matches integer constraints.
+     */
+    protected function isIntegerPattern(string $pattern): bool
+    {
+        // Common integer patterns
+        $integerPatterns = [
+            '/^\[0-9\]\+$/',           // [0-9]+
+            '/^\\\\d\+$/',              // \d+
+            '/^\[0-9\]\*$/',           // [0-9]*
+            '/^\[0-9\]\{1,\d*\}$/',    // [0-9]{1,} or [0-9]{1,10}
+        ];
+
+        foreach ($integerPatterns as $intPattern) {
+            if (preg_match($intPattern, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if pattern matches UUID format.
+     *
+     * @param  string  $pattern  The regex pattern to check
+     */
+    protected function isUuidPattern(string $pattern): bool
+    {
+        // UUID regex pattern variants (including Laravel's whereUuid() which uses \d)
+        $uuidPatterns = [
+            '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+            '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}', // Laravel's whereUuid()
+            '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
+            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+        ];
+
+        foreach ($uuidPatterns as $uuidPattern) {
+            if (strcasecmp($pattern, $uuidPattern) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
