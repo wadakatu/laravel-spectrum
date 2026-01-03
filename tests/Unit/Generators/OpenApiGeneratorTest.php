@@ -1505,6 +1505,7 @@ class OpenApiGeneratorTest extends TestCase
         // The injected registry should be used
         $mockRegistry->shouldReceive('clear')->once();
         $mockRegistry->shouldReceive('all')->andReturn([]);
+        $mockRegistry->shouldReceive('validateReferences')->once()->andReturn([]);
 
         $generator = new OpenApiGenerator(
             $this->controllerAnalyzer,
@@ -1826,6 +1827,159 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertArrayHasKey('requestBody', $operation);
         $this->assertArrayHasKey('content', $operation['requestBody']);
         $this->assertArrayHasKey('application/json', $operation['requestBody']['content']);
+    }
+
+    #[Test]
+    public function it_logs_warning_for_broken_schema_references(): void
+    {
+        // Create a mock SchemaRegistry that returns broken references
+        $schemaRegistry = Mockery::mock(SchemaRegistry::class);
+        $schemaRegistry->shouldReceive('clear')->once();
+        $schemaRegistry->shouldReceive('all')->once()->andReturn([]);
+        $schemaRegistry->shouldReceive('validateReferences')->once()->andReturn(['NonExistentResource']);
+
+        $generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $this->openApi31Converter,
+            $schemaRegistry
+        );
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        // Assert that a warning is logged
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'NonExistentResource');
+            }));
+
+        $result = $generator->generate([]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('openapi', $result);
+    }
+
+    #[Test]
+    public function it_does_not_log_warning_when_all_references_are_valid(): void
+    {
+        // Create a mock SchemaRegistry with no broken references
+        $schemaRegistry = Mockery::mock(SchemaRegistry::class);
+        $schemaRegistry->shouldReceive('clear')->once();
+        $schemaRegistry->shouldReceive('all')->once()->andReturn([
+            'UserResource' => ['type' => 'object'],
+            'PostResource' => ['type' => 'object'],
+        ]);
+        $schemaRegistry->shouldReceive('validateReferences')->once()->andReturn([]);
+
+        $generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $this->openApi31Converter,
+            $schemaRegistry
+        );
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        // Use spy to verify warning is NOT called
+        \Illuminate\Support\Facades\Log::spy();
+
+        $result = $generator->generate([]);
+
+        // Verify warning was not logged
+        \Illuminate\Support\Facades\Log::shouldNotHaveReceived('warning');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('openapi', $result);
+        // Verify schemas are populated correctly
+        $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
+        $this->assertArrayHasKey('PostResource', $result['components']['schemas']);
+    }
+
+    #[Test]
+    public function it_logs_warning_for_multiple_broken_references(): void
+    {
+        // Create a mock SchemaRegistry that returns multiple broken references
+        $schemaRegistry = Mockery::mock(SchemaRegistry::class);
+        $schemaRegistry->shouldReceive('clear')->once();
+        $schemaRegistry->shouldReceive('all')->once()->andReturn([
+            'UserResource' => ['type' => 'object'],
+        ]);
+        $schemaRegistry->shouldReceive('validateReferences')->once()->andReturn(['BrokenRef1', 'BrokenRef2']);
+
+        $generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $this->openApi31Converter,
+            $schemaRegistry
+        );
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        // Assert that a warning is logged with all broken references
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'BrokenRef1') && str_contains($message, 'BrokenRef2');
+            }));
+
+        $result = $generator->generate([]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('openapi', $result);
+        // Verify UserResource is still in schemas
+        $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
     }
 
     protected function tearDown(): void
