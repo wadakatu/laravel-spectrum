@@ -46,6 +46,9 @@ class ParameterGenerator
         // Add query parameters
         $parameters = $this->addQueryParameters($parameters, $controllerInfo);
 
+        // Add header parameters
+        $parameters = $this->addHeaderParameters($parameters, $controllerInfo);
+
         // Add validation-based query parameters for GET requests
         if ($httpMethod !== null && strtolower($httpMethod) === 'get') {
             $parameters = $this->addValidationQueryParameters($parameters, $controllerInfo);
@@ -193,6 +196,50 @@ class ParameterGenerator
                     $param = $param->withStyleAndExplode($style, $explode);
                 }
             }
+
+            $parameters[] = $param;
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * Add header parameters from controller analysis.
+     *
+     * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
+     * @param  ControllerInfo  $controllerInfo  Controller analysis result
+     * @return array<int, OpenApiParameter> Updated parameters
+     */
+    protected function addHeaderParameters(array $parameters, ControllerInfo $controllerInfo): array
+    {
+        if (! $controllerInfo->hasHeaderParameters()) {
+            return $parameters;
+        }
+
+        foreach ($controllerInfo->headerParameters as $headerParamDTO) {
+            $schema = OpenApiSchema::string();
+
+            // Add default value if present
+            if ($headerParamDTO->default !== null) {
+                $schema = new OpenApiSchema(
+                    type: 'string',
+                    format: $headerParamDTO->isBearerToken ? 'bearer' : null,
+                    default: $headerParamDTO->default,
+                );
+            } elseif ($headerParamDTO->isBearerToken) {
+                $schema = new OpenApiSchema(
+                    type: 'string',
+                    format: 'bearer',
+                );
+            }
+
+            $param = new OpenApiParameter(
+                name: $headerParamDTO->name,
+                in: OpenApiParameter::IN_HEADER,
+                required: $headerParamDTO->required,
+                schema: $schema,
+                description: $headerParamDTO->generateDescription(),
+            );
 
             $parameters[] = $param;
         }

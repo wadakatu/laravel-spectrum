@@ -22,6 +22,7 @@ final readonly class ControllerInfo
      * @param  FractalInfo|null  $fractal  Fractal transformer info if detected
      * @param  PaginationInfo|null  $pagination  Pagination info if detected
      * @param  array<int, QueryParameterInfo>  $queryParameters  Query parameters if detected
+     * @param  array<int, HeaderParameterInfo>  $headerParameters  Header parameters if detected
      * @param  array<int, EnumParameterInfo>  $enumParameters  Enum parameters from method signature
      * @param  ResponseInfo|null  $response  Response analysis info
      * @param  bool  $deprecated  Whether the controller method is marked as deprecated
@@ -35,6 +36,7 @@ final readonly class ControllerInfo
         public ?FractalInfo $fractal = null,
         public ?PaginationInfo $pagination = null,
         public array $queryParameters = [],
+        public array $headerParameters = [],
         public array $enumParameters = [],
         public ?ResponseInfo $response = null,
         public bool $deprecated = false,
@@ -75,6 +77,14 @@ final readonly class ControllerInfo
             }
         }
 
+        // Convert headerParameters arrays to DTOs
+        $headerParameters = [];
+        if (isset($data['headerParameters']) && is_array($data['headerParameters'])) {
+            foreach ($data['headerParameters'] as $param) {
+                $headerParameters[] = HeaderParameterInfo::fromArray($param);
+            }
+        }
+
         // Convert enumParameters arrays to DTOs
         $enumParameters = [];
         if (isset($data['enumParameters']) && is_array($data['enumParameters'])) {
@@ -110,6 +120,7 @@ final readonly class ControllerInfo
             fractal: $fractal,
             pagination: $pagination,
             queryParameters: $queryParameters,
+            headerParameters: $headerParameters,
             enumParameters: $enumParameters,
             response: $response,
             deprecated: $data['deprecated'] ?? false,
@@ -132,6 +143,7 @@ final readonly class ControllerInfo
             'fractal' => $this->fractal?->toArray(),
             'pagination' => $this->pagination?->toArray(),
             'queryParameters' => array_map(fn (QueryParameterInfo $p) => $p->toArray(), $this->queryParameters),
+            'headerParameters' => array_map(fn (HeaderParameterInfo $p) => $p->toArray(), $this->headerParameters),
             'enumParameters' => array_map(fn (EnumParameterInfo $p) => $p->toArray(), $this->enumParameters),
             'response' => $this->response?->toArray(),
             'deprecated' => $this->deprecated,
@@ -203,6 +215,14 @@ final readonly class ControllerInfo
     }
 
     /**
+     * Check if header parameters were detected.
+     */
+    public function hasHeaderParameters(): bool
+    {
+        return count($this->headerParameters) > 0;
+    }
+
+    /**
      * Check if enum parameters were detected.
      */
     public function hasEnumParameters(): bool
@@ -237,6 +257,7 @@ final readonly class ControllerInfo
             && ! $this->hasFractal()
             && ! $this->hasPagination()
             && ! $this->hasQueryParameters()
+            && ! $this->hasHeaderParameters()
             && ! $this->hasEnumParameters()
             && ! $this->hasResponse();
     }

@@ -11,6 +11,7 @@ use LaravelSpectrum\Contracts\HasErrors;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\EnumParameterInfo;
 use LaravelSpectrum\DTO\FractalInfo;
+use LaravelSpectrum\DTO\HeaderParameterInfo;
 use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
@@ -38,6 +39,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     protected QueryParameterAnalyzer $queryParameterAnalyzer;
 
+    protected HeaderParameterAnalyzer $headerParameterAnalyzer;
+
     protected EnumAnalyzer $enumAnalyzer;
 
     protected ResponseAnalyzer $responseAnalyzer;
@@ -51,6 +54,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         InlineValidationAnalyzer $inlineValidationAnalyzer,
         PaginationAnalyzer $paginationAnalyzer,
         QueryParameterAnalyzer $queryParameterAnalyzer,
+        HeaderParameterAnalyzer $headerParameterAnalyzer,
         EnumAnalyzer $enumAnalyzer,
         ResponseAnalyzer $responseAnalyzer,
         AstHelper $astHelper,
@@ -62,6 +66,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         $this->inlineValidationAnalyzer = $inlineValidationAnalyzer;
         $this->paginationAnalyzer = $paginationAnalyzer;
         $this->queryParameterAnalyzer = $queryParameterAnalyzer;
+        $this->headerParameterAnalyzer = $headerParameterAnalyzer;
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
         $this->astHelper = $astHelper;
@@ -142,6 +147,9 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             $method
         );
 
+        // Header Parameter使用を検出
+        $headerParameters = $this->detectHeaderParameters($methodReflection);
+
         // レスポンス解析
         $response = $this->responseAnalyzer->analyze($controller, $method);
         // Only include response if it's not unknown type
@@ -161,6 +169,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             fractal: $fractal,
             pagination: $pagination,
             queryParameters: $queryParameters,
+            headerParameters: $headerParameters,
             enumParameters: $enumParameters,
             response: $response,
             deprecated: $deprecated,
@@ -380,6 +389,16 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         }
 
         return $queryParamsResult->parameters;
+    }
+
+    /**
+     * Header Parameter使用を検出
+     *
+     * @return array<int, HeaderParameterInfo>
+     */
+    protected function detectHeaderParameters(ReflectionMethod $methodReflection): array
+    {
+        return $this->headerParameterAnalyzer->analyzeToResult($methodReflection);
     }
 
     /**
