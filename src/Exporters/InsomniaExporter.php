@@ -19,6 +19,13 @@ class InsomniaExporter implements ExportFormatInterface
         $this->exampleFormatter = $exampleFormatter;
     }
 
+    /**
+     * Export OpenAPI specification to Insomnia format.
+     *
+     * @param  array<string, mixed>  $openapi
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
     public function export(array $openapi, array $options = []): array
     {
         $exportData = [
@@ -95,6 +102,12 @@ class InsomniaExporter implements ExportFormatInterface
         return $exportData;
     }
 
+    /**
+     * Create a request resource.
+     *
+     * @param  array<string, mixed>  $route
+     * @return array<string, mixed>
+     */
     private function createRequest(array $route, string $parentId, string $environmentId, int $sortKey): array
     {
         $path = $route['path'];
@@ -129,6 +142,12 @@ class InsomniaExporter implements ExportFormatInterface
         return $request;
     }
 
+    /**
+     * Generate request body.
+     *
+     * @param  array<string, mixed>  $operation
+     * @return array<string, mixed>
+     */
     private function generateBody(array $operation): array
     {
         if (! isset($operation['requestBody'])) {
@@ -165,6 +184,12 @@ class InsomniaExporter implements ExportFormatInterface
         return [];
     }
 
+    /**
+     * Generate query parameters.
+     *
+     * @param  array<string, mixed>  $operation
+     * @return array<int, array<string, mixed>>
+     */
     private function generateParameters(array $operation): array
     {
         if (! isset($operation['parameters'])) {
@@ -174,6 +199,12 @@ class InsomniaExporter implements ExportFormatInterface
         return $this->formatter->formatQueryParameters($operation['parameters']);
     }
 
+    /**
+     * Generate authentication configuration.
+     *
+     * @param  array<string, mixed>  $operation
+     * @return array<string, mixed>
+     */
     private function generateAuthentication(array $operation): array
     {
         if (! isset($operation['security'])) {
@@ -220,12 +251,25 @@ class InsomniaExporter implements ExportFormatInterface
         return 'Insomnia Export v4';
     }
 
+    /**
+     * Export environment configuration.
+     *
+     * @param  array<int, array<string, mixed>>  $servers
+     * @param  array<int, array<string, mixed>>  $security
+     * @return array<string, mixed>
+     */
     public function exportEnvironment(array $servers, array $security, string $environment = 'local'): array
     {
         // Insomnia environments are included in the main export
         return [];
     }
 
+    /**
+     * Create environment resource.
+     *
+     * @param  array<string, mixed>  $openapi
+     * @return array<string, mixed>
+     */
     private function createEnvironment(string $environmentId, string $workspaceId, array $openapi): array
     {
         $data = [
@@ -271,11 +315,23 @@ class InsomniaExporter implements ExportFormatInterface
         ];
     }
 
+    /**
+     * Group routes by tag.
+     *
+     * @param  array<string, mixed>  $openapi
+     * @return array<string, array<int, array<string, mixed>>>
+     */
     private function groupRoutesByTag(array $openapi): array
     {
         return $this->formatter->groupRoutesByTag($openapi['paths'] ?? []);
     }
 
+    /**
+     * Generate request headers.
+     *
+     * @param  array<string, mixed>  $operation
+     * @return array<int, array<string, string>>
+     */
     private function generateHeaders(array $operation): array
     {
         $headers = [];
