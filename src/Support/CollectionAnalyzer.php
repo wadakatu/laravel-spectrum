@@ -21,6 +21,11 @@ class CollectionAnalyzer
         $this->typeInferenceEngine = $typeInferenceEngine ?? new AstTypeInferenceEngine;
     }
 
+    /**
+     * Analyze a collection method chain and determine the resulting schema.
+     *
+     * @return array<string, mixed>
+     */
     public function analyzeCollectionChain(Node $node): array
     {
         $operations = [];
@@ -53,6 +58,11 @@ class CollectionAnalyzer
         return $schema;
     }
 
+    /**
+     * Infer the base type of a collection expression.
+     *
+     * @return array<string, mixed>
+     */
     private function inferBaseType(Node $node): array
     {
         // User::all() や User::get() などのパターン
@@ -81,6 +91,13 @@ class CollectionAnalyzer
         ];
     }
 
+    /**
+     * Apply a collection operation to a schema.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $operation
+     * @return array<string, mixed>
+     */
     private function applyOperation(array $schema, array $operation): array
     {
         switch ($operation['method']) {
@@ -125,6 +142,13 @@ class CollectionAnalyzer
         }
     }
 
+    /**
+     * Apply a map operation to transform schema items.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<int, array<string, mixed>>  $args
+     * @return array<string, mixed>
+     */
     private function applyMapOperation(array $schema, array $args): array
     {
         // mapのコールバック関数を解析
@@ -152,6 +176,13 @@ class CollectionAnalyzer
         return $schema;
     }
 
+    /**
+     * Apply an only operation to filter schema properties.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<int, array<string, mixed>>  $args
+     * @return array<string, mixed>
+     */
     private function applyOnlyOperation(array $schema, array $args): array
     {
         if ($schema['type'] === 'array' && isset($schema['items']['properties']) && ! empty($args)) {
@@ -170,6 +201,13 @@ class CollectionAnalyzer
         return $schema;
     }
 
+    /**
+     * Apply an except operation to exclude schema properties.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<int, array<string, mixed>>  $args
+     * @return array<string, mixed>
+     */
     private function applyExceptOperation(array $schema, array $args): array
     {
         if ($schema['type'] === 'array' && isset($schema['items']['properties']) && ! empty($args)) {
@@ -183,6 +221,13 @@ class CollectionAnalyzer
         return $schema;
     }
 
+    /**
+     * Apply a pluck operation to extract a single field.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<int, array<string, mixed>>  $args
+     * @return array<string, mixed>
+     */
     private function applyPluckOperation(array $schema, array $args): array
     {
         if (! empty($args)) {
@@ -203,6 +248,12 @@ class CollectionAnalyzer
         ];
     }
 
+    /**
+     * Extract arguments from AST nodes.
+     *
+     * @param  array<int, Node\Arg>  $args
+     * @return array<int, array<string, mixed>>
+     */
     private function extractArguments(array $args): array
     {
         $result = [];
@@ -215,6 +266,11 @@ class CollectionAnalyzer
         return $result;
     }
 
+    /**
+     * Extract the value from an argument node.
+     *
+     * @return array<string, mixed>
+     */
     private function extractArgumentValue(Node $node): array
     {
         if ($node instanceof Node\Expr\Closure) {
@@ -239,6 +295,12 @@ class CollectionAnalyzer
         return ['type' => 'unknown'];
     }
 
+    /**
+     * Extract an array of strings from arguments.
+     *
+     * @param  array<int, array<string, mixed>>  $args
+     * @return array<int, string>
+     */
     private function extractStringArray(array $args): array
     {
         if (isset($args[0]) && $args[0]['type'] === 'array') {
@@ -248,6 +310,11 @@ class CollectionAnalyzer
         return [];
     }
 
+    /**
+     * Extract a string value from an argument.
+     *
+     * @param  array<string, mixed>  $arg
+     */
     private function extractString(array $arg): ?string
     {
         if ($arg['type'] === 'string') {
@@ -257,6 +324,11 @@ class CollectionAnalyzer
         return null;
     }
 
+    /**
+     * Extract schema structure from a node.
+     *
+     * @return array<string, mixed>
+     */
     private function extractStructureFromNode(Node $node): array
     {
         if ($node instanceof Node\Expr\Array_) {

@@ -13,6 +13,13 @@ class ResponseGenerator
         $this->exampleGenerator = $exampleGenerator;
     }
 
+    /**
+     * Generate response for a given operation.
+     *
+     * @param  array<string, mixed>  $operation
+     * @param  array<string, string>  $pathParams
+     * @return array<string, mixed>
+     */
     public function generate(
         array $operation,
         int $statusCode,
@@ -48,6 +55,13 @@ class ResponseGenerator
         ];
     }
 
+    /**
+     * Generate JSON response from content specification.
+     *
+     * @param  array<string, mixed>  $contentSpec
+     * @param  array<string, string>  $pathParams
+     * @return array<string, mixed>
+     */
     private function generateJsonResponse(array $contentSpec, string $scenario, array $pathParams): array
     {
         // 既存の例がある場合
@@ -67,6 +81,13 @@ class ResponseGenerator
         return [];
     }
 
+    /**
+     * Generate response from schema.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, string>  $pathParams
+     * @return array<string, mixed>
+     */
     private function generateFromSchema(array $schema, array $pathParams): array
     {
         // ページネーションの検出
@@ -81,6 +102,11 @@ class ResponseGenerator
         ]);
     }
 
+    /**
+     * Check if the schema represents a paginated response.
+     *
+     * @param  array<string, mixed>  $schema
+     */
     private function isPaginatedResponse(array $schema): bool
     {
         if ($schema['type'] !== 'object') {
@@ -95,6 +121,13 @@ class ResponseGenerator
         return $matchCount >= 3;
     }
 
+    /**
+     * Generate paginated response.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, string>  $pathParams
+     * @return array<string, mixed>
+     */
     private function generatePaginatedResponse(array $schema, array $pathParams): array
     {
         $properties = $schema['properties'] ?? [];
@@ -129,6 +162,13 @@ class ResponseGenerator
         return $response;
     }
 
+    /**
+     * Process example with path parameter substitution.
+     *
+     * @param  array<string, mixed>|object  $example
+     * @param  array<string, string>  $pathParams
+     * @return array<string, mixed>
+     */
     private function processExample(array|object $example, array $pathParams): array
     {
         // パスパラメータの置換
@@ -140,6 +180,13 @@ class ResponseGenerator
         return json_decode($json, true);
     }
 
+    /**
+     * Generate response headers.
+     *
+     * @param  array<string, mixed>  $responseSpec
+     * @param  array<string, mixed>  $operation
+     * @return array<string, string>
+     */
     private function generateHeaders(array $responseSpec, array $operation): array
     {
         $headers = [];
@@ -172,6 +219,11 @@ class ResponseGenerator
         return isset($commonHeaders[$name]) ? $commonHeaders[$name]() : 'mock-value';
     }
 
+    /**
+     * Check if operation has rate limiting.
+     *
+     * @param  array<string, mixed>  $operation
+     */
     private function hasRateLimiting(array $operation): bool
     {
         // x-rate-limit拡張があるかチェック
@@ -179,6 +231,11 @@ class ResponseGenerator
                in_array('throttle', $operation['x-middleware'] ?? []);
     }
 
+    /**
+     * Generate default response for status code.
+     *
+     * @return array<string, mixed>
+     */
     private function generateDefaultResponse(int $statusCode): array
     {
         $defaults = [

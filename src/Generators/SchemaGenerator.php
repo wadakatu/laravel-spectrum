@@ -29,6 +29,9 @@ class SchemaGenerator
 
     /**
      * パラメータからスキーマを生成
+     *
+     * @param  array<int, array<string, mixed>>  $parameters
+     * @return array<string, mixed>
      */
     public function generateFromParameters(array $parameters): array
     {
@@ -411,6 +414,10 @@ class SchemaGenerator
 
     /**
      * Generate multipart/form-data schema
+     *
+     * @param  array<int, array<string, mixed>>  $normalFields
+     * @param  array<int, array<string, mixed>>  $fileFields
+     * @return array<string, mixed>
      */
     protected function generateMultipartSchema(array $normalFields, array $fileFields): array
     {
@@ -513,6 +520,8 @@ class SchemaGenerator
 
     /**
      * リソース構造からスキーマを生成
+     *
+     * @return array<string, mixed>
      */
     public function generateFromResource(ResourceInfo $resourceInfo): array
     {
@@ -538,6 +547,9 @@ class SchemaGenerator
 
     /**
      * Generate schema from conditional parameters
+     *
+     * @param  array<int, array<string, mixed>>  $parameters
+     * @return array<string, mixed>
      */
     public function generateFromConditionalParameters(array $parameters): array
     {
@@ -565,6 +577,9 @@ class SchemaGenerator
 
     /**
      * Group parameters by HTTP method from conditional rules
+     *
+     * @param  array<int, array<string, mixed>>  $parameters
+     * @return array<string, array<int, array<string, mixed>>>
      */
     private function groupParametersByHttpMethod(array $parameters): array
     {
@@ -637,6 +652,10 @@ class SchemaGenerator
 
     /**
      * Generate conditional schema using oneOf
+     *
+     * @param  array<string, mixed>  $conditionalRules
+     * @param  array<int, array<string, mixed>>  $parameters
+     * @return array<string, mixed>
      */
     public function generateConditionalSchema(array $conditionalRules, array $parameters): array
     {
@@ -671,6 +690,9 @@ class SchemaGenerator
 
     /**
      * Generate schema for a specific rule set
+     *
+     * @param  array<string, mixed>  $ruleSet
+     * @return array<string, mixed>
      */
     private function generateSchemaForRuleSet(array $ruleSet): array
     {
@@ -742,6 +764,9 @@ class SchemaGenerator
 
     /**
      * Generate discriminator mapping for oneOf schemas
+     *
+     * @param  array<int, array<string, mixed>>  $ruleSets
+     * @return array<string, string>
      */
     private function generateDiscriminatorMapping(array $ruleSets): array
     {
@@ -845,6 +870,8 @@ class SchemaGenerator
      * Only the 'required' rule marks a field as unconditionally required.
      * Conditional required rules (required_if, required_unless, required_with, required_without)
      * do not make a field always required - they depend on other field values.
+     *
+     * @param  array<int, mixed>  $rules
      */
     private function isFieldRequired(array $rules): bool
     {
@@ -860,6 +887,8 @@ class SchemaGenerator
 
     /**
      * Check if rules include required validation
+     *
+     * @param  array<int, mixed>  $rules
      */
     private function isRequired(array $rules): bool
     {
@@ -868,6 +897,9 @@ class SchemaGenerator
 
     /**
      * Fractal Transformerからスキーマを生成
+     *
+     * @param  array<string, mixed>  $fractalData
+     * @return array<string, mixed>
      */
     public function generateFromFractal(array $fractalData, bool $isCollection = false, bool $hasPagination = false): array
     {
@@ -936,6 +968,9 @@ class SchemaGenerator
 
     /**
      * Fractalのプロパティをスキーマ形式に変換
+     *
+     * @param  array<string, mixed>  $properties
+     * @return array<string, mixed>
      */
     private function convertFractalPropertiesToSchema(array $properties): array
     {

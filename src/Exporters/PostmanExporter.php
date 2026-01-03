@@ -20,6 +20,13 @@ class PostmanExporter implements ExportFormatInterface
         $this->exampleFormatter = $exampleFormatter;
     }
 
+    /**
+     * Export OpenAPI specification to Postman collection format.
+     *
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @param  array<string, mixed>  $options  Export options
+     * @return array<string, mixed> Postman collection
+     */
     public function export(array $openapi, array $options = []): array
     {
         $collection = [
@@ -55,6 +62,13 @@ class PostmanExporter implements ExportFormatInterface
         return $collection;
     }
 
+    /**
+     * Convert a route to Postman item format.
+     *
+     * @param  array<string, mixed>  $route  Route definition
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<string, mixed> Postman item
+     */
     private function convertRoute(array $route, array $openapi): array
     {
         $path = $route['path'];
@@ -123,6 +137,13 @@ class PostmanExporter implements ExportFormatInterface
         return $item;
     }
 
+    /**
+     * Generate URL object for Postman request.
+     *
+     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<string, mixed> Postman URL object
+     */
     private function generateUrl(string $path, array $operation, array $openapi): array
     {
         // Convert path parameters
@@ -160,6 +181,12 @@ class PostmanExporter implements ExportFormatInterface
         return $url;
     }
 
+    /**
+     * Generate request body for Postman request.
+     *
+     * @param  array<string, mixed>  $requestBody  OpenAPI request body
+     * @return array<string, mixed>|null Postman request body
+     */
     private function generateRequestBody(array $requestBody): ?array
     {
         $content = $requestBody['content'] ?? [];
@@ -215,6 +242,12 @@ class PostmanExporter implements ExportFormatInterface
         return null;
     }
 
+    /**
+     * Generate test scripts for Postman request.
+     *
+     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @return array<int, string> Test script lines
+     */
     private function generateTests(array $operation): array
     {
         $tests = [];
@@ -270,6 +303,13 @@ class PostmanExporter implements ExportFormatInterface
         return 'Postman Collection v2.1';
     }
 
+    /**
+     * Export environment configuration for Postman.
+     *
+     * @param  array<int, array<string, mixed>>  $servers  OpenAPI servers
+     * @param  array<int, array<string, mixed>>  $security  Security schemes
+     * @return array<string, mixed> Postman environment
+     */
     public function exportEnvironment(array $servers, array $security, string $environment = 'local'): array
     {
         $variables = [
@@ -323,6 +363,12 @@ class PostmanExporter implements ExportFormatInterface
         ];
     }
 
+    /**
+     * Extract authentication configuration from OpenAPI.
+     *
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<string, mixed> Authentication configuration
+     */
     private function extractAuth(array $openapi): array
     {
         if (! isset($openapi['components']['securitySchemes']) || ! isset($openapi['security'])) {
@@ -339,12 +385,24 @@ class PostmanExporter implements ExportFormatInterface
         return $this->formatter->formatAuth($globalSecurity, $securitySchemes);
     }
 
+    /**
+     * Generate global pre-request scripts.
+     *
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<int, array<string, mixed>> Pre-request script events
+     */
     private function generatePreRequestScripts(array $openapi): array
     {
         // Global pre-request scripts can be added here
         return [];
     }
 
+    /**
+     * Generate collection variables.
+     *
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<int, array<string, mixed>> Collection variables
+     */
     private function generateVariables(array $openapi): array
     {
         $variables = [];
@@ -362,6 +420,12 @@ class PostmanExporter implements ExportFormatInterface
         return $variables;
     }
 
+    /**
+     * Group routes by their tags.
+     *
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<string, array<int, array<string, mixed>>> Routes grouped by tag
+     */
     private function groupRoutesByTag(array $openapi): array
     {
         $paths = $openapi['paths'] ?? [];
@@ -372,6 +436,12 @@ class PostmanExporter implements ExportFormatInterface
         return $this->formatter->groupRoutesByTag($paths);
     }
 
+    /**
+     * Generate headers for Postman request.
+     *
+     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @return array<int, array<string, string>> Postman headers
+     */
     private function generateHeaders(array $operation): array
     {
         $headers = [];
@@ -402,6 +472,13 @@ class PostmanExporter implements ExportFormatInterface
         return $this->formatter->formatHeaders($headers);
     }
 
+    /**
+     * Generate authentication configuration for a specific operation.
+     *
+     * @param  array<int, array<string, array<int, string>>>  $security  Security requirements
+     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @return array<string, mixed> Postman authentication
+     */
     private function generateAuth(array $security, array $openapi): array
     {
         if (! isset($openapi['components']['securitySchemes'])) {
@@ -411,6 +488,12 @@ class PostmanExporter implements ExportFormatInterface
         return $this->formatter->formatAuth($security, $openapi['components']['securitySchemes']);
     }
 
+    /**
+     * Generate response examples for Postman.
+     *
+     * @param  array<string, array<string, mixed>>  $responses  OpenAPI responses
+     * @return array<int, array<string, mixed>> Postman response examples
+     */
     private function generateResponseExamples(array $responses): array
     {
         $examples = [];
@@ -466,6 +549,12 @@ class PostmanExporter implements ExportFormatInterface
         return $statuses[$code] ?? 'Unknown';
     }
 
+    /**
+     * Extract query parameters from operation.
+     *
+     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @return array<int, array<string, mixed>> Query parameters
+     */
     private function extractQueryParameters(array $operation): array
     {
         if (! isset($operation['parameters'])) {
@@ -475,6 +564,12 @@ class PostmanExporter implements ExportFormatInterface
         return $this->formatter->formatQueryParameters($operation['parameters']);
     }
 
+    /**
+     * Generate pre-request script for operation.
+     *
+     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @return array<int, string> Script lines
+     */
     private function generatePreRequestScript(array $operation): array
     {
         return $this->formatter->generatePreRequestScript($operation);
