@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\HeaderParameterAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Analyzers\PaginationAnalyzer;
 use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
@@ -153,6 +154,7 @@ class ControllerAnalyzerTest extends TestCase
             $this->app->make(InlineValidationAnalyzer::class),
             $this->app->make(PaginationAnalyzer::class),
             $this->app->make(QueryParameterAnalyzer::class),
+            $this->app->make(HeaderParameterAnalyzer::class),
             $this->app->make(EnumAnalyzer::class),
             $this->app->make(ResponseAnalyzer::class),
             $mockAstHelper,
@@ -176,6 +178,7 @@ class ControllerAnalyzerTest extends TestCase
             $this->app->make(InlineValidationAnalyzer::class),
             $this->app->make(PaginationAnalyzer::class),
             $this->app->make(QueryParameterAnalyzer::class),
+            $this->app->make(HeaderParameterAnalyzer::class),
             $this->app->make(EnumAnalyzer::class),
             $this->app->make(ResponseAnalyzer::class),
             $mockAstHelper,
