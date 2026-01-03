@@ -440,7 +440,7 @@ class PostmanExporter implements ExportFormatInterface
      * Generate headers for Postman request.
      *
      * @param  array<string, mixed>  $operation  OpenAPI operation
-     * @return array<int, array<string, string>> Postman headers
+     * @return array<int, array<string, mixed>> Postman headers
      */
     private function generateHeaders(array $operation): array
     {

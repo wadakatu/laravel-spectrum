@@ -16,8 +16,10 @@ class ResponseGenerator
     /**
      * Generate response for a given operation.
      *
-     * @param  array<string, mixed>  $operation
-     * @param  array<string, string>  $pathParams
+     * @param  array<string, mixed>  $operation  OpenAPI operation definition
+     * @param  int  $statusCode  HTTP status code for the response
+     * @param  string  $scenario  Response scenario ('success', 'error', etc.)
+     * @param  array<string, string>  $pathParams  Path parameters for substitution
      * @return array<string, mixed>
      */
     public function generate(
@@ -59,6 +61,7 @@ class ResponseGenerator
      * Generate JSON response from content specification.
      *
      * @param  array<string, mixed>  $contentSpec
+     * @param  string  $scenario  Response scenario type
      * @param  array<string, string>  $pathParams
      * @return array<string, mixed>
      */
