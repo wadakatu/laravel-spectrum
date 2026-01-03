@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
@@ -117,6 +118,14 @@ class OpenApiGenerator
             foreach ($registeredSchemas as $name => $schema) {
                 $openapi['components']['schemas'][$name] = $schema;
             }
+        }
+
+        // Validate that all schema references are resolved
+        $brokenReferences = $this->schemaRegistry->validateReferences();
+        if (! empty($brokenReferences)) {
+            Log::warning(
+                'OpenAPI generation completed with unresolved schema references: '.implode(', ', $brokenReferences)
+            );
         }
 
         // Convert to OpenAPI 3.1.0 format if enabled
