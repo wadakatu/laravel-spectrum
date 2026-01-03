@@ -1708,6 +1708,126 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('TestApp API', $result['info']['title']);
     }
 
+    #[Test]
+    public function it_generates_request_body_for_delete_route_with_validation(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users/batch',
+                'httpMethods' => ['DELETE'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'action' => 'batchDelete',
+                'method' => 'batchDelete',
+                'middleware' => [],
+                'name' => 'users.batch-delete',
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')
+            ->once();
+
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')
+            ->once()
+            ->andReturn(null);
+
+        $this->authenticationAnalyzer->shouldReceive('analyze')
+            ->once()
+            ->andReturn(AuthenticationResult::empty());
+
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')
+            ->once()
+            ->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
+            ->once()
+            ->andReturn(ControllerInfo::fromArray([
+                'method' => 'batchDelete',
+                'responseType' => 'json',
+                'hasValidation' => true,
+                'inlineValidation' => [
+                    'rules' => [
+                        'ids' => ['required', 'array', 'min:1', 'max:100'],
+                        'ids.*' => ['integer', 'distinct'],
+                    ],
+                ],
+            ]));
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->once()
+            ->andReturn('/api/users/batch');
+
+        $this->metadataGenerator->shouldReceive('generateSummary')
+            ->once()
+            ->andReturn('Batch delete users');
+
+        $this->metadataGenerator->shouldReceive('generateOperationId')
+            ->once()
+            ->andReturn('usersBatchDelete');
+
+        $this->tagGenerator->shouldReceive('generate')
+            ->once()
+            ->andReturn(['User']);
+
+        $this->parameterGenerator->shouldReceive('generate')
+            ->once()
+            ->andReturn([]);
+
+        $this->requestBodyGenerator->shouldReceive('generate')
+            ->once()
+            ->andReturn(new OpenApiRequestBody(
+                content: [
+                    'application/json' => [
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'ids' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'integer'],
+                                    'minItems' => 1,
+                                    'maxItems' => 100,
+                                ],
+                            ],
+                            'required' => ['ids'],
+                        ],
+                    ],
+                ],
+                required: true,
+            ));
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')
+            ->once()
+            ->andReturn([
+                '422' => new OpenApiResponse(
+                    statusCode: 422,
+                    description: 'Validation Error',
+                    content: [
+                        'application/json' => [
+                            'schema' => ['type' => 'object'],
+                        ],
+                    ],
+                ),
+            ]);
+
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')
+            ->once()
+            ->andReturn([]);
+
+        $this->exampleGenerator->shouldReceive('generateErrorExample')
+            ->withAnyArgs()
+            ->andReturn(['message' => 'Validation failed']);
+
+        $result = $this->generator->generate($routes);
+
+        $this->assertArrayHasKey('/api/users/batch', $result['paths']);
+        $this->assertArrayHasKey('delete', $result['paths']['/api/users/batch']);
+        $operation = $result['paths']['/api/users/batch']['delete'];
+
+        $this->assertArrayHasKey('requestBody', $operation);
+        $this->assertArrayHasKey('content', $operation['requestBody']);
+        $this->assertArrayHasKey('application/json', $operation['requestBody']['content']);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

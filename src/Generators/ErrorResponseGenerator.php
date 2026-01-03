@@ -202,8 +202,9 @@ class ErrorResponseGenerator
             $responses['403'] = $this->generateForbiddenResponse();
         }
 
-        // バリデーションがある場合（POST, PUT, PATCH）
-        if ($hasValidation && in_array(strtoupper($method), ['POST', 'PUT', 'PATCH'])) {
+        // バリデーションがある場合（POST, PUT, PATCH, DELETE）
+        // DELETE with validation is common for batch operations
+        if ($hasValidation && in_array(strtoupper($method), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
             // 422はFormRequestから生成されるので、ここでは含めない
         }
 
