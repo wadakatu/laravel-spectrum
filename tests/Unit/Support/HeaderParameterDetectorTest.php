@@ -102,4 +102,24 @@ class HeaderParameterDetectorTest extends TestCase
         $this->assertCount(1, $detected);
         $this->assertEquals('X-Api-Key', $detected[0]->name);
     }
+
+    #[Test]
+    public function it_returns_empty_array_when_ast_is_null(): void
+    {
+        $detected = $this->detector->detectHeaderCalls(null);
+
+        $this->assertIsArray($detected);
+        $this->assertEmpty($detected);
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_method_without_headers(): void
+    {
+        $method = new ReflectionMethod(HeaderTestController::class, 'withNoHeaders');
+        $ast = $this->detector->parseMethod($method);
+        $detected = $this->detector->detectHeaderCalls($ast);
+
+        $this->assertIsArray($detected);
+        $this->assertEmpty($detected);
+    }
 }

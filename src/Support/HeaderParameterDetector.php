@@ -75,7 +75,11 @@ class HeaderParameterDetector
             }
 
             return null;
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            // Silently return null on parsing errors (consistent with QueryParameterDetector pattern)
+            // The calling analyzer can handle the null case appropriately
+            report($e);
+
             return null;
         }
     }

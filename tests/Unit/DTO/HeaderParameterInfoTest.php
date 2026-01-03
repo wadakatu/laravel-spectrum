@@ -125,4 +125,80 @@ class HeaderParameterInfoTest extends TestCase
         $this->assertArrayHasKey('schema', $array);
         $this->assertEquals('string', $array['schema']['type']);
     }
+
+    #[Test]
+    public function to_array_includes_bearer_format_for_bearer_tokens(): void
+    {
+        $info = new HeaderParameterInfo(
+            name: 'Authorization',
+            required: true,
+            isBearerToken: true,
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayHasKey('schema', $array);
+        $this->assertEquals('bearer', $array['schema']['format']);
+    }
+
+    #[Test]
+    public function to_array_includes_default_value_in_schema(): void
+    {
+        $info = new HeaderParameterInfo(
+            name: 'Accept-Language',
+            required: false,
+            default: 'en',
+        );
+
+        $array = $info->toArray();
+
+        $this->assertArrayHasKey('schema', $array);
+        $this->assertEquals('en', $array['schema']['default']);
+    }
+
+    #[Test]
+    public function generate_description_returns_custom_description_when_set(): void
+    {
+        $info = new HeaderParameterInfo(
+            name: 'X-Custom',
+            description: 'Custom header for testing',
+        );
+
+        $this->assertEquals('Custom header for testing', $info->generateDescription());
+    }
+
+    #[Test]
+    public function generate_description_returns_bearer_description_for_bearer_token(): void
+    {
+        $info = new HeaderParameterInfo(
+            name: 'Authorization',
+            isBearerToken: true,
+        );
+
+        $this->assertEquals('Bearer token for authentication', $info->generateDescription());
+    }
+
+    #[Test]
+    public function generate_description_returns_generic_description_when_no_custom(): void
+    {
+        $info = new HeaderParameterInfo(
+            name: 'X-Custom-Header',
+        );
+
+        $this->assertEquals('Request header: X-Custom-Header', $info->generateDescription());
+    }
+
+    #[Test]
+    public function from_array_supports_snake_case_is_bearer_token(): void
+    {
+        $data = [
+            'name' => 'Authorization',
+            'required' => true,
+            'is_bearer_token' => true,
+        ];
+
+        $info = HeaderParameterInfo::fromArray($data);
+
+        $this->assertTrue($info->isBearerToken);
+    }
 }

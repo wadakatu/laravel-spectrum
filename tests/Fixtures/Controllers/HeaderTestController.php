@@ -78,4 +78,18 @@ class HeaderTestController
             'user_id' => $userId,
         ]);
     }
+
+    /**
+     * Test endpoint without any headers (only body params)
+     */
+    public function withNoHeaders(Request $request): JsonResponse
+    {
+        $name = $request->input('name');
+        $email = $request->input('email');
+
+        return response()->json([
+            'name' => $name,
+            'email' => $email,
+        ]);
+    }
 }
