@@ -201,9 +201,10 @@ class OpenApiGenerator
             $route['method']
         );
 
-        // Generate request body for POST, PUT, PATCH
+        // Generate request body for POST, PUT, PATCH, DELETE
+        // DELETE with body is common for batch operations (RFC 7231 allows it)
         $requestBody = null;
-        if (in_array($method, ['post', 'put', 'patch'])) {
+        if (in_array($method, ['post', 'put', 'patch', 'delete'])) {
             $requestBody = $this->requestBodyGenerator->generate($controllerInfo, $route);
         }
 
