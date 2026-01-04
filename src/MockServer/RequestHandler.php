@@ -4,6 +4,9 @@ namespace LaravelSpectrum\MockServer;
 
 use Workerman\Protocols\Http\Request;
 
+/**
+ * @phpstan-import-type MockResponse from ResponseGenerator
+ */
 class RequestHandler
 {
     private ValidationSimulator $validator;
@@ -22,6 +25,12 @@ class RequestHandler
         $this->responseGenerator = $responseGenerator;
     }
 
+    /**
+     * Handle an incoming request.
+     *
+     * @param  array<string, mixed>  $route
+     * @return MockResponse
+     */
     public function handle(Request $request, array $route): array
     {
         // 認証チェック
@@ -38,6 +47,12 @@ class RequestHandler
         return $this->generateSuccessResponse($request, $route);
     }
 
+    /**
+     * Check authentication for the request.
+     *
+     * @param  array<string, mixed>  $route
+     * @return MockResponse|null
+     */
     private function checkAuthentication(Request $request, array $route): ?array
     {
         // No security defined means no authentication required
@@ -59,6 +74,12 @@ class RequestHandler
         return null;
     }
 
+    /**
+     * Validate the request.
+     *
+     * @param  array<string, mixed>  $route
+     * @return MockResponse|null
+     */
     private function validateRequest(Request $request, array $route): ?array
     {
         $requestBody = null;
@@ -102,6 +123,12 @@ class RequestHandler
         return null;
     }
 
+    /**
+     * Generate a success response.
+     *
+     * @param  array<string, mixed>  $route
+     * @return MockResponse
+     */
     private function generateSuccessResponse(Request $request, array $route): array
     {
         // シナリオベースのレスポンス選択
@@ -120,6 +147,11 @@ class RequestHandler
         );
     }
 
+    /**
+     * Determine the status code for the response.
+     *
+     * @param  array<string, mixed>  $route
+     */
     private function determineStatusCode(array $route, string $scenario): int
     {
         $method = strtolower($route['method']);

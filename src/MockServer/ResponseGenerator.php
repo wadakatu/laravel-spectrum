@@ -9,6 +9,12 @@ use LaravelSpectrum\Generators\DynamicExampleGenerator;
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
  * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
+ *
+ * @phpstan-type MockResponse array{
+ *     status: int,
+ *     headers?: array<string, string>,
+ *     body: array<string, mixed>|null
+ * }
  */
 class ResponseGenerator
 {
@@ -26,7 +32,7 @@ class ResponseGenerator
      * @param  int  $statusCode  HTTP status code for the response
      * @param  string  $scenario  Response scenario ('success', 'error', etc.)
      * @param  array<string, string>  $pathParams  Path parameters for substitution
-     * @return array<string, mixed>
+     * @return MockResponse
      */
     public function generate(
         array $operation,
@@ -243,7 +249,7 @@ class ResponseGenerator
     /**
      * Generate default response for status code.
      *
-     * @return array<string, mixed>
+     * @return MockResponse
      */
     private function generateDefaultResponse(int $statusCode): array
     {
