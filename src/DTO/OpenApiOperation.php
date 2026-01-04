@@ -23,7 +23,8 @@ namespace LaravelSpectrum\DTO;
  * @phpstan-type RouteDefinition array{
  *     path: string,
  *     method: string,
- *     operation: OpenApiOperationType
+ *     operation: OpenApiOperationType,
+ *     params?: array<string, string>
  * }
  */
 final readonly class OpenApiOperation
