@@ -1,15 +1,20 @@
 {
     "name": "wadakatu/laravel-spectrum",
-    "description": "Zero-annotation API documentation generator for Laravel",
+    "description": "Zero-annotation OpenAPI/Swagger documentation generator for Laravel - automatic API docs from your existing code",
     "keywords": [
         "laravel",
-
         "api",
+        "api-documentation",
         "documentation",
         "openapi",
         "swagger",
+        "swagger-alternative",
         "generator",
-        "zero-annotation"
+        "zero-annotation",
+        "no-annotation",
+        "automatic",
+        "rest-api",
+        "mock-server"
     ],
     "type": "library",
     "license": "MIT",
