@@ -29,6 +29,8 @@ use PhpParser\PrettyPrinter;
  * }
  * @phpstan-type ResourceStructure array{
  *     properties?: array<string, PropertyInfo>,
+ *     conditionalFields?: list<string>,
+ *     nestedResources?: list<string>,
  *     with?: array<string|int, mixed>,
  *     isCollection?: bool,
  *     hasExamples?: bool,
