@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\OpenApiSchema;
+
 /**
  * Registry for OpenAPI schema references.
  *
  * Manages schema definitions that will be placed in components.schemas,
  * allowing $ref references to be used instead of inline schemas.
+ *
+ * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
  */
 class SchemaRegistry
 {
@@ -30,7 +34,7 @@ class SchemaRegistry
      * Register a schema with the given name.
      *
      * @param  string  $name  Schema name (e.g., "UserResource")
-     * @param  array<string, mixed>  $schema  Schema definition
+     * @param  OpenApiSchemaType  $schema  Schema definition
      */
     public function register(string $name, array $schema): void
     {
@@ -133,7 +137,7 @@ class SchemaRegistry
      * Register a schema and return its $ref reference.
      *
      * @param  string  $className  Fully qualified class name
-     * @param  array<string, mixed>  $schema  Schema definition
+     * @param  OpenApiSchemaType  $schema  Schema definition
      * @return array<string, string> Reference array with '$ref' key
      */
     public function registerAndGetRef(string $className, array $schema): array
