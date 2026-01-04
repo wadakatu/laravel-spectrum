@@ -1,3 +1,10 @@
+---
+id: quickstart
+title: Quick Start Guide
+description: Get started with Laravel Spectrum in under 5 minutes. Learn how to install and generate your first OpenAPI documentation with just 3 commands.
+keywords: [Laravel Spectrum, quick start, tutorial, getting started]
+---
+
 # Quick Start Guide
 
 Get started with Laravel Spectrum in 5 minutes.

@@ -1,3 +1,10 @@
+---
+id: installation
+title: Installation and Configuration
+description: Step-by-step guide to install Laravel Spectrum via Composer and configure it for your Laravel application. Includes requirements and troubleshooting tips.
+keywords: [Laravel Spectrum, installation, setup, configuration, Composer]
+---
+
 # Installation and Configuration
 
 This guide provides detailed instructions from installing Laravel Spectrum to initial configuration.

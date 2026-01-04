@@ -1,3 +1,10 @@
+---
+id: index
+title: Laravel Spectrum Documentation
+description: Complete documentation for Laravel Spectrum - the zero-annotation OpenAPI documentation generator for Laravel. Learn how to automatically generate API docs from your existing code.
+keywords: [Laravel, OpenAPI, Swagger, API documentation, PHP]
+---
+
 # Laravel Spectrum Documentation
 
 Welcome to the complete documentation for Laravel Spectrum. This directory contains detailed guides to help you make the most of Laravel Spectrum.
