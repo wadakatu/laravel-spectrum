@@ -1,13 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Performance;
 
+/**
+ * @phpstan-type NodeData array<string, mixed>
+ * @phpstan-type GraphNode array{id: string, data: NodeData, dependencies: list<string>, dependents: list<string>}
+ * @phpstan-type RouteArray array{httpMethods: list<string>, uri: string, controller?: string, formRequest?: string, resource?: string}
+ */
 class DependencyGraph
 {
+    /** @var array<string, GraphNode> */
     private array $nodes = [];
 
     /**
      * Add a node to the graph
+     *
+     * @param  NodeData  $data
      */
     public function addNode(string $id, array $data = []): void
     {
@@ -38,6 +48,9 @@ class DependencyGraph
 
     /**
      * Get all nodes affected by changes to the given nodes
+     *
+     * @param  list<string>  $changedNodes
+     * @return list<string>
      */
     public function getAffectedNodes(array $changedNodes): array
     {
@@ -51,6 +64,10 @@ class DependencyGraph
         return array_unique($affected);
     }
 
+    /**
+     * @param  list<string>  $affected
+     * @param  list<string>  $visited
+     */
     private function collectAffectedNodes(string $node, array &$affected, array &$visited): void
     {
         if (in_array($node, $visited)) {
@@ -70,6 +87,8 @@ class DependencyGraph
 
     /**
      * Build dependency graph from routes
+     *
+     * @param  array<int, RouteArray>  $routes
      */
     public function buildFromRoutes(array $routes): void
     {
@@ -94,6 +113,7 @@ class DependencyGraph
         }
     }
 
+    /** @param  RouteArray  $route */
     private function getRouteId(array $route): string
     {
         return 'route:'.implode(':', $route['httpMethods']).':'.$route['uri'];

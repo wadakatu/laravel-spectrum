@@ -7,6 +7,12 @@ namespace LaravelSpectrum\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @phpstan-type DependencyList list<string>
+ * @phpstan-type DependencyHashMap array<string, string>
+ * @phpstan-type CacheMetadata array{key: string, created_at: string, dependencies: DependencyHashMap}
+ * @phpstan-type CacheData array{version: int, metadata: CacheMetadata, data: mixed}
+ */
 class DocumentationCache
 {
     /**
@@ -38,6 +44,8 @@ class DocumentationCache
 
     /**
      * キャッシュから取得、なければコールバックを実行
+     *
+     * @param  DependencyList  $dependencies
      */
     public function remember(string $key, \Closure $callback, array $dependencies = []): mixed
     {
@@ -65,6 +73,8 @@ class DocumentationCache
 
     /**
      * FormRequest解析結果をキャッシュ
+     *
+     * @return array<string, mixed>
      */
     public function rememberFormRequest(string $requestClass, \Closure $callback): array
     {
@@ -83,6 +93,8 @@ class DocumentationCache
 
     /**
      * Resource解析結果をキャッシュ
+     *
+     * @return array<string, mixed>
      */
     public function rememberResource(string $resourceClass, \Closure $callback): array
     {
@@ -107,6 +119,8 @@ class DocumentationCache
 
     /**
      * ルート解析結果をキャッシュ
+     *
+     * @return array<int, array<string, mixed>>
      */
     public function rememberRoutes(\Closure $callback): array
     {
@@ -126,6 +140,8 @@ class DocumentationCache
 
     /**
      * 依存ファイルが変更されているかチェック
+     *
+     * @param  DependencyList  $dependencies
      */
     private function isDependenciesChanged(string $key, array $dependencies): bool
     {
@@ -161,6 +177,8 @@ class DocumentationCache
 
     /**
      * キャッシュに保存
+     *
+     * @param  DependencyList  $dependencies
      */
     private function put(string $key, mixed $data, array $dependencies): void
     {
@@ -225,6 +243,8 @@ class DocumentationCache
 
     /**
      * メタデータを取得
+     *
+     * @return CacheMetadata|null
      */
     private function getMetadata(string $key): ?array
     {
@@ -415,6 +435,8 @@ class DocumentationCache
 
     /**
      * Resourceの依存関係を検出
+     *
+     * @return DependencyList
      */
     private function findResourceDependencies(string $filePath): array
     {
@@ -455,6 +477,8 @@ class DocumentationCache
 
     /**
      * 全てのキャッシュエントリのキーを取得
+     *
+     * @return list<string>
      */
     public function getAllCacheKeys(): array
     {
