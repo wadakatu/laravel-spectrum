@@ -16,7 +16,7 @@ final readonly class QueryParameterInfo
      * @param  string  $name  The parameter name
      * @param  string  $type  The OpenAPI type (string, integer, boolean, number, array)
      * @param  bool  $required  Whether the parameter is required
-     * @param  mixed  $default  Default value if any
+     * @param  string|int|float|bool|array<array-key, mixed>|null  $default  Default value if any
      * @param  string  $source  The source method (input, integer, boolean, etc.)
      * @param  string|null  $description  Human-readable description
      * @param  array<string>|null  $enum  Allowed enum values if any
@@ -27,7 +27,7 @@ final readonly class QueryParameterInfo
         public string $name,
         public string $type,
         public bool $required = false,
-        public mixed $default = null,
+        public string|int|float|bool|array|null $default = null,
         public string $source = 'input',
         public ?string $description = null,
         public ?array $enum = null,

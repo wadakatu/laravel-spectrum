@@ -13,7 +13,7 @@ final readonly class HeaderParameterInfo
      * @param  string  $name  The header name (e.g., 'X-Request-Id', 'Authorization')
      * @param  bool  $required  Whether the header is required
      * @param  string  $type  The OpenAPI type (always 'string' for headers)
-     * @param  mixed  $default  Default value if any
+     * @param  string|int|float|bool|array<array-key, mixed>|null  $default  Default value if any
      * @param  string  $source  The source method (header, hasHeader, bearerToken)
      * @param  string|null  $description  Human-readable description
      * @param  bool  $isBearerToken  Whether this is a bearer token (Authorization header)
@@ -23,7 +23,7 @@ final readonly class HeaderParameterInfo
         public string $name,
         public bool $required = false,
         public string $type = 'string',
-        public mixed $default = null,
+        public string|int|float|bool|array|null $default = null,
         public string $source = 'header',
         public ?string $description = null,
         public bool $isBearerToken = false,

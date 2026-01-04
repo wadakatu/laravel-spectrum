@@ -23,24 +23,26 @@ final readonly class DetectedQueryParameter
     ];
 
     /**
+     * @param  string|int|float|bool|array<array-key, mixed>|null  $default
      * @param  array<string, mixed>  $context
      */
     private function __construct(
         public string $name,
         public string $method,
-        public mixed $default,
+        public string|int|float|bool|array|null $default,
         public array $context,
     ) {}
 
     /**
      * Create a new detected query parameter.
      *
+     * @param  string|int|float|bool|array<array-key, mixed>|null  $default
      * @param  array<string, mixed>  $context
      */
     public static function create(
         string $name,
         string $method,
-        mixed $default = null,
+        string|int|float|bool|array|null $default = null,
         array $context = [],
     ): self {
         return new self(
@@ -101,7 +103,7 @@ final readonly class DetectedQueryParameter
     /**
      * Convert to array format for backward compatibility.
      *
-     * @return array{name: string, method: string, default: mixed, context: array<string, mixed>}
+     * @return array{name: string, method: string, default: string|int|float|bool|array<array-key, mixed>|null, context: array<string, mixed>}
      */
     public function toArray(): array
     {

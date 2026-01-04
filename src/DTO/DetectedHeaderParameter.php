@@ -13,25 +13,26 @@ final readonly class DetectedHeaderParameter
     /**
      * @param  string  $name  The header name
      * @param  string  $method  The method used (header, hasHeader, bearerToken)
-     * @param  mixed  $default  Default value if any
+     * @param  string|int|float|bool|array<array-key, mixed>|null  $default  Default value if any
      * @param  array<string, mixed>  $context  Additional context from analysis
      */
     public function __construct(
         public string $name,
         public string $method,
-        public mixed $default = null,
+        public string|int|float|bool|array|null $default = null,
         public array $context = [],
     ) {}
 
     /**
      * Factory method for creating a detected header parameter.
      *
+     * @param  string|int|float|bool|array<array-key, mixed>|null  $default
      * @param  array<string, mixed>  $context
      */
     public static function create(
         string $name,
         string $method,
-        mixed $default = null,
+        string|int|float|bool|array|null $default = null,
         array $context = [],
     ): self {
         return new self($name, $method, $default, $context);
