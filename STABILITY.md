@@ -97,7 +97,7 @@ When features are deprecated:
 
 | Version | PHP | Laravel | Status |
 |---------|-----|---------|--------|
-| 1.x | 8.1 - 8.4 | 11.x, 12.x | Active |
+| 1.x | 8.2 - 8.4 | 11.x, 12.x | Active |
 
 Security fixes are backported to supported versions for at least 12 months after a new major release.
 

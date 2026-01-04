@@ -2,6 +2,81 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.0.0) - 2025-01-04
+
+First stable release of Laravel Spectrum!
+
+### 🎉 Highlights
+
+Laravel Spectrum is now production-ready with comprehensive OpenAPI documentation generation for Laravel 11 and 12 applications.
+
+**Key Features:**
+- Zero-annotation OpenAPI 3.0 and 3.1 documentation generation
+- Automatic validation rule to OpenAPI schema conversion
+- Laravel Resource analysis and schema generation
+- Mock API server for frontend development
+- Postman/Insomnia collection export
+- HTML documentation output with Swagger UI
+
+### ✨ New Features (since beta)
+
+#### OpenAPI 3.1.0 Support
+- Full OpenAPI 3.1.0 specification support with type arrays (`["string", "null"]`) instead of `nullable: true`
+- JSON Schema Draft 2020-12 compatibility
+
+#### Enhanced Schema Generation
+- `$ref` schema references for API Resources, reducing duplication
+- `$ref` validation to prevent broken references in generated specifications
+- Request header detection from controller code
+- DELETE request body support with validation
+- Route `where()` constraint detection and OpenAPI schema mapping
+- `@deprecated` PHPDoc annotation detection
+- Password rule constraints to OpenAPI schema properties
+- Confirmation field generation for `confirmed` validation rule
+
+#### Authentication Improvements
+- OpenID Connect support per OpenAPI 3.0 specification
+- Refactored authentication handling with `AuthenticationType` enum and `AuthenticationScheme` DTO
+
+#### Documentation Output
+- HTML documentation output with integrated Swagger UI
+- Contact, license, and terms of service configuration for OpenAPI info object
+
+#### Configuration
+- Style/explode support for array query parameters
+- Tag groups and tag descriptions for better API organization
+- Configurable OpenAPI version in base structure
+
+### ♻️ Code Quality Improvements
+
+- Comprehensive PHPStan type definitions across all major classes
+- Data Transfer Objects (DTOs) for type-safe data handling:
+  - `OpenApiSpec` DTO replacing `array<string, mixed>` types
+  - `OpenApiOperationType`, `OpenApiSchemaType`, `RouteDefinition` PHPStan types
+  - Response, FileUpload, Enum, and Authentication DTOs
+- Reduced PHPStan baseline with proper PHPDoc type annotations
+- Refactored OpenApiGenerator with extracted responsibilities
+
+### 📚 Documentation
+
+- Consolidated documentation site (docs/)
+- Added Claude Code rules for documentation maintenance
+- Removed Lumen references (Lumen support was dropped in beta)
+
+### ⚠️ Breaking Changes from Beta
+
+- **PHP 8.2+ required** (dropped PHP 8.1 support)
+- **Laravel 11+ required** (dropped Laravel 10 support)
+- Lumen compatibility layer removed
+
+### 📦 Dependencies
+
+- Requires PHP 8.2, 8.3, or 8.4
+- Supports Laravel 11.x and 12.x
+- PHPUnit 11/12 compatible
+
+---
+
 ## [0.2.2-beta](https://github.com/wadakatu/laravel-spectrum/releases/tag/v0.2.2-beta) - 2025-08-11
 
 ### ✅ Tests
