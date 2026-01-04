@@ -342,7 +342,6 @@ public function attributes()
 ### Recently Fixed Issues
 
 - **v1.2.0**: Improved pagination metadata detection
-- **v1.1.5**: Fixed service provider registration issue in Lumen
 - **v1.1.4**: Fixed deprecation warnings in PHP 8.2
 
 ### Planned Fixes
