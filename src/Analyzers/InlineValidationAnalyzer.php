@@ -17,6 +17,23 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
+/**
+ * @phpstan-type ValidationRulesArray array<string, string|array<int, string>>
+ * @phpstan-type MessagesArray array<string, string>
+ * @phpstan-type AttributesArray array<string, string>
+ * @phpstan-type UseStatementsArray array<string, string>
+ * @phpstan-type FileInfoArray array{
+ *     type?: string,
+ *     is_image?: bool,
+ *     mimes?: array<int, string>,
+ *     mime_types?: array<int, string>,
+ *     max_size?: int|null,
+ *     min_size?: int|null,
+ *     dimensions?: array<string, int|float|string>,
+ *     multiple?: bool
+ * }
+ * @phpstan-type ValidationEntry array{type: string, rules: ValidationRulesArray, messages: MessagesArray, attributes: AttributesArray}
+ */
 class InlineValidationAnalyzer implements HasErrors
 {
     use HasErrorCollection;
@@ -252,6 +269,8 @@ class InlineValidationAnalyzer implements HasErrors
 
                 /**
                  * Extract array from return statement in a method
+                 *
+                 * @return array<string, string|array<int, string>>
                  */
                 protected function extractReturnedArray(Node\Stmt\ClassMethod $method): array
                 {
@@ -274,6 +293,7 @@ class InlineValidationAnalyzer implements HasErrors
                             return null;
                         }
 
+                        /** @return array<string, string|array<int, string>> */
                         protected function extractArray(Node\Expr\Array_ $node): array
                         {
                             $array = [];
@@ -386,6 +406,7 @@ class InlineValidationAnalyzer implements HasErrors
                     }
                 }
 
+                /** @return array<string, string|array<int, string>> */
                 protected function extractRulesArray(Node $node): array
                 {
                     if (! $node instanceof Node\Expr\Array_) {
@@ -439,6 +460,7 @@ class InlineValidationAnalyzer implements HasErrors
                     return $rules;
                 }
 
+                /** @return array<string, string|int|float> */
                 protected function extractArray(Node $node): array
                 {
                     if (! $node instanceof Node\Expr\Array_) {
@@ -494,6 +516,8 @@ class InlineValidationAnalyzer implements HasErrors
 
     /**
      * 複数のバリデーションをマージ
+     *
+     * @param  array<int, ValidationEntry>  $validations
      */
     protected function mergeValidations(array $validations): ?InlineValidationInfo
     {
@@ -708,6 +732,8 @@ class InlineValidationAnalyzer implements HasErrors
 
     /**
      * required_if等の条件付き必須ルールをチェック
+     *
+     * @param  array<int, mixed>  $rules
      */
     protected function hasRequiredIf(array $rules): bool
     {
@@ -722,6 +748,10 @@ class InlineValidationAnalyzer implements HasErrors
 
     /**
      * フィールドの説明を生成
+     *
+     * @param  array<int, mixed>  $rules
+     * @param  AttributesArray  $attributes
+     * @param  UseStatementsArray  $useStatements
      */
     protected function generateDescription(string $field, array $rules, array $attributes, ?string $namespace = null, array $useStatements = []): string
     {
@@ -760,6 +790,9 @@ class InlineValidationAnalyzer implements HasErrors
 
     /**
      * ファイルフィールドの説明を生成
+     *
+     * @param  FileInfoArray  $fileInfo
+     * @param  AttributesArray  $attributes
      */
     protected function generateFileDescription(string $field, array $fileInfo, array $attributes): string
     {
