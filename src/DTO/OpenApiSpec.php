@@ -171,6 +171,14 @@ final readonly class OpenApiSpec
     }
 
     /**
+     * Check if this specification has webhooks (OpenAPI 3.1.0+).
+     */
+    public function hasWebhooks(): bool
+    {
+        return $this->webhooks !== null;
+    }
+
+    /**
      * Get a path definition by path string.
      *
      * @return array<string, array<string, mixed>>|null

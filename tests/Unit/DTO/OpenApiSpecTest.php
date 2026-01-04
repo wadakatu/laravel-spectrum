@@ -119,6 +119,48 @@ class OpenApiSpecTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_webhooks_in_array_when_set(): void
+    {
+        $info = new OpenApiInfo(title: 'API', version: '1.0.0');
+        $webhooksData = new \stdClass;
+        $spec = new OpenApiSpec(
+            openapi: '3.1.0',
+            info: $info,
+            webhooks: $webhooksData,
+        );
+
+        $array = $spec->toArray();
+
+        $this->assertArrayHasKey('webhooks', $array);
+        $this->assertSame($webhooksData, $array['webhooks']);
+    }
+
+    #[Test]
+    public function it_includes_webhooks_array_in_output(): void
+    {
+        $info = new OpenApiInfo(title: 'API', version: '1.0.0');
+        $webhooksData = [
+            'newUser' => [
+                'post' => [
+                    'requestBody' => [
+                        'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                    ],
+                ],
+            ],
+        ];
+        $spec = new OpenApiSpec(
+            openapi: '3.1.0',
+            info: $info,
+            webhooks: $webhooksData,
+        );
+
+        $array = $spec->toArray();
+
+        $this->assertArrayHasKey('webhooks', $array);
+        $this->assertArrayHasKey('newUser', $array['webhooks']);
+    }
+
+    #[Test]
     public function it_creates_from_array(): void
     {
         $data = [
@@ -481,5 +523,25 @@ class OpenApiSpecTest extends TestCase
         $this->assertEquals($original->security, $restored->security);
         $this->assertEquals($original->tags, $restored->tags);
         $this->assertEquals($original->tagGroups, $restored->tagGroups);
+    }
+
+    #[Test]
+    public function it_checks_has_webhooks(): void
+    {
+        $info = new OpenApiInfo(title: 'API', version: '1.0.0');
+
+        $specWithWebhooks = new OpenApiSpec(
+            openapi: '3.1.0',
+            info: $info,
+            webhooks: new \stdClass,
+        );
+
+        $specWithoutWebhooks = new OpenApiSpec(
+            openapi: '3.0.0',
+            info: $info,
+        );
+
+        $this->assertTrue($specWithWebhooks->hasWebhooks());
+        $this->assertFalse($specWithoutWebhooks->hasWebhooks());
     }
 }
