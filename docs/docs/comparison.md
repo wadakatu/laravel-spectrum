@@ -1,3 +1,10 @@
+---
+id: comparison
+title: Comparison with Other Tools
+description: Compare Laravel Spectrum with Swagger-PHP, L5-Swagger, and Scribe. See feature differences, setup time, and find the best API documentation tool for your Laravel project.
+keywords: [Laravel Spectrum vs Swagger-PHP, Laravel Spectrum vs Scribe, API documentation comparison, Laravel]
+---
+
 # Comparison with Other Tools
 
 A detailed comparison between Laravel Spectrum and other API documentation generation tools for Laravel.

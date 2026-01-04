@@ -9,6 +9,31 @@ const config: Config = {
   tagline: 'Zero-annotation API documentation generator for Laravel',
   favicon: 'img/favicon.svg',
 
+  // SEO metadata
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'keywords',
+        content: 'Laravel, OpenAPI, Swagger, API documentation, PHP, zero-annotation, automatic documentation, REST API',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'author',
+        content: 'wadakatu',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'canonical',
+        href: 'https://wadakatu.github.io/laravel-spectrum/',
+      },
+    },
+  ],
+
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
