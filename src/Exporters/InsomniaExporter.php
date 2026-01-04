@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Exporters;
 
+use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Formatters\InsomniaFormatter;
 use LaravelSpectrum\Formatters\RequestExampleFormatter;
 
@@ -22,12 +23,14 @@ class InsomniaExporter implements ExportFormatInterface
     /**
      * Export OpenAPI specification to Insomnia format.
      *
-     * @param  array<string, mixed>  $openapi
+     * @param  OpenApiSpec|array<string, mixed>  $openapi
      * @param  array<string, mixed>  $options
      * @return array<string, mixed>
      */
-    public function export(array $openapi, array $options = []): array
+    public function export(OpenApiSpec|array $openapi, array $options = []): array
     {
+        $spec = $openapi instanceof OpenApiSpec ? $openapi->toArray() : $openapi;
+
         $exportData = [
             '_type' => 'export',
             '__export_format' => 4,
@@ -41,14 +44,14 @@ class InsomniaExporter implements ExportFormatInterface
         $exportData['resources'][] = [
             '_id' => $workspaceId,
             '_type' => 'workspace',
-            'name' => $openapi['info']['title'] ?? 'API Workspace',
-            'description' => $openapi['info']['description'] ?? '',
+            'name' => $spec['info']['title'] ?? 'API Workspace',
+            'description' => $spec['info']['description'] ?? '',
             'scope' => 'collection',
         ];
 
         // Create environment
         $environmentId = $this->generateId('env');
-        $exportData['resources'][] = $this->createEnvironment($environmentId, $workspaceId, $openapi);
+        $exportData['resources'][] = $this->createEnvironment($environmentId, $workspaceId, $spec);
 
         // Create base environment
         $baseEnvironmentId = $this->generateId('env');
@@ -57,7 +60,7 @@ class InsomniaExporter implements ExportFormatInterface
             '_type' => 'environment',
             'parentId' => $workspaceId,
             'name' => 'Base Environment',
-            'data' => $this->formatter->generateEnvironmentData($openapi['servers'] ?? []),
+            'data' => $this->formatter->generateEnvironmentData($spec['servers'] ?? []),
             'dataPropertyOrder' => [
                 '&base_url',
                 '&scheme',
@@ -70,7 +73,7 @@ class InsomniaExporter implements ExportFormatInterface
         ];
 
         // Create request groups and requests
-        $groups = $this->groupRoutesByTag($openapi);
+        $groups = $this->groupRoutesByTag($spec);
         $sortKey = 0;
 
         foreach ($groups as $tag => $routes) {

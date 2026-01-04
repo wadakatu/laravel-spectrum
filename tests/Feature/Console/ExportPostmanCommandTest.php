@@ -4,6 +4,7 @@ namespace LaravelSpectrum\Tests\Feature\Console;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
@@ -140,7 +141,7 @@ class ExportPostmanCommandTest extends TestCase
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
             ->once()
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => 'Test API',
@@ -176,7 +177,7 @@ class ExportPostmanCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
 
@@ -213,7 +214,7 @@ class ExportPostmanCommandTest extends TestCase
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
             ->once()
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => 'Test API',
@@ -247,7 +248,7 @@ class ExportPostmanCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
 
@@ -313,7 +314,7 @@ class ExportPostmanCommandTest extends TestCase
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
             ->once()
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => 'Test API',
@@ -344,7 +345,7 @@ class ExportPostmanCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
 
@@ -412,7 +413,7 @@ class ExportPostmanCommandTest extends TestCase
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
             ->once()
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => 'Test API',
@@ -451,7 +452,7 @@ class ExportPostmanCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
 
@@ -547,7 +548,7 @@ class ExportPostmanCommandTest extends TestCase
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
             ->once()
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => 'Test API',
@@ -582,7 +583,7 @@ class ExportPostmanCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
 

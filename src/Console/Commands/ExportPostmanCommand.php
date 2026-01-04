@@ -56,8 +56,9 @@ class ExportPostmanCommand extends Command
 
         // Export environments
         $environments = explode(',', $this->option('environments'));
-        $servers = $openapi['servers'] ?? [];
-        $security = $openapi['components']['securitySchemes'] ?? [];
+        $openapiArray = $openapi->toArray();
+        $servers = $openapiArray['servers'] ?? [];
+        $security = $openapiArray['components']['securitySchemes'] ?? [];
 
         foreach ($environments as $env) {
             $env = trim($env);

@@ -30,7 +30,7 @@ class QueryParameterDetectionTest extends TestCase
             ],
         ];
 
-        $openapi = $this->generator->generate($routes);
+        $openapi = $this->generator->generate($routes)->toArray();
 
         $this->assertArrayHasKey('/api/users', $openapi['paths']);
         $this->assertArrayHasKey('get', $openapi['paths']['/api/users']);
@@ -78,7 +78,7 @@ class QueryParameterDetectionTest extends TestCase
             ],
         ];
 
-        $openapi = $this->generator->generate($routes);
+        $openapi = $this->generator->generate($routes)->toArray();
 
         $operation = $openapi['paths']['/api/products/search']['get'];
 
@@ -117,7 +117,7 @@ class QueryParameterDetectionTest extends TestCase
             ],
         ];
 
-        $openapi = $this->generator->generate($routes);
+        $openapi = $this->generator->generate($routes)->toArray();
 
         $operation = $openapi['paths']['/api/products/filter']['get'];
 
@@ -175,7 +175,7 @@ class QueryParameterDetectionTest extends TestCase
             ],
         ];
 
-        $openapi = $this->generator->generate($routes);
+        $openapi = $this->generator->generate($routes)->toArray();
         $operation = $openapi['paths']['/api/search']['get'];
 
         // Check that validation rules take precedence
@@ -221,7 +221,7 @@ class QueryParameterDetectionTest extends TestCase
             ],
         ];
 
-        $openapi = $this->generator->generate($routes);
+        $openapi = $this->generator->generate($routes)->toArray();
         $operation = $openapi['paths']['/api/test']['get'];
 
         $userIdParam = $this->findParameter($operation['parameters'], 'user_id');

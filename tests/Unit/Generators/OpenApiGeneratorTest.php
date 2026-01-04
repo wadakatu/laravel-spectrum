@@ -124,6 +124,17 @@ class OpenApiGeneratorTest extends TestCase
         );
     }
 
+    /**
+     * Helper method to generate OpenAPI spec as array for backward compatibility in tests.
+     *
+     * @param  array<int, array<string, mixed>>  $routes
+     * @return array<string, mixed>
+     */
+    private function generateAsArray(array $routes): array
+    {
+        return $this->generator->generate($routes)->toArray();
+    }
+
     #[Test]
     public function it_generates_basic_openapi_structure()
     {
@@ -145,7 +156,7 @@ class OpenApiGeneratorTest extends TestCase
             ->with([])
             ->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayHasKey('openapi', $result);
         $this->assertEquals('3.0.0', $result['openapi']);
@@ -171,7 +182,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayHasKey('contact', $result['info']);
         $this->assertEquals('API Support', $result['info']['contact']['name']);
@@ -194,7 +205,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayHasKey('license', $result['info']);
         $this->assertEquals('MIT', $result['info']['license']['name']);
@@ -211,7 +222,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayHasKey('termsOfService', $result['info']);
         $this->assertEquals('https://example.com/terms', $result['info']['termsOfService']);
@@ -232,7 +243,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayNotHasKey('contact', $result['info']);
         $this->assertArrayNotHasKey('license', $result['info']);
@@ -309,7 +320,7 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayHasKey('/api/users', $result['paths']);
         $this->assertArrayHasKey('get', $result['paths']['/api/users']);
@@ -423,7 +434,7 @@ class OpenApiGeneratorTest extends TestCase
             ->withAnyArgs()
             ->andReturn(['message' => 'Validation failed']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayHasKey('/api/users', $result['paths']);
         $this->assertArrayHasKey('post', $result['paths']['/api/users']);
@@ -548,7 +559,7 @@ class OpenApiGeneratorTest extends TestCase
             ->with(401)
             ->andReturn(['message' => 'Unauthenticated']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $operation = $result['paths']['/api/profile']['get'];
         $this->assertArrayHasKey('security', $operation);
@@ -635,7 +646,7 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $operation = $result['paths']['/api/users/{user}']['get'];
         $this->assertArrayHasKey('parameters', $operation);
@@ -677,7 +688,7 @@ class OpenApiGeneratorTest extends TestCase
                 return $spec;
             });
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertEquals('3.1.0', $result['openapi']);
     }
@@ -709,7 +720,7 @@ class OpenApiGeneratorTest extends TestCase
         // Converter should NOT be called
         $this->openApi31Converter->shouldNotReceive('convert');
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertEquals('3.0.0', $result['openapi']);
     }
@@ -741,7 +752,7 @@ class OpenApiGeneratorTest extends TestCase
         // Converter should NOT be called for invalid version
         $this->openApi31Converter->shouldNotReceive('convert');
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Should fall back to 3.0.0
         $this->assertEquals('3.0.0', $result['openapi']);
@@ -774,7 +785,7 @@ class OpenApiGeneratorTest extends TestCase
         // Converter should NOT be called for null version
         $this->openApi31Converter->shouldNotReceive('convert');
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Should fall back to 3.0.0
         $this->assertEquals('3.0.0', $result['openapi']);
@@ -825,7 +836,7 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $result = $generator->generate($routes);
+        $result = $generator->generate($routes)->toArray();
 
         // Verify OpenAPI version is 3.1.0
         $this->assertEquals('3.1.0', $result['openapi']);
@@ -912,7 +923,7 @@ class OpenApiGeneratorTest extends TestCase
                 ['id' => 2, 'name' => 'Jane Doe', 'email' => 'jane@example.com'],
             ]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify that schema is registered in components.schemas
         $this->assertArrayHasKey('components', $result);
@@ -991,7 +1002,7 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn(['id' => 1, 'name' => 'John Doe']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify that the response uses $ref
         $responseContent = $result['paths']['/api/users/{user}']['get']['responses']['200']['content']['application/json'];
@@ -1070,7 +1081,7 @@ class OpenApiGeneratorTest extends TestCase
                 ['id' => 2, 'title' => 'Another Post'],
             ]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify that the response uses $ref for array items
         $responseContent = $result['paths']['/api/posts']['get']['responses']['200']['content']['application/json'];
@@ -1158,7 +1169,7 @@ class OpenApiGeneratorTest extends TestCase
             ->once()
             ->andReturn(['id' => 1, 'name' => 'John Doe']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify only one schema is registered
         $this->assertCount(1, $result['components']['schemas']);
@@ -1225,7 +1236,7 @@ class OpenApiGeneratorTest extends TestCase
             ->with(401)
             ->andReturn(['message' => 'Unauthenticated']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayHasKey('401', $result['paths']['/api/users']['get']['responses']);
     }
@@ -1266,7 +1277,7 @@ class OpenApiGeneratorTest extends TestCase
             ->with('get', false, false)
             ->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayNotHasKey('401', $result['paths']['/api/public']['get']['responses']);
     }
@@ -1321,7 +1332,7 @@ class OpenApiGeneratorTest extends TestCase
             ->with(401)
             ->andReturn(['message' => 'Unauthenticated']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayHasKey('401', $result['paths']['/api/users']['get']['responses']);
     }
@@ -1415,7 +1426,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify tags section contains sorted unique tags
         $this->assertArrayHasKey('tags', $result);
@@ -1488,7 +1499,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify tags section
         $this->assertArrayHasKey('tags', $result);
@@ -1533,7 +1544,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->andReturn(null);
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
-        $result = $generator->generate([]);
+        $result = $generator->generate([])->toArray();
 
         // Mockery will fail if clear() wasn't called on the injected registry
         // Also verify the result structure to ensure generation completed
@@ -1552,7 +1563,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->andReturn([]);
 
         // Generate should clear the registry
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         // OldSchema should not be in the result because clear() was called
         $this->assertArrayNotHasKey('OldSchema', $result['components']['schemas']);
@@ -1612,7 +1623,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->andReturn([]);
         $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->andReturn([]);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         // Verify the schema is registered and merged properly
         $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
@@ -1645,7 +1656,7 @@ class OpenApiGeneratorTest extends TestCase
             ->with(['scheme' => 'bearer', 'required' => true])
             ->andReturn([['bearer' => []]]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayHasKey('security', $result);
         $this->assertEquals([['bearer' => []]], $result['security']);
@@ -1663,7 +1674,7 @@ class OpenApiGeneratorTest extends TestCase
         // generateEndpointSecurity should NOT be called
         $this->securitySchemeGenerator->shouldNotReceive('generateEndpointSecurity');
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayNotHasKey('security', $result);
     }
@@ -1678,7 +1689,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayHasKey('title', $result['info']);
         $this->assertEquals('My Custom API', $result['info']['title']);
@@ -1703,7 +1714,7 @@ class OpenApiGeneratorTest extends TestCase
         $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
         $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
 
-        $result = $this->generator->generate([]);
+        $result = $this->generateAsArray([]);
 
         $this->assertArrayHasKey('title', $result['info']);
         $this->assertEquals('TestApp API', $result['info']['title']);
@@ -1818,7 +1829,7 @@ class OpenApiGeneratorTest extends TestCase
             ->withAnyArgs()
             ->andReturn(['message' => 'Validation failed']);
 
-        $result = $this->generator->generate($routes);
+        $result = $this->generateAsArray($routes);
 
         $this->assertArrayHasKey('/api/users/batch', $result['paths']);
         $this->assertArrayHasKey('delete', $result['paths']['/api/users/batch']);
@@ -1873,8 +1884,8 @@ class OpenApiGeneratorTest extends TestCase
 
         $result = $generator->generate([]);
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('openapi', $result);
+        $this->assertInstanceOf(\LaravelSpectrum\DTO\OpenApiSpec::class, $result);
+        $this->assertEquals('3.0.0', $result->openapi);
     }
 
     #[Test]
@@ -1918,7 +1929,7 @@ class OpenApiGeneratorTest extends TestCase
         // Use spy to verify warning is NOT called
         \Illuminate\Support\Facades\Log::spy();
 
-        $result = $generator->generate([]);
+        $result = $generator->generate([])->toArray();
 
         // Verify warning was not logged
         \Illuminate\Support\Facades\Log::shouldNotHaveReceived('warning');
@@ -1976,10 +1987,10 @@ class OpenApiGeneratorTest extends TestCase
 
         $result = $generator->generate([]);
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('openapi', $result);
+        $this->assertInstanceOf(\LaravelSpectrum\DTO\OpenApiSpec::class, $result);
+        $this->assertEquals('3.0.0', $result->openapi);
         // Verify UserResource is still in schemas
-        $this->assertArrayHasKey('UserResource', $result['components']['schemas']);
+        $this->assertArrayHasKey('UserResource', $result->getSchemas());
     }
 
     protected function tearDown(): void

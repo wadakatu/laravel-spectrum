@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
+use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Generators\HtmlDocumentGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Support\ErrorCollector;
@@ -170,22 +171,23 @@ class GenerateDocsCommand extends Command
         };
     }
 
-    protected function formatOutput(array $openapi, string $format): string
+    protected function formatOutput(OpenApiSpec|array $openapi, string $format): string
     {
+        $data = $openapi instanceof OpenApiSpec ? $openapi->toArray() : $openapi;
+
         if ($format === 'html') {
             $htmlGenerator = new HtmlDocumentGenerator;
 
-            return $htmlGenerator->generate($openapi, [
+            return $htmlGenerator->generate($data, [
                 'try_it_out' => ! $this->option('no-try-it-out'),
             ]);
         }
 
         if ($format === 'yaml') {
-            // 簡易的なYAML変換（本番ではsymfony/yamlを使用）
-            return $this->arrayToYaml($openapi);
+            return $this->arrayToYaml($data);
         }
 
-        return json_encode($openapi, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
     protected function arrayToYaml(array $array, int $indent = 0): string

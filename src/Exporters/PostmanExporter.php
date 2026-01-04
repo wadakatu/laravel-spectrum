@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Exporters;
 
 use Illuminate\Support\Str;
+use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Formatters\PostmanFormatter;
 use LaravelSpectrum\Formatters\RequestExampleFormatter;
 
@@ -23,28 +24,30 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Export OpenAPI specification to Postman collection format.
      *
-     * @param  array<string, mixed>  $openapi  OpenAPI specification
+     * @param  OpenApiSpec|array<string, mixed>  $openapi  OpenAPI specification
      * @param  array<string, mixed>  $options  Export options
      * @return array<string, mixed> Postman collection
      */
-    public function export(array $openapi, array $options = []): array
+    public function export(OpenApiSpec|array $openapi, array $options = []): array
     {
+        $spec = $openapi instanceof OpenApiSpec ? $openapi->toArray() : $openapi;
+
         $collection = [
             'info' => [
                 '_postman_id' => Str::uuid()->toString(),
-                'name' => $openapi['info']['title'] ?? 'API Collection',
-                'description' => $openapi['info']['description'] ?? '',
+                'name' => $spec['info']['title'] ?? 'API Collection',
+                'description' => $spec['info']['description'] ?? '',
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
                 '_exporter_id' => 'laravel-spectrum',
             ],
             'item' => [],
-            'auth' => $this->extractAuth($openapi),
-            'event' => $this->generatePreRequestScripts($openapi),
-            'variable' => $this->generateVariables($openapi),
+            'auth' => $this->extractAuth($spec),
+            'event' => $this->generatePreRequestScripts($spec),
+            'variable' => $this->generateVariables($spec),
         ];
 
         // Group routes by tag
-        $items = $this->groupRoutesByTag($openapi);
+        $items = $this->groupRoutesByTag($spec);
 
         foreach ($items as $tag => $routes) {
             $folder = [
@@ -53,7 +56,7 @@ class PostmanExporter implements ExportFormatInterface
             ];
 
             foreach ($routes as $route) {
-                $folder['item'][] = $this->convertRoute($route, $openapi);
+                $folder['item'][] = $this->convertRoute($route, $spec);
             }
 
             $collection['item'][] = $folder;

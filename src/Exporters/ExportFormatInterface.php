@@ -2,12 +2,18 @@
 
 namespace LaravelSpectrum\Exporters;
 
+use LaravelSpectrum\DTO\OpenApiSpec;
+
 interface ExportFormatInterface
 {
     /**
      * Export OpenAPI to specific format
+     *
+     * @param  OpenApiSpec|array<string, mixed>  $openapi  OpenAPI specification
+     * @param  array<string, mixed>  $options  Export options
+     * @return array<string, mixed>
      */
-    public function export(array $openapi, array $options = []): array;
+    public function export(OpenApiSpec|array $openapi, array $options = []): array;
 
     /**
      * Get the file extension for this format
