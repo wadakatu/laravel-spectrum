@@ -9,6 +9,7 @@ use LaravelSpectrum\Formatters\RequestExampleFormatter;
 
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ * @phpstan-import-type RouteDefinition from OpenApiOperation
  */
 class InsomniaExporter implements ExportFormatInterface
 {
@@ -112,7 +113,7 @@ class InsomniaExporter implements ExportFormatInterface
     /**
      * Create a request resource.
      *
-     * @param  array<string, mixed>  $route
+     * @param  RouteDefinition  $route
      * @return array<string, mixed>
      */
     private function createRequest(array $route, string $parentId, string $environmentId, int $sortKey): array

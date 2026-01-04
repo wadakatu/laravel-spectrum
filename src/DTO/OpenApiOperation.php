@@ -20,6 +20,11 @@ namespace LaravelSpectrum\DTO;
  *     x-middleware?: array<int, string>,
  *     x-rate-limit?: array{limit: int, period: string}
  * }
+ * @phpstan-type RouteDefinition array{
+ *     path: string,
+ *     method: string,
+ *     operation: OpenApiOperationType
+ * }
  */
 final readonly class OpenApiOperation
 {

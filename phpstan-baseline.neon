@@ -859,18 +859,6 @@ parameters:
 			path: src/Formatters/InsomniaFormatter.php
 
 		-
-			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:groupRoutesByTag\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Formatters/InsomniaFormatter.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Formatters\\InsomniaFormatter\:\:groupRoutesByTag\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Formatters/InsomniaFormatter.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:formatAuth\(\) has parameter \$security with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -944,18 +932,6 @@ parameters:
 
 		-
 			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:getParameterExample\(\) has parameter \$param with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Formatters/PostmanFormatter.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:groupRoutesByTag\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Formatters/PostmanFormatter.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Formatters\\PostmanFormatter\:\:groupRoutesByTag\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Formatters/PostmanFormatter.php

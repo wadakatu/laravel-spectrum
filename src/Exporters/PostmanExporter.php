@@ -10,6 +10,7 @@ use LaravelSpectrum\Formatters\RequestExampleFormatter;
 
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ * @phpstan-import-type RouteDefinition from OpenApiOperation
  */
 class PostmanExporter implements ExportFormatInterface
 {
@@ -72,7 +73,7 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Convert a route to Postman item format.
      *
-     * @param  array<string, mixed>  $route  Route definition
+     * @param  RouteDefinition  $route  Route definition
      * @param  array<string, mixed>  $openapi  OpenAPI specification
      * @return array<string, mixed> Postman item
      */

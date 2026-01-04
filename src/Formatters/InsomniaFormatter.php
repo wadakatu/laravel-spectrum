@@ -3,7 +3,13 @@
 namespace LaravelSpectrum\Formatters;
 
 use Illuminate\Support\Str;
+use LaravelSpectrum\DTO\OpenApiOperation;
 
+/**
+ * Formats OpenAPI data for Insomnia collection export.
+ *
+ * @phpstan-import-type RouteDefinition from OpenApiOperation
+ */
 class InsomniaFormatter
 {
     /**
@@ -86,7 +92,10 @@ class InsomniaFormatter
     }
 
     /**
-     * Group routes by tag
+     * Group routes by tag.
+     *
+     * @param  array<string, array<string, mixed>>  $paths
+     * @return array<string, array<int, RouteDefinition>>
      */
     public function groupRoutesByTag(array $paths): array
     {
