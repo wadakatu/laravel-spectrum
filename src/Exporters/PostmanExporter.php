@@ -3,10 +3,14 @@
 namespace LaravelSpectrum\Exporters;
 
 use Illuminate\Support\Str;
+use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Formatters\PostmanFormatter;
 use LaravelSpectrum\Formatters\RequestExampleFormatter;
 
+/**
+ * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ */
 class PostmanExporter implements ExportFormatInterface
 {
     private PostmanFormatter $formatter;
@@ -143,7 +147,7 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Generate URL object for Postman request.
      *
-     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @param  OpenApiOperationType  $operation  OpenAPI operation
      * @param  array<string, mixed>  $openapi  OpenAPI specification
      * @return array<string, mixed> Postman URL object
      */
@@ -248,7 +252,7 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Generate test scripts for Postman request.
      *
-     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @param  OpenApiOperationType  $operation  OpenAPI operation
      * @return array<int, string> Test script lines
      */
     private function generateTests(array $operation): array
@@ -442,7 +446,7 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Generate headers for Postman request.
      *
-     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @param  OpenApiOperationType  $operation  OpenAPI operation
      * @return array<int, array<string, mixed>> Postman headers
      */
     private function generateHeaders(array $operation): array
@@ -555,7 +559,7 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Extract query parameters from operation.
      *
-     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @param  OpenApiOperationType  $operation  OpenAPI operation
      * @return array<int, array<string, mixed>> Query parameters
      */
     private function extractQueryParameters(array $operation): array
@@ -570,7 +574,7 @@ class PostmanExporter implements ExportFormatInterface
     /**
      * Generate pre-request script for operation.
      *
-     * @param  array<string, mixed>  $operation  OpenAPI operation
+     * @param  OpenApiOperationType  $operation  OpenAPI operation
      * @return array<int, string> Script lines
      */
     private function generatePreRequestScript(array $operation): array

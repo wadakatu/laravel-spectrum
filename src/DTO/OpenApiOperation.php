@@ -6,6 +6,20 @@ namespace LaravelSpectrum\DTO;
 
 /**
  * Represents an OpenAPI operation object.
+ *
+ * @phpstan-type OpenApiOperationType array{
+ *     operationId?: string,
+ *     summary?: string,
+ *     description?: string,
+ *     tags?: array<int, string>,
+ *     parameters?: array<int, array<string, mixed>>,
+ *     requestBody?: array{content: array<string, array{schema: array<string, mixed>}>},
+ *     responses: array<string, array{description: string, content?: array<string, mixed>}>,
+ *     security?: array<int, array<string, array<int, string>>>,
+ *     deprecated?: bool,
+ *     x-middleware?: array<int, string>,
+ *     x-rate-limit?: array{limit: int, period: string}
+ * }
  */
 final readonly class OpenApiOperation
 {

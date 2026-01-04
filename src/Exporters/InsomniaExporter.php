@@ -2,10 +2,14 @@
 
 namespace LaravelSpectrum\Exporters;
 
+use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Formatters\InsomniaFormatter;
 use LaravelSpectrum\Formatters\RequestExampleFormatter;
 
+/**
+ * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ */
 class InsomniaExporter implements ExportFormatInterface
 {
     private InsomniaFormatter $formatter;
@@ -148,7 +152,7 @@ class InsomniaExporter implements ExportFormatInterface
     /**
      * Generate request body.
      *
-     * @param  array<string, mixed>  $operation
+     * @param  OpenApiOperationType  $operation
      * @return array<string, mixed>
      */
     private function generateBody(array $operation): array
@@ -190,7 +194,7 @@ class InsomniaExporter implements ExportFormatInterface
     /**
      * Generate query parameters.
      *
-     * @param  array<string, mixed>  $operation
+     * @param  OpenApiOperationType  $operation
      * @return array<int, array<string, mixed>>
      */
     private function generateParameters(array $operation): array
@@ -205,7 +209,7 @@ class InsomniaExporter implements ExportFormatInterface
     /**
      * Generate authentication configuration.
      *
-     * @param  array<string, mixed>  $operation
+     * @param  OpenApiOperationType  $operation
      * @return array<string, mixed>
      */
     private function generateAuthentication(array $operation): array
@@ -332,7 +336,7 @@ class InsomniaExporter implements ExportFormatInterface
     /**
      * Generate request headers.
      *
-     * @param  array<string, mixed>  $operation
+     * @param  OpenApiOperationType  $operation
      * @return array<int, array<string, string>>
      */
     private function generateHeaders(array $operation): array
