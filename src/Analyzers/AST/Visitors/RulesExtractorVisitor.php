@@ -6,12 +6,18 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter;
 
+/**
+ * @phpstan-type RuleValue string|array<int|string, mixed>
+ * @phpstan-type ValidationRulesArray array<string, RuleValue>
+ */
 class RulesExtractorVisitor extends NodeVisitorAbstract
 {
+    /** @var ValidationRulesArray */
     private array $rules = [];
 
     private PrettyPrinter\Standard $printer;
 
+    /** @var array<string, ValidationRulesArray> */
     private array $variables = [];
 
     public function __construct(PrettyPrinter\Standard $printer)
@@ -70,6 +76,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * 配列形式のルールを抽出
+     *
+     * @return ValidationRulesArray
      */
     private function extractArrayRules(Node\Expr\Array_ $array): array
     {
@@ -90,6 +98,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * match式からルールを抽出（PHP 8）
+     *
+     * @return ValidationRulesArray
      */
     private function extractMatchRules(Node\Expr\Match_ $match): array
     {
@@ -105,6 +115,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * array_merge呼び出しからルールを抽出
+     *
+     * @return ValidationRulesArray
      */
     private function extractArrayMergeRules(Node\Expr\FuncCall $call): array
     {
@@ -149,6 +161,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * 値を評価
+     *
+     * @return RuleValue
      */
     private function evaluateValue(Node $expr): string|array
     {
@@ -206,6 +220,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * 静的メソッド呼び出しを評価
+     *
+     * @return RuleValue
      */
     private function evaluateStaticCall(Node\Expr\StaticCall $call): string|array
     {
@@ -329,6 +345,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Rule::enum() を評価
+     *
+     * @return RuleValue
      */
     private function evaluateEnumRule(Node\Expr\StaticCall $call): string|array
     {
@@ -350,6 +368,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * new式を評価
+     *
+     * @return RuleValue
      */
     private function evaluateNewExpression(Node\Expr\New_ $new): string|array
     {
@@ -379,6 +399,8 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * メソッドチェーンを評価 (例: Rule::unique('users')->ignore(1))
+     *
+     * @return RuleValue
      */
     private function evaluateMethodCall(Node\Expr\MethodCall $call): string|array
     {
@@ -409,6 +431,9 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
         return $this->printer->prettyPrintExpr($call);
     }
 
+    /**
+     * @return ValidationRulesArray
+     */
     public function getRules(): array
     {
         return $this->rules;

@@ -6,8 +6,13 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter;
 
+/**
+ * @phpstan-type ArrayValue string|int|array<string, mixed>
+ * @phpstan-type ExtractedArray array<string, ArrayValue>
+ */
 class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
 {
+    /** @var ExtractedArray */
     private array $array = [];
 
     private PrettyPrinter\Standard $printer;
@@ -27,6 +32,9 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    /**
+     * @return ExtractedArray
+     */
     private function extractArray(Node\Expr\Array_ $array): array
     {
         $result = [];
@@ -44,6 +52,9 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         return $result;
     }
 
+    /**
+     * @return ArrayValue
+     */
     private function evaluateExpression(Node $expr): string|int|array
     {
         if ($expr instanceof Node\Scalar\String_) {
@@ -66,6 +77,9 @@ class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
         return '';
     }
 
+    /**
+     * @return ExtractedArray
+     */
     public function getArray(): array
     {
         return $this->array;

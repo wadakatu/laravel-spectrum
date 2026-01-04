@@ -10,6 +10,11 @@ use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter;
 
+/**
+ * @phpstan-type ValidationRulesArray array<string, string|array<int, mixed>>
+ * @phpstan-type RuleSetEntry array{conditions: array<ConditionResult>, rules: ValidationRulesArray, probability?: float}
+ * @phpstan-type RuleSetsResult array{rules_sets: array<RuleSetEntry>, merged_rules: array<string, array<int, string>>, has_conditions: bool}
+ */
 class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 {
     private PrettyPrinter\Standard $printer;
@@ -17,7 +22,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     /** @var array<string, mixed> Current variable scope */
     private array $variableScope = [];
 
-    /** @var array<array{conditions: array, rules: array}> */
+    /** @var array<RuleSetEntry> */
     private array $ruleSets = [];
 
     /** @var array<ConditionResult> Current condition path */
@@ -26,7 +31,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     /** @var bool Whether we found a return statement */
     private bool $foundReturn = false;
 
-    /** @var array<string, array> Method return values cache */
+    /** @var array<string, ValidationRulesArray> Method return values cache */
     private array $methodReturns = [];
 
     public function __construct(PrettyPrinter\Standard $printer)
@@ -155,6 +160,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate complex expressions
+     *
+     * @return ValidationRulesArray|null
      */
     private function evaluateExpression(Node\Expr $expr): ?array
     {
@@ -195,6 +202,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate array_merge() calls
+     *
+     * @return ValidationRulesArray
      */
     private function evaluateArrayMerge(Node\Expr\FuncCall $call): array
     {
@@ -212,6 +221,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate method calls
+     *
+     * @return ValidationRulesArray|null
      */
     private function evaluateMethodCall(Node\Expr\MethodCall $call): ?array
     {
@@ -239,6 +250,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate ternary expressions
+     *
+     * @return ValidationRulesArray|null
      */
     private function evaluateTernary(Node\Expr\Ternary $expr): ?array
     {
@@ -252,6 +265,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate array addition (array + array)
+     *
+     * @return ValidationRulesArray
      */
     private function evaluateArrayAddition(Node\Expr\BinaryOp\Plus $expr): array
     {
@@ -442,6 +457,9 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
         );
     }
 
+    /**
+     * @param  array<Node\Stmt>  $statements
+     */
     private function traverseStatements(array $statements): void
     {
         $traverser = new NodeTraverser;
@@ -451,6 +469,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Extract rules from array node with enhanced handling
+     *
+     * @return ValidationRulesArray
      */
     private function extractArrayRules(Node\Expr\Array_ $array): array
     {
@@ -492,6 +512,8 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate rule value with Rule class support
+     *
+     * @return string|array<int, mixed>
      */
     private function evaluateRuleValue(Node\Expr $expr): string|array
     {
@@ -697,6 +719,9 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
         return 1.0 / pow(2, count($this->currentPath));
     }
 
+    /**
+     * @return RuleSetsResult
+     */
     public function getRuleSets(): array
     {
         return [
@@ -706,6 +731,9 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
         ];
     }
 
+    /**
+     * @return array<string, array<int, string>>
+     */
     private function mergeAllRules(): array
     {
         $merged = [];

@@ -7,6 +7,7 @@ use PhpParser\NodeVisitorAbstract;
 
 class ReturnStatementVisitor extends NodeVisitorAbstract
 {
+    /** @var array<int, Node\Stmt\Return_> */
     private array $returnStatements = [];
 
     public function enterNode(Node $node)
@@ -18,6 +19,9 @@ class ReturnStatementVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    /**
+     * @return array<int, Node\Stmt\Return_>
+     */
     public function getReturnStatements(): array
     {
         return $this->returnStatements;
