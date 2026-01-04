@@ -17,6 +17,28 @@ use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter;
 
+/**
+ * @phpstan-type PropertyInfo array{
+ *     type?: string,
+ *     example?: mixed,
+ *     format?: string,
+ *     items?: array<string, mixed>,
+ *     properties?: array<string, array<string, mixed>>,
+ *     conditional?: bool,
+ *     condition?: string
+ * }
+ * @phpstan-type ResourceStructure array{
+ *     properties?: array<string, PropertyInfo>,
+ *     conditionalFields?: list<string>,
+ *     nestedResources?: list<string>,
+ *     with?: array<string|int, mixed>,
+ *     isCollection?: bool,
+ *     hasExamples?: bool,
+ *     customExample?: mixed,
+ *     customExamples?: array<int, mixed>
+ * }
+ * @phpstan-type OpenApiSchemaArray array<string, mixed>
+ */
 class ResourceAnalyzer implements HasErrors
 {
     use HasErrorCollection;
@@ -63,6 +85,8 @@ class ResourceAnalyzer implements HasErrors
 
     /**
      * 実際の解析処理
+     *
+     * @return ResourceStructure
      */
     protected function performAnalysis(string $resourceClass): array
     {
@@ -169,6 +193,8 @@ class ResourceAnalyzer implements HasErrors
 
     /**
      * toArray()メソッドを解析
+     *
+     * @return ResourceStructure
      */
     protected function analyzeToArrayMethod(Node\Stmt\Class_ $class): array
     {
@@ -193,6 +219,8 @@ class ResourceAnalyzer implements HasErrors
 
     /**
      * with()メソッドを解析（追加のメタデータ）
+     *
+     * @return array<string|int, mixed>
      */
     protected function analyzeWithMethod(Node\Stmt\Class_ $class): array
     {
@@ -231,6 +259,9 @@ class ResourceAnalyzer implements HasErrors
 
     /**
      * レスポンス構造からOpenAPIスキーマを生成
+     *
+     * @param  ResourceStructure  $structure
+     * @return OpenApiSchemaArray
      */
     public function generateSchema(array $structure): array
     {
@@ -275,6 +306,9 @@ class ResourceAnalyzer implements HasErrors
 
     /**
      * プロパティのスキーマを生成
+     *
+     * @param  PropertyInfo  $info
+     * @return OpenApiSchemaArray
      */
     protected function generatePropertySchema(array $info): array
     {
@@ -320,6 +354,9 @@ class ResourceAnalyzer implements HasErrors
 
     /**
      * 配列から properties を生成
+     *
+     * @param  array<string|int, mixed>  $array
+     * @return array<string, OpenApiSchemaArray>
      */
     protected function generatePropertiesFromArray(array $array): array
     {
