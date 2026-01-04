@@ -4,10 +4,22 @@ namespace LaravelSpectrum\MockServer;
 
 use Workerman\Protocols\Http\Request;
 
+/**
+ * @phpstan-type AuthResult array{
+ *     authenticated: bool,
+ *     method?: string,
+ *     message?: string,
+ *     credentials?: string|array{username: string, password: string},
+ *     scopes?: array<int, string>
+ * }
+ * @phpstan-type SecurityScheme array<string, array<int, string>>
+ */
 class AuthenticationSimulator
 {
     /**
      * Valid tokens for testing
+     *
+     * @var array<int, string>
      */
     private array $validTokens = [
         'test-token-123',
@@ -17,6 +29,8 @@ class AuthenticationSimulator
 
     /**
      * Valid API keys for testing
+     *
+     * @var array<int, string>
      */
     private array $validApiKeys = [
         'test-api-key-123',
@@ -25,6 +39,8 @@ class AuthenticationSimulator
 
     /**
      * Valid basic auth credentials
+     *
+     * @var array<int, string>
      */
     private array $validBasicAuth = [
         'user:password',
@@ -32,7 +48,10 @@ class AuthenticationSimulator
     ];
 
     /**
-     * Authenticate a request based on security requirements
+     * Authenticate a request based on security requirements.
+     *
+     * @param  array<int, SecurityScheme>  $security
+     * @return AuthResult
      */
     public function authenticate(Request $request, array $security): array
     {
@@ -65,7 +84,10 @@ class AuthenticationSimulator
     }
 
     /**
-     * Try to authenticate with a specific security scheme
+     * Try to authenticate with a specific security scheme.
+     *
+     * @param  SecurityScheme  $scheme
+     * @return AuthResult
      */
     private function tryAuthenticateWithScheme(Request $request, array $scheme): array
     {
@@ -98,7 +120,9 @@ class AuthenticationSimulator
     }
 
     /**
-     * Authenticate Bearer token
+     * Authenticate Bearer token.
+     *
+     * @return AuthResult
      */
     private function authenticateBearerToken(Request $request): array
     {
@@ -128,7 +152,9 @@ class AuthenticationSimulator
     }
 
     /**
-     * Authenticate API key
+     * Authenticate API key.
+     *
+     * @return AuthResult
      */
     private function authenticateApiKey(Request $request): array
     {
@@ -159,7 +185,9 @@ class AuthenticationSimulator
     }
 
     /**
-     * Authenticate Basic auth
+     * Authenticate Basic auth.
+     *
+     * @return AuthResult
      */
     private function authenticateBasicAuth(Request $request): array
     {
@@ -202,7 +230,10 @@ class AuthenticationSimulator
     }
 
     /**
-     * Authenticate OAuth2
+     * Authenticate OAuth2.
+     *
+     * @param  array<int, string>  $scopes
+     * @return AuthResult
      */
     private function authenticateOAuth2(Request $request, array $scopes): array
     {
@@ -233,7 +264,9 @@ class AuthenticationSimulator
     }
 
     /**
-     * Set valid tokens for testing
+     * Set valid tokens for testing.
+     *
+     * @param  array<int, string>  $tokens
      */
     public function setValidTokens(array $tokens): void
     {
@@ -241,7 +274,9 @@ class AuthenticationSimulator
     }
 
     /**
-     * Set valid API keys for testing
+     * Set valid API keys for testing.
+     *
+     * @param  array<int, string>  $keys
      */
     public function setValidApiKeys(array $keys): void
     {
@@ -249,7 +284,9 @@ class AuthenticationSimulator
     }
 
     /**
-     * Set valid basic auth credentials for testing
+     * Set valid basic auth credentials for testing.
+     *
+     * @param  array<int, string>  $credentials
      */
     public function setValidBasicAuth(array $credentials): void
     {

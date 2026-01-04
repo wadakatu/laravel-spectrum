@@ -7,10 +7,16 @@ use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 use Workerman\Worker;
 
+/**
+ * @phpstan-import-type MockResponse from ResponseGenerator
+ */
 class MockServer
 {
     private Worker $worker;
 
+    /**
+     * @var array<string, mixed>
+     */
     private array $openapi;
 
     private RequestHandler $requestHandler;
@@ -21,6 +27,9 @@ class MockServer
 
     private string $host;
 
+    /**
+     * @param  array<string, mixed>  $openapi
+     */
     public function __construct(
         array $openapi,
         RequestHandler $requestHandler,
@@ -95,6 +104,9 @@ class MockServer
         }
     }
 
+    /**
+     * @param  MockResponse  $response
+     */
     private function sendResponse(TcpConnection $connection, array $response): void
     {
         $headers = array_merge([

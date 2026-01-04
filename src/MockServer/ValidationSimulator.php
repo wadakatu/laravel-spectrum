@@ -2,8 +2,29 @@
 
 namespace LaravelSpectrum\MockServer;
 
+use LaravelSpectrum\DTO\OpenApiOperation;
+use LaravelSpectrum\DTO\OpenApiSchema;
+
+/**
+ * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
+ *
+ * @phpstan-type ValidationResult array{
+ *     valid: bool,
+ *     errors: array<string, array<int, string>>
+ * }
+ */
 class ValidationSimulator
 {
+    /**
+     * Validate request data against OpenAPI operation specification.
+     *
+     * @param  OpenApiOperationType  $operation
+     * @param  array<string, mixed>|null  $requestBody
+     * @param  array<string, string>  $queryParams
+     * @param  array<string, string>  $pathParams
+     * @return ValidationResult
+     */
     public function validate(
         array $operation,
         ?array $requestBody,
