@@ -3,11 +3,18 @@
 namespace LaravelSpectrum\MockServer;
 
 use Illuminate\Support\Str;
+use LaravelSpectrum\DTO\OpenApiOperation;
 
+/**
+ * @phpstan-import-type RouteDefinition from OpenApiOperation
+ */
 class RouteResolver
 {
     /**
-     * Resolve a request path and method to an OpenAPI route
+     * Resolve a request path and method to an OpenAPI route.
+     *
+     * @param  array<string, mixed>  $openapi
+     * @return RouteDefinition|null
      */
     public function resolve(string $path, string $method, array $openapi): ?array
     {
