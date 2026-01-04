@@ -393,9 +393,6 @@ Recommended extensions:
 
 ### Frequently Asked Questions (FAQ)
 
-**Q: Does it work with Lumen?**
-A: Yes, it works with Lumen 10.x and later. Register the service provider in `bootstrap/app.php`.
-
 **Q: Can it be used alongside existing Swagger annotations?**
 A: Yes, but Laravel Spectrum ignores annotations. Manually merge after generation if needed.
 
