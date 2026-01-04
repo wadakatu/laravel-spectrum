@@ -5,10 +5,20 @@ namespace LaravelSpectrum\Analyzers\AST\Visitors;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 
+/**
+ * @phpstan-type ResponseStructure array{
+ *     type?: string,
+ *     data?: string|int|float|null,
+ *     collection_operations?: array<int, array{method: string, args: array<int, string|int|float|null>}>,
+ *     array_structures?: array<int, array<string, string|int|float|null>>
+ * }
+ */
 class ResponseStructureVisitor extends NodeVisitorAbstract
 {
+    /** @var ResponseStructure */
     private array $structure = [];
 
+    /** @var array<string, Node\Expr> */
     private array $variables = [];
 
     public function enterNode(Node $node)
@@ -100,6 +110,10 @@ class ResponseStructureVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    /**
+     * @param  array<Node\Arg>  $args
+     * @return array<int, string|int|float|null>
+     */
     private function extractArguments(array $args): array
     {
         $result = [];
@@ -112,11 +126,17 @@ class ResponseStructureVisitor extends NodeVisitorAbstract
         return $result;
     }
 
+    /**
+     * @return ResponseStructure
+     */
     public function getStructure(): array
     {
         return $this->structure;
     }
 
+    /**
+     * @return array<string, Node\Expr>
+     */
     public function getVariables(): array
     {
         return $this->variables;

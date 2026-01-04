@@ -40,7 +40,7 @@ class PaginationCallVisitor extends NodeVisitorAbstract
      * Reset state before traversing a new AST.
      *
      * @param  array<Node>  $nodes  The nodes to be traversed
-     * @return null
+     * @return array<Node>|null
      */
     public function beforeTraverse(array $nodes): ?array
     {

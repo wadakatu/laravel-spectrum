@@ -7,6 +7,7 @@ use PhpParser\NodeVisitorAbstract;
 
 class UseStatementExtractorVisitor extends NodeVisitorAbstract
 {
+    /** @var array<string, string> */
     private array $useStatements = [];
 
     public function enterNode(Node $node): ?int
@@ -21,6 +22,9 @@ class UseStatementExtractorVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getUseStatements(): array
     {
         return $this->useStatements;
