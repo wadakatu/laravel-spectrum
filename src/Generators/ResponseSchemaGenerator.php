@@ -4,6 +4,28 @@ namespace LaravelSpectrum\Generators;
 
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 
+/**
+ * @phpstan-type ResponseData array{
+ *     type?: string,
+ *     class?: string,
+ *     properties?: array<string, array<string, mixed>>,
+ *     items?: array<string, mixed>,
+ *     description?: string,
+ *     format?: string,
+ *     additionalProperties?: array<string, mixed>
+ * }
+ * @phpstan-type OpenApiResponse array{description: string, content?: array<string, array<string, array<string, mixed>>>}
+ * @phpstan-type PropertySchema array{
+ *     type?: string,
+ *     format?: string,
+ *     description?: string,
+ *     properties?: array<string, array<string, mixed>>,
+ *     items?: array<string, mixed>,
+ *     nullable?: bool,
+ *     readOnly?: bool,
+ *     enum?: array<int, mixed>
+ * }
+ */
 class ResponseSchemaGenerator
 {
     protected SchemaPropertyMapper $propertyMapper;
@@ -13,6 +35,10 @@ class ResponseSchemaGenerator
         $this->propertyMapper = $propertyMapper ?? new SchemaPropertyMapper;
     }
 
+    /**
+     * @param  ResponseData  $responseData
+     * @return array<int, OpenApiResponse>
+     */
     public function generate(array $responseData, int $statusCode = 200): array
     {
         if (empty($responseData) || $responseData['type'] === 'void') {
@@ -41,6 +67,10 @@ class ResponseSchemaGenerator
         ];
     }
 
+    /**
+     * @param  ResponseData  $data
+     * @return array<string, mixed>
+     */
     private function convertToOpenApiSchema(array $data): array
     {
         $schema = [];
@@ -76,6 +106,10 @@ class ResponseSchemaGenerator
         return $schema;
     }
 
+    /**
+     * @param  PropertySchema  $property
+     * @return array<string, mixed>
+     */
     private function convertPropertyToOpenApi(array $property): array
     {
         $openApiProperty = $this->propertyMapper->mapType($property, [], 'object');
@@ -99,6 +133,10 @@ class ResponseSchemaGenerator
         return $openApiProperty;
     }
 
+    /**
+     * @param  ResponseData  $data
+     * @return array<int, string>
+     */
     private function extractRequiredFields(array $data): array
     {
         $required = [];
@@ -118,6 +156,9 @@ class ResponseSchemaGenerator
         return $required;
     }
 
+    /**
+     * @return array<int, OpenApiResponse>
+     */
     private function generateVoidResponse(int $statusCode): array
     {
         return [
@@ -127,6 +168,9 @@ class ResponseSchemaGenerator
         ];
     }
 
+    /**
+     * @return array<int, OpenApiResponse>
+     */
     private function generateUnknownResponse(int $statusCode): array
     {
         return [
@@ -144,6 +188,10 @@ class ResponseSchemaGenerator
         ];
     }
 
+    /**
+     * @param  ResponseData  $data
+     * @return array<int, OpenApiResponse>
+     */
     private function generateResourceResponse(array $data, int $statusCode): array
     {
         return [

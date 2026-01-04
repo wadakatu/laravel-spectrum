@@ -6,10 +6,19 @@ use Illuminate\Support\Str;
 use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\Support\ValidationRules;
 
+/**
+ * @phpstan-type ValidationRulesArray array<string, string|array<int, mixed>>
+ * @phpstan-type CustomMessages array<string, string>
+ * @phpstan-type FieldMessages array<string, array<int, string>>
+ */
 class ValidationMessageGenerator
 {
     /**
      * バリデーションルールから可能なエラーメッセージを生成
+     *
+     * @param  ValidationRulesArray  $rules
+     * @param  CustomMessages  $customMessages
+     * @return FieldMessages
      */
     public function generateMessages(array $rules, array $customMessages = []): array
     {
@@ -24,6 +33,10 @@ class ValidationMessageGenerator
 
     /**
      * フィールドごとのエラーメッセージを生成
+     *
+     * @param  string|array<int, mixed>  $rules
+     * @param  CustomMessages  $customMessages
+     * @return array<int, string>
      */
     protected function generateFieldMessages(string $field, string|array $rules, array $customMessages): array
     {
@@ -73,6 +86,8 @@ class ValidationMessageGenerator
 
     /**
      * メッセージテンプレートのプレースホルダーを置換
+     *
+     * @param  array<int, string>  $parameters
      */
     protected function replacePlaceholders(string $template, string $field, string $humanField, array $parameters): string
     {
@@ -97,6 +112,8 @@ class ValidationMessageGenerator
 
     /**
      * フィールドごとのサンプルメッセージを1つ生成（OpenAPIの例として使用）
+     *
+     * @param  string|array<int, mixed>  $rules
      */
     public function generateSampleMessage(string $field, string|array $rules): string
     {
