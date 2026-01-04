@@ -10,6 +10,41 @@ use LaravelSpectrum\Formatters\RequestExampleFormatter;
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
  * @phpstan-import-type RouteDefinition from OpenApiOperation
+ *
+ * @phpstan-type InsomniaResource array{
+ *     _id: string,
+ *     _type: string,
+ *     parentId?: string,
+ *     name?: string,
+ *     description?: string,
+ *     url?: string,
+ *     method?: string,
+ *     body?: array<string, mixed>,
+ *     parameters?: array<int, array{name: string, value: string}>,
+ *     headers?: array<int, array{name: string, value: string}>,
+ *     authentication?: array<string, mixed>,
+ *     metaSortKey?: int,
+ *     isPrivate?: bool,
+ *     scope?: string,
+ *     data?: array<string, string>,
+ *     dataPropertyOrder?: array<int, string>|null,
+ *     color?: string|null,
+ *     environment?: array<string, mixed>,
+ *     environmentPropertyOrder?: array<string, mixed>|null,
+ *     settingStoreCookies?: bool,
+ *     settingSendCookies?: bool,
+ *     settingDisableRenderRequestBody?: bool,
+ *     settingEncodeUrl?: bool,
+ *     settingRebuildPath?: bool,
+ *     settingFollowRedirects?: string
+ * }
+ * @phpstan-type InsomniaExport array{
+ *     _type: string,
+ *     __export_format: int,
+ *     __export_date: string,
+ *     __export_source: string,
+ *     resources: array<int, InsomniaResource>
+ * }
  */
 class InsomniaExporter implements ExportFormatInterface
 {
@@ -30,7 +65,7 @@ class InsomniaExporter implements ExportFormatInterface
      *
      * @param  OpenApiSpec|array<string, mixed>  $openapi
      * @param  array<string, mixed>  $options
-     * @return array<string, mixed>
+     * @return InsomniaExport
      */
     public function export(OpenApiSpec|array $openapi, array $options = []): array
     {
