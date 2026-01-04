@@ -2,8 +2,12 @@
 
 namespace LaravelSpectrum\MockServer;
 
+use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\Generators\DynamicExampleGenerator;
 
+/**
+ * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ */
 class ResponseGenerator
 {
     private DynamicExampleGenerator $exampleGenerator;
@@ -16,7 +20,7 @@ class ResponseGenerator
     /**
      * Generate response for a given operation.
      *
-     * @param  array<string, mixed>  $operation  OpenAPI operation definition
+     * @param  OpenApiOperationType  $operation  OpenAPI operation definition
      * @param  int  $statusCode  HTTP status code for the response
      * @param  string  $scenario  Response scenario ('success', 'error', etc.)
      * @param  array<string, string>  $pathParams  Path parameters for substitution
@@ -187,7 +191,7 @@ class ResponseGenerator
      * Generate response headers.
      *
      * @param  array<string, mixed>  $responseSpec
-     * @param  array<string, mixed>  $operation
+     * @param  OpenApiOperationType  $operation
      * @return array<string, string>
      */
     private function generateHeaders(array $responseSpec, array $operation): array
@@ -225,7 +229,7 @@ class ResponseGenerator
     /**
      * Check if operation has rate limiting.
      *
-     * @param  array<string, mixed>  $operation
+     * @param  OpenApiOperationType  $operation
      */
     private function hasRateLimiting(array $operation): bool
     {
