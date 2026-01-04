@@ -11,6 +11,26 @@ use LaravelSpectrum\Formatters\RequestExampleFormatter;
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
  * @phpstan-import-type RouteDefinition from OpenApiOperation
+ *
+ * @phpstan-type PostmanInfo array{
+ *     _postman_id: string,
+ *     name: string,
+ *     description: string,
+ *     schema: string,
+ *     _exporter_id: string
+ * }
+ * @phpstan-type PostmanVariable array{
+ *     key: string,
+ *     value: string,
+ *     type: string
+ * }
+ * @phpstan-type PostmanCollection array{
+ *     info: PostmanInfo,
+ *     item: array<int, array<string, mixed>>,
+ *     auth: array<string, mixed>,
+ *     event: array<int, array<string, mixed>>,
+ *     variable: array<int, PostmanVariable>
+ * }
  */
 class PostmanExporter implements ExportFormatInterface
 {
@@ -31,7 +51,7 @@ class PostmanExporter implements ExportFormatInterface
      *
      * @param  OpenApiSpec|array<string, mixed>  $openapi  OpenAPI specification
      * @param  array<string, mixed>  $options  Export options
-     * @return array<string, mixed> Postman collection
+     * @return PostmanCollection Postman collection
      */
     public function export(OpenApiSpec|array $openapi, array $options = []): array
     {
