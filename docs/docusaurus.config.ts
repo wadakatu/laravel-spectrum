@@ -32,6 +32,13 @@ const config: Config = {
         href: 'https://wadakatu.github.io/laravel-spectrum/',
       },
     },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'algolia-site-verification',
+        content: '50AD9223A365C948',
+      },
+    },
   ],
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -248,18 +255,12 @@ const config: Config = {
       additionalLanguages: ['php', 'bash', 'json', 'yaml'],
     },
     algolia: {
-      // The application ID provided by Algolia
-      appId: 'YOUR_APP_ID',
-      // Public API key: it is safe to commit it
-      apiKey: 'YOUR_SEARCH_API_KEY',
-      indexName: 'laravel_spectrum',
-      // Optional: see doc section below
+      appId: 'SHVBWY8812',
+      apiKey: '2baccfed816df4fadefc744af17d2bf1',
+      indexName: 'Laravel-spectrum documentation site',
       contextualSearch: true,
-      // Optional: Algolia search parameters
       searchParameters: {},
-      // Optional: path for search page that enabled by default (`false` to disable it)
       searchPagePath: 'search',
-      // Optional: whether the insights feature is enabled or not on Docsearch (`false` by default)
       insights: false,
     },
   } satisfies Preset.ThemeConfig,
