@@ -7,9 +7,9 @@
 <p align="center">
   <a href="https://github.com/wadakatu/laravel-spectrum/actions"><img src="https://github.com/wadakatu/laravel-spectrum/workflows/Tests/badge.svg" alt="Tests"></a>
   <a href="https://codecov.io/gh/wadakatu/laravel-spectrum"><img src="https://codecov.io/gh/wadakatu/laravel-spectrum/branch/main/graph/badge.svg" alt="Code Coverage"></a>
-  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/v" alt="Latest Stable Version"></a>
-  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/downloads" alt="Total Downloads"></a>
-  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://poser.pugx.org/wadakatu/laravel-spectrum/license" alt="License"></a>
+  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://img.shields.io/packagist/v/wadakatu/laravel-spectrum" alt="Latest Stable Version"></a>
+  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://img.shields.io/packagist/dt/wadakatu/laravel-spectrum" alt="Total Downloads"></a>
+  <a href="https://packagist.org/packages/wadakatu/laravel-spectrum"><img src="https://img.shields.io/packagist/l/wadakatu/laravel-spectrum" alt="License"></a>
 </p>
 
 <p align="center">
