@@ -2,80 +2,383 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.0](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.0.0) - 2025-01-04
+## [1.0.1](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.0.1) - 2026-01-04
 
-First stable release of Laravel Spectrum!
+### 🐛 Bug Fixes
 
-### 🎉 Highlights
-
-Laravel Spectrum is now production-ready with comprehensive OpenAPI documentation generation for Laravel 11 and 12 applications.
-
-**Key Features:**
-- Zero-annotation OpenAPI 3.0 and 3.1 documentation generation
-- Automatic validation rule to OpenAPI schema conversion
-- Laravel Resource analysis and schema generation
-- Mock API server for frontend development
-- Postman/Insomnia collection export
-- HTML documentation output with Swagger UI
-
-### ✨ New Features (since beta)
-
-#### OpenAPI 3.1.0 Support
-- Full OpenAPI 3.1.0 specification support with type arrays (`["string", "null"]`) instead of `nullable: true`
-- JSON Schema Draft 2020-12 compatibility
-
-#### Enhanced Schema Generation
-- `$ref` schema references for API Resources, reducing duplication
-- `$ref` validation to prevent broken references in generated specifications
-- Request header detection from controller code
-- DELETE request body support with validation
-- Route `where()` constraint detection and OpenAPI schema mapping
-- `@deprecated` PHPDoc annotation detection
-- Password rule constraints to OpenAPI schema properties
-- Confirmation field generation for `confirmed` validation rule
-
-#### Authentication Improvements
-- OpenID Connect support per OpenAPI 3.0 specification
-- Refactored authentication handling with `AuthenticationType` enum and `AuthenticationScheme` DTO
-
-#### Documentation Output
-- HTML documentation output with integrated Swagger UI
-- Contact, license, and terms of service configuration for OpenAPI info object
-
-#### Configuration
-- Style/explode support for array query parameters
-- Tag groups and tag descriptions for better API organization
-- Configurable OpenAPI version in base structure
-
-### ♻️ Code Quality Improvements
-
-- Comprehensive PHPStan type definitions across all major classes
-- Data Transfer Objects (DTOs) for type-safe data handling:
-  - `OpenApiSpec` DTO replacing `array<string, mixed>` types
-  - `OpenApiOperationType`, `OpenApiSchemaType`, `RouteDefinition` PHPStan types
-  - Response, FileUpload, Enum, and Authentication DTOs
-- Reduced PHPStan baseline with proper PHPDoc type annotations
-- Refactored OpenApiGenerator with extracted responsibilities
+- switch Packagist badges from poser.pugx.org to shields.io
 
 ### 📚 Documentation
 
-- Consolidated documentation site (docs/)
-- Added Claude Code rules for documentation maintenance
-- Removed Lumen references (Lumen support was dropped in beta)
+- rewrite README for v1.0.0 release
+- improve SEO for documentation site
+- configure Algolia DocSearch
 
-### ⚠️ Breaking Changes from Beta
+## [1.0.0](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.0.0) - 2026-01-04
 
-- **PHP 8.2+ required** (dropped PHP 8.1 support)
-- **Laravel 11+ required** (dropped Laravel 10 support)
-- Lumen compatibility layer removed
+### ♻️ Code Refactoring
 
-### 📦 Dependencies
+- extract responsibilities from OpenApiGenerator
+- simplify code and remove duplicate tests
+- extract RuleRequirementAnalyzer from FormRequestAnalyzer
+- extract FormatInferrer from FormRequestAnalyzer
+- extract ValidationDescriptionGenerator from FormRequestAnalyzer
+- extract ParameterBuilder from FormRequestAnalyzer
+- extract FormRequestAstExtractor from FormRequestAnalyzer
+- extract AnonymousClassAnalyzer from FormRequestAnalyzer
+- consolidate PHP parsing into FormRequestAstExtractor
+- extract prepareAnalysisContext helper in FormRequestAnalyzer
+- extract AstHelper for shared AST operations
+- use AstHelper in FractalTransformerAnalyzer
+- remove unused DocumentationCache from Services namespace
+- centralize PHP-Parser instantiation through DI
+- extend ParserFactory centralization to AstHelper and AnonymousClassAnalyzer
+- extract duplicate formatFileSize() to FileSizeFormatter utility class
+- standardize error handling across analyzers
+- extract MethodSourceExtractor utility class
+- consolidate type inference logic into AstTypeInferenceEngine
+- add traverse() helper to AstHelper for AST traversal
+- extract anonymous visitors to dedicated classes
+- extract AST value extraction to AstNodeValueExtractor
+- consolidate example generation with Strategy pattern
+- remove useNewFormat parameter from ResourceAnalyzer
+- extract property mapping to SchemaPropertyMapper
+- extract ValidationRuleTypeMapper for type inference
+- address PR review suggestions
+- remove unused dependencies from FormRequestAnalyzer
+- switch from cebe/php-openapi to devizzent/cebe-php-openapi
+- improve comment accuracy in OpenAPI validation tests
+- address PR review suggestions for E2E tests
+- replace mixed with union types
+- simplify schema registration and add global security tests
+- improve ParallelProcessor testability with DI
+- add DI support and comprehensive tests
+- introduce ValueObject/DTO classes for type-safe parameter handling
+- apply DTOs to analyzers and generators
+- introduce ControllerInfo DTO with nested type-safe DTOs
+- introduce RouteInfo and RouteParameterInfo DTOs
+- introduce Validation DTOs for FormRequest analysis
+- apply OpenApiRequestBody DTO to RequestBodyGenerator
+- apply OpenApiResponse DTO to ErrorResponseGenerator
+- apply AuthenticationScheme DTO to SecuritySchemeGenerator
+- apply OpenApiOperation DTO to OpenApiGenerator
+- apply OpenApiParameter DTO fully to ParameterGenerator
+- apply ResourceInfo DTO to ResourceAnalyzer and generators
+- apply ResponseInfo DTO to ControllerInfo
+- apply InlineValidationInfo DTO to ControllerInfo
+- apply EnumInfo DTO to EnumAnalyzer and callers
+- apply ParameterDefinition DTO to ParameterBuilder
+- apply AuthenticationResult DTO to AuthenticationAnalyzer
+- apply PaginationInfo DTO to PaginationAnalyzer
+- add FractalTransformerResult DTO for type-safe transformer analysis
+- apply ControllerInfo DTO to generator classes
+- add analyzeToResult() method to FormRequestAnalyzer
+- add InlineParameterInfo DTO for type-safe parameter generation
+- add type-safe analyzeRulesToResult() method to FileUploadAnalyzer
+- add TypeInfo DTO for AST type inference
+- add MethodSignatureInfo DTO for enum method analysis
+- introduce FieldPatternConfig DTO for type-safe pattern configuration
+- remove redundant first_name and last_name pattern entries
+- remove dead code patterns and add image tests
+- convert FieldPatternRegistryTest to use data providers
+- remove unreachable dead code patterns
+- add ResourceDetectionResult DTO for type-safe resource detection
+- add ErrorEntry DTO for type-safe error collection
+- add DiagnosticReport DTO for type-safe diagnostic reporting
+- add DetectedQueryParameter DTO for type-safe query parameter detection
+- add ConditionResult DTO for type-safe conditional rules
+- add FormRequestAnalysisContext DTO for type-safe analysis context
+- introduce ResourceFieldInfo DTO for API Resource field type info
+- eliminate redundant DTO-to-array conversion in AnonymousClassAnalyzer
+- use ParameterDefinition[] in ValidationAnalysisResult
+- use OpenApiResponse[] in OpenApiOperation
+- add ConditionalRule DTO for type-safe conditional validation rules
+- introduce ConditionalRuleDetail DTO for type-safe conditional rules
+- introduce TagGroup and TagDefinition DTOs for type-safe tag handling
+- add AbstractCollection base class and ValidationRuleCollection
+- apply ValidationRuleCollection across codebase
+- enhance ValidationRuleCollection::from() to accept null
+- run PHPStan on single PHP version (8.4)
+- add PHPDoc type annotations to reduce PHPStan baseline
+- add PHPStan type definitions to Generator classes
+- consolidate docs-site into docs directory
 
-- Requires PHP 8.2, 8.3, or 8.4
-- Supports Laravel 11.x and 12.x
-- PHPUnit 11/12 compatible
+### ✅ Tests
 
----
+- improve test coverage for OpenAPI 3.1.0 support
+- add unit tests for ResponseStructureVisitor and IncrementalCache
+- add comprehensive tests for AnonymousClassAnalyzer
+- add ValidatesOpenApi trait for OpenAPI spec validation
+- add comprehensive OpenAPI spec validation tests
+- add snapshot testing for OpenAPI output stability
+- add E2E tests for demo app integration
+- add additional E2E test coverage
+- improve DocumentationCache test coverage
+- add null-safe operator test cases
+- add tests for collectUsedTags to improve mutation coverage
+- add tests for requiresAuth method to improve mutation coverage
+- add tests for SchemaRegistry injection and clearing
+- improve test coverage across multiple components
+- enhance test coverage for support classes and services
+- improve coverage for analyzers, formatters and generators (Phase 3)
+- improve coverage for FormRequestAnalyzer and ControllerAnalyzer (Phase 4)
+- improve coverage for AST visitors and analyzers (Phase 5)
+- improve coverage for SchemaGenerator and ResourceAnalyzer (Phase 6)
+- add tests to catch escaped mutants in generateConditionKey
+- improve coverage for CollectionAnalyzer and QueryParameterDetector
+- improve Performance component test coverage (Phase 8)
+- add comprehensive tests for GenerateDocsCommand (Phase 10)
+- improve WatchCommand test coverage (Phase 11)
+- improve method coverage with additional tests
+- improve method coverage from 75% to 78%
+- improve MockServer test coverage and fix test reliability
+- improve WatchCommand test coverage from 59% to 73%
+- improve method coverage for GenerateDocsCommand and LiveReloadServer
+- add tests to kill mutation testing escaped mutants
+- improve GenerateDocsCommand coverage from 70% to 95%+
+- improve LiveReloadServer coverage from 73% to 90%
+- improve Exporter test coverage for PostmanExporter and InsomniaExporter
+- add comprehensive tests for DTO edge cases
+- add edge case tests for DTO conversion methods
+- add FractalInfo fromArray default value tests
+- add edge case tests for zero values and partial dimensions
+- add edge case tests for EnumInfo DTO
+- add edge case tests for OpenAPI output DTOs
+- add coverage for apiKey name->headerName fallback
+- add missing test coverage per PR review suggestions
+- add edge case tests for TypeInfo DTO per review
+- add tests for escaped mutants in FieldPatternRegistry
+- add comprehensive pattern tests to kill mutation escapes
+- add last_name pattern test to kill mutation escape
+- add phone and phonenumber pattern tests
+- add countrycode pattern test to kill mutation escape
+- add country pattern test to kill mutation escape
+- add tests for zipcode, lon, and avatar patterns to kill mutation escapes
+- add tests for postal_code, thumbnail, photo, picture patterns
+- add tests for cover, company, jobtitle, department patterns
+- add missing pattern tests for mutation coverage
+- improve method coverage for ParameterDefinition and OpenApiOperation
+- improve DTO method coverage to 100%
+- add edge case tests for collection classes
+- add comprehensive demo-app patterns for OpenAPI testing
+- add test for hybrid controller to kill mutation
+- add comprehensive edge case tests for PCRE delimiter stripping
+- add missing tests for string length constraints
+- add float constraint tests for numeric types
+- add tests for file detection in conditional rules
+- add coverage for array items with required_array_keys
+- add comprehensive tests for File:: static call detection
+- add comprehensive tests for Password rule components
+- add edge case tests for dynamic relation names
+- add edge case test for required with conditional rule
+
+### ✨ Features
+
+- add HTML documentation output with Swagger UI integration
+- add OpenAPI 3.1.0 specification support
+- add tag groups and tag descriptions support
+- add Claude Code skills for quality checks and PR review
+- add category-based analyzer interfaces
+- add Infection mutation testing
+- implement controllers and form requests for comprehensive testing
+- add version checking for automatic cache invalidation
+- add null-safe operator support for Resource analysis
+- add Post model and enhance Resource examples
+- implement $ref schema references for API resources
+- add style/explode support for array parameters ([#204](https://github.com/wadakatu/laravel-spectrum/issues/204))
+- use configured OpenAPI version in base structure ([#207](https://github.com/wadakatu/laravel-spectrum/issues/207))
+- add contact, license, termsOfService to info object ([#206](https://github.com/wadakatu/laravel-spectrum/issues/206))
+- introduce Response DTOs for type-safe response handling
+- introduce FileUploadInfo and FileDimensions DTOs
+- introduce EnumBackingType enum and EnumInfo DTO
+- introduce OpenAPI output DTOs
+- introduce AuthenticationType enum and AuthenticationScheme DTO
+- add OpenID Connect support per OpenAPI 3.0 spec
+- add named constructors and additional tests for FieldPatternConfig
+- add $ref validation to prevent broken references
+- generate confirmation field for confirmed validation rule
+- convert Password rule constraints to OpenAPI schema properties
+- detect @deprecated PHPDoc annotation on controller methods
+- detect route where() constraints and map to OpenAPI schema
+- support request body for DELETE requests with validation
+- detect request headers used in controller
+- integrate validateReferences() into OpenAPI generation
+- add OpenApiSpec DTO to replace array<string, mixed> types
+- add @phpstan-type OpenApiOperationType for operation arrays
+- add @phpstan-type OpenApiSchemaType for schema arrays
+- add @phpstan-type RouteDefinition for route arrays
+- add @phpstan-type for Postman and Insomnia export formats
+- add MockResponse PHPStan type definition
+- add PHPStan type definitions to MockServer classes
+- add PHPStan type definitions to Formatter classes
+- add PHPStan types to AST Visitor classes
+- add specific types to Analyzer classes ([#360](https://github.com/wadakatu/laravel-spectrum/issues/360))
+- add specific types to Support and Infrastructure classes ([#361](https://github.com/wadakatu/laravel-spectrum/issues/361))
+
+### 🐛 Bug Fixes
+
+- cast floor() return value to int for array key
+- address PR review feedback
+- remove nullable: false from output and add $ref tests
+- address PR review findings and add test coverage
+- add input validation and defensive error handling
+- strengthen IncrementalCacheTest assertions
+- address PR review findings for support classes
+- address PR review findings for ValidationDescriptionGenerator
+- add defensive validation for malformed conditional rules input
+- address PR review findings for ParameterBuilder
+- address PR review findings for FormRequestAstExtractor
+- address all PR review findings (critical, important, suggestions)
+- address PR review findings for AnonymousClassAnalyzer
+- address PR review findings for AnonymousClassAnalyzer
+- address PR review findings for FormRequestAstExtractor
+- share ErrorCollector between FormRequestAnalyzer and AstExtractor
+- address PR review findings for prepareAnalysisContext helper
+- address PR review findings for AstHelper extraction
+- address PR review findings for FractalTransformerAnalyzer
+- improve commit message guidance in post-pr-review skill
+- address PR review suggestions for FileSizeFormatter
+- address PR review feedback for error handling improvements
+- address PR review findings for MethodSourceExtractor
+- address PR review findings for AstTypeInferenceEngine
+- address PR review findings for traverse() method
+- address PR review findings for visitor classes
+- address PR review findings for AstNodeValueExtractor
+- address PR review findings for example generation refactoring
+- address PR review feedback for analyzer interfaces
+- address PR review suggestions for SchemaPropertyMapper
+- update demo-app files to use container resolution
+- add .env file creation step for E2E workflow
+- update Docusaurus to 3.9.2 to fix security vulnerabilities
+- add missing return and parameter type hints
+- resolve strict comparison and missing type errors
+- add type annotations and improve type safety
+- address PR review suggestions
+- ignore unmatched baseline errors for PHP version compatibility
+- improve error handling and documentation
+- address PR review feedback
+- handle object, boolean, and null values in YAML conversion
+- prevent example state leak between different resources
+- set memory_limit=-1 in php.ini for coverage generation
+- add explicit memory_limit in test bootstrap
+- run coverage on PHP 8.2 instead of 8.3
+- use correct storage path in LiveReloadServer test
+- improve assertion clarity in ControllerAnalyzerTest
+- add declare(strict_types=1) to fixture files
+- address PR review feedback
+- add strict_types declaration and complete test assertions
+- use project's base TestCase and correct namespace
+- address PR review feedback
+- make Faker seed test more robust across PHP versions
+- make Faker seed test verify functionality not exact values
+- remove plugin-development from sidebar configuration
+- improve error handling and add test cleanup
+- simplify applyStyleAndExplode to array-only and add test cleanup
+- improve test quality per review feedback
+- support inline validation detection for anonymous classes
+- add guard clause and tests per PR review
+- add error handling to analyzeWithConditionalRulesToResult
+- address PR review feedback
+- address PR review feedback
+- address PR review feedback
+- add PHPDoc and improve test coverage per review feedback
+- consistent DTO serialization in toArray() methods
+- serialize enumInfo consistently in InlineParameterInfo::toArray()
+- update hasWidthConstraints/hasHeightConstraints to include exact dimensions
+- skip memory limit test when Xdebug is enabled
+- revert to PCOV for coverage, skip test when coverage enabled
+- make ResourceDetectionResult constructor private for invariant safety
+- recalculate counts from actual arrays in fromArray()
+- add missing typed method aliases to TYPED_METHODS constant
+- update SchemaGenerator and tests to use ConditionResult DTO
+- make FormRequestAnalysisContext constructor private
+- remove PHP 8.3 typed constant for backward compatibility
+- accept all Japanese phone number formats in test
+- relax phone number regex pattern in FakerIntegrationTest
+- relax Japanese phone regex to allow 1-digit middle group
+- handle keyless array items in ResourceStructureVisitor
+- convert nested array validation to proper OpenAPI schema
+- add defensive null coalescing and fallback items schema
+- support union return types with oneOf in OpenAPI schema
+- validate union requires at least 2 resource classes
+- detect __invoke method for invokable controllers
+- generate correct example for accepted/declined rules
+- generate accurate decimal example based on rule parameters
+- add format property to conditional parameters
+- exclude fields with exclude validation rule from schema
+- convert regex patterns to OpenAPI pattern property
+- convert string min/max/size rules to minLength/maxLength
+- convert numeric validation rules to OpenAPI constraints
+- convert array validation rules to OpenAPI minItems/maxItems
+- add between rule support and additional tests for array constraints
+- add ulid format mapping and tests for validation rule formats
+- extract enum values from Rule::in() objects
+- address PR review feedback for confirmed rule
+- detect file uploads in conditional validation rules
+- reflect required_array_keys validation in OpenAPI schema
+- detect File:: static call strings as file upload rules
+- whenCounted and whenAggregated return valid OpenAPI types
+- convert GET request validation rules to query parameters
+- remove unused dependency and add missing tests
+- only mark fields as required with unconditional 'required' rule
+- rename undocumentedMethod to methodWithoutDocblock
+- support Laravel's native whereUuid() pattern and add helper tests
+- add error logging and improve test coverage for header detection
+- improve PHPDoc completeness based on PR review
+- add hasWebhooks() method and test coverage for webhooks
+- add missing required property to requestBody type
+- add missing schema properties and class description
+- add params key to RouteDefinition type and remove unused import
+- correct type definitions in AST Visitors
+- add missing fields to ResourceStructure type
+- change extractReturnedArray visibility to private
+- update broken README link in contributing.md
+- update docs-deploy workflow paths after docs consolidation
+- remove gitignore rules for docs content, add documentation files
+
+### 📚 Documentation
+
+- update CHANGELOG.md for v0.2.2-beta
+- add PHPDoc and beforeTraverse resets to visitor classes
+- improve PHPDoc comments for snapshot normalization methods
+- add modular Claude Code rules for better organization
+- update CLI and config reference to match implementation
+- remove unimplemented plugin system documentation
+- add CONTRIBUTING.md to project root
+- add stability and backward compatibility document
+- remove Lumen references from documentation
+- add documentation rules for Claude Code
+- add v1.0.0 release notes and fix STABILITY.md PHP version
+
+### 📦 Build System
+
+- bump js-yaml from 3.14.1 to 3.14.2 in /docs-site
+- bump node-forge from 1.3.1 to 1.3.2 in /docs-site
+- bump mdast-util-to-hast from 13.2.0 to 13.2.1 in /docs-site
+- add cebe/php-openapi dependency for spec validation
+
+### 🚀 Continuous Integration
+
+- increase memory limit to 256M for coverage generation
+- set memory_limit=256M in phpunit.xml for coverage generation
+- use PCOV instead of Xdebug for code coverage
+- increase memory limit to 512M for code coverage
+- increase PHPUnit memory limit to 512M for coverage generation
+- pass memory_limit directly to PHP for coverage generation
+- optimize coverage generation to only run where needed
+- lower mutation testing threshold for file-level diffing
+- increase PHP memory limit for coverage generation
+- increase PHP memory limit for coverage generation
+- use unlimited memory limit for coverage generation
+- debug and force memory_limit via custom ini file
+- add pcov.directory setting to limit coverage scope
+- revert to main branch configuration for coverage
+- remove ini-values to match main branch exactly
+- switch coverage generation to PHP 8.4
+- try PHP 8.2 for coverage generation
+- revert mutation testing threshold to original 65%
+- add debug output for PHP memory settings
+- increase memory limit for coverage generation
 
 ## [0.2.2-beta](https://github.com/wadakatu/laravel-spectrum/releases/tag/v0.2.2-beta) - 2025-08-11
 
