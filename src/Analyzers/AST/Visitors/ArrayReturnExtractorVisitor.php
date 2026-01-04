@@ -7,8 +7,8 @@ use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter;
 
 /**
- * @phpstan-type ArrayValue string|int|array<string, mixed>
- * @phpstan-type ExtractedArray array<string, ArrayValue>
+ * @phpstan-type ArrayValue string|int|array<string|int, mixed>
+ * @phpstan-type ExtractedArray array<string|int, ArrayValue>
  */
 class ArrayReturnExtractorVisitor extends NodeVisitorAbstract
 {

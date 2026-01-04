@@ -13,7 +13,7 @@ use PhpParser\PrettyPrinter;
 /**
  * @phpstan-type ValidationRulesArray array<string, string|array<int, mixed>>
  * @phpstan-type RuleSetEntry array{conditions: array<ConditionResult>, rules: ValidationRulesArray, probability?: float}
- * @phpstan-type RuleSetsResult array{rules_sets: array<RuleSetEntry>, merged_rules: array<string, array<int, string>>, has_conditions: bool}
+ * @phpstan-type RuleSetsResult array{rules_sets: array<RuleSetEntry>, merged_rules: array<string, array<int, mixed>>, has_conditions: bool}
  */
 class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 {
@@ -732,7 +732,7 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     private function mergeAllRules(): array
     {
