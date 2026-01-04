@@ -9,6 +9,21 @@ use LaravelSpectrum\DTO\OpenApiOperation;
  * Formats OpenAPI data for Insomnia collection export.
  *
  * @phpstan-import-type RouteDefinition from OpenApiOperation
+ *
+ * @phpstan-type InsomniaHeader array{name: string, value: string}
+ * @phpstan-type InsomniaBearerAuth array{type: string, token: string, prefix: string}
+ * @phpstan-type InsomniaApiKeyAuth array{type: string, key: string}
+ * @phpstan-type InsomniaOAuth2Auth array{type: string, grantType: string, accessTokenUrl: string, authorizationUrl: string, clientId: string, clientSecret: string, scope: string}
+ * @phpstan-type InsomniaAuth InsomniaBearerAuth|InsomniaApiKeyAuth|InsomniaOAuth2Auth|array{}
+ * @phpstan-type InsomniaQueryParam array{id: string, name: string, value: string, description: string, disabled: bool}
+ * @phpstan-type InsomniaFormDataParam array{id: string, name: string, value: string, description: string, type?: string, fileName?: string}
+ * @phpstan-type InsomniaEnvironmentData array{base_url: string, scheme: string, host: string, base_path: string}
+ * @phpstan-type OpenApiParameter array{in: string, name: string, description?: string, required?: bool, schema?: array<string, mixed>, example?: mixed}
+ * @phpstan-type OpenApiSecurityRequirement array<string, array<int, string>>
+ * @phpstan-type OpenApiSecurityScheme array{type: string, scheme?: string, in?: string, name?: string}
+ * @phpstan-type OpenApiRequestBodyType array{content?: array<string, mixed>, required?: bool}
+ * @phpstan-type OpenApiServer array{url: string, description?: string, variables?: array<string, mixed>}
+ * @phpstan-type OpenApiSchemaProperty array{type?: string, format?: string, description?: string}
  */
 class InsomniaFormatter
 {
@@ -21,7 +36,10 @@ class InsomniaFormatter
     }
 
     /**
-     * Format headers for Insomnia
+     * Format headers for Insomnia.
+     *
+     * @param  array<string, string>  $headers
+     * @return array<int, InsomniaHeader>
      */
     public function formatHeaders(array $headers): array
     {
@@ -38,7 +56,11 @@ class InsomniaFormatter
     }
 
     /**
-     * Format authentication for Insomnia
+     * Format authentication for Insomnia.
+     *
+     * @param  array<int, OpenApiSecurityRequirement>  $security
+     * @param  array<string, OpenApiSecurityScheme>  $securitySchemes
+     * @return InsomniaAuth
      */
     public function formatAuth(array $security, array $securitySchemes): array
     {
@@ -126,7 +148,9 @@ class InsomniaFormatter
     }
 
     /**
-     * Extract content type from request body
+     * Extract content type from request body.
+     *
+     * @param  OpenApiRequestBodyType  $requestBody
      */
     public function getContentType(array $requestBody): string
     {
@@ -152,7 +176,10 @@ class InsomniaFormatter
     }
 
     /**
-     * Generate environment data from OpenAPI servers
+     * Generate environment data from OpenAPI servers.
+     *
+     * @param  array<int, OpenApiServer>  $servers
+     * @return InsomniaEnvironmentData
      */
     public function generateEnvironmentData(array $servers): array
     {
@@ -177,7 +204,10 @@ class InsomniaFormatter
     }
 
     /**
-     * Format query parameters for Insomnia
+     * Format query parameters for Insomnia.
+     *
+     * @param  array<int, OpenApiParameter>  $parameters
+     * @return array<int, InsomniaQueryParam>
      */
     public function formatQueryParameters(array $parameters): array
     {
@@ -201,7 +231,9 @@ class InsomniaFormatter
     }
 
     /**
-     * Get example value for a parameter
+     * Get example value for a parameter.
+     *
+     * @param  OpenApiParameter  $param
      */
     private function getParameterExample(array $param): string
     {
@@ -236,7 +268,10 @@ class InsomniaFormatter
     }
 
     /**
-     * Format form data parameters
+     * Format form data parameters.
+     *
+     * @param  array<string, OpenApiSchemaProperty>  $properties
+     * @return array<int, InsomniaFormDataParam>
      */
     public function formatFormDataParameters(array $properties, RequestExampleFormatter $exampleFormatter): array
     {

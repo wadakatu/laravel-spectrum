@@ -4,6 +4,25 @@ namespace LaravelSpectrum\Formatters;
 
 use Illuminate\Support\Str;
 
+/**
+ * Formats request examples based on OpenAPI schema.
+ *
+ * @phpstan-type OpenApiSchemaType array{
+ *     type?: string,
+ *     format?: string,
+ *     example?: mixed,
+ *     enum?: array<int, mixed>,
+ *     properties?: array<string, array<string, mixed>>,
+ *     items?: array<string, mixed>,
+ *     allOf?: array<int, array<string, mixed>>,
+ *     minimum?: int|float,
+ *     maximum?: int|float,
+ *     minLength?: int,
+ *     maxLength?: int,
+ *     minItems?: int,
+ *     maxItems?: int
+ * }
+ */
 class RequestExampleFormatter
 {
     /**
@@ -28,7 +47,9 @@ class RequestExampleFormatter
     }
 
     /**
-     * Generate example from OpenAPI schema
+     * Generate example from OpenAPI schema.
+     *
+     * @param  OpenApiSchemaType  $schema
      */
     public function generateFromSchema(array $schema): mixed
     {
@@ -177,6 +198,9 @@ class RequestExampleFormatter
         return (bool) rand(0, 1);
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function generateArrayExample(string $fieldNameLower): array
     {
         if (str_contains($fieldNameLower, 'tags')) {
@@ -198,6 +222,10 @@ class RequestExampleFormatter
         return ['item1', 'item2', 'item3'];
     }
 
+    /**
+     * @param  OpenApiSchemaType  $schema
+     * @return array<string, mixed>
+     */
     private function generateObjectFromSchema(array $schema): array
     {
         $result = [];
@@ -211,6 +239,10 @@ class RequestExampleFormatter
         return $result;
     }
 
+    /**
+     * @param  OpenApiSchemaType  $schema
+     * @return array<int, mixed>
+     */
     private function generateArrayFromSchema(array $schema): array
     {
         $minItems = $schema['minItems'] ?? 1;
@@ -229,6 +261,9 @@ class RequestExampleFormatter
         return $result;
     }
 
+    /**
+     * @param  OpenApiSchemaType  $schema
+     */
     private function generatePrimitiveFromSchema(array $schema): mixed
     {
         $type = $schema['type'] ?? 'string';
@@ -281,6 +316,10 @@ class RequestExampleFormatter
         return $this->generateExample($type, 'field');
     }
 
+    /**
+     * @param  array<int, OpenApiSchemaType>  $allOf
+     * @return array<string, mixed>
+     */
     private function generateFromAllOf(array $allOf): array
     {
         $result = [];

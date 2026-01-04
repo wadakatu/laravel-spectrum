@@ -8,11 +8,25 @@ use LaravelSpectrum\DTO\OpenApiOperation;
  * Formats OpenAPI data for Postman collection export.
  *
  * @phpstan-import-type RouteDefinition from OpenApiOperation
+ * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ *
+ * @phpstan-type PostmanHeader array{key: string, value: string, type: string}
+ * @phpstan-type PostmanAuthItem array{key: string, value: string, type: string}
+ * @phpstan-type PostmanAuth array{type: string, bearer?: array<int, PostmanAuthItem>, apikey?: array<int, PostmanAuthItem>, oauth2?: array<int, PostmanAuthItem>}
+ * @phpstan-type PostmanQueryParam array{key: string, value: string, description: string, disabled: bool}
+ * @phpstan-type PostmanPathParam array{key: string, value: string, description: string}
+ * @phpstan-type OpenApiParameter array{in: string, name: string, description?: string, required?: bool, schema?: array<string, mixed>, example?: mixed}
+ * @phpstan-type OpenApiSecurityRequirement array<string, array<int, string>>
+ * @phpstan-type OpenApiSecurityScheme array{type: string, scheme?: string, in?: string, name?: string}
+ * @phpstan-type OpenApiRequestBodyType array{content?: array<string, mixed>, required?: bool}
  */
 class PostmanFormatter
 {
     /**
-     * Format headers for Postman
+     * Format headers for Postman.
+     *
+     * @param  array<string, string>  $headers
+     * @return array<int, PostmanHeader>
      */
     public function formatHeaders(array $headers): array
     {
@@ -30,7 +44,11 @@ class PostmanFormatter
     }
 
     /**
-     * Format authentication for Postman
+     * Format authentication for Postman.
+     *
+     * @param  array<int, OpenApiSecurityRequirement>  $security
+     * @param  array<string, OpenApiSecurityScheme>  $securitySchemes
+     * @return PostmanAuth|array{}
      */
     public function formatAuth(array $security, array $securitySchemes): array
     {
@@ -102,7 +120,10 @@ class PostmanFormatter
     }
 
     /**
-     * Format query parameters for Postman
+     * Format query parameters for Postman.
+     *
+     * @param  array<int, OpenApiParameter>  $parameters
+     * @return array<int, PostmanQueryParam>
      */
     public function formatQueryParameters(array $parameters): array
     {
@@ -125,7 +146,10 @@ class PostmanFormatter
     }
 
     /**
-     * Format path parameters for Postman
+     * Format path parameters for Postman.
+     *
+     * @param  array<int, OpenApiParameter>  $parameters
+     * @return array<int, PostmanPathParam>
      */
     public function formatPathParameters(array $parameters): array
     {
@@ -156,7 +180,10 @@ class PostmanFormatter
     }
 
     /**
-     * Generate pre-request script
+     * Generate pre-request script.
+     *
+     * @param  OpenApiOperationType  $operation
+     * @return array<int, string>
      */
     public function generatePreRequestScript(array $operation): array
     {
@@ -208,7 +235,9 @@ class PostmanFormatter
     }
 
     /**
-     * Extract content type from request body
+     * Extract content type from request body.
+     *
+     * @param  OpenApiRequestBodyType  $requestBody
      */
     public function getContentType(array $requestBody): string
     {
@@ -234,7 +263,9 @@ class PostmanFormatter
     }
 
     /**
-     * Get example value for a parameter
+     * Get example value for a parameter.
+     *
+     * @param  OpenApiParameter  $param
      */
     private function getParameterExample(array $param): string
     {
@@ -269,7 +300,9 @@ class PostmanFormatter
     }
 
     /**
-     * Check if operation needs timestamp variable
+     * Check if operation needs timestamp variable.
+     *
+     * @param  OpenApiOperationType  $operation
      */
     private function needsTimestamp(array $operation): bool
     {
