@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Laravel Spectrum',
-  tagline: 'Zero-annotation API documentation generator for Laravel & Lumen',
+  tagline: 'Zero-annotation API documentation generator for Laravel',
   favicon: 'img/favicon.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -93,9 +93,9 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           editUrl: ({locale, docPath}) => {
             if (locale === 'ja') {
-              return `https://github.com/wadakatu/laravel-spectrum/tree/main/docs-site/i18n/ja/docusaurus-plugin-content-docs/current/${docPath}`;
+              return `https://github.com/wadakatu/laravel-spectrum/tree/main/docs/i18n/ja/docusaurus-plugin-content-docs/current/${docPath}`;
             }
-            return `https://github.com/wadakatu/laravel-spectrum/tree/main/docs-site/docs/${docPath}`;
+            return `https://github.com/wadakatu/laravel-spectrum/tree/main/docs/docs/${docPath}`;
           },
           remarkPlugins: [],
           rehypePlugins: [],
