@@ -2,6 +2,13 @@
 
 namespace LaravelSpectrum\Formatters;
 
+use LaravelSpectrum\DTO\OpenApiOperation;
+
+/**
+ * Formats OpenAPI data for Postman collection export.
+ *
+ * @phpstan-import-type RouteDefinition from OpenApiOperation
+ */
 class PostmanFormatter
 {
     /**
@@ -167,7 +174,10 @@ class PostmanFormatter
     }
 
     /**
-     * Group routes by tag
+     * Group routes by tag.
+     *
+     * @param  array<string, array<string, mixed>>  $paths
+     * @return array<string, array<int, RouteDefinition>>
      */
     public function groupRoutesByTag(array $paths): array
     {
