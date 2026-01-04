@@ -19,6 +19,3 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Synced documentation (copied from ../docs)
-/docs
-/i18n/ja/docusaurus-plugin-content-docs/current

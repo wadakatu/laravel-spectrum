@@ -368,7 +368,7 @@ We are currently seeking contributions in the following areas:
 
 ## 🏆 Contributors
 
-Contributors are listed in [README.md](../../README.md).
+Contributors are listed in [README.md](https://github.com/wadakatu/laravel-spectrum#contributors).
 
 ## 📄 License
 

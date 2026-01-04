@@ -1,13 +1,10 @@
 {
-  "name": "docs-site",
+  "name": "docs",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "sync-docs": "node scripts/sync-docs.js",
-    "prestart": "npm run sync-docs",
     "start": "docusaurus start",
-    "prebuild": "npm run sync-docs",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -30,7 +27,6 @@
     "@docusaurus/module-type-aliases": "^3.9.2",
     "@docusaurus/tsconfig": "3.8.1",
     "@docusaurus/types": "^3.9.2",
-    "fs-extra": "^11.3.0",
     "typescript": "~5.6.2"
   },
   "browserslist": {
