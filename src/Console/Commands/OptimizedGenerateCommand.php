@@ -141,7 +141,7 @@ class OptimizedGenerateCommand extends Command
             $chunkResults = [];
 
             foreach ($chunk as $route) {
-                $chunkResults[] = $this->openApiGenerator->generate([$route])['paths'];
+                $chunkResults[] = $this->openApiGenerator->generate([$route])->paths;
                 $progressBar->advance();
             }
 
@@ -184,7 +184,7 @@ class OptimizedGenerateCommand extends Command
         $results = $this->parallelProcessor->processWithProgress(
             $routes,
             function ($route) {
-                return $this->openApiGenerator->generate([$route])['paths'];
+                return $this->openApiGenerator->generate([$route])->paths;
             },
             function ($current, $total) use ($progressBar) {
                 $progressBar->setProgress($current);

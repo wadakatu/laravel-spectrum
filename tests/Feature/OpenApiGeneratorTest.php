@@ -45,7 +45,7 @@ class OpenApiGeneratorTest extends TestCase
 
         // Act
         $routes = $routeAnalyzer->analyze();
-        $openapi = $generator->generate($routes);
+        $openapi = $generator->generate($routes)->toArray();
 
         // Assert
         $this->assertEquals('3.0.0', $openapi['openapi']);

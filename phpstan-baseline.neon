@@ -763,24 +763,6 @@ parameters:
 			path: src/Contracts/HasExamples.php
 
 		-
-			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:export\(\) has parameter \$openapi with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Exporters/ExportFormatInterface.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:export\(\) has parameter \$options with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Exporters/ExportFormatInterface.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:export\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Exporters/ExportFormatInterface.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Exporters\\ExportFormatInterface\:\:exportEnvironment\(\) has parameter \$security with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1250,18 +1232,6 @@ parameters:
 
 		-
 			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:collectUsedTags\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/OpenApiGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generate\(\) has parameter \$routes with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/OpenApiGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\OpenApiGenerator\:\:generate\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Generators/OpenApiGenerator.php

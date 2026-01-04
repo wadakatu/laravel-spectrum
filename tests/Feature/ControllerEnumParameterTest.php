@@ -31,7 +31,7 @@ class ControllerEnumParameterTest extends TestCase
         // キャッシュを無効にして確実に新しいルートを取得
         $routes = app(RouteAnalyzer::class)->analyze(false);
 
-        return app(OpenApiGenerator::class)->generate($routes);
+        return app(OpenApiGenerator::class)->generate($routes)->toArray();
     }
 
     #[Test]

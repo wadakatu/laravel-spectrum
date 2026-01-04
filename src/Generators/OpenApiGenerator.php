@@ -12,6 +12,7 @@ use LaravelSpectrum\DTO\AuthenticationResult;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiResponse;
+use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
 
@@ -57,10 +58,9 @@ class OpenApiGenerator
     /**
      * Generate OpenAPI specification from routes.
      *
-     * @param  array  $routes  Route definitions
-     * @return array OpenAPI specification
+     * @param  array<int, array<string, mixed>>  $routes  Route definitions
      */
-    public function generate(array $routes): array
+    public function generate(array $routes): OpenApiSpec
     {
         // Clear schema registry and examples for fresh generation
         $this->schemaRegistry->clear();
@@ -133,7 +133,7 @@ class OpenApiGenerator
             $openapi = $this->openApi31Converter->convert($openapi);
         }
 
-        return $openapi;
+        return OpenApiSpec::fromArray($openapi);
     }
 
     /**

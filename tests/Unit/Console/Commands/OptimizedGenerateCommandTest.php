@@ -6,6 +6,7 @@ namespace Tests\Unit\Console\Commands;
 
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
+use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Performance\ChunkProcessor;
 use LaravelSpectrum\Performance\DependencyGraph;
@@ -283,12 +284,14 @@ class OptimizedGenerateCommandTest extends TestCase
 
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
+                'openapi' => '3.0.0',
+                'info' => ['title' => 'Test', 'version' => '1.0.0'],
                 'paths' => [
                     'path' => '/api/users',
                     'methods' => ['get' => []],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(RouteAnalyzer::class, $routeAnalyzer);
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
@@ -316,12 +319,14 @@ class OptimizedGenerateCommandTest extends TestCase
 
         $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
         $openApiGenerator->shouldReceive('generate')
-            ->andReturn([
+            ->andReturn(OpenApiSpec::fromArray([
+                'openapi' => '3.0.0',
+                'info' => ['title' => 'Test', 'version' => '1.0.0'],
                 'paths' => [
                     'path' => '/api/test',
                     'methods' => ['get' => []],
                 ],
-            ]);
+            ]));
 
         $this->app->instance(RouteAnalyzer::class, $routeAnalyzer);
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);

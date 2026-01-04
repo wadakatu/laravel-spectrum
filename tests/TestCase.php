@@ -29,7 +29,7 @@ abstract class TestCase extends Orchestra
     {
         $routes = app(RouteAnalyzer::class)->analyze();
 
-        return app(OpenApiGenerator::class)->generate($routes);
+        return app(OpenApiGenerator::class)->generate($routes)->toArray();
     }
 
     /**
