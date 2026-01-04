@@ -6,12 +6,37 @@ use LaravelSpectrum\Contracts\HasCustomExamples;
 use LaravelSpectrum\Contracts\HasExamples;
 use LaravelSpectrum\DTO\ResourceInfo;
 
+/**
+ * Generates example values for OpenAPI documentation.
+ *
+ * @phpstan-type OpenApiSchemaType array{
+ *     type?: string,
+ *     format?: string,
+ *     properties?: array<string, array<string, mixed>>,
+ *     items?: array<string, mixed>,
+ *     enum?: array<int, mixed>,
+ *     nullable?: bool,
+ *     example?: mixed,
+ *     default?: mixed
+ * }
+ * @phpstan-type TransformerSchema array{default?: OpenApiSchemaType}
+ * @phpstan-type ValidationRules array<string, string|array<int, mixed>>
+ * @phpstan-type ValidationErrorExample array{message: string, errors: array<string, array<int, string>>}
+ * @phpstan-type PaginatedCollectionExample array{data: array<int, array<string, mixed>>, links: array<string, string|null>, meta: array<string, int|string>}
+ * @phpstan-type ErrorExample array{message: string, errors?: array<string, array<int, string>>}
+ */
 class ExampleGenerator
 {
     public function __construct(
         private ExampleValueFactory $valueFactory
     ) {}
 
+    /**
+     * Generate example from a resource.
+     *
+     * @param  class-string  $resourceClass
+     * @return array<string, mixed>
+     */
     public function generateFromResource(ResourceInfo $resourceInfo, string $resourceClass): array
     {
         // Use custom example from ResourceInfo if available
@@ -46,6 +71,12 @@ class ExampleGenerator
         return $this->generateFromSchema($schema, $customMapping);
     }
 
+    /**
+     * Generate example from a transformer schema.
+     *
+     * @param  TransformerSchema  $transformerSchema
+     * @return array<string, mixed>
+     */
     public function generateFromTransformer(array $transformerSchema): array
     {
         // Generate example from default transformer fields
@@ -56,6 +87,12 @@ class ExampleGenerator
         return [];
     }
 
+    /**
+     * Generate a collection example from an item example.
+     *
+     * @param  array<string, mixed>  $itemExample
+     * @return array<int|string, mixed>
+     */
     public function generateCollectionExample(array $itemExample, bool $isPaginated = false): array
     {
         if ($isPaginated) {
@@ -75,6 +112,12 @@ class ExampleGenerator
         return $collection;
     }
 
+    /**
+     * Generate an error example based on status code.
+     *
+     * @param  ValidationRules  $validationRules
+     * @return ErrorExample
+     */
     public function generateErrorExample(int $statusCode, array $validationRules = []): array
     {
         return match ($statusCode) {
@@ -88,7 +131,11 @@ class ExampleGenerator
     }
 
     /**
-     * Generate from schema with custom field mappings
+     * Generate from schema with custom field mappings.
+     *
+     * @param  OpenApiSchemaType  $schema
+     * @param  array<string, callable>  $customMapping
+     * @return array<string, mixed>
      */
     private function generateFromSchema(array $schema, array $customMapping = []): array
     {
@@ -107,7 +154,9 @@ class ExampleGenerator
     }
 
     /**
-     * Generate field value with custom generator support
+     * Generate field value with custom generator support.
+     *
+     * @param  OpenApiSchemaType  $fieldSchema
      */
     private function generateFieldValue(string $fieldName, array $fieldSchema, ?callable $customGenerator = null): mixed
     {
@@ -141,6 +190,12 @@ class ExampleGenerator
         return $this->valueFactory->create($fieldName, $fieldSchema, $customGenerator);
     }
 
+    /**
+     * Generate a paginated collection example.
+     *
+     * @param  array<string, mixed>  $itemExample
+     * @return PaginatedCollectionExample
+     */
     private function generatePaginatedCollection(array $itemExample): array
     {
         return [
@@ -163,6 +218,10 @@ class ExampleGenerator
         ];
     }
 
+    /**
+     * @param  ValidationRules  $validationRules
+     * @return ValidationErrorExample
+     */
     private function generateValidationErrorExample(array $validationRules): array
     {
         $errors = [];

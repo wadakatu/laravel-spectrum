@@ -2,10 +2,17 @@
 
 namespace LaravelSpectrum\Generators;
 
+/**
+ * @phpstan-type DataSchema array{type?: string, properties?: array<string, mixed>}|array{"\$ref": string}
+ * @phpstan-type PaginationSchema array{type: string, properties: array<string, array<string, mixed>>}
+ */
 class PaginationSchemaGenerator
 {
     /**
      * Generate pagination schema based on type
+     *
+     * @param  DataSchema  $dataSchema
+     * @return PaginationSchema|DataSchema
      */
     public function generate(string $paginationType, array $dataSchema): array
     {
@@ -19,6 +26,9 @@ class PaginationSchemaGenerator
 
     /**
      * Generate schema for LengthAwarePaginator
+     *
+     * @param  DataSchema  $dataSchema
+     * @return PaginationSchema
      */
     private function generateLengthAwarePaginatorSchema(array $dataSchema): array
     {
@@ -97,6 +107,9 @@ class PaginationSchemaGenerator
 
     /**
      * Generate schema for SimplePaginator
+     *
+     * @param  DataSchema  $dataSchema
+     * @return PaginationSchema
      */
     private function generateSimplePaginatorSchema(array $dataSchema): array
     {
@@ -142,6 +155,9 @@ class PaginationSchemaGenerator
 
     /**
      * Generate schema for CursorPaginator
+     *
+     * @param  DataSchema  $dataSchema
+     * @return PaginationSchema
      */
     private function generateCursorPaginatorSchema(array $dataSchema): array
     {

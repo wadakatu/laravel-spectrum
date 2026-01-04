@@ -14,6 +14,29 @@ use LaravelSpectrum\Support\Example\ValueProviders\FakerValueProvider;
  *
  * Used by MockServer for generating realistic API responses.
  * Supports schema constraints (min/max, enum, pattern) and recursive object/array generation.
+ *
+ * @phpstan-type OpenApiSchemaType array{
+ *     type?: string,
+ *     format?: string,
+ *     example?: mixed,
+ *     enum?: array<int, mixed>,
+ *     properties?: array<string, array<string, mixed>>,
+ *     items?: array<string, mixed>,
+ *     required?: array<int, string>,
+ *     minimum?: int|float,
+ *     maximum?: int|float,
+ *     minLength?: int,
+ *     maxLength?: int,
+ *     minItems?: int,
+ *     maxItems?: int,
+ *     pattern?: string,
+ *     additionalProperties?: bool|array<string, mixed>
+ * }
+ * @phpstan-type GeneratorOptions array{
+ *     use_realistic_data?: bool,
+ *     field_name?: string,
+ *     include_all_properties?: bool
+ * }
  */
 class DynamicExampleGenerator
 {
@@ -34,6 +57,9 @@ class DynamicExampleGenerator
 
     /**
      * Generate example data from OpenAPI schema.
+     *
+     * @param  OpenApiSchemaType  $schema
+     * @param  GeneratorOptions  $options
      */
     public function generateFromSchema(array $schema, array $options = []): mixed
     {
@@ -65,6 +91,9 @@ class DynamicExampleGenerator
 
     /**
      * Generate string example.
+     *
+     * @param  OpenApiSchemaType  $schema
+     * @param  GeneratorOptions  $options
      */
     private function generateString(array $schema, array $options = []): string
     {
@@ -142,6 +171,8 @@ class DynamicExampleGenerator
 
     /**
      * Generate integer example.
+     *
+     * @param  OpenApiSchemaType  $schema
      */
     private function generateInteger(array $schema): int
     {
@@ -157,6 +188,8 @@ class DynamicExampleGenerator
 
     /**
      * Generate number example.
+     *
+     * @param  OpenApiSchemaType  $schema
      */
     private function generateNumber(array $schema): float
     {
@@ -180,6 +213,10 @@ class DynamicExampleGenerator
 
     /**
      * Generate array example.
+     *
+     * @param  OpenApiSchemaType  $schema
+     * @param  GeneratorOptions  $options
+     * @return array<int, mixed>
      */
     private function generateArray(array $schema, array $options = []): array
     {
@@ -201,6 +238,10 @@ class DynamicExampleGenerator
 
     /**
      * Generate object example.
+     *
+     * @param  OpenApiSchemaType  $schema
+     * @param  GeneratorOptions  $options
+     * @return array<string, mixed>
      */
     private function generateObject(array $schema, array $options = []): array
     {

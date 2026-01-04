@@ -21,6 +21,17 @@ use LaravelSpectrum\Support\PaginationDetector;
  *
  * Orchestrates the generation of OpenAPI documentation by delegating
  * to specialized generators for different aspects of the specification.
+ *
+ * @phpstan-type RouteDefinition array{
+ *     uri: string,
+ *     httpMethods: array<int, string>,
+ *     controller: class-string,
+ *     method: string,
+ *     middleware: array<int, string>,
+ *     prefix?: string,
+ *     as?: string
+ * }
+ * @phpstan-type OpenApiPaths array<string, array<string, array<string, mixed>>>
  */
 class OpenApiGenerator
 {
@@ -138,6 +149,8 @@ class OpenApiGenerator
 
     /**
      * Build the base OpenAPI structure.
+     *
+     * @return array<string, mixed>
      */
     protected function buildBaseStructure(AuthenticationResult $authenticationInfo): array
     {
@@ -202,6 +215,8 @@ class OpenApiGenerator
 
     /**
      * Generate a single operation.
+     *
+     * @param  RouteDefinition  $route
      */
     protected function generateOperation(array $route, string $method, ?RouteAuthentication $authentication = null): OpenApiOperation
     {
@@ -244,6 +259,7 @@ class OpenApiGenerator
     /**
      * Generate responses for an operation.
      *
+     * @param  RouteDefinition  $route
      * @return array<string, OpenApiResponse>
      */
     protected function generateResponses(array $route, ControllerInfo $controllerInfo): array
@@ -276,6 +292,9 @@ class OpenApiGenerator
 
     /**
      * Generate error responses.
+     *
+     * @param  RouteDefinition  $route
+     * @return array<string, array<string, mixed>>
      */
     protected function generateErrorResponses(array $route, ControllerInfo $controllerInfo): array
     {
@@ -343,6 +362,9 @@ class OpenApiGenerator
 
     /**
      * Generate success response.
+     *
+     * @param  RouteDefinition  $route
+     * @return array{code: string, response: array<string, mixed>}
      */
     protected function generateSuccessResponse(array $route, ControllerInfo $controllerInfo): array
     {
@@ -519,6 +541,8 @@ class OpenApiGenerator
 
     /**
      * Check if route requires authentication.
+     *
+     * @param  RouteDefinition  $route
      */
     protected function requiresAuth(array $route): bool
     {
@@ -537,6 +561,8 @@ class OpenApiGenerator
 
     /**
      * Generate basic model schema.
+     *
+     * @return array<string, mixed>
      */
     protected function generateBasicModelSchema(string $modelClass): array
     {
@@ -554,8 +580,8 @@ class OpenApiGenerator
     /**
      * Collect all unique tags used in paths.
      *
-     * @param  array  $paths  OpenAPI paths object
-     * @return array<string> Unique tags sorted alphabetically
+     * @param  OpenApiPaths  $paths  OpenAPI paths object
+     * @return array<int, string> Unique tags sorted alphabetically
      */
     protected function collectUsedTags(array $paths): array
     {
