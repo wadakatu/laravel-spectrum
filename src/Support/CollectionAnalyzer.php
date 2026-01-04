@@ -9,6 +9,8 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 
 /**
+ * Analyzes Laravel Collection operations to infer schema transformations.
+ *
  * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
  */
 class CollectionAnalyzer
