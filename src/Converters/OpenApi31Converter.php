@@ -2,8 +2,12 @@
 
 namespace LaravelSpectrum\Converters;
 
+use LaravelSpectrum\DTO\OpenApiSchema;
+
 /**
  * Converts OpenAPI 3.0.x specifications to OpenAPI 3.1.0 format.
+ *
+ * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
  *
  * Main changes in 3.1.0:
  * - `nullable: true` becomes `type: ['originalType', 'null']`
@@ -158,7 +162,7 @@ class OpenApi31Converter
     /**
      * Convert a schema from OpenAPI 3.0.x to 3.1.0 format.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @return array<string, mixed>
      */
     private function convertSchema(array $schema): array
@@ -224,7 +228,7 @@ class OpenApi31Converter
      * Note: nullable: false is also removed as the nullable keyword
      * does not exist in OpenAPI 3.1.0.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @return array<string, mixed>
      */
     private function convertNullable(array $schema): array
@@ -254,7 +258,8 @@ class OpenApi31Converter
         // Handle case where type is already an array
         if (is_array($originalType)) {
             if (! in_array('null', $originalType, true)) {
-                $schema['type'][] = 'null';
+                $originalType[] = 'null';
+                $schema['type'] = $originalType;
             }
         } else {
             // Convert single type to array with null

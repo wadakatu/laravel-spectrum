@@ -6,6 +6,8 @@ namespace LaravelSpectrum\DTO;
 
 /**
  * Represents a route parameter extracted from URI.
+ *
+ * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
  */
 final readonly class RouteParameterInfo
 {
@@ -13,7 +15,7 @@ final readonly class RouteParameterInfo
      * @param  string  $name  The parameter name
      * @param  bool  $required  Whether the parameter is required
      * @param  string  $in  The parameter location (always 'path' for route parameters)
-     * @param  array<string, mixed>  $schema  The OpenAPI schema for the parameter
+     * @param  OpenApiSchemaType  $schema  The OpenAPI schema for the parameter
      */
     public function __construct(
         public string $name,

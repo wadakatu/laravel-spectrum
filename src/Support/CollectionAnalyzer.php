@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Support;
 
+use LaravelSpectrum\DTO\OpenApiSchema;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 
+/**
+ * Analyzes Laravel Collection operations to infer schema transformations.
+ *
+ * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
+ */
 class CollectionAnalyzer
 {
     private ModelSchemaExtractor $modelExtractor;
@@ -94,7 +100,7 @@ class CollectionAnalyzer
     /**
      * Apply a collection operation to a schema.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<string, mixed>  $operation
      * @return array<string, mixed>
      */
@@ -145,7 +151,7 @@ class CollectionAnalyzer
     /**
      * Apply a map operation to transform schema items.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<int, array<string, mixed>>  $args
      * @return array<string, mixed>
      */
@@ -179,7 +185,7 @@ class CollectionAnalyzer
     /**
      * Apply an only operation to filter schema properties.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<int, array<string, mixed>>  $args
      * @return array<string, mixed>
      */
@@ -204,7 +210,7 @@ class CollectionAnalyzer
     /**
      * Apply an except operation to exclude schema properties.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<int, array<string, mixed>>  $args
      * @return array<string, mixed>
      */
@@ -224,7 +230,7 @@ class CollectionAnalyzer
     /**
      * Apply a pluck operation to extract a single field.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<int, array<string, mixed>>  $args
      * @return array<string, mixed>
      */

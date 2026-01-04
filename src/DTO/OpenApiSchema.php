@@ -8,6 +8,40 @@ namespace LaravelSpectrum\DTO;
  * Represents an OpenAPI Schema Object.
  *
  * @see https://spec.openapis.org/oas/v3.0.3#schema-object
+ *
+ * @phpstan-type OpenApiSchemaType array{
+ *     type?: string|array<int, string>,
+ *     format?: string,
+ *     title?: string,
+ *     description?: string,
+ *     default?: mixed,
+ *     example?: mixed,
+ *     enum?: array<int, mixed>,
+ *     nullable?: bool,
+ *     readOnly?: bool,
+ *     writeOnly?: bool,
+ *     deprecated?: bool,
+ *     properties?: array<string, array<string, mixed>>,
+ *     items?: array<string, mixed>,
+ *     required?: array<int, string>,
+ *     minimum?: int|float,
+ *     maximum?: int|float,
+ *     exclusiveMinimum?: int|float,
+ *     exclusiveMaximum?: int|float,
+ *     multipleOf?: int|float,
+ *     minLength?: int,
+ *     maxLength?: int,
+ *     minItems?: int,
+ *     maxItems?: int,
+ *     uniqueItems?: bool,
+ *     pattern?: string,
+ *     allOf?: array<int, array<string, mixed>>,
+ *     anyOf?: array<int, array<string, mixed>>,
+ *     oneOf?: array<int, array<string, mixed>>,
+ *     additionalProperties?: bool|array<string, mixed>,
+ *     '\$ref'?: string,
+ *     discriminator?: array{propertyName: string, mapping?: array<string, string>}
+ * }
  */
 final readonly class OpenApiSchema
 {

@@ -3,10 +3,12 @@
 namespace LaravelSpectrum\MockServer;
 
 use LaravelSpectrum\DTO\OpenApiOperation;
+use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\Generators\DynamicExampleGenerator;
 
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
+ * @phpstan-import-type OpenApiSchemaType from OpenApiSchema
  */
 class ResponseGenerator
 {
@@ -91,7 +93,7 @@ class ResponseGenerator
     /**
      * Generate response from schema.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<string, string>  $pathParams
      * @return array<string, mixed>
      */
@@ -112,7 +114,7 @@ class ResponseGenerator
     /**
      * Check if the schema represents a paginated response.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      */
     private function isPaginatedResponse(array $schema): bool
     {
@@ -131,7 +133,7 @@ class ResponseGenerator
     /**
      * Generate paginated response.
      *
-     * @param  array<string, mixed>  $schema
+     * @param  OpenApiSchemaType  $schema
      * @param  array<string, string>  $pathParams
      * @return array<string, mixed>
      */
