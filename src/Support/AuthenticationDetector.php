@@ -1,13 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Support;
 
 use Illuminate\Support\Str;
 
+/**
+ * @phpstan-type AuthScheme array{
+ *     type: string,
+ *     scheme?: string,
+ *     bearerFormat?: string,
+ *     flows?: array<string, array<string, mixed>>,
+ *     in?: string,
+ *     headerName?: string,
+ *     description: string,
+ *     name: string
+ * }
+ * @phpstan-type MiddlewareList list<string>
+ */
 class AuthenticationDetector
 {
     /**
      * 認証ミドルウェアとOpenAPIセキュリティスキームのマッピング
+     *
+     * @var array<string, AuthScheme>
      */
     protected static array $authSchemeMap = [
         // Laravel Sanctum
@@ -66,6 +83,8 @@ class AuthenticationDetector
 
     /**
      * API Key認証のパターン（ヘッダー名で判定）
+     *
+     * @var array<string, AuthScheme>
      */
     protected static array $apiKeyPatterns = [
         'api-key' => [
@@ -93,6 +112,9 @@ class AuthenticationDetector
 
     /**
      * ミドルウェアから認証スキームを検出
+     *
+     * @param  MiddlewareList  $middleware
+     * @return AuthScheme|null
      */
     public static function detectFromMiddleware(array $middleware): ?array
     {
@@ -122,6 +144,8 @@ class AuthenticationDetector
 
     /**
      * ガード名から認証スキームを推測
+     *
+     * @return AuthScheme
      */
     protected static function detectFromGuard(string $guard): array
     {
@@ -148,6 +172,8 @@ class AuthenticationDetector
 
     /**
      * カスタム認証スキームを追加
+     *
+     * @param  AuthScheme  $scheme
      */
     public static function addCustomScheme(string $middleware, array $scheme): void
     {
@@ -156,6 +182,9 @@ class AuthenticationDetector
 
     /**
      * 複数のミドルウェアから全ての認証スキームを検出
+     *
+     * @param  MiddlewareList  $middleware
+     * @return list<AuthScheme>
      */
     public static function detectMultipleSchemes(array $middleware): array
     {

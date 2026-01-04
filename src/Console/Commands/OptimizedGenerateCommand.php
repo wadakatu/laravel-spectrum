@@ -14,6 +14,12 @@ use LaravelSpectrum\Performance\MemoryManager;
 use LaravelSpectrum\Performance\ParallelProcessor;
 use Symfony\Component\Console\Helper\ProgressBar;
 
+/**
+ * @phpstan-type RouteArray array<int, array<string, mixed>>
+ * @phpstan-type PathData array{path: string, methods: array<string, mixed>}
+ * @phpstan-type PathsArray array<int, PathData>
+ * @phpstan-type OpenApiSpec array<string, mixed>
+ */
 class OptimizedGenerateCommand extends Command
 {
     protected $signature = 'spectrum:generate:optimized 
@@ -120,12 +126,17 @@ class OptimizedGenerateCommand extends Command
         return 0;
     }
 
+    /** @return RouteArray */
     private function analyzeRoutes(): array
     {
         // RouteAnalyzer を使用してルートを分析
         return $this->routeAnalyzer->analyze();
     }
 
+    /**
+     * @param  RouteArray  $routes
+     * @return OpenApiSpec
+     */
     private function processInChunks(array $routes): array
     {
         $this->info('Processing routes in chunks...');
@@ -169,6 +180,10 @@ class OptimizedGenerateCommand extends Command
         return $this->assembleOpenApiSpec($results);
     }
 
+    /**
+     * @param  RouteArray  $routes
+     * @return OpenApiSpec
+     */
     private function processInParallel(array $routes): array
     {
         $this->info('Processing routes in parallel...');
@@ -197,12 +212,17 @@ class OptimizedGenerateCommand extends Command
         return $this->assembleOpenApiSpec($results);
     }
 
+    /** @param RouteArray $routes */
     private function buildDependencyGraph(array $routes): void
     {
         $this->info('Building dependency graph...');
         $this->dependencyGraph->buildFromRoutes($routes);
     }
 
+    /**
+     * @param  RouteArray  $routes
+     * @return RouteArray
+     */
     private function filterChangedRoutes(array $routes): array
     {
         $cache = new IncrementalCache($this->dependencyGraph);
@@ -215,6 +235,10 @@ class OptimizedGenerateCommand extends Command
         });
     }
 
+    /**
+     * @param  PathsArray  $paths
+     * @return OpenApiSpec
+     */
     private function assembleOpenApiSpec(array $paths): array
     {
         return [
@@ -238,6 +262,10 @@ class OptimizedGenerateCommand extends Command
         ];
     }
 
+    /**
+     * @param  PathsArray  $paths
+     * @return array<string, array<string, mixed>>
+     */
     private function combinePaths(array $paths): array
     {
         $combined = [];
@@ -255,6 +283,7 @@ class OptimizedGenerateCommand extends Command
         return $combined;
     }
 
+    /** @param OpenApiSpec $openapi */
     private function saveOutput(array $openapi): void
     {
         $format = $this->option('format');
