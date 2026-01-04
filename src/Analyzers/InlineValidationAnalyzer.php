@@ -272,7 +272,7 @@ class InlineValidationAnalyzer implements HasErrors
                  *
                  * @return array<string, string|array<int, string>>
                  */
-                protected function extractReturnedArray(Node\Stmt\ClassMethod $method): array
+                private function extractReturnedArray(Node\Stmt\ClassMethod $method): array
                 {
                     $returnedArray = [];
 
