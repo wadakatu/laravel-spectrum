@@ -23,14 +23,14 @@ class PostTransformer extends TransformerAbstract
      *
      * @var array<string>
      */
-    protected $availableIncludes = ['comments', 'tags'];
+    protected array $availableIncludes = ['comments', 'tags'];
 
     /**
      * Relations that are included by default.
      *
      * @var array<string>
      */
-    protected $defaultIncludes = ['author'];
+    protected array $defaultIncludes = ['author'];
 
     /**
      * Transform a Post model into an array.

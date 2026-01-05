@@ -23,14 +23,14 @@ class UserTransformer extends TransformerAbstract
      *
      * @var array<string>
      */
-    protected $availableIncludes = ['posts', 'profile'];
+    protected array $availableIncludes = ['posts', 'profile'];
 
     /**
      * Relations that are included by default.
      *
      * @var array<string>
      */
-    protected $defaultIncludes = [];
+    protected array $defaultIncludes = [];
 
     /**
      * Transform a User model into an array.
