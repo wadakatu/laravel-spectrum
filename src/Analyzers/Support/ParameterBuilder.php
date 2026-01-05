@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Analyzers\Support;
 
+use Illuminate\Contracts\Validation\ValidationRule;
+use LaravelSpectrum\Analyzers\CustomRuleAnalyzer;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FileUploadAnalyzer;
 use LaravelSpectrum\Analyzers\PasswordRuleAnalyzer;
 use LaravelSpectrum\DTO\Collections\ValidationRuleCollection;
 use LaravelSpectrum\DTO\EnumInfo;
 use LaravelSpectrum\DTO\FileUploadInfo;
+use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\DTO\ParameterDefinition;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\TypeInference;
@@ -24,6 +27,8 @@ class ParameterBuilder
 {
     protected PasswordRuleAnalyzer $passwordRuleAnalyzer;
 
+    protected CustomRuleAnalyzer $customRuleAnalyzer;
+
     public function __construct(
         protected TypeInference $typeInference,
         protected RuleRequirementAnalyzer $ruleRequirementAnalyzer,
@@ -33,8 +38,10 @@ class ParameterBuilder
         protected FileUploadAnalyzer $fileUploadAnalyzer,
         protected ?ErrorCollector $errorCollector = null,
         ?PasswordRuleAnalyzer $passwordRuleAnalyzer = null,
+        ?CustomRuleAnalyzer $customRuleAnalyzer = null,
     ) {
         $this->passwordRuleAnalyzer = $passwordRuleAnalyzer ?? new PasswordRuleAnalyzer;
+        $this->customRuleAnalyzer = $customRuleAnalyzer ?? new CustomRuleAnalyzer;
     }
 
     /**
@@ -385,6 +392,160 @@ class ParameterBuilder
     }
 
     /**
+     * Find custom rule schema from rules.
+     *
+     * Handles both runtime ValidationRule objects and AST-extracted custom rule arrays.
+     *
+     * @param  array<int|string, mixed>  $rules
+     */
+    protected function findCustomRuleSchema(array $rules): ?OpenApiSchema
+    {
+        foreach ($rules as $rule) {
+            // Handle runtime ValidationRule objects
+            if ($rule instanceof ValidationRule) {
+                $schema = $this->customRuleAnalyzer->analyze($rule);
+                if ($schema !== null) {
+                    return $schema;
+                }
+            }
+
+            // Handle AST-extracted custom rule arrays
+            if ($this->isAstCustomRule($rule)) {
+                $schema = $this->analyzeAstCustomRule($rule);
+                if ($schema !== null) {
+                    return $schema;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a rule is an AST-extracted custom rule array.
+     *
+     * @param  mixed  $rule
+     */
+    private function isAstCustomRule($rule): bool
+    {
+        return is_array($rule)
+            && isset($rule['type'])
+            && $rule['type'] === 'custom_rule'
+            && isset($rule['class']);
+    }
+
+    /**
+     * Try to instantiate and analyze an AST-extracted custom rule.
+     *
+     * @param  array{type: string, class: string, args?: array<mixed>}  $ruleData
+     */
+    private function analyzeAstCustomRule(array $ruleData): ?OpenApiSchema
+    {
+        $className = $ruleData['class'];
+        $args = $ruleData['args'] ?? [];
+
+        // Try to resolve the full class name
+        $fullClassName = $this->resolveClassName($className);
+
+        if ($fullClassName === null || ! class_exists($fullClassName)) {
+            return null;
+        }
+
+        // Verify it implements ValidationRule
+        if (! is_subclass_of($fullClassName, ValidationRule::class)) {
+            return null;
+        }
+
+        try {
+            // Try to instantiate with the provided arguments
+            $instance = $this->instantiateWithArgs($fullClassName, $args);
+            if ($instance === null) {
+                return null;
+            }
+
+            return $this->customRuleAnalyzer->analyze($instance);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve a short class name to its fully qualified name.
+     */
+    private function resolveClassName(string $className): ?string
+    {
+        // If already fully qualified, return as-is
+        if (class_exists($className)) {
+            return $className;
+        }
+
+        // Try common Laravel validation rule namespaces
+        $candidates = [
+            'App\\Rules\\'.$className,
+            'Illuminate\\Validation\\Rules\\'.$className,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (class_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Instantiate a class with the given arguments.
+     *
+     * @param  class-string  $className
+     * @param  array<mixed>  $args
+     */
+    private function instantiateWithArgs(string $className, array $args): ?ValidationRule
+    {
+        try {
+            $reflection = new \ReflectionClass($className);
+
+            if (empty($args)) {
+                /** @var ValidationRule */
+                return $reflection->newInstance();
+            }
+
+            // Check if args are named or positional
+            $hasNamedArgs = array_keys($args) !== range(0, count($args) - 1);
+
+            if ($hasNamedArgs) {
+                // For named args, we need to map them to constructor parameter positions
+                $constructor = $reflection->getConstructor();
+                if ($constructor === null) {
+                    /** @var ValidationRule */
+                    return $reflection->newInstance();
+                }
+
+                $orderedArgs = [];
+                foreach ($constructor->getParameters() as $param) {
+                    $name = $param->getName();
+                    if (array_key_exists($name, $args)) {
+                        $orderedArgs[] = $args[$name];
+                    } elseif ($param->isDefaultValueAvailable()) {
+                        $orderedArgs[] = $param->getDefaultValue();
+                    } else {
+                        // Required parameter not provided
+                        return null;
+                    }
+                }
+
+                /** @var ValidationRule */
+                return $reflection->newInstanceArgs($orderedArgs);
+            }
+
+            /** @var ValidationRule */
+            return $reflection->newInstanceArgs($args);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Check if rules contain an unconditional exclude rule.
      *
      * Only the plain 'exclude' rule always excludes the field.
@@ -478,6 +639,12 @@ class ParameterBuilder
      */
     private function extractPattern(array $rules): ?string
     {
+        // Check custom ValidationRule objects first
+        $customSchema = $this->findCustomRuleSchema($rules);
+        if ($customSchema !== null && $customSchema->pattern !== null) {
+            return $customSchema->pattern;
+        }
+
         foreach ($rules as $rule) {
             if (! is_string($rule)) {
                 continue;
@@ -514,7 +681,21 @@ class ParameterBuilder
         $minLength = null;
         $maxLength = null;
 
-        // Check for Password:: rules first
+        // Check custom ValidationRule objects first
+        $customSchema = $this->findCustomRuleSchema($rules);
+        if ($customSchema !== null) {
+            if ($customSchema->minLength !== null) {
+                $minLength = $customSchema->minLength;
+            }
+            if ($customSchema->maxLength !== null) {
+                $maxLength = $customSchema->maxLength;
+            }
+            if ($minLength !== null || $maxLength !== null) {
+                return [$minLength, $maxLength];
+            }
+        }
+
+        // Check for Password:: rules
         $passwordInfo = $this->passwordRuleAnalyzer->analyze($rules);
         if ($passwordInfo !== null) {
             $minLength = $passwordInfo->minLength;
@@ -577,6 +758,20 @@ class ParameterBuilder
         $maximum = null;
         $exclusiveMinimum = null;
         $exclusiveMaximum = null;
+
+        // Check custom ValidationRule objects first
+        $customSchema = $this->findCustomRuleSchema($rules);
+        if ($customSchema !== null) {
+            if ($customSchema->minimum !== null) {
+                $minimum = $customSchema->minimum;
+            }
+            if ($customSchema->maximum !== null) {
+                $maximum = $customSchema->maximum;
+            }
+            if ($minimum !== null || $maximum !== null) {
+                return [$minimum, $maximum, null, null];
+            }
+        }
 
         foreach ($rules as $rule) {
             if (! is_string($rule)) {

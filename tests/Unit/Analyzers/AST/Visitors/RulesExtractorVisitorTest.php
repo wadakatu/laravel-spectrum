@@ -798,8 +798,49 @@ class RulesExtractorVisitorTest extends TestCase
 
         $rules = $visitor->getRules();
 
-        // Non-Enum new expressions are stringified
-        $this->assertStringContainsString('new CustomRule()', $rules['custom']);
+        // Non-Enum new expressions return structured format for custom rule analysis
+        $this->assertIsArray($rules['custom']);
+        $this->assertSame('custom_rule', $rules['custom']['type']);
+        $this->assertSame('CustomRule', $rules['custom']['class']);
+        $this->assertSame([], $rules['custom']['args']);
+    }
+
+    #[Test]
+    public function it_handles_custom_rule_with_constructor_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'password' => new StrongPassword(minLength: 16, requireUppercase: true),
+                    'age' => new NumericRange(18, 120),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Named arguments
+        $this->assertIsArray($rules['password']);
+        $this->assertSame('custom_rule', $rules['password']['type']);
+        $this->assertSame('StrongPassword', $rules['password']['class']);
+        $this->assertSame(['minLength' => 16, 'requireUppercase' => true], $rules['password']['args']);
+
+        // Positional arguments
+        $this->assertIsArray($rules['age']);
+        $this->assertSame('custom_rule', $rules['age']['type']);
+        $this->assertSame('NumericRange', $rules['age']['class']);
+        $this->assertSame([18, 120], $rules['age']['args']);
     }
 
     #[Test]

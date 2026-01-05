@@ -391,10 +391,99 @@ class RulesExtractorVisitor extends NodeVisitorAbstract
 
                 return '__enum__';
             }
+
+            // Handle custom ValidationRule classes
+            // Return structured format that can be used for runtime instantiation
+            $args = $this->extractConstructorArgs($new);
+
+            return [
+                'type' => 'custom_rule',
+                'class' => $className,
+                'args' => $args,
+            ];
         }
 
         // その他のnew式は文字列化
         return $this->printer->prettyPrintExpr($new);
+    }
+
+    /**
+     * Extract constructor arguments from new expression.
+     *
+     * @return array<string, mixed>
+     */
+    private function extractConstructorArgs(Node\Expr\New_ $new): array
+    {
+        $args = [];
+
+        foreach ($new->args as $arg) {
+            $name = null;
+            if ($arg instanceof Node\Arg && $arg->name !== null) {
+                $name = $arg->name->name;
+            }
+
+            $value = $this->extractArgValue($arg->value);
+
+            if ($name !== null) {
+                $args[$name] = $value;
+            } else {
+                $args[] = $value;
+            }
+        }
+
+        return $args;
+    }
+
+    /**
+     * Extract the value from an argument node.
+     */
+    private function extractArgValue(Node $node): mixed
+    {
+        if ($node instanceof Node\Scalar\LNumber) {
+            return $node->value;
+        }
+        if ($node instanceof Node\Scalar\DNumber) {
+            return $node->value;
+        }
+        if ($node instanceof Node\Scalar\String_) {
+            return $node->value;
+        }
+        if ($node instanceof Node\Expr\ConstFetch) {
+            $constName = strtolower($node->name->toString());
+            if ($constName === 'true') {
+                return true;
+            }
+            if ($constName === 'false') {
+                return false;
+            }
+            if ($constName === 'null') {
+                return null;
+            }
+        }
+        if ($node instanceof Node\Expr\Array_) {
+            $result = [];
+            foreach ($node->items as $item) {
+                if ($item === null) {
+                    continue;
+                }
+                $key = $item->key ? $this->extractArgValue($item->key) : null;
+                $val = $this->extractArgValue($item->value);
+                if ($key !== null) {
+                    $result[$key] = $val;
+                } else {
+                    $result[] = $val;
+                }
+            }
+
+            return $result;
+        }
+
+        // For complex expressions, return the pretty-printed string
+        if ($node instanceof Node\Expr) {
+            return $this->printer->prettyPrintExpr($node);
+        }
+
+        return null;
     }
 
     /**
