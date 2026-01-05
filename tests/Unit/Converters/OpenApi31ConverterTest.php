@@ -1689,4 +1689,36 @@ class OpenApi31ConverterTest extends TestCase
         $this->assertArrayNotHasKey('contentEncoding', $result['components']['schemas']['SomeObject']['properties']['count']);
         $this->assertArrayNotHasKey('contentEncoding', $result['components']['schemas']['SomeObject']['properties']['flag']);
     }
+
+    #[Test]
+    public function it_adds_content_encoding_for_nullable_byte_format(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'FileData' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => [
+                                'type' => 'string',
+                                'format' => 'byte',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $dataSchema = $result['components']['schemas']['FileData']['properties']['data'];
+        // Type should be converted to array with null
+        $this->assertEquals(['string', 'null'], $dataSchema['type']);
+        // contentEncoding should still be added for type arrays containing 'string'
+        $this->assertEquals('base64', $dataSchema['contentEncoding']);
+    }
 }
