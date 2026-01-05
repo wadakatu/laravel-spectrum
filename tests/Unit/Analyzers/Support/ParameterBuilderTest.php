@@ -1582,6 +1582,224 @@ class ParameterBuilderTest extends TestCase
         $this->assertEquals(12, $password->minLength);
     }
 
+    // ========== Custom Rule tests (Issue #316) ==========
+
+    #[Test]
+    public function it_extracts_min_length_from_custom_rule_object(): void
+    {
+        $rules = [
+            'password' => ['required', new \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule(minLength: 12)],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $password = $this->findParameter($parameters, 'password');
+        $this->assertNotNull($password);
+        $this->assertEquals('string', $password->type);
+        $this->assertEquals(12, $password->minLength);
+    }
+
+    #[Test]
+    public function it_extracts_numeric_range_from_custom_rule_object(): void
+    {
+        $rules = [
+            'score' => ['required', 'integer', new \LaravelSpectrum\Tests\Fixtures\Rules\NumericRangeRule(min: 0, max: 100)],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $score = $this->findParameter($parameters, 'score');
+        $this->assertNotNull($score);
+        $this->assertEquals('integer', $score->type);
+        $this->assertEquals(0, $score->minimum);
+        $this->assertEquals(100, $score->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_pattern_from_custom_rule_object(): void
+    {
+        $rules = [
+            'code' => ['required', new \LaravelSpectrum\Tests\Fixtures\Rules\PatternRule(pattern: '^\d{6}$')],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $code = $this->findParameter($parameters, 'code');
+        $this->assertNotNull($code);
+        $this->assertEquals('string', $code->type);
+        $this->assertEquals('^\d{6}$', $code->pattern);
+    }
+
+    #[Test]
+    public function it_extracts_schema_from_describable_rule_interface(): void
+    {
+        $rules = [
+            'postal_code' => ['required', new \LaravelSpectrum\Tests\Fixtures\Rules\DescribableRule],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $postalCode = $this->findParameter($parameters, 'postal_code');
+        $this->assertNotNull($postalCode);
+        $this->assertEquals('string', $postalCode->type);
+        $this->assertEquals('^\d{3}-\d{4}$', $postalCode->pattern);
+        $this->assertEquals(8, $postalCode->minLength);
+        $this->assertEquals(8, $postalCode->maxLength);
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_custom_rule_with_min_length(): void
+    {
+        // This is the format produced by ConditionalRulesExtractorVisitor
+        $rules = [
+            'password' => [
+                'required',
+                [
+                    'type' => 'custom_rule',
+                    'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                    'args' => ['minLength' => 16],
+                ],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $password = $this->findParameter($parameters, 'password');
+        $this->assertNotNull($password);
+        $this->assertEquals('string', $password->type);
+        $this->assertEquals(16, $password->minLength);
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_custom_rule_with_numeric_range(): void
+    {
+        $rules = [
+            'temperature' => [
+                'required',
+                'integer',
+                [
+                    'type' => 'custom_rule',
+                    'class' => \LaravelSpectrum\Tests\Fixtures\Rules\NumericRangeRule::class,
+                    'args' => ['min' => -40, 'max' => 100],
+                ],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $temperature = $this->findParameter($parameters, 'temperature');
+        $this->assertNotNull($temperature);
+        $this->assertEquals('integer', $temperature->type);
+        $this->assertEquals(-40, $temperature->minimum);
+        $this->assertEquals(100, $temperature->maximum);
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_describable_rule(): void
+    {
+        $rules = [
+            'postal_code' => [
+                'required',
+                [
+                    'type' => 'custom_rule',
+                    'class' => \LaravelSpectrum\Tests\Fixtures\Rules\DescribableRule::class,
+                    'args' => [],
+                ],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $postalCode = $this->findParameter($parameters, 'postal_code');
+        $this->assertNotNull($postalCode);
+        $this->assertEquals('string', $postalCode->type);
+        $this->assertEquals('^\d{3}-\d{4}$', $postalCode->pattern);
+        $this->assertEquals(8, $postalCode->minLength);
+        $this->assertEquals(8, $postalCode->maxLength);
+    }
+
+    #[Test]
+    public function it_handles_custom_rule_in_conditional_rules(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => ['type' => 'secure'],
+                    'rules' => [
+                        'password' => [
+                            'required',
+                            [
+                                'type' => 'custom_rule',
+                                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                                'args' => ['minLength' => 20],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'merged_rules' => [
+                'password' => [
+                    'required',
+                    [
+                        'type' => 'custom_rule',
+                        'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                        'args' => ['minLength' => 20],
+                    ],
+                ],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromConditionalRules($conditionalRules);
+
+        $password = $this->findParameter($parameters, 'password');
+        $this->assertNotNull($password);
+        $this->assertEquals('string', $password->type);
+        $this->assertEquals(20, $password->minLength);
+    }
+
+    #[Test]
+    public function it_ignores_non_existent_custom_rule_class(): void
+    {
+        $rules = [
+            'field' => [
+                'required',
+                'string',
+                [
+                    'type' => 'custom_rule',
+                    'class' => 'NonExistentRule',
+                    'args' => ['minLength' => 10],
+                ],
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $field = $this->findParameter($parameters, 'field');
+        $this->assertNotNull($field);
+        $this->assertEquals('string', $field->type);
+        // Should not have constraints since the class doesn't exist
+        $this->assertNull($field->minLength);
+    }
+
+    #[Test]
+    public function it_handles_custom_rule_without_constraints(): void
+    {
+        $rules = [
+            'field' => [
+                'required',
+                new \LaravelSpectrum\Tests\Fixtures\Rules\NoConstraintRule,
+            ],
+        ];
+
+        $parameters = $this->builder->buildFromRules($rules);
+
+        $field = $this->findParameter($parameters, 'field');
+        $this->assertNotNull($field);
+        // Should still work but without constraints
+        $this->assertNull($field->minLength);
+        $this->assertNull($field->maxLength);
+    }
+
     // ========== Helper methods ==========
 
     /**
