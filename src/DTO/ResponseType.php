@@ -14,6 +14,12 @@ enum ResponseType: string
     case OBJECT = 'object';
     case COLLECTION = 'collection';
     case UNKNOWN = 'unknown';
+    case BINARY_FILE = 'binary_file';
+    case STREAMED = 'streamed';
+    case PLAIN_TEXT = 'plain_text';
+    case XML = 'xml';
+    case HTML = 'html';
+    case CUSTOM = 'custom';
 
     /**
      * Check if this response type is void.
@@ -53,5 +59,28 @@ enum ResponseType: string
     public function isUnknown(): bool
     {
         return $this === self::UNKNOWN;
+    }
+
+    /**
+     * Check if this response type is a binary response.
+     */
+    public function isBinaryResponse(): bool
+    {
+        return in_array($this, [self::BINARY_FILE, self::STREAMED], true);
+    }
+
+    /**
+     * Check if this response type is a non-JSON response.
+     */
+    public function isNonJsonResponse(): bool
+    {
+        return in_array($this, [
+            self::BINARY_FILE,
+            self::STREAMED,
+            self::PLAIN_TEXT,
+            self::XML,
+            self::HTML,
+            self::CUSTOM,
+        ], true);
     }
 }

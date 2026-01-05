@@ -2,6 +2,7 @@
 
 namespace LaravelSpectrum\Generators;
 
+use LaravelSpectrum\DTO\ResponseType;
 use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
 
 /**
@@ -12,7 +13,9 @@ use LaravelSpectrum\Generators\Support\SchemaPropertyMapper;
  *     items?: array<string, mixed>,
  *     description?: string,
  *     format?: string,
- *     additionalProperties?: array<string, mixed>
+ *     additionalProperties?: array<string, mixed>,
+ *     contentType?: string,
+ *     fileName?: string
  * }
  * @phpstan-type OpenApiResponse array{description: string, content?: array<string, array<string, array<string, mixed>>>}
  * @phpstan-type PropertySchema array{
@@ -51,6 +54,12 @@ class ResponseSchemaGenerator
 
         if ($responseData['type'] === 'resource') {
             return $this->generateResourceResponse($responseData, $statusCode);
+        }
+
+        // Handle non-JSON response types
+        $responseType = ResponseType::tryFrom($responseData['type'] ?? '');
+        if ($responseType !== null && $responseType->isNonJsonResponse()) {
+            return $this->generateNonJsonResponse($responseData, $statusCode, $responseType);
         }
 
         $schema = $this->convertToOpenApiSchema($responseData);
@@ -207,6 +216,87 @@ class ResponseSchemaGenerator
                 ],
             ],
         ];
+    }
+
+    /**
+     * Generate response for non-JSON content types (binary files, streams, XML, etc.)
+     *
+     * @param  ResponseData  $data
+     * @return array<int, OpenApiResponse>
+     */
+    private function generateNonJsonResponse(array $data, int $statusCode, ResponseType $responseType): array
+    {
+        $contentType = $data['contentType'] ?? $this->getDefaultContentType($responseType);
+        $description = $this->getNonJsonDescription($responseType, $data);
+
+        // Binary responses use string type with binary format
+        if ($responseType->isBinaryResponse()) {
+            return [
+                $statusCode => [
+                    'description' => $description,
+                    'content' => [
+                        $contentType => [
+                            'schema' => [
+                                'type' => 'string',
+                                'format' => 'binary',
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        // Text-based non-JSON responses (XML, plain text, HTML)
+        return [
+            $statusCode => [
+                'description' => $description,
+                'content' => [
+                    $contentType => [
+                        'schema' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Get default content type based on response type.
+     */
+    private function getDefaultContentType(ResponseType $responseType): string
+    {
+        return match ($responseType) {
+            ResponseType::BINARY_FILE, ResponseType::STREAMED => 'application/octet-stream',
+            ResponseType::PLAIN_TEXT => 'text/plain',
+            ResponseType::XML => 'application/xml',
+            ResponseType::HTML => 'text/html',
+            default => 'application/octet-stream',
+        };
+    }
+
+    /**
+     * Get description for non-JSON response.
+     *
+     * @param  ResponseData  $data
+     */
+    private function getNonJsonDescription(ResponseType $responseType, array $data): string
+    {
+        $fileName = $data['fileName'] ?? null;
+
+        return match ($responseType) {
+            ResponseType::BINARY_FILE => $fileName
+                ? "File download: {$fileName}"
+                : 'File download',
+            ResponseType::STREAMED => $fileName
+                ? "Streamed response: {$fileName}"
+                : 'Streamed response',
+            ResponseType::PLAIN_TEXT => 'Plain text response',
+            ResponseType::XML => 'XML response',
+            ResponseType::HTML => 'HTML response',
+            ResponseType::CUSTOM => 'Custom content type response',
+            default => 'Response',
+        };
     }
 
     private function getStatusDescription(int $statusCode): string

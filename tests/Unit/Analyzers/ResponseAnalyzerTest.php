@@ -149,4 +149,210 @@ class ResponseAnalyzerTest extends TestCase
         $this->assertEquals(ResponseType::UNKNOWN, $result->type);
         $this->assertTrue($result->hasError());
     }
+
+    public function test_analyzes_response_download_pattern()
+    {
+        $controller = new class
+        {
+            public function downloadFile()
+            {
+                return response()->download(storage_path('app/reports/report.pdf'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadFile');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('application/pdf', $result->contentType);
+    }
+
+    public function test_analyzes_response_download_with_filename()
+    {
+        $controller = new class
+        {
+            public function downloadReport()
+            {
+                return response()->download(storage_path('app/data.csv'), 'export.csv');
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadReport');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('text/csv', $result->contentType);
+        $this->assertEquals('export.csv', $result->fileName);
+    }
+
+    public function test_analyzes_response_file_pattern()
+    {
+        $controller = new class
+        {
+            public function showImage()
+            {
+                return response()->file(storage_path('app/images/photo.jpg'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'showImage');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('image/jpeg', $result->contentType);
+    }
+
+    public function test_analyzes_response_stream_pattern()
+    {
+        $controller = new class
+        {
+            public function streamData()
+            {
+                return response()->stream(function () {
+                    echo 'streaming data';
+                }, 200, ['Content-Type' => 'text/event-stream']);
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'streamData');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::STREAMED, $result->type);
+        $this->assertEquals('text/event-stream', $result->contentType);
+    }
+
+    public function test_analyzes_response_stream_download_pattern()
+    {
+        $controller = new class
+        {
+            public function exportLargeFile()
+            {
+                return response()->streamDownload(function () {
+                    echo 'large file content';
+                }, 'export.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'exportLargeFile');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::STREAMED, $result->type);
+        $this->assertEquals('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $result->contentType);
+        $this->assertEquals('export.xlsx', $result->fileName);
+    }
+
+    public function test_analyzes_response_with_custom_content_type_header()
+    {
+        $controller = new class
+        {
+            public function xmlResponse()
+            {
+                return response('<xml>data</xml>', 200, ['Content-Type' => 'application/xml']);
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'xmlResponse');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::CUSTOM, $result->type);
+        $this->assertEquals('application/xml', $result->contentType);
+    }
+
+    public function test_analyzes_response_with_plain_text_content_type()
+    {
+        $controller = new class
+        {
+            public function textResponse()
+            {
+                return response('Hello World', 200, ['Content-Type' => 'text/plain']);
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'textResponse');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::CUSTOM, $result->type);
+        $this->assertEquals('text/plain', $result->contentType);
+    }
+
+    public function test_defaults_to_octet_stream_for_unknown_extension()
+    {
+        $controller = new class
+        {
+            public function downloadUnknown()
+            {
+                return response()->download(storage_path('app/data.unknown'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadUnknown');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('application/octet-stream', $result->contentType);
+    }
+
+    public function test_analyzes_png_file_extension()
+    {
+        $controller = new class
+        {
+            public function downloadFile()
+            {
+                return response()->download(storage_path('images/photo.png'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadFile');
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('image/png', $result->contentType);
+    }
+
+    public function test_analyzes_xlsx_file_extension()
+    {
+        $controller = new class
+        {
+            public function downloadFile()
+            {
+                return response()->download(storage_path('reports/data.xlsx'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadFile');
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $result->contentType);
+    }
+
+    public function test_analyzes_txt_file_extension()
+    {
+        $controller = new class
+        {
+            public function downloadFile()
+            {
+                return response()->download(storage_path('logs/app.txt'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadFile');
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('text/plain', $result->contentType);
+    }
+
+    public function test_analyzes_zip_file_extension()
+    {
+        $controller = new class
+        {
+            public function downloadFile()
+            {
+                return response()->download(storage_path('archives/backup.zip'));
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'downloadFile');
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
+        $this->assertEquals('application/zip', $result->contentType);
+    }
 }

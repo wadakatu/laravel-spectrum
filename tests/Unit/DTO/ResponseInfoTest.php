@@ -292,4 +292,221 @@ class ResponseInfoTest extends TestCase
         $this->assertEquals($original->type, $restored->type);
         $this->assertEquals($original->resourceClass, $restored->resourceClass);
     }
+
+    #[Test]
+    public function it_can_be_constructed_with_content_type(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+            resourceClass: null,
+            error: null,
+            contentType: 'application/pdf',
+        );
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $info->type);
+        $this->assertEquals('application/pdf', $info->contentType);
+    }
+
+    #[Test]
+    public function it_can_be_constructed_with_file_name(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+            resourceClass: null,
+            error: null,
+            contentType: 'application/pdf',
+            fileName: 'document.pdf',
+        );
+
+        $this->assertEquals('document.pdf', $info->fileName);
+    }
+
+    #[Test]
+    public function it_creates_binary_file_instance(): void
+    {
+        $info = ResponseInfo::binaryFile('application/pdf', 'report.pdf');
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $info->type);
+        $this->assertEquals('application/pdf', $info->contentType);
+        $this->assertEquals('report.pdf', $info->fileName);
+        $this->assertEquals([], $info->properties);
+    }
+
+    #[Test]
+    public function it_creates_binary_file_without_filename(): void
+    {
+        $info = ResponseInfo::binaryFile('application/octet-stream');
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $info->type);
+        $this->assertEquals('application/octet-stream', $info->contentType);
+        $this->assertNull($info->fileName);
+    }
+
+    #[Test]
+    public function it_creates_streamed_instance(): void
+    {
+        $info = ResponseInfo::streamed('text/csv');
+
+        $this->assertEquals(ResponseType::STREAMED, $info->type);
+        $this->assertEquals('text/csv', $info->contentType);
+        $this->assertNull($info->fileName);
+        $this->assertEquals([], $info->properties);
+    }
+
+    #[Test]
+    public function it_creates_custom_content_type_instance(): void
+    {
+        $info = ResponseInfo::customContentType('application/xml');
+
+        $this->assertEquals(ResponseType::CUSTOM, $info->type);
+        $this->assertEquals('application/xml', $info->contentType);
+    }
+
+    #[Test]
+    public function it_gets_content_type_from_explicit_value(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+            contentType: 'application/pdf',
+        );
+
+        $this->assertEquals('application/pdf', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_default_content_type_for_binary_file(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+        );
+
+        $this->assertEquals('application/octet-stream', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_default_content_type_for_streamed(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::STREAMED,
+            properties: [],
+        );
+
+        $this->assertEquals('application/octet-stream', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_default_content_type_for_plain_text(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::PLAIN_TEXT,
+            properties: [],
+        );
+
+        $this->assertEquals('text/plain', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_default_content_type_for_xml(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::XML,
+            properties: [],
+        );
+
+        $this->assertEquals('application/xml', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_default_content_type_for_html(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::HTML,
+            properties: [],
+        );
+
+        $this->assertEquals('text/html', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_json_content_type_for_object_type(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::OBJECT,
+            properties: [],
+        );
+
+        $this->assertEquals('application/json', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_gets_json_content_type_for_resource_type(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::RESOURCE,
+            properties: [],
+        );
+
+        $this->assertEquals('application/json', $info->getContentType());
+    }
+
+    #[Test]
+    public function it_includes_content_type_in_to_array(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+            contentType: 'application/pdf',
+        );
+
+        $array = $info->toArray();
+
+        $this->assertEquals('application/pdf', $array['contentType']);
+    }
+
+    #[Test]
+    public function it_includes_file_name_in_to_array(): void
+    {
+        $info = new ResponseInfo(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+            contentType: 'application/pdf',
+            fileName: 'report.pdf',
+        );
+
+        $array = $info->toArray();
+
+        $this->assertEquals('report.pdf', $array['fileName']);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_content_type(): void
+    {
+        $array = [
+            'type' => 'binary_file',
+            'contentType' => 'application/pdf',
+        ];
+
+        $info = ResponseInfo::fromArray($array);
+
+        $this->assertEquals(ResponseType::BINARY_FILE, $info->type);
+        $this->assertEquals('application/pdf', $info->contentType);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_file_name(): void
+    {
+        $array = [
+            'type' => 'binary_file',
+            'contentType' => 'application/pdf',
+            'fileName' => 'document.pdf',
+        ];
+
+        $info = ResponseInfo::fromArray($array);
+
+        $this->assertEquals('document.pdf', $info->fileName);
+    }
 }
