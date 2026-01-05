@@ -1650,4 +1650,151 @@ class ConditionalRulesExtractorVisitorTest extends TestCase
 
         $this->assertEquals(1, $customRuleCount, 'Duplicate custom rules should be merged');
     }
+
+    // =====================================
+    // Mutation Testing Coverage Tests
+    // =====================================
+
+    #[Test]
+    public function it_concatenates_string_literals_in_correct_order(): void
+    {
+        // Test string literal concatenation which exercises the Concat branch
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'name' => ['required', 'string' . '|max:255'],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+
+        // Verify concatenation produces correct result
+        $this->assertArrayHasKey('name', $mergedRules);
+        $this->assertContains('required', $mergedRules['name']);
+        // The concatenated rule should be 'string|max:255' (not 'max:255|string')
+        $this->assertContains('string|max:255', $mergedRules['name']);
+    }
+
+    #[Test]
+    public function it_preserves_order_in_nested_string_concatenation(): void
+    {
+        // Test nested concatenation: 'a' . 'b' . 'c' should produce 'abc'
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'name' => ['required', 'min:' . '5' . '|max:100'],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+
+        $this->assertArrayHasKey('name', $mergedRules);
+        $this->assertContains('required', $mergedRules['name']);
+        // Should be 'min:5|max:100' in correct order
+        $this->assertContains('min:5|max:100', $mergedRules['name']);
+    }
+
+    #[Test]
+    public function it_handles_enum_with_dynamic_class_argument(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rules\Enum;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => ['required', new Enum($this->getEnumClass())],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+
+        // Enum with dynamic class argument falls back to __enum__
+        $this->assertArrayHasKey('status', $mergedRules);
+        $this->assertContains('required', $mergedRules['status']);
+        $this->assertContains('__enum__', $mergedRules['status']);
+    }
+
+    #[Test]
+    public function it_handles_enum_with_static_class_constant(): void
+    {
+        $code = <<<'PHP'
+        <?php
+        use Illuminate\Validation\Rules\Enum;
+
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'status' => ['required', new Enum(StatusEnum::class)],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new ConditionalRulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $ruleSets = $visitor->getRuleSets();
+        $mergedRules = $ruleSets['merged_rules'];
+
+        // Enum with static class constant is properly extracted
+        $this->assertArrayHasKey('status', $mergedRules);
+        $this->assertContains('required', $mergedRules['status']);
+
+        // Find the enum rule
+        $enumRule = null;
+        foreach ($mergedRules['status'] as $rule) {
+            if (is_array($rule) && isset($rule['type']) && $rule['type'] === 'enum') {
+                $enumRule = $rule;
+
+                break;
+            }
+        }
+
+        $this->assertNotNull($enumRule);
+        $this->assertEquals('StatusEnum', $enumRule['class']);
+    }
 }
