@@ -424,4 +424,130 @@ class ValidationRuleTypeMapperTest extends TestCase
         $constraints = $this->mapper->extractConstraints([new \stdClass, 'min:5']);
         $this->assertEquals(5, $constraints['minLength']);
     }
+
+    // =====================================
+    // AST Custom Rule Tests
+    // =====================================
+
+    #[Test]
+    public function it_infers_type_from_ast_custom_rule_with_min_length(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                'args' => ['minLength' => 16],
+            ],
+        ];
+
+        // Custom rule with minLength should infer string type
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_infers_type_from_ast_custom_rule_with_min_max(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\NumericRangeRule::class,
+                'args' => ['min' => 18, 'max' => 120],
+            ],
+        ];
+
+        // Custom rule with min/max should infer integer type
+        $this->assertEquals('integer', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_custom_rule_with_min_length(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                'args' => ['minLength' => 16],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertEquals(16, $constraints['minLength']);
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_custom_rule_with_min_max(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\NumericRangeRule::class,
+                'args' => ['min' => 0, 'max' => 100],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertEquals(0, $constraints['minimum']);
+        $this->assertEquals(100, $constraints['maximum']);
+    }
+
+    #[Test]
+    public function it_extracts_format_from_ast_custom_rule(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\AttributeRule::class,
+                'args' => [],
+            ],
+        ];
+
+        // AttributeRule has #[OpenApiSchema(format: 'uuid')] attribute
+        $this->assertEquals('uuid', $this->mapper->inferFormat($rules));
+    }
+
+    #[Test]
+    public function it_handles_ast_custom_rule_with_unresolvable_class(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => 'NonExistentCustomRule',
+                'args' => ['minLength' => 10],
+            ],
+        ];
+
+        // Should fall back to default behavior when class cannot be resolved
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_ignores_invalid_ast_custom_rule_structure(): void
+    {
+        // Missing 'type' key
+        $rules = [
+            'required',
+            ['class' => 'SomeRule', 'args' => []],
+        ];
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+
+        // Missing 'class' key
+        $rules = [
+            'required',
+            ['type' => 'custom_rule', 'args' => []],
+        ];
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+
+        // Wrong 'type' value
+        $rules = [
+            'required',
+            ['type' => 'not_custom_rule', 'class' => 'SomeRule', 'args' => []],
+        ];
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+    }
 }
