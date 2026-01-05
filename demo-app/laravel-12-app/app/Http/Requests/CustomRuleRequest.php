@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Rules\JapanesePostalCode;
+use App\Rules\NumericRange;
+use App\Rules\PhoneNumber;
 use App\Rules\StrongPassword;
+use App\Rules\UuidRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -23,8 +27,20 @@ class CustomRuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Custom Rule class implementing ValidationRule
+            // Custom Rule class implementing ValidationRule (reflection-based minLength detection)
             'password' => ['required', new StrongPassword(minLength: 16)],
+
+            // Custom Rule with min/max constraints (reflection-based detection)
+            'age' => ['required', new NumericRange(min: 18, max: 120)],
+
+            // Custom Rule with pattern constraint (reflection-based detection)
+            'mobile_phone' => ['required', new PhoneNumber],
+
+            // Custom Rule implementing SpectrumDescribableRule interface
+            'postal_code' => ['required', new JapanesePostalCode],
+
+            // Custom Rule with OpenApiSchemaAttribute
+            'external_id' => ['required', new UuidRule],
 
             // Closure-based validation rule
             'username' => [
