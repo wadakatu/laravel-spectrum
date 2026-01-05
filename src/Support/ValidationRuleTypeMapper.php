@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Support;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
+use LaravelSpectrum\Analyzers\CustomRuleAnalyzer;
+use LaravelSpectrum\DTO\OpenApiSchema;
 
 /**
  * Maps Laravel validation rules to OpenAPI type information.
@@ -14,6 +17,15 @@ use Illuminate\Support\Str;
  */
 final class ValidationRuleTypeMapper
 {
+    private ?CustomRuleAnalyzer $customRuleAnalyzer = null;
+
+    /**
+     * Cached custom rule schema results from analyze calls.
+     *
+     * @var array<string, OpenApiSchema|null>
+     */
+    private array $customRuleCache = [];
+
     /**
      * Rules that map to 'integer' type.
      *
@@ -83,6 +95,174 @@ final class ValidationRuleTypeMapper
     ];
 
     /**
+     * Get or create the CustomRuleAnalyzer instance.
+     */
+    private function getCustomRuleAnalyzer(): CustomRuleAnalyzer
+    {
+        if ($this->customRuleAnalyzer === null) {
+            $this->customRuleAnalyzer = new CustomRuleAnalyzer;
+        }
+
+        return $this->customRuleAnalyzer;
+    }
+
+    /**
+     * Analyze a custom validation rule and cache the result.
+     */
+    private function analyzeCustomRule(ValidationRule $rule): ?OpenApiSchema
+    {
+        $key = spl_object_id($rule);
+
+        if (! array_key_exists($key, $this->customRuleCache)) {
+            $this->customRuleCache[$key] = $this->getCustomRuleAnalyzer()->analyze($rule);
+        }
+
+        return $this->customRuleCache[$key];
+    }
+
+    /**
+     * Check if a rule is an AST-extracted custom rule array.
+     *
+     * @param  mixed  $rule
+     */
+    private function isAstCustomRule($rule): bool
+    {
+        return is_array($rule)
+            && isset($rule['type'])
+            && $rule['type'] === 'custom_rule'
+            && isset($rule['class']);
+    }
+
+    /**
+     * Try to instantiate and analyze an AST-extracted custom rule.
+     *
+     * @param  array{type: string, class: string, args: array<mixed>}  $ruleData
+     */
+    private function analyzeAstCustomRule(array $ruleData): ?OpenApiSchema
+    {
+        $className = $ruleData['class'];
+        $args = $ruleData['args'] ?? [];
+
+        // Generate cache key from class name and args
+        $cacheKey = 'ast:'.$className.':'.md5(serialize($args));
+
+        if (array_key_exists($cacheKey, $this->customRuleCache)) {
+            return $this->customRuleCache[$cacheKey];
+        }
+
+        // Try to resolve the full class name
+        $fullClassName = $this->resolveClassName($className);
+
+        if ($fullClassName === null || ! class_exists($fullClassName)) {
+            $this->customRuleCache[$cacheKey] = null;
+
+            return null;
+        }
+
+        // Verify it implements ValidationRule
+        if (! is_subclass_of($fullClassName, ValidationRule::class)) {
+            $this->customRuleCache[$cacheKey] = null;
+
+            return null;
+        }
+
+        try {
+            // Try to instantiate with the provided arguments
+            $instance = $this->instantiateWithArgs($fullClassName, $args);
+            if ($instance === null) {
+                $this->customRuleCache[$cacheKey] = null;
+
+                return null;
+            }
+
+            $schema = $this->getCustomRuleAnalyzer()->analyze($instance);
+            $this->customRuleCache[$cacheKey] = $schema;
+
+            return $schema;
+        } catch (\Throwable) {
+            $this->customRuleCache[$cacheKey] = null;
+
+            return null;
+        }
+    }
+
+    /**
+     * Resolve a short class name to its fully qualified name.
+     */
+    private function resolveClassName(string $className): ?string
+    {
+        // If already fully qualified, return as-is
+        if (class_exists($className)) {
+            return $className;
+        }
+
+        // Try common Laravel validation rule namespaces
+        $candidates = [
+            'App\\Rules\\'.$className,
+            'Illuminate\\Validation\\Rules\\'.$className,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (class_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Instantiate a class with the given arguments.
+     *
+     * @param  class-string  $className
+     * @param  array<mixed>  $args
+     */
+    private function instantiateWithArgs(string $className, array $args): ?ValidationRule
+    {
+        try {
+            $reflection = new \ReflectionClass($className);
+
+            if (empty($args)) {
+                /** @var ValidationRule */
+                return $reflection->newInstance();
+            }
+
+            // Check if args are named or positional
+            $hasNamedArgs = array_keys($args) !== range(0, count($args) - 1);
+
+            if ($hasNamedArgs) {
+                // For named args, we need to map them to constructor parameter positions
+                $constructor = $reflection->getConstructor();
+                if ($constructor === null) {
+                    /** @var ValidationRule */
+                    return $reflection->newInstance();
+                }
+
+                $orderedArgs = [];
+                foreach ($constructor->getParameters() as $param) {
+                    $name = $param->getName();
+                    if (array_key_exists($name, $args)) {
+                        $orderedArgs[] = $args[$name];
+                    } elseif ($param->isDefaultValueAvailable()) {
+                        $orderedArgs[] = $param->getDefaultValue();
+                    } else {
+                        // Required parameter not provided
+                        return null;
+                    }
+                }
+
+                /** @var ValidationRule */
+                return $reflection->newInstanceArgs($orderedArgs);
+            }
+
+            /** @var ValidationRule */
+            return $reflection->newInstanceArgs($args);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Infer OpenAPI type from validation rules.
      *
      * @param  array<mixed>  $rules  Laravel validation rules
@@ -91,6 +271,26 @@ final class ValidationRuleTypeMapper
     public function inferType(array $rules): string
     {
         foreach ($rules as $rule) {
+            // Handle custom ValidationRule objects
+            if ($rule instanceof ValidationRule) {
+                $schema = $this->analyzeCustomRule($rule);
+                if ($schema !== null) {
+                    return $schema->type;
+                }
+
+                continue;
+            }
+
+            // Handle AST-extracted custom rule arrays
+            if ($this->isAstCustomRule($rule)) {
+                $schema = $this->analyzeAstCustomRule($rule);
+                if ($schema !== null) {
+                    return $schema->type;
+                }
+
+                continue;
+            }
+
             if (! is_string($rule)) {
                 continue;
             }
@@ -160,6 +360,26 @@ final class ValidationRuleTypeMapper
     public function inferFormat(array $rules): ?string
     {
         foreach ($rules as $rule) {
+            // Handle custom ValidationRule objects
+            if ($rule instanceof ValidationRule) {
+                $schema = $this->analyzeCustomRule($rule);
+                if ($schema !== null && $schema->format !== null) {
+                    return $schema->format;
+                }
+
+                continue;
+            }
+
+            // Handle AST-extracted custom rule arrays
+            if ($this->isAstCustomRule($rule)) {
+                $schema = $this->analyzeAstCustomRule($rule);
+                if ($schema !== null && $schema->format !== null) {
+                    return $schema->format;
+                }
+
+                continue;
+            }
+
             if (! is_string($rule)) {
                 continue;
             }
@@ -284,6 +504,26 @@ final class ValidationRuleTypeMapper
         $useNumericConstraints = in_array($inferredType, ['integer', 'number'], true);
 
         foreach ($rules as $rule) {
+            // Handle custom ValidationRule objects
+            if ($rule instanceof ValidationRule) {
+                $schema = $this->analyzeCustomRule($rule);
+                if ($schema !== null) {
+                    $constraints = $this->mergeSchemaConstraints($constraints, $schema);
+                }
+
+                continue;
+            }
+
+            // Handle AST-extracted custom rule arrays
+            if ($this->isAstCustomRule($rule)) {
+                $schema = $this->analyzeAstCustomRule($rule);
+                if ($schema !== null) {
+                    $constraints = $this->mergeSchemaConstraints($constraints, $schema);
+                }
+
+                continue;
+            }
+
             if (! is_string($rule)) {
                 continue;
             }
@@ -360,6 +600,36 @@ final class ValidationRuleTypeMapper
                     }
                     break;
             }
+        }
+
+        return $constraints;
+    }
+
+    /**
+     * Merge OpenApiSchema constraints into the constraints array.
+     *
+     * @param  array<string, mixed>  $constraints
+     * @return array<string, mixed>
+     */
+    private function mergeSchemaConstraints(array $constraints, OpenApiSchema $schema): array
+    {
+        if ($schema->minimum !== null) {
+            $constraints['minimum'] = $schema->minimum;
+        }
+        if ($schema->maximum !== null) {
+            $constraints['maximum'] = $schema->maximum;
+        }
+        if ($schema->minLength !== null) {
+            $constraints['minLength'] = $schema->minLength;
+        }
+        if ($schema->maxLength !== null) {
+            $constraints['maxLength'] = $schema->maxLength;
+        }
+        if ($schema->pattern !== null) {
+            $constraints['pattern'] = $schema->pattern;
+        }
+        if ($schema->enum !== null) {
+            $constraints['enum'] = $schema->enum;
         }
 
         return $constraints;

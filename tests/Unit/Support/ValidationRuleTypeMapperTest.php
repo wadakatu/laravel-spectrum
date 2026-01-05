@@ -424,4 +424,294 @@ class ValidationRuleTypeMapperTest extends TestCase
         $constraints = $this->mapper->extractConstraints([new \stdClass, 'min:5']);
         $this->assertEquals(5, $constraints['minLength']);
     }
+
+    // =====================================
+    // AST Custom Rule Tests
+    // =====================================
+
+    #[Test]
+    public function it_infers_type_from_ast_custom_rule_with_min_length(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                'args' => ['minLength' => 16],
+            ],
+        ];
+
+        // Custom rule with minLength should infer string type
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_infers_type_from_ast_custom_rule_with_min_max(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\NumericRangeRule::class,
+                'args' => ['min' => 18, 'max' => 120],
+            ],
+        ];
+
+        // Custom rule with min/max should infer integer type
+        $this->assertEquals('integer', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_custom_rule_with_min_length(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                'args' => ['minLength' => 16],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertEquals(16, $constraints['minLength']);
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_ast_custom_rule_with_min_max(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\NumericRangeRule::class,
+                'args' => ['min' => 0, 'max' => 100],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertEquals(0, $constraints['minimum']);
+        $this->assertEquals(100, $constraints['maximum']);
+    }
+
+    #[Test]
+    public function it_extracts_format_from_ast_custom_rule(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\AttributeRule::class,
+                'args' => [],
+            ],
+        ];
+
+        // AttributeRule has #[OpenApiSchema(format: 'uuid')] attribute
+        $this->assertEquals('uuid', $this->mapper->inferFormat($rules));
+    }
+
+    #[Test]
+    public function it_handles_ast_custom_rule_with_unresolvable_class(): void
+    {
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => 'NonExistentCustomRule',
+                'args' => ['minLength' => 10],
+            ],
+        ];
+
+        // Should fall back to default behavior when class cannot be resolved
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_ignores_invalid_ast_custom_rule_structure(): void
+    {
+        // Missing 'type' key
+        $rules = [
+            'required',
+            ['class' => 'SomeRule', 'args' => []],
+        ];
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+
+        // Missing 'class' key
+        $rules = [
+            'required',
+            ['type' => 'custom_rule', 'args' => []],
+        ];
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+
+        // Wrong 'type' value
+        $rules = [
+            'required',
+            ['type' => 'not_custom_rule', 'class' => 'SomeRule', 'args' => []],
+        ];
+        $this->assertEquals('string', $this->mapper->inferType($rules));
+    }
+
+    // =====================================
+    // Mutation Testing Coverage Tests
+    // =====================================
+
+    #[Test]
+    public function it_extracts_max_length_from_describable_rule(): void
+    {
+        // DescribableRule has maxLength: 8 in its spectrumSchema
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\DescribableRule::class,
+                'args' => [],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertArrayHasKey('maxLength', $constraints);
+        $this->assertEquals(8, $constraints['maxLength']);
+    }
+
+    #[Test]
+    public function it_extracts_pattern_from_describable_rule(): void
+    {
+        // DescribableRule has pattern: '^\d{3}-\d{4}$' in its spectrumSchema
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\DescribableRule::class,
+                'args' => [],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertArrayHasKey('pattern', $constraints);
+        $this->assertEquals('^\d{3}-\d{4}$', $constraints['pattern']);
+    }
+
+    #[Test]
+    public function it_extracts_pattern_from_pattern_rule(): void
+    {
+        // PatternRule extracts pattern from constructor
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\PatternRule::class,
+                'args' => ['pattern' => '^\d{6}$'],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+        $this->assertArrayHasKey('pattern', $constraints);
+        $this->assertEquals('^\d{6}$', $constraints['pattern']);
+    }
+
+    #[Test]
+    public function it_extracts_multiple_constraints_from_custom_rule(): void
+    {
+        // DescribableRule has minLength, maxLength, and pattern
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\DescribableRule::class,
+                'args' => [],
+            ],
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+
+        // Verify all constraints are extracted
+        $this->assertArrayHasKey('minLength', $constraints);
+        $this->assertArrayHasKey('maxLength', $constraints);
+        $this->assertArrayHasKey('pattern', $constraints);
+        $this->assertEquals(8, $constraints['minLength']);
+        $this->assertEquals(8, $constraints['maxLength']);
+        $this->assertEquals('^\d{3}-\d{4}$', $constraints['pattern']);
+    }
+
+    #[Test]
+    public function it_handles_custom_rule_without_format(): void
+    {
+        // MinLengthRule doesn't define format
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                'args' => ['minLength' => 8],
+            ],
+        ];
+
+        // Format should be null when not defined
+        $format = $this->mapper->inferFormat($rules);
+        $this->assertNull($format);
+    }
+
+    #[Test]
+    public function it_uses_format_from_custom_rule_object(): void
+    {
+        // Test with actual ValidationRule object
+        $rule = new \LaravelSpectrum\Tests\Fixtures\Rules\AttributeRule;
+        $rules = ['required', $rule];
+
+        // AttributeRule has format: 'uuid' via attribute
+        $format = $this->mapper->inferFormat($rules);
+        $this->assertEquals('uuid', $format);
+    }
+
+    #[Test]
+    public function it_continues_iteration_after_non_resolvable_custom_rule(): void
+    {
+        // Test that continue statement works properly when custom rule returns null schema
+        // NoConstraintRule has no detectable constraints, so returns null schema
+        $rules = [
+            new \LaravelSpectrum\Tests\Fixtures\Rules\NoConstraintRule,
+            'integer',  // This should be processed after continue since schema is null
+        ];
+
+        // NoConstraintRule returns null schema (no detectable constraints), so continue to 'integer'
+        $this->assertEquals('integer', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_continues_iteration_after_non_resolvable_ast_custom_rule(): void
+    {
+        // Test that continue statement works when AST custom rule class cannot be resolved
+        $rules = [
+            [
+                'type' => 'custom_rule',
+                'class' => 'NonExistentCustomRuleClass',
+                'args' => ['minLength' => 5],
+            ],
+            'integer',  // This should be processed after continue since class doesn't exist
+        ];
+
+        // Non-existent class returns null schema, so continue to 'integer'
+        $this->assertEquals('integer', $this->mapper->inferType($rules));
+    }
+
+    #[Test]
+    public function it_extracts_constraints_from_both_custom_rule_and_string_rules(): void
+    {
+        // Mix of custom rule and string rules
+        $rules = [
+            'required',
+            [
+                'type' => 'custom_rule',
+                'class' => \LaravelSpectrum\Tests\Fixtures\Rules\MinLengthRule::class,
+                'args' => ['minLength' => 10],
+            ],
+            'max:100',  // String rule for maxLength
+        ];
+
+        $constraints = $this->mapper->extractConstraints($rules);
+
+        // Both constraints should be extracted
+        $this->assertEquals(10, $constraints['minLength']);
+        $this->assertEquals(100, $constraints['maxLength']);
+    }
 }

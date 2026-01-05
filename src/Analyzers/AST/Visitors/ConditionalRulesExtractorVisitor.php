@@ -543,8 +543,10 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
 
     /**
      * Evaluate single rule with Rule:: support
+     *
+     * @return string|array<string, mixed>
      */
-    private function evaluateSingleRule(Node\Expr $expr): string
+    private function evaluateSingleRule(Node\Expr $expr): string|array
     {
         // String rule
         if ($expr instanceof Node\Scalar\String_) {
@@ -564,9 +566,9 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
             return $this->evaluateRuleMethodChain($expr);
         }
 
-        // new Enum(StatusEnum::class)
+        // new Enum(StatusEnum::class) or custom ValidationRule class
         if ($expr instanceof Node\Expr\New_) {
-            return $this->printer->prettyPrintExpr($expr);
+            return $this->evaluateNewExpression($expr);
         }
 
         // Concatenation
@@ -574,7 +576,13 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
             $left = $this->evaluateSingleRule($expr->left);
             $right = $this->evaluateSingleRule($expr->right);
 
-            return $left.$right;
+            // Only concatenate if both are strings
+            if (is_string($left) && is_string($right)) {
+                return $left.$right;
+            }
+
+            // Otherwise return the pretty-printed expression
+            return $this->printer->prettyPrintExpr($expr);
         }
 
         // Default: convert to string
@@ -737,15 +745,28 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     private function mergeAllRules(): array
     {
         $merged = [];
+        /** @var array<string, array<string, bool>> Track seen rules for deduplication */
+        $seen = [];
 
         foreach ($this->ruleSets as $set) {
             foreach ($set['rules'] as $field => $rules) {
                 if (! isset($merged[$field])) {
                     $merged[$field] = [];
+                    $seen[$field] = [];
                 }
 
                 $rulesList = is_string($rules) ? explode('|', $rules) : $rules;
-                $merged[$field] = array_unique(array_merge($merged[$field], $rulesList));
+
+                // Merge rules, handling arrays (custom rules) and strings
+                foreach ($rulesList as $rule) {
+                    // Create a unique key for deduplication
+                    $key = is_array($rule) ? 'array:'.json_encode($rule) : 'string:'.$rule;
+
+                    if (! isset($seen[$field][$key])) {
+                        $seen[$field][$key] = true;
+                        $merged[$field][] = $rule;
+                    }
+                }
             }
         }
 
@@ -758,5 +779,125 @@ class ConditionalRulesExtractorVisitor extends NodeVisitorAbstract
     public function hasConditionalRules(): bool
     {
         return $this->foundReturn && ! empty($this->currentPath);
+    }
+
+    /**
+     * Evaluate new expression (custom validation rules and Enum rules).
+     *
+     * @return string|array<string, mixed>
+     */
+    private function evaluateNewExpression(Node\Expr\New_ $new): string|array
+    {
+        // new Enum(StatusEnum::class)
+        if ($new->class instanceof Node\Name) {
+            $className = $new->class->toString();
+            if ($className === 'Enum' || $className === 'Illuminate\\Validation\\Rules\\Enum') {
+                if (isset($new->args[0]) && $new->args[0]->value instanceof Node\Expr\ClassConstFetch) {
+                    $classConstFetch = $new->args[0]->value;
+                    if ($classConstFetch->class instanceof Node\Name && $classConstFetch->name instanceof Node\Identifier && $classConstFetch->name->name === 'class') {
+                        $enumClassName = $classConstFetch->class->toString();
+
+                        return [
+                            'type' => 'enum',
+                            'class' => $enumClassName,
+                        ];
+                    }
+                }
+
+                return '__enum__';
+            }
+
+            // Handle custom ValidationRule classes
+            // Return structured format that can be used for runtime instantiation
+            $args = $this->extractConstructorArgs($new);
+
+            return [
+                'type' => 'custom_rule',
+                'class' => $className,
+                'args' => $args,
+            ];
+        }
+
+        // Fallback: pretty print the expression
+        return $this->printer->prettyPrintExpr($new);
+    }
+
+    /**
+     * Extract constructor arguments from new expression.
+     *
+     * @return array<string, mixed>
+     */
+    private function extractConstructorArgs(Node\Expr\New_ $new): array
+    {
+        $args = [];
+
+        foreach ($new->args as $arg) {
+            $name = null;
+            if ($arg instanceof Node\Arg && $arg->name !== null) {
+                $name = $arg->name->name;
+            }
+
+            $value = $this->extractArgValue($arg->value);
+
+            if ($name !== null) {
+                $args[$name] = $value;
+            } else {
+                $args[] = $value;
+            }
+        }
+
+        return $args;
+    }
+
+    /**
+     * Extract the value from an argument node.
+     */
+    private function extractArgValue(Node $node): mixed
+    {
+        if ($node instanceof Node\Scalar\LNumber) {
+            return $node->value;
+        }
+        if ($node instanceof Node\Scalar\DNumber) {
+            return $node->value;
+        }
+        if ($node instanceof Node\Scalar\String_) {
+            return $node->value;
+        }
+        if ($node instanceof Node\Expr\ConstFetch) {
+            $constName = strtolower($node->name->toString());
+            if ($constName === 'true') {
+                return true;
+            }
+            if ($constName === 'false') {
+                return false;
+            }
+            if ($constName === 'null') {
+                return null;
+            }
+        }
+        if ($node instanceof Node\Expr\Array_) {
+            $result = [];
+            foreach ($node->items as $item) {
+                if ($item === null) {
+                    continue;
+                }
+                $key = $item->key ? $this->extractArgValue($item->key) : null;
+                $val = $this->extractArgValue($item->value);
+                if ($key !== null) {
+                    $result[$key] = $val;
+                } else {
+                    $result[] = $val;
+                }
+            }
+
+            return $result;
+        }
+
+        // For complex expressions, return the pretty-printed string
+        if ($node instanceof Node\Expr) {
+            return $this->printer->prettyPrintExpr($node);
+        }
+
+        return null;
     }
 }

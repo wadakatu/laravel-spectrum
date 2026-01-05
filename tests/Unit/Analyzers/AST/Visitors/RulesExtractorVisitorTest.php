@@ -798,8 +798,49 @@ class RulesExtractorVisitorTest extends TestCase
 
         $rules = $visitor->getRules();
 
-        // Non-Enum new expressions are stringified
-        $this->assertStringContainsString('new CustomRule()', $rules['custom']);
+        // Non-Enum new expressions return structured format for custom rule analysis
+        $this->assertIsArray($rules['custom']);
+        $this->assertSame('custom_rule', $rules['custom']['type']);
+        $this->assertSame('CustomRule', $rules['custom']['class']);
+        $this->assertSame([], $rules['custom']['args']);
+    }
+
+    #[Test]
+    public function it_handles_custom_rule_with_constructor_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'password' => new StrongPassword(minLength: 16, requireUppercase: true),
+                    'age' => new NumericRange(18, 120),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Named arguments
+        $this->assertIsArray($rules['password']);
+        $this->assertSame('custom_rule', $rules['password']['type']);
+        $this->assertSame('StrongPassword', $rules['password']['class']);
+        $this->assertSame(['minLength' => 16, 'requireUppercase' => true], $rules['password']['args']);
+
+        // Positional arguments
+        $this->assertIsArray($rules['age']);
+        $this->assertSame('custom_rule', $rules['age']['type']);
+        $this->assertSame('NumericRange', $rules['age']['class']);
+        $this->assertSame([18, 120], $rules['age']['args']);
     }
 
     #[Test]
@@ -1059,5 +1100,324 @@ class RulesExtractorVisitorTest extends TestCase
 
         // Custom methods are stringified
         $this->assertArrayHasKey('email', $rules);
+    }
+
+    // ========== Additional Custom Rule tests (Issue #316) ==========
+
+    #[Test]
+    public function it_extracts_custom_rule_with_all_scalar_types()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'field' => new CustomRule(
+                        stringArg: 'hello',
+                        intArg: 42,
+                        floatArg: 3.14,
+                        boolTrue: true,
+                        boolFalse: false,
+                        nullArg: null,
+                    ),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['field']);
+        $this->assertSame('custom_rule', $rules['field']['type']);
+        $this->assertSame('CustomRule', $rules['field']['class']);
+        $this->assertSame('hello', $rules['field']['args']['stringArg']);
+        $this->assertSame(42, $rules['field']['args']['intArg']);
+        $this->assertSame(3.14, $rules['field']['args']['floatArg']);
+        $this->assertTrue($rules['field']['args']['boolTrue']);
+        $this->assertFalse($rules['field']['args']['boolFalse']);
+        $this->assertNull($rules['field']['args']['nullArg']);
+    }
+
+    #[Test]
+    public function it_extracts_custom_rule_with_array_argument()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'field' => new CustomRule(
+                        options: ['a', 'b', 'c'],
+                        mappedOptions: ['key1' => 'value1', 'key2' => 'value2'],
+                    ),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['field']);
+        $this->assertSame('custom_rule', $rules['field']['type']);
+        $this->assertSame(['a', 'b', 'c'], $rules['field']['args']['options']);
+        $this->assertSame(['key1' => 'value1', 'key2' => 'value2'], $rules['field']['args']['mappedOptions']);
+    }
+
+    #[Test]
+    public function it_extracts_custom_rule_in_array_syntax()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'password' => ['required', 'string', new StrongPassword(minLength: 12)],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['password']);
+        $this->assertContains('required', $rules['password']);
+        $this->assertContains('string', $rules['password']);
+
+        // Find the custom rule in the array
+        $customRule = null;
+        foreach ($rules['password'] as $rule) {
+            if (is_array($rule) && isset($rule['type']) && $rule['type'] === 'custom_rule') {
+                $customRule = $rule;
+
+                break;
+            }
+        }
+
+        $this->assertNotNull($customRule);
+        $this->assertSame('StrongPassword', $customRule['class']);
+        $this->assertSame(['minLength' => 12], $customRule['args']);
+    }
+
+    #[Test]
+    public function it_extracts_custom_rule_with_complex_expression_argument()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'field' => new CustomRule($this->getDynamicValue()),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['field']);
+        $this->assertSame('custom_rule', $rules['field']['type']);
+        $this->assertSame('CustomRule', $rules['field']['class']);
+        // Complex expression is stringified
+        $this->assertIsString($rules['field']['args'][0]);
+        $this->assertStringContainsString('getDynamicValue', $rules['field']['args'][0]);
+    }
+
+    #[Test]
+    public function it_extracts_multiple_custom_rules_in_same_request()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'password' => ['required', new StrongPassword(minLength: 16)],
+                    'phone' => ['required', new PhoneNumber(format: 'E164')],
+                    'age' => ['required', new NumericRange(min: 18, max: 120)],
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        // Check password rule
+        $passwordRule = null;
+        foreach ($rules['password'] as $rule) {
+            if (is_array($rule) && isset($rule['type']) && $rule['type'] === 'custom_rule') {
+                $passwordRule = $rule;
+
+                break;
+            }
+        }
+        $this->assertNotNull($passwordRule);
+        $this->assertSame('StrongPassword', $passwordRule['class']);
+        $this->assertSame(16, $passwordRule['args']['minLength']);
+
+        // Check phone rule
+        $phoneRule = null;
+        foreach ($rules['phone'] as $rule) {
+            if (is_array($rule) && isset($rule['type']) && $rule['type'] === 'custom_rule') {
+                $phoneRule = $rule;
+
+                break;
+            }
+        }
+        $this->assertNotNull($phoneRule);
+        $this->assertSame('PhoneNumber', $phoneRule['class']);
+        $this->assertSame('E164', $phoneRule['args']['format']);
+
+        // Check age rule
+        $ageRule = null;
+        foreach ($rules['age'] as $rule) {
+            if (is_array($rule) && isset($rule['type']) && $rule['type'] === 'custom_rule') {
+                $ageRule = $rule;
+
+                break;
+            }
+        }
+        $this->assertNotNull($ageRule);
+        $this->assertSame('NumericRange', $ageRule['class']);
+        $this->assertSame(18, $ageRule['args']['min']);
+        $this->assertSame(120, $ageRule['args']['max']);
+    }
+
+    #[Test]
+    public function it_extracts_custom_rule_with_nested_array_argument()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'config' => new CustomRule(
+                        settings: [
+                            'level1' => [
+                                'level2' => 'value',
+                            ],
+                        ],
+                    ),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['config']);
+        $this->assertSame('custom_rule', $rules['config']['type']);
+        $expected = [
+            'level1' => [
+                'level2' => 'value',
+            ],
+        ];
+        $this->assertSame($expected, $rules['config']['args']['settings']);
+    }
+
+    #[Test]
+    public function it_extracts_custom_rule_with_fully_qualified_class_name()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'password' => new \App\Rules\StrongPassword(minLength: 20),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['password']);
+        $this->assertSame('custom_rule', $rules['password']['type']);
+        $this->assertSame('App\Rules\StrongPassword', $rules['password']['class']);
+        $this->assertSame(['minLength' => 20], $rules['password']['args']);
+    }
+
+    #[Test]
+    public function it_extracts_custom_rule_with_no_arguments()
+    {
+        $code = <<<'PHP'
+        <?php
+        class TestRequest {
+            public function rules(): array
+            {
+                return [
+                    'field' => new DefaultRule(),
+                ];
+            }
+        }
+        PHP;
+
+        $visitor = new RulesExtractorVisitor($this->printer);
+        $ast = $this->parser->parse($code);
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $rules = $visitor->getRules();
+
+        $this->assertIsArray($rules['field']);
+        $this->assertSame('custom_rule', $rules['field']['type']);
+        $this->assertSame('DefaultRule', $rules['field']['class']);
+        $this->assertSame([], $rules['field']['args']);
     }
 }
