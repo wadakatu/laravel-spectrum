@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
+use LaravelSpectrum\Analyzers\FractalTransformerAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Converters\OpenApi31Converter;
 use LaravelSpectrum\DTO\AuthenticationResult;
@@ -60,7 +61,8 @@ class OpenApiGenerator
         protected PaginationDetector $paginationDetector,
         protected FormRequestAnalyzer $requestAnalyzer,
         protected OpenApi31Converter $openApi31Converter,
-        protected ?SchemaRegistry $schemaRegistry = null
+        protected ?SchemaRegistry $schemaRegistry = null,
+        protected ?FractalTransformerAnalyzer $fractalTransformerAnalyzer = null,
     ) {
         // デフォルトでSchemaRegistryを作成
         $this->schemaRegistry = $schemaRegistry ?? new SchemaRegistry;
@@ -380,6 +382,17 @@ class OpenApiGenerator
             'description' => 'Successful response',
         ];
 
+        // Fractal Transformer response (check before ResponseAnalyzer)
+        if ($controllerInfo->hasFractal() && $this->fractalTransformerAnalyzer !== null) {
+            $fractalResult = $this->generateFractalResponse($controllerInfo, $response);
+            if ($fractalResult !== null) {
+                return [
+                    'code' => $statusCode,
+                    'response' => $fractalResult,
+                ];
+            }
+        }
+
         // Response from ResponseAnalyzer (excluding Resource type)
         if ($controllerInfo->hasResponse()
             && ! $controllerInfo->response->isResource()
@@ -599,5 +612,75 @@ class OpenApiGenerator
         sort($uniqueTags);
 
         return $uniqueTags;
+    }
+
+    /**
+     * Generate response schema from Fractal Transformer.
+     *
+     * Analyzes the Fractal transformer class to extract properties and generates
+     * an OpenAPI-compliant response schema. Also registers the item schema in
+     * the SchemaRegistry for reuse.
+     *
+     * @param  ControllerInfo  $controllerInfo  Controller info with Fractal metadata
+     * @param  array<string, mixed>  $baseResponse  Base response structure to extend
+     * @return array<string, mixed>|null Response array with content/schema, or null if analysis fails
+     */
+    protected function generateFractalResponse(ControllerInfo $controllerInfo, array $baseResponse): ?array
+    {
+        if ($controllerInfo->fractal === null || $this->fractalTransformerAnalyzer === null) {
+            return null;
+        }
+
+        $transformerClass = $controllerInfo->fractal->transformer;
+        $isCollection = $controllerInfo->fractal->isCollection;
+        $hasPagination = $controllerInfo->hasPagination();
+
+        // Analyze the transformer
+        $fractalData = $this->fractalTransformerAnalyzer->analyze($transformerClass);
+
+        if (empty($fractalData) || empty($fractalData['properties'])) {
+            Log::debug('Fractal transformer analysis returned no properties', [
+                'transformer' => $transformerClass,
+                'has_data' => ! empty($fractalData),
+            ]);
+
+            return null;
+        }
+
+        // Generate schema using SchemaGenerator
+        $schema = $this->schemaGenerator->generateFromFractal($fractalData, $isCollection, $hasPagination);
+
+        if (empty($schema)) {
+            Log::debug('Fractal schema generation returned empty result', [
+                'transformer' => $transformerClass,
+                'isCollection' => $isCollection,
+                'hasPagination' => $hasPagination,
+            ]);
+
+            return null;
+        }
+
+        // Register schema if it has a name
+        $schemaName = $this->schemaRegistry->extractSchemaName($transformerClass);
+
+        if (! $this->schemaRegistry->has($schemaName)) {
+            // Get the item schema (unwrap from data wrapper if needed)
+            $itemSchema = $schema;
+            if (isset($schema['properties']['data']['items'])) {
+                $itemSchema = $schema['properties']['data']['items'];
+            } elseif (isset($schema['properties']['data'])) {
+                $itemSchema = $schema['properties']['data'];
+            }
+            $this->schemaRegistry->register($schemaName, $itemSchema);
+        }
+
+        $response = $baseResponse;
+        $response['content'] = [
+            'application/json' => [
+                'schema' => $schema,
+            ],
+        ];
+
+        return $response;
     }
 }

@@ -277,3 +277,20 @@ use App\Http\Controllers\SometimesController;
 Route::prefix('conditional-validation')->group(function () {
     Route::post('/order', [SometimesController::class, 'process']);
 });
+
+// ============================================
+// Fractal Transformer Tests
+// ============================================
+
+use App\Http\Controllers\FractalController;
+
+Route::prefix('fractal')->name('api.fractal.')->group(function () {
+    // User endpoints with Fractal transformation
+    Route::get('/users', [FractalController::class, 'index'])->name('users.index');
+    Route::get('/users/{id}', [FractalController::class, 'show'])->name('users.show');
+    Route::get('/users/{userId}/posts', [FractalController::class, 'userPosts'])->name('users.posts');
+
+    // Post endpoints with Fractal transformation
+    Route::get('/posts', [FractalController::class, 'posts'])->name('posts.index');
+    Route::get('/posts/{id}', [FractalController::class, 'showPost'])->name('posts.show');
+});

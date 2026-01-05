@@ -231,6 +231,7 @@ return [
             app_path('Http/Controllers'),
             app_path('Http/Requests'),
             app_path('Http/Resources'),
+            app_path('Transformers'),
             base_path('routes'),
         ],
 
