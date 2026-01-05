@@ -323,6 +323,30 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
                 );
             }
         }
+        // new Item(..., new Transformer) パターン (League\Fractal\Resource\Item 直接使用)
+        elseif (preg_match('/new\s+Item\s*\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $transformerClass = $this->resolveClassName($matches[1], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                return new FractalInfo(
+                    transformer: $transformerClass,
+                    isCollection: false,
+                    type: 'item',
+                    hasIncludes: strpos($source, 'parseIncludes') !== false,
+                );
+            }
+        }
+        // new Collection(..., new Transformer) パターン (League\Fractal\Resource\Collection 直接使用)
+        elseif (preg_match('/new\s+Collection\s*\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
+            $transformerClass = $this->resolveClassName($matches[1], $reflection);
+            if ($transformerClass && class_exists($transformerClass)) {
+                return new FractalInfo(
+                    transformer: $transformerClass,
+                    isCollection: true,
+                    type: 'collection',
+                    hasIncludes: strpos($source, 'parseIncludes') !== false,
+                );
+            }
+        }
 
         return null;
     }
