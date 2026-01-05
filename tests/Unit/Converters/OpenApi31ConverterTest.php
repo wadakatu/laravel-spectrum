@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Tests\Unit\Converters;
 
 use LaravelSpectrum\Converters\OpenApi31Converter;
@@ -1464,5 +1466,310 @@ class OpenApi31ConverterTest extends TestCase
             '#/components/schemas/User',
             $result['paths']['/users']['get']['responses']['200']['content']['application/json']['schema']['items']['$ref']
         );
+    }
+
+    // =========================================================================
+    // JSON Schema 2020-12 Features (Issue #297)
+    // =========================================================================
+
+    #[Test]
+    public function it_adds_json_schema_dialect_for_3_1(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayHasKey('jsonSchemaDialect', $result);
+        $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $result['jsonSchemaDialect']);
+    }
+
+    #[Test]
+    public function it_places_json_schema_dialect_near_openapi_version(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // Verify the order of keys (openapi should be followed by jsonSchemaDialect)
+        $keys = array_keys($result);
+        $openapiIndex = array_search('openapi', $keys);
+        $dialectIndex = array_search('jsonSchemaDialect', $keys);
+
+        $this->assertNotFalse($openapiIndex);
+        $this->assertNotFalse($dialectIndex);
+        // jsonSchemaDialect should come after openapi
+        $this->assertGreaterThan($openapiIndex, $dialectIndex);
+    }
+
+    #[Test]
+    public function it_adds_content_encoding_for_byte_format(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'FileData' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => [
+                                'type' => 'string',
+                                'format' => 'byte',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $dataSchema = $result['components']['schemas']['FileData']['properties']['data'];
+        $this->assertEquals('base64', $dataSchema['contentEncoding']);
+    }
+
+    #[Test]
+    public function it_adds_content_encoding_for_nested_byte_schemas(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [
+                '/files' => [
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'attachment' => [
+                                                'type' => 'string',
+                                                'format' => 'byte',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Success',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $attachmentSchema = $result['paths']['/files']['post']['requestBody']['content']['application/json']['schema']['properties']['attachment'];
+        $this->assertEquals('base64', $attachmentSchema['contentEncoding']);
+    }
+
+    #[Test]
+    public function it_adds_content_encoding_for_array_items_with_byte_format(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'FileList' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'string',
+                            'format' => 'byte',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $itemsSchema = $result['components']['schemas']['FileList']['items'];
+        $this->assertEquals('base64', $itemsSchema['contentEncoding']);
+    }
+
+    #[Test]
+    public function it_preserves_existing_content_encoding(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'CustomEncoded' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => [
+                                'type' => 'string',
+                                'format' => 'byte',
+                                'contentEncoding' => 'base32',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $dataSchema = $result['components']['schemas']['CustomEncoded']['properties']['data'];
+        // Should preserve existing contentEncoding, not override with base64
+        $this->assertEquals('base32', $dataSchema['contentEncoding']);
+    }
+
+    #[Test]
+    public function it_does_not_add_content_encoding_for_binary_format(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'BinaryFile' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'content' => [
+                                'type' => 'string',
+                                'format' => 'binary',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $contentSchema = $result['components']['schemas']['BinaryFile']['properties']['content'];
+        // binary format doesn't need contentEncoding (it's raw bytes, not base64)
+        $this->assertArrayNotHasKey('contentEncoding', $contentSchema);
+    }
+
+    #[Test]
+    public function it_does_not_add_content_encoding_for_non_string_types(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'SomeObject' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'count' => [
+                                'type' => 'integer',
+                            ],
+                            'flag' => [
+                                'type' => 'boolean',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertArrayNotHasKey('contentEncoding', $result['components']['schemas']['SomeObject']['properties']['count']);
+        $this->assertArrayNotHasKey('contentEncoding', $result['components']['schemas']['SomeObject']['properties']['flag']);
+    }
+
+    #[Test]
+    public function it_adds_content_encoding_for_nullable_byte_format(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'FileData' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => [
+                                'type' => 'string',
+                                'format' => 'byte',
+                                'nullable' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $dataSchema = $result['components']['schemas']['FileData']['properties']['data'];
+        // Type should be converted to array with null
+        $this->assertEquals(['string', 'null'], $dataSchema['type']);
+        // contentEncoding should still be added for type arrays containing 'string'
+        $this->assertEquals('base64', $dataSchema['contentEncoding']);
+    }
+
+    #[Test]
+    public function it_skips_conversion_for_already_converted_specs(): void
+    {
+        // A spec that has already been converted (has jsonSchemaDialect)
+        $spec = [
+            'openapi' => '3.1.0',
+            'jsonSchemaDialect' => 'https://json-schema.org/draft/2020-12/schema',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'User' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => [
+                                'type' => 'string',
+                                'nullable' => true, // Should NOT be converted since spec is already converted
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'webhooks' => new \stdClass,
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // Spec should be returned unchanged
+        $this->assertSame($spec, $result);
+    }
+
+    #[Test]
+    public function it_converts_3_1_spec_without_json_schema_dialect(): void
+    {
+        // A spec with 3.1.0 version but without jsonSchemaDialect (not yet converted)
+        $spec = [
+            'openapi' => '3.1.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // Conversion should still happen
+        $this->assertEquals('3.1.0', $result['openapi']);
+        $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $result['jsonSchemaDialect']);
+        $this->assertArrayHasKey('webhooks', $result);
     }
 }
