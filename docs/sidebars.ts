@@ -64,6 +64,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'api-reference',
         'cli-reference',
+        'openapi-extensions',
         'comparison',
         'migration-guide',
       ],
