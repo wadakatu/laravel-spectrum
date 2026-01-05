@@ -275,6 +275,42 @@ class ResponseAnalyzerTest extends TestCase
         $this->assertEquals('text/plain', $result->contentType);
     }
 
+    public function test_analyzes_response_with_lowercase_content_type_header()
+    {
+        $controller = new class
+        {
+            public function xmlResponse()
+            {
+                return response('<xml>data</xml>', 200, ['content-type' => 'application/xml']);
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'xmlResponse');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::CUSTOM, $result->type);
+        $this->assertEquals('application/xml', $result->contentType);
+    }
+
+    public function test_analyzes_stream_with_uppercase_content_type_header()
+    {
+        $controller = new class
+        {
+            public function streamData()
+            {
+                return response()->stream(function () {
+                    echo 'streaming data';
+                }, 200, ['CONTENT-TYPE' => 'text/event-stream']);
+            }
+        };
+
+        $result = $this->analyzer->analyze(get_class($controller), 'streamData');
+
+        $this->assertInstanceOf(ResponseInfo::class, $result);
+        $this->assertEquals(ResponseType::STREAMED, $result->type);
+        $this->assertEquals('text/event-stream', $result->contentType);
+    }
+
     public function test_defaults_to_octet_stream_for_unknown_extension()
     {
         $controller = new class
