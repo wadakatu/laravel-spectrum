@@ -544,4 +544,81 @@ class OpenApiSpecTest extends TestCase
         $this->assertTrue($specWithWebhooks->hasWebhooks());
         $this->assertFalse($specWithoutWebhooks->hasWebhooks());
     }
+
+    #[Test]
+    public function it_includes_json_schema_dialect_in_array_when_set(): void
+    {
+        $info = new OpenApiInfo(title: 'API', version: '1.0.0');
+        $spec = new OpenApiSpec(
+            openapi: '3.1.0',
+            info: $info,
+            jsonSchemaDialect: 'https://json-schema.org/draft/2020-12/schema',
+        );
+
+        $array = $spec->toArray();
+
+        $this->assertArrayHasKey('jsonSchemaDialect', $array);
+        $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $array['jsonSchemaDialect']);
+    }
+
+    #[Test]
+    public function it_excludes_json_schema_dialect_when_null(): void
+    {
+        $info = new OpenApiInfo(title: 'API', version: '1.0.0');
+        $spec = new OpenApiSpec(
+            openapi: '3.0.0',
+            info: $info,
+        );
+
+        $array = $spec->toArray();
+
+        $this->assertArrayNotHasKey('jsonSchemaDialect', $array);
+    }
+
+    #[Test]
+    public function it_places_json_schema_dialect_after_openapi_version(): void
+    {
+        $info = new OpenApiInfo(title: 'API', version: '1.0.0');
+        $spec = new OpenApiSpec(
+            openapi: '3.1.0',
+            info: $info,
+            jsonSchemaDialect: 'https://json-schema.org/draft/2020-12/schema',
+        );
+
+        $array = $spec->toArray();
+        $keys = array_keys($array);
+
+        $openapiIndex = array_search('openapi', $keys, true);
+        $dialectIndex = array_search('jsonSchemaDialect', $keys, true);
+
+        $this->assertEquals($openapiIndex + 1, $dialectIndex, 'jsonSchemaDialect should immediately follow openapi');
+    }
+
+    #[Test]
+    public function it_parses_json_schema_dialect_from_array(): void
+    {
+        $data = [
+            'openapi' => '3.1.0',
+            'info' => ['title' => 'API', 'version' => '1.0.0'],
+            'jsonSchemaDialect' => 'https://json-schema.org/draft/2020-12/schema',
+        ];
+
+        $spec = OpenApiSpec::fromArray($data);
+
+        $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $spec->jsonSchemaDialect);
+    }
+
+    #[Test]
+    public function it_preserves_json_schema_dialect_in_round_trip(): void
+    {
+        $original = new OpenApiSpec(
+            openapi: '3.1.0',
+            info: new OpenApiInfo(title: 'API', version: '1.0.0'),
+            jsonSchemaDialect: 'https://json-schema.org/draft/2020-12/schema',
+        );
+
+        $restored = OpenApiSpec::fromArray($original->toArray());
+
+        $this->assertEquals($original->jsonSchemaDialect, $restored->jsonSchemaDialect);
+    }
 }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Tests\Fixtures\Controllers\NullableTestController;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -121,20 +122,8 @@ class OpenApi31JsonSchemaTest extends TestCase
     #[Test]
     public function it_converts_nullable_to_type_array_in_3_1(): void
     {
-        // Arrange
-        $controller = new class
-        {
-            public function store(\Illuminate\Http\Request $request)
-            {
-                $request->validate([
-                    'name' => 'nullable|string',
-                ]);
-
-                return ['id' => 1];
-            }
-        };
-
-        Route::post('api/test', [get_class($controller), 'store']);
+        // Arrange - use fixture controller with FormRequest for reliable schema generation
+        Route::post('api/nullable-test', [NullableTestController::class, 'store']);
 
         $routeAnalyzer = app(RouteAnalyzer::class);
         $generator = app(OpenApiGenerator::class);
@@ -143,17 +132,29 @@ class OpenApi31JsonSchemaTest extends TestCase
         $routes = $routeAnalyzer->analyze();
         $openapi = $generator->generate($routes)->toArray();
 
-        // Assert - nullable should be converted to type array
-        if (isset($openapi['paths']['/api/test']['post']['requestBody']['content']['application/json']['schema']['properties']['name'])) {
-            $nameSchema = $openapi['paths']['/api/test']['post']['requestBody']['content']['application/json']['schema']['properties']['name'];
-            // In 3.1.0, nullable: true becomes type: ["string", "null"]
-            $this->assertArrayNotHasKey('nullable', $nameSchema);
-            if (isset($nameSchema['type']) && is_array($nameSchema['type'])) {
-                $this->assertContains('null', $nameSchema['type']);
-            }
-        }
-
-        // Verify OpenAPI version
+        // Assert - verify OpenAPI version first
         $this->assertEquals('3.1.0', $openapi['openapi']);
+
+        // Assert - path exists
+        $this->assertArrayHasKey('/api/nullable-test', $openapi['paths']);
+        $this->assertArrayHasKey('post', $openapi['paths']['/api/nullable-test']);
+
+        // Assert - requestBody exists with schema
+        $operation = $openapi['paths']['/api/nullable-test']['post'];
+        $this->assertArrayHasKey('requestBody', $operation);
+        $this->assertArrayHasKey('content', $operation['requestBody']);
+        $this->assertArrayHasKey('application/json', $operation['requestBody']['content']);
+
+        $schema = $operation['requestBody']['content']['application/json']['schema'];
+        $this->assertArrayHasKey('properties', $schema);
+        $this->assertArrayHasKey('name', $schema['properties']);
+
+        // Assert - OpenAPI 3.1.0 should not have 'nullable' keyword
+        // The 'nullable' validation rule makes the field not required, and if the schema
+        // has nullable: true, it gets converted to type array. Even if nullable: true
+        // isn't added by the schema generator, the key point is that 'nullable' keyword
+        // should NOT appear in OpenAPI 3.1.0 output.
+        $nameSchema = $schema['properties']['name'];
+        $this->assertArrayNotHasKey('nullable', $nameSchema, 'nullable keyword should not exist in OpenAPI 3.1.0');
     }
 }

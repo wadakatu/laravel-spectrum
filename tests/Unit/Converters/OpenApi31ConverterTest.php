@@ -1723,4 +1723,53 @@ class OpenApi31ConverterTest extends TestCase
         // contentEncoding should still be added for type arrays containing 'string'
         $this->assertEquals('base64', $dataSchema['contentEncoding']);
     }
+
+    #[Test]
+    public function it_skips_conversion_for_already_converted_specs(): void
+    {
+        // A spec that has already been converted (has jsonSchemaDialect)
+        $spec = [
+            'openapi' => '3.1.0',
+            'jsonSchemaDialect' => 'https://json-schema.org/draft/2020-12/schema',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => [
+                'schemas' => [
+                    'User' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => [
+                                'type' => 'string',
+                                'nullable' => true, // Should NOT be converted since spec is already converted
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'webhooks' => new \stdClass,
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // Spec should be returned unchanged
+        $this->assertSame($spec, $result);
+    }
+
+    #[Test]
+    public function it_converts_3_1_spec_without_json_schema_dialect(): void
+    {
+        // A spec with 3.1.0 version but without jsonSchemaDialect (not yet converted)
+        $spec = [
+            'openapi' => '3.1.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        // Conversion should still happen
+        $this->assertEquals('3.1.0', $result['openapi']);
+        $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $result['jsonSchemaDialect']);
+        $this->assertArrayHasKey('webhooks', $result);
+    }
 }

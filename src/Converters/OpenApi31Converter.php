@@ -16,6 +16,8 @@ use LaravelSpectrum\DTO\OpenApiSchema;
  * - Version string changes from '3.0.x' to '3.1.0'
  * - Full JSON Schema Draft 2020-12 compatibility
  * - webhooks section support
+ * - jsonSchemaDialect declaration (defaults to JSON Schema 2020-12)
+ * - contentEncoding: base64 for format: byte strings
  */
 class OpenApi31Converter
 {
@@ -27,10 +29,19 @@ class OpenApi31Converter
      */
     public function convert(array $spec): array
     {
+        // Skip conversion if already converted (has jsonSchemaDialect) to ensure idempotency.
+        // This prevents double-conversion while allowing initial conversion of specs
+        // that were generated with version 3.1.0 but haven't been processed yet.
+        if (isset($spec['jsonSchemaDialect'])) {
+            return $spec;
+        }
+
         // Update version string
         $spec['openapi'] = '3.1.0';
 
-        // Add JSON Schema 2020-12 dialect declaration
+        // Explicitly declare JSON Schema 2020-12 dialect for full compatibility.
+        // Without this, OpenAPI 3.1.0 defaults to the OAS dialect (https://spec.openapis.org/oas/3.1/dialect/base)
+        // which has some restrictions. Setting JSON Schema 2020-12 enables all standard JSON Schema keywords.
         $spec['jsonSchemaDialect'] = 'https://json-schema.org/draft/2020-12/schema';
 
         // Convert paths
