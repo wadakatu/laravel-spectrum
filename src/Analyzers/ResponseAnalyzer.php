@@ -503,7 +503,8 @@ class ResponseAnalyzer
             }
 
             $key = $this->getNodeValue($item->key);
-            if ($key === 'Content-Type' && $item->value instanceof Node\Scalar\String_) {
+            // HTTP headers are case-insensitive per RFC 7230
+            if ($key !== null && strtolower($key) === 'content-type' && $item->value instanceof Node\Scalar\String_) {
                 return $item->value->value;
             }
         }
