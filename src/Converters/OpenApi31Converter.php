@@ -28,6 +28,9 @@ class OpenApi31Converter
         // Update version string
         $spec['openapi'] = '3.1.0';
 
+        // Add JSON Schema 2020-12 dialect declaration
+        $spec['jsonSchemaDialect'] = 'https://json-schema.org/draft/2020-12/schema';
+
         // Convert paths
         if (isset($spec['paths']) && is_array($spec['paths'])) {
             $spec['paths'] = $this->convertPaths($spec['paths']);
@@ -170,6 +173,9 @@ class OpenApi31Converter
         // Convert nullable to type array
         $schema = $this->convertNullable($schema);
 
+        // Add contentEncoding for base64 data (JSON Schema 2020-12 feature)
+        $schema = $this->convertContentEncoding($schema);
+
         // Recursively convert nested properties
         if (isset($schema['properties']) && is_array($schema['properties'])) {
             foreach ($schema['properties'] as $propName => $propSchema) {
@@ -268,6 +274,36 @@ class OpenApi31Converter
 
         // Remove the nullable key as it's not used in 3.1.0
         unset($schema['nullable']);
+
+        return $schema;
+    }
+
+    /**
+     * Add contentEncoding for base64 encoded data.
+     *
+     * In JSON Schema 2020-12, contentEncoding specifies the encoding used
+     * for string data. For format: byte (base64), we add contentEncoding: base64.
+     *
+     * @param  OpenApiSchemaType  $schema
+     * @return array<string, mixed>
+     */
+    private function convertContentEncoding(array $schema): array
+    {
+        // Only process string type with byte format
+        $type = $schema['type'] ?? null;
+        $format = $schema['format'] ?? null;
+
+        // Handle type arrays (e.g., ["string", "null"])
+        if (is_array($type)) {
+            $isString = in_array('string', $type, true);
+        } else {
+            $isString = $type === 'string';
+        }
+
+        // Add contentEncoding: base64 for format: byte (unless already set)
+        if ($isString && $format === 'byte' && ! isset($schema['contentEncoding'])) {
+            $schema['contentEncoding'] = 'base64';
+        }
 
         return $schema;
     }

@@ -21,6 +21,7 @@ final readonly class OpenApiSpec
      * @param  array<int, array{name: string, description?: string}>  $tags  Tag definitions
      * @param  array<int, array{name: string, tags: array<int, string>}>|null  $tagGroups  Swagger UI extension for tag groups
      * @param  \stdClass|array<string, mixed>|null  $webhooks  Webhooks definitions (OpenAPI 3.1.0+)
+     * @param  string|null  $jsonSchemaDialect  JSON Schema dialect URI (OpenAPI 3.1.0+)
      */
     public function __construct(
         public string $openapi,
@@ -32,6 +33,7 @@ final readonly class OpenApiSpec
         public array $tags = [],
         public ?array $tagGroups = null,
         public \stdClass|array|null $webhooks = null,
+        public ?string $jsonSchemaDialect = null,
     ) {}
 
     /**
@@ -62,6 +64,7 @@ final readonly class OpenApiSpec
             tags: $data['tags'] ?? [],
             tagGroups: $data['x-tagGroups'] ?? null,
             webhooks: $data['webhooks'] ?? null,
+            jsonSchemaDialect: $data['jsonSchemaDialect'] ?? null,
         );
     }
 
@@ -74,14 +77,20 @@ final readonly class OpenApiSpec
     {
         $result = [
             'openapi' => $this->openapi,
-            'info' => $this->info->toArray(),
-            'servers' => array_map(
-                fn (OpenApiServer $server) => $server->toArray(),
-                $this->servers
-            ),
-            'paths' => $this->paths,
-            'components' => $this->components,
         ];
+
+        // Add jsonSchemaDialect right after openapi (OpenAPI 3.1.0+)
+        if ($this->jsonSchemaDialect !== null) {
+            $result['jsonSchemaDialect'] = $this->jsonSchemaDialect;
+        }
+
+        $result['info'] = $this->info->toArray();
+        $result['servers'] = array_map(
+            fn (OpenApiServer $server) => $server->toArray(),
+            $this->servers
+        );
+        $result['paths'] = $this->paths;
+        $result['components'] = $this->components;
 
         if (count($this->security) > 0) {
             $result['security'] = $this->security;
