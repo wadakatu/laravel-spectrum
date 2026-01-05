@@ -14,12 +14,16 @@ final readonly class ResponseInfo
      * @param  array<string, array<string, mixed>>  $properties  The response properties/schema
      * @param  string|null  $resourceClass  The resource class name (for resource type)
      * @param  string|null  $error  Error message if analysis failed
+     * @param  string|null  $contentType  The content type (e.g., "application/pdf")
+     * @param  string|null  $fileName  The file name for download responses
      */
     public function __construct(
         public ResponseType $type,
         public array $properties = [],
         public ?string $resourceClass = null,
         public ?string $error = null,
+        public ?string $contentType = null,
+        public ?string $fileName = null,
     ) {}
 
     /**
@@ -37,6 +41,8 @@ final readonly class ResponseInfo
             properties: $data['properties'] ?? [],
             resourceClass: $data['class'] ?? null,
             error: $data['error'] ?? null,
+            contentType: $data['contentType'] ?? null,
+            fileName: $data['fileName'] ?? null,
         );
     }
 
@@ -58,6 +64,14 @@ final readonly class ResponseInfo
 
         if ($this->error !== null) {
             $result['error'] = $this->error;
+        }
+
+        if ($this->contentType !== null) {
+            $result['contentType'] = $this->contentType;
+        }
+
+        if ($this->fileName !== null) {
+            $result['fileName'] = $this->fileName;
         }
 
         return $result;
@@ -94,6 +108,43 @@ final readonly class ResponseInfo
             type: ResponseType::UNKNOWN,
             properties: [],
             error: $error,
+        );
+    }
+
+    /**
+     * Create a binary file response info.
+     */
+    public static function binaryFile(string $contentType, ?string $fileName = null): self
+    {
+        return new self(
+            type: ResponseType::BINARY_FILE,
+            properties: [],
+            contentType: $contentType,
+            fileName: $fileName,
+        );
+    }
+
+    /**
+     * Create a streamed response info.
+     */
+    public static function streamed(string $contentType): self
+    {
+        return new self(
+            type: ResponseType::STREAMED,
+            properties: [],
+            contentType: $contentType,
+        );
+    }
+
+    /**
+     * Create a custom content type response info.
+     */
+    public static function customContentType(string $contentType): self
+    {
+        return new self(
+            type: ResponseType::CUSTOM,
+            properties: [],
+            contentType: $contentType,
         );
     }
 
@@ -153,5 +204,25 @@ final readonly class ResponseInfo
     public function getPropertyNames(): array
     {
         return array_keys($this->properties);
+    }
+
+    /**
+     * Get the content type for this response.
+     *
+     * Returns explicit content type if set, otherwise returns default based on type.
+     */
+    public function getContentType(): string
+    {
+        if ($this->contentType !== null) {
+            return $this->contentType;
+        }
+
+        return match ($this->type) {
+            ResponseType::BINARY_FILE, ResponseType::STREAMED => 'application/octet-stream',
+            ResponseType::PLAIN_TEXT => 'text/plain',
+            ResponseType::XML => 'application/xml',
+            ResponseType::HTML => 'text/html',
+            default => 'application/json',
+        };
     }
 }
