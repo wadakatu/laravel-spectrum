@@ -22,8 +22,8 @@ use League\Fractal\Serializer\ArraySerializer;
  * This controller showcases various Fractal features:
  * - Basic item transformation
  * - Collection transformation with pagination
- * - Include parsing (sparse fieldsets)
- * - Different serializers
+ * - Include parsing for related resources
+ * - ArraySerializer usage
  */
 class FractalController extends Controller
 {

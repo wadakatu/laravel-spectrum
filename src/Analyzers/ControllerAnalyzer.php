@@ -323,7 +323,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
                 );
             }
         }
-        // new Item(..., new Transformer) パターン (League\Fractal\Resource\Item 直接使用)
+        // Pattern: new Item(..., new Transformer) - direct League\Fractal\Resource\Item usage
         elseif (preg_match('/new\s+Item\s*\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
             $transformerClass = $this->resolveClassName($matches[1], $reflection);
             if ($transformerClass && class_exists($transformerClass)) {
@@ -335,7 +335,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
                 );
             }
         }
-        // new Collection(..., new Transformer) パターン (League\Fractal\Resource\Collection 直接使用)
+        // Pattern: new Collection(..., new Transformer) - direct League\Fractal\Resource\Collection usage
         elseif (preg_match('/new\s+Collection\s*\([^,]+,\s*new\s+([\\\\]?\w+(?:\\\\\\w+)*)\s*(?:\(|\))/', $source, $matches)) {
             $transformerClass = $this->resolveClassName($matches[1], $reflection);
             if ($transformerClass && class_exists($transformerClass)) {

@@ -617,8 +617,13 @@ class OpenApiGenerator
     /**
      * Generate response schema from Fractal Transformer.
      *
-     * @param  array<string, mixed>  $baseResponse
-     * @return array<string, mixed>|null
+     * Analyzes the Fractal transformer class to extract properties and generates
+     * an OpenAPI-compliant response schema. Also registers the item schema in
+     * the SchemaRegistry for reuse.
+     *
+     * @param  ControllerInfo  $controllerInfo  Controller info with Fractal metadata
+     * @param  array<string, mixed>  $baseResponse  Base response structure to extend
+     * @return array<string, mixed>|null Response array with content/schema, or null if analysis fails
      */
     protected function generateFractalResponse(ControllerInfo $controllerInfo, array $baseResponse): ?array
     {
@@ -634,6 +639,11 @@ class OpenApiGenerator
         $fractalData = $this->fractalTransformerAnalyzer->analyze($transformerClass);
 
         if (empty($fractalData) || empty($fractalData['properties'])) {
+            Log::debug('Fractal transformer analysis returned no properties', [
+                'transformer' => $transformerClass,
+                'has_data' => ! empty($fractalData),
+            ]);
+
             return null;
         }
 
@@ -641,6 +651,12 @@ class OpenApiGenerator
         $schema = $this->schemaGenerator->generateFromFractal($fractalData, $isCollection, $hasPagination);
 
         if (empty($schema)) {
+            Log::debug('Fractal schema generation returned empty result', [
+                'transformer' => $transformerClass,
+                'isCollection' => $isCollection,
+                'hasPagination' => $hasPagination,
+            ]);
+
             return null;
         }
 
