@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Converters;
 
 use LaravelSpectrum\DTO\OpenApiSchema;
