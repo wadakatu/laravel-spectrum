@@ -114,12 +114,7 @@ return [
     |   ],
     |
     */
-    'servers' => [
-        [
-            'url' => env('APP_URL', 'http://localhost'),
-            'description' => 'API Server',
-        ],
-    ],
+    'servers' => [],
 
     /*
     |--------------------------------------------------------------------------

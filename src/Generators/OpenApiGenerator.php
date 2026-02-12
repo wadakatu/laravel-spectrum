@@ -205,22 +205,39 @@ class OpenApiGenerator
      */
     protected function buildServers(): array
     {
-        /** @var array<int, array<string, mixed>>|null $servers */
         $servers = config('spectrum.servers');
 
-        if (empty($servers)) {
-            return [
-                [
-                    'url' => rtrim(config('app.url'), '/').'/api',
-                    'description' => 'API Server',
-                ],
-            ];
+        if (! is_array($servers) || empty($servers)) {
+            return $this->getDefaultServers();
         }
 
-        return array_map(
-            fn (array $server) => OpenApiServer::fromArray($server)->toArray(),
-            $servers
-        );
+        $result = [];
+        foreach ($servers as $server) {
+            if (! is_array($server)) {
+                Log::warning('Invalid server entry in spectrum.servers config: expected array, got '.gettype($server).'. Skipping.');
+
+                continue;
+            }
+
+            $result[] = OpenApiServer::fromArray($server)->toArray();
+        }
+
+        return empty($result) ? $this->getDefaultServers() : $result;
+    }
+
+    /**
+     * Get the default server configuration.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getDefaultServers(): array
+    {
+        return [
+            [
+                'url' => rtrim(config('app.url'), '/').'/api',
+                'description' => 'API Server',
+            ],
+        ];
     }
 
     /**

@@ -417,6 +417,61 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertEquals('API Server', $openapi['servers'][0]['description']);
     }
 
+    #[Test]
+    public function it_falls_back_to_default_when_servers_config_is_null()
+    {
+        // Arrange - Simulate older config that does not have 'servers' key
+        config(['spectrum.servers' => null]);
+        config(['app.url' => 'https://example.com']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Should use the default app.url/api fallback
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
+    }
+
+    #[Test]
+    public function it_supports_server_with_url_only()
+    {
+        // Arrange
+        config(['spectrum.servers' => [
+            ['url' => 'https://api.example.com'],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://api.example.com', $openapi['servers'][0]['url']);
+        $this->assertArrayNotHasKey('description', $openapi['servers'][0]);
+        $this->assertArrayNotHasKey('variables', $openapi['servers'][0]);
+    }
+
+    #[Test]
+    public function it_skips_invalid_server_entries_gracefully()
+    {
+        // Arrange - Mix of valid and invalid entries
+        config(['spectrum.servers' => [
+            ['url' => 'https://api.example.com', 'description' => 'Valid Server'],
+            'https://invalid.example.com',
+            ['url' => 'https://also-valid.example.com'],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Only valid array entries should be included
+        $this->assertCount(2, $openapi['servers']);
+        $this->assertEquals('https://api.example.com', $openapi['servers'][0]['url']);
+        $this->assertEquals('https://also-valid.example.com', $openapi['servers'][1]['url']);
+    }
+
     protected function mockControllerAnalysis(string $method, array $result): void
     {
         $controllerAnalyzer = Mockery::mock('LaravelSpectrum\Analyzers\ControllerAnalyzer');
