@@ -234,7 +234,7 @@ class OpenApiGenerator
     {
         return [
             [
-                'url' => rtrim(config('app.url'), '/').'/api',
+                'url' => rtrim(config('app.url', 'http://localhost'), '/').'/api',
                 'description' => 'API Server',
             ],
         ];
