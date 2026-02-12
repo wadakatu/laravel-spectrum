@@ -89,6 +89,40 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Server Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define the servers for the OpenAPI specification. Each server entry
+    | requires a 'url' and optionally a 'description' and 'variables'.
+    |
+    | If empty or not set, defaults to APP_URL/api.
+    |
+    | Example with server variables:
+    |   [
+    |       'url' => 'https://{environment}.example.com/api/{version}',
+    |       'description' => 'API Server',
+    |       'variables' => [
+    |           'environment' => [
+    |               'default' => 'production',
+    |               'description' => 'Server environment',
+    |               'enum' => ['production', 'staging'],
+    |           ],
+    |           'version' => [
+    |               'default' => 'v1',
+    |           ],
+    |       ],
+    |   ],
+    |
+    */
+    'servers' => [
+        [
+            'url' => env('APP_URL', 'http://localhost'),
+            'description' => 'API Server',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Parameter Serialization
     |--------------------------------------------------------------------------
     |

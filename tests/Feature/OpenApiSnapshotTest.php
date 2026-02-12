@@ -35,6 +35,7 @@ class OpenApiSnapshotTest extends TestCase
         config(['spectrum.version' => '1.0.0']);
         config(['spectrum.description' => 'API for snapshot testing']);
         config(['app.url' => 'https://api.example.com']);
+        config(['spectrum.servers' => []]);
     }
 
     protected function tearDown(): void

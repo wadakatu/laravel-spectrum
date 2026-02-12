@@ -13,6 +13,7 @@ use LaravelSpectrum\DTO\AuthenticationResult;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiResponse;
+use LaravelSpectrum\DTO\OpenApiServer;
 use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
@@ -186,12 +187,7 @@ class OpenApiGenerator
         return [
             'openapi' => $this->getOpenApiVersion(),
             'info' => $info,
-            'servers' => [
-                [
-                    'url' => rtrim(config('app.url'), '/').'/api',
-                    'description' => 'API Server',
-                ],
-            ],
+            'servers' => $this->buildServers(),
             'paths' => [],
             'components' => [
                 'schemas' => [],
@@ -200,6 +196,31 @@ class OpenApiGenerator
                 ),
             ],
         ];
+    }
+
+    /**
+     * Build the servers array from configuration or fall back to default.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildServers(): array
+    {
+        /** @var array<int, array<string, mixed>>|null $servers */
+        $servers = config('spectrum.servers');
+
+        if (empty($servers)) {
+            return [
+                [
+                    'url' => rtrim(config('app.url'), '/').'/api',
+                    'description' => 'API Server',
+                ],
+            ];
+        }
+
+        return array_map(
+            fn (array $server) => OpenApiServer::fromArray($server)->toArray(),
+            $servers
+        );
     }
 
     /**

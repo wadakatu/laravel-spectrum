@@ -21,6 +21,9 @@ class ExportPostmanCommandTest extends TestCase
         if (File::exists(storage_path('app/spectrum'))) {
             File::deleteDirectory(storage_path('app/spectrum'));
         }
+
+        // Use fallback server behavior for consistent test output
+        config(['spectrum.servers' => []]);
     }
 
     protected function tearDown(): void

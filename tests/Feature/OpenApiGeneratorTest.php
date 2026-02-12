@@ -126,6 +126,7 @@ class OpenApiGeneratorTest extends TestCase
         config(['spectrum.version' => '2.0.0']);
         config(['spectrum.description' => 'Test API Description']);
         config(['app.url' => 'https://example.com']);
+        config(['spectrum.servers' => []]);
 
         Route::get('api/test', [UserController::class, 'index']);
 
@@ -331,6 +332,89 @@ class OpenApiGeneratorTest extends TestCase
 
         // Assert - x-tagGroups should not be present
         $this->assertArrayNotHasKey('x-tagGroups', $openapi);
+    }
+
+    #[Test]
+    public function it_uses_config_servers_when_configured()
+    {
+        // Arrange
+        config(['spectrum.servers' => [
+            [
+                'url' => 'https://api.example.com',
+                'description' => 'Production Server',
+            ],
+            [
+                'url' => 'https://staging.example.com',
+                'description' => 'Staging Server',
+            ],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert
+        $this->assertCount(2, $openapi['servers']);
+        $this->assertEquals('https://api.example.com', $openapi['servers'][0]['url']);
+        $this->assertEquals('Production Server', $openapi['servers'][0]['description']);
+        $this->assertEquals('https://staging.example.com', $openapi['servers'][1]['url']);
+        $this->assertEquals('Staging Server', $openapi['servers'][1]['description']);
+    }
+
+    #[Test]
+    public function it_supports_server_variables_in_config()
+    {
+        // Arrange
+        config(['spectrum.servers' => [
+            [
+                'url' => 'https://{environment}.example.com/api/{version}',
+                'description' => 'API Server with variables',
+                'variables' => [
+                    'environment' => [
+                        'default' => 'production',
+                        'description' => 'Server environment',
+                        'enum' => ['production', 'staging', 'development'],
+                    ],
+                    'version' => [
+                        'default' => 'v1',
+                        'description' => 'API version',
+                    ],
+                ],
+            ],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert
+        $this->assertCount(1, $openapi['servers']);
+        $server = $openapi['servers'][0];
+        $this->assertEquals('https://{environment}.example.com/api/{version}', $server['url']);
+        $this->assertEquals('API Server with variables', $server['description']);
+        $this->assertArrayHasKey('variables', $server);
+        $this->assertArrayHasKey('environment', $server['variables']);
+        $this->assertEquals('production', $server['variables']['environment']['default']);
+        $this->assertEquals(['production', 'staging', 'development'], $server['variables']['environment']['enum']);
+        $this->assertArrayHasKey('version', $server['variables']);
+        $this->assertEquals('v1', $server['variables']['version']['default']);
+    }
+
+    #[Test]
+    public function it_falls_back_to_default_when_servers_config_is_empty()
+    {
+        // Arrange
+        config(['spectrum.servers' => []]);
+        config(['app.url' => 'https://example.com']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Should use the default app.url/api fallback
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
+        $this->assertEquals('API Server', $openapi['servers'][0]['description']);
     }
 
     protected function mockControllerAnalysis(string $method, array $result): void
