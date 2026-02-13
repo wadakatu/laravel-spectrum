@@ -880,6 +880,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Response Links Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define OpenAPI response links for controller methods.
+    | Key format: 'App\Http\Controllers\UserController@store'
+    |
+    | Links are emitted under responses.<status>.links in each operation.
+    | This is an alternative to using the #[OpenApiResponseLink] attribute.
+    |
+    | Example:
+    |   'App\Http\Controllers\UserController@store' => [
+    |       [
+    |           'statusCode' => 201,
+    |           'name' => 'GetUserById',
+    |           'operationId' => 'usersShow',
+    |           'parameters' => ['user' => '$response.body#/id'],
+    |           'description' => 'Follow-up operation to fetch the created user',
+    |       ],
+    |   ],
+    |
+    */
+    'response_links' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Callbacks Configuration
     |--------------------------------------------------------------------------
     |

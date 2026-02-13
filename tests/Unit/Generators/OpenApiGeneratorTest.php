@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
@@ -16,6 +17,7 @@ use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiSchema;
+use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\DTO\TagDefinition;
@@ -655,6 +657,158 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertCount(1, $operation['parameters']);
         $this->assertEquals('user', $operation['parameters'][0]['name']);
         $this->assertEquals('path', $operation['parameters'][0]['in']);
+    }
+
+    #[Test]
+    public function it_includes_response_links_in_generated_responses(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['POST'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'store',
+                'middleware' => [],
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
+            ->once()
+            ->andReturn(new ControllerInfo(
+                responseLinks: [
+                    new ResponseLinkInfo(
+                        statusCode: 201,
+                        name: 'GetUserById',
+                        operationId: 'usersShow',
+                        parameters: ['user' => '$response.body#/id'],
+                    ),
+                ],
+            ));
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users');
+        $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('Create User');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->once()->andReturn('usersStore');
+        $this->tagGenerator->shouldReceive('generate')->once()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->once()->andReturn([]);
+        $this->requestBodyGenerator->shouldReceive('generate')->once()->andReturn(null);
+
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->once()->andReturn([]);
+
+        $result = $this->generateAsArray($routes);
+
+        $response = $result['paths']['/api/users']['post']['responses']['201'];
+        $this->assertArrayHasKey('links', $response);
+        $this->assertArrayHasKey('GetUserById', $response['links']);
+        $this->assertSame('usersShow', $response['links']['GetUserById']['operationId']);
+    }
+
+    #[Test]
+    public function it_merges_multiple_response_links_for_same_status(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['POST'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'store',
+                'middleware' => [],
+                'parameters' => [],
+            ],
+        ];
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
+            ->once()
+            ->andReturn(new ControllerInfo(
+                responseLinks: [
+                    new ResponseLinkInfo(
+                        statusCode: 201,
+                        name: 'GetUserById',
+                        operationId: 'usersShow',
+                        parameters: ['user' => '$response.body#/id'],
+                    ),
+                    new ResponseLinkInfo(
+                        statusCode: 201,
+                        name: 'GetUserPosts',
+                        operationId: 'usersPostsIndex',
+                        parameters: ['user' => '$response.body#/id'],
+                    ),
+                ],
+            ));
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users');
+        $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('Create User');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->once()->andReturn('usersStore');
+        $this->tagGenerator->shouldReceive('generate')->once()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->once()->andReturn([]);
+        $this->requestBodyGenerator->shouldReceive('generate')->once()->andReturn(null);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->once()->andReturn([]);
+
+        $result = $this->generateAsArray($routes);
+        $links = $result['paths']['/api/users']['post']['responses']['201']['links'];
+
+        $this->assertArrayHasKey('GetUserById', $links);
+        $this->assertArrayHasKey('GetUserPosts', $links);
+    }
+
+    #[Test]
+    public function it_skips_response_links_when_status_code_response_does_not_exist(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'method' => 'index',
+                'middleware' => [],
+                'parameters' => [],
+            ],
+        ];
+
+        Log::spy();
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
+            ->once()
+            ->andReturn(new ControllerInfo(
+                responseLinks: [
+                    new ResponseLinkInfo(
+                        statusCode: 201,
+                        name: 'GetUserById',
+                        operationId: 'usersShow',
+                    ),
+                ],
+            ));
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')->once()->andReturn('/api/users');
+        $this->metadataGenerator->shouldReceive('generateSummary')->once()->andReturn('List Users');
+        $this->metadataGenerator->shouldReceive('generateOperationId')->once()->andReturn('usersIndex');
+        $this->tagGenerator->shouldReceive('generate')->once()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->once()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->once()->andReturn([]);
+
+        $result = $this->generateAsArray($routes);
+        $response200 = $result['paths']['/api/users']['get']['responses']['200'];
+
+        $this->assertArrayNotHasKey('links', $response200);
+        Log::shouldHaveReceived('warning')->once();
     }
 
     #[Test]

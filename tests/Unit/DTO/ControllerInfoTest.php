@@ -11,6 +11,7 @@ use LaravelSpectrum\DTO\FractalInfo;
 use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
+use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\ResponseInfo;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -475,5 +476,54 @@ class ControllerInfoTest extends TestCase
 
         $this->assertCount(1, $info->callbacks);
         $this->assertEquals('valid', $info->callbacks[0]->name);
+    }
+
+    #[Test]
+    public function it_checks_if_has_response_links(): void
+    {
+        $withLinks = new ControllerInfo(responseLinks: [
+            new ResponseLinkInfo(
+                statusCode: 201,
+                name: 'GetUserById',
+                operationId: 'usersShow',
+            ),
+        ]);
+        $without = ControllerInfo::empty();
+
+        $this->assertTrue($withLinks->hasResponseLinks());
+        $this->assertFalse($without->hasResponseLinks());
+    }
+
+    #[Test]
+    public function it_serializes_response_links_round_trip(): void
+    {
+        $info = new ControllerInfo(responseLinks: [
+            new ResponseLinkInfo(
+                statusCode: 201,
+                name: 'GetUserById',
+                operationId: 'usersShow',
+                parameters: ['user' => '$response.body#/id'],
+            ),
+        ]);
+
+        $restored = ControllerInfo::fromArray($info->toArray());
+
+        $this->assertCount(1, $restored->responseLinks);
+        $this->assertEquals('GetUserById', $restored->responseLinks[0]->name);
+        $this->assertEquals('usersShow', $restored->responseLinks[0]->operationId);
+    }
+
+    #[Test]
+    public function it_is_not_empty_when_has_response_links(): void
+    {
+        $info = new ControllerInfo(responseLinks: [
+            new ResponseLinkInfo(
+                statusCode: 200,
+                name: 'GetUserById',
+                operationId: 'usersShow',
+            ),
+        ]);
+
+        $this->assertFalse($info->isEmpty());
     }
 }

@@ -14,7 +14,7 @@ namespace LaravelSpectrum\DTO;
  *     tags?: array<int, string>,
  *     parameters?: array<int, array<string, mixed>>,
  *     requestBody?: array{content: array<string, array{schema: array<string, mixed>}>, required?: bool},
- *     responses: array<string, array{description: string, content?: array<string, mixed>}>,
+ *     responses: array<string, array{description: string, content?: array<string, mixed>, links?: array<string, mixed>}>,
  *     security?: array<int, array<string, array<int, string>>>,
  *     deprecated?: bool,
  *     callbacks?: array<string, mixed>,

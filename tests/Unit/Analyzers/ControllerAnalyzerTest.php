@@ -11,6 +11,7 @@ use LaravelSpectrum\Analyzers\HeaderParameterAnalyzer;
 use LaravelSpectrum\Analyzers\InlineValidationAnalyzer;
 use LaravelSpectrum\Analyzers\PaginationAnalyzer;
 use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
+use LaravelSpectrum\Analyzers\ResponseLinkAnalyzer;
 use LaravelSpectrum\Analyzers\ResponseAnalyzer;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Tests\TestCase;
@@ -159,6 +160,7 @@ class ControllerAnalyzerTest extends TestCase
             $this->app->make(EnumAnalyzer::class),
             $this->app->make(ResponseAnalyzer::class),
             $this->app->make(CallbackAnalyzer::class),
+            $this->app->make(ResponseLinkAnalyzer::class),
             $mockAstHelper,
         );
 
@@ -184,6 +186,7 @@ class ControllerAnalyzerTest extends TestCase
             $this->app->make(EnumAnalyzer::class),
             $this->app->make(ResponseAnalyzer::class),
             $this->app->make(CallbackAnalyzer::class),
+            $this->app->make(ResponseLinkAnalyzer::class),
             $mockAstHelper,
         );
 
