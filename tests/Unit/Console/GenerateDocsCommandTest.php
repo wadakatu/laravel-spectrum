@@ -62,6 +62,70 @@ class GenerateDocsCommandTest extends TestCase
     }
 
     #[Test]
+    public function it_applies_configured_memory_limit_when_higher_than_current_limit(): void
+    {
+        $command = app(GenerateDocsCommand::class);
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('applyConfiguredMemoryLimit');
+        $method->setAccessible(true);
+
+        $originalMemoryLimit = ini_get('memory_limit');
+        $originalConfigLimit = config('spectrum.performance.memory_limit');
+
+        try {
+            if (ini_set('memory_limit', '256M') === false) {
+                $this->markTestSkipped('Unable to change memory_limit in this environment.');
+            }
+
+            config(['spectrum.performance.memory_limit' => '512M']);
+
+            $method->invoke($command);
+
+            $this->assertSame(
+                $this->parseMemoryLimitToBytes('512M'),
+                $this->parseMemoryLimitToBytes((string) ini_get('memory_limit'))
+            );
+        } finally {
+            config(['spectrum.performance.memory_limit' => $originalConfigLimit]);
+            if (is_string($originalMemoryLimit)) {
+                ini_set('memory_limit', $originalMemoryLimit);
+            }
+        }
+    }
+
+    #[Test]
+    public function it_does_not_lower_memory_limit_when_configured_limit_is_smaller(): void
+    {
+        $command = app(GenerateDocsCommand::class);
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('applyConfiguredMemoryLimit');
+        $method->setAccessible(true);
+
+        $originalMemoryLimit = ini_get('memory_limit');
+        $originalConfigLimit = config('spectrum.performance.memory_limit');
+
+        try {
+            if (ini_set('memory_limit', '1G') === false) {
+                $this->markTestSkipped('Unable to change memory_limit in this environment.');
+            }
+
+            config(['spectrum.performance.memory_limit' => '512M']);
+
+            $method->invoke($command);
+
+            $this->assertSame(
+                $this->parseMemoryLimitToBytes('1G'),
+                $this->parseMemoryLimitToBytes((string) ini_get('memory_limit'))
+            );
+        } finally {
+            config(['spectrum.performance.memory_limit' => $originalConfigLimit]);
+            if (is_string($originalMemoryLimit)) {
+                ini_set('memory_limit', $originalMemoryLimit);
+            }
+        }
+    }
+
+    #[Test]
     public function get_file_extension_returns_json_by_default(): void
     {
         $command = app(GenerateDocsCommand::class);
@@ -1015,5 +1079,32 @@ class GenerateDocsCommandTest extends TestCase
         $this->artisan('spectrum:generate', ['--verbose' => true])
             ->expectsOutputToContain('Found 1 warnings:')
             ->assertSuccessful();
+    }
+
+    private function parseMemoryLimitToBytes(string $limit): int
+    {
+        $normalizedLimit = trim($limit);
+
+        if ($normalizedLimit === '-1') {
+            return PHP_INT_MAX;
+        }
+
+        $unit = strtolower(substr($normalizedLimit, -1));
+        $numericValue = $normalizedLimit;
+
+        if (in_array($unit, ['k', 'm', 'g'], true)) {
+            $numericValue = substr($normalizedLimit, 0, -1);
+        } else {
+            $unit = '';
+        }
+
+        $bytes = (int) $numericValue;
+
+        return match ($unit) {
+            'g' => $bytes * 1024 * 1024 * 1024,
+            'm' => $bytes * 1024 * 1024,
+            'k' => $bytes * 1024,
+            default => $bytes,
+        };
     }
 }
