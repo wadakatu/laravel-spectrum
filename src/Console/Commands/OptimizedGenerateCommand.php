@@ -478,7 +478,7 @@ class OptimizedGenerateCommand extends Command
             }
 
             $name = $group['name'];
-            $tags = isset($group['tags']) && is_array($group['tags']) ? array_values(array_unique($group['tags'])) : [];
+            $tags = $this->normalizeTagList(isset($group['tags']) && is_array($group['tags']) ? $group['tags'] : []);
 
             if (! isset($indexByName[$name])) {
                 $indexByName[$name] = count($merged);
@@ -491,11 +491,27 @@ class OptimizedGenerateCommand extends Command
             }
 
             $existingIndex = $indexByName[$name];
-            $existingTags = $merged[$existingIndex]['tags'] ?? [];
-            $merged[$existingIndex]['tags'] = array_values(array_unique(array_merge($existingTags, $tags)));
+            $existingTags = $this->normalizeTagList(is_array($merged[$existingIndex]['tags'] ?? null) ? $merged[$existingIndex]['tags'] : []);
+            $merged[$existingIndex]['tags'] = $this->normalizeTagList(array_merge($existingTags, $tags));
         }
 
         return $merged;
+    }
+
+    /**
+     * @param  array<int, mixed>  $tags
+     * @return array<int, string>
+     */
+    private function normalizeTagList(array $tags): array
+    {
+        $normalized = [];
+        foreach ($tags as $tag) {
+            if (is_string($tag) && $tag !== '') {
+                $normalized[] = $tag;
+            }
+        }
+
+        return array_values(array_unique($normalized));
     }
 
     /**
