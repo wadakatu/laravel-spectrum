@@ -463,6 +463,12 @@ class OpenApiGeneratorTest extends TestCase
         ]]);
         Route::get('api/users', [UserController::class, 'index']);
 
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'expected array, got string');
+            }));
+
         // Act
         $openapi = $this->generateOpenApi();
 
@@ -470,6 +476,227 @@ class OpenApiGeneratorTest extends TestCase
         $this->assertCount(2, $openapi['servers']);
         $this->assertEquals('https://api.example.com', $openapi['servers'][0]['url']);
         $this->assertEquals('https://also-valid.example.com', $openapi['servers'][1]['url']);
+    }
+
+    #[Test]
+    public function it_falls_back_to_default_when_all_server_entries_are_invalid()
+    {
+        // Arrange - All entries are non-array
+        config(['spectrum.servers' => [
+            'https://string1.example.com',
+            'https://string2.example.com',
+        ]]);
+        config(['app.url' => 'https://example.com']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->times(3);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Should fall back to default since all entries were invalid
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
+        $this->assertEquals('API Server', $openapi['servers'][0]['description']);
+    }
+
+    #[Test]
+    public function it_skips_server_entries_with_missing_url()
+    {
+        // Arrange - Entry without url key
+        config(['spectrum.servers' => [
+            ['description' => 'No URL server'],
+            ['url' => 'https://valid.example.com', 'description' => 'Valid'],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'missing a valid "url" field');
+            }));
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Only entry with valid url should be included
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://valid.example.com', $openapi['servers'][0]['url']);
+    }
+
+    #[Test]
+    public function it_skips_server_entries_with_empty_url()
+    {
+        // Arrange - Entry with empty url
+        config(['spectrum.servers' => [
+            ['url' => '', 'description' => 'Empty URL'],
+            ['url' => 'https://valid.example.com'],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'missing a valid "url" field');
+            }));
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://valid.example.com', $openapi['servers'][0]['url']);
+    }
+
+    #[Test]
+    public function it_handles_trailing_slash_in_app_url_for_default_server()
+    {
+        // Arrange - app.url with trailing slash
+        config(['spectrum.servers' => []]);
+        config(['app.url' => 'https://example.com/']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Should not produce double slash
+        $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
+    }
+
+    #[Test]
+    public function it_falls_back_to_localhost_when_app_url_is_null()
+    {
+        // Arrange
+        config(['spectrum.servers' => []]);
+        config(['app.url' => null]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'app.url config is not a valid string');
+            }));
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Should use http://localhost fallback
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('http://localhost/api', $openapi['servers'][0]['url']);
+    }
+
+    #[Test]
+    public function it_handles_non_string_url_in_server_entry()
+    {
+        // Arrange - url is an array instead of string
+        config(['spectrum.servers' => [
+            ['url' => ['nested', 'array'], 'description' => 'Bad config'],
+            ['url' => 'https://valid.example.com'],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'missing a valid "url" field');
+            }));
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Invalid entry should be skipped
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://valid.example.com', $openapi['servers'][0]['url']);
+    }
+
+    #[Test]
+    public function it_strips_server_variables_missing_default_field()
+    {
+        // Arrange - Variable missing required 'default' field
+        config(['spectrum.servers' => [
+            [
+                'url' => 'https://{env}.example.com/api',
+                'description' => 'API Server',
+                'variables' => [
+                    'env' => [
+                        'default' => 'production',
+                        'enum' => ['production', 'staging'],
+                    ],
+                    'bad_var' => [
+                        'enum' => ['a', 'b'],
+                    ],
+                ],
+            ],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::on(function ($message) {
+                return str_contains($message, 'Server variable "bad_var"') && str_contains($message, 'missing a valid "default" field');
+            }));
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Server should be included but invalid variable stripped
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://{env}.example.com/api', $openapi['servers'][0]['url']);
+        $this->assertArrayHasKey('variables', $openapi['servers'][0]);
+        $this->assertArrayHasKey('env', $openapi['servers'][0]['variables']);
+        $this->assertArrayNotHasKey('bad_var', $openapi['servers'][0]['variables']);
+    }
+
+    #[Test]
+    public function it_removes_variables_key_when_all_variables_are_invalid()
+    {
+        // Arrange - All variables missing 'default'
+        config(['spectrum.servers' => [
+            [
+                'url' => 'https://example.com/api',
+                'variables' => [
+                    'bad1' => ['enum' => ['a']],
+                    'bad2' => ['description' => 'no default'],
+                ],
+            ],
+        ]]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->times(2);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - Server included but variables key removed entirely
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
+        $this->assertArrayNotHasKey('variables', $openapi['servers'][0]);
+    }
+
+    #[Test]
+    public function it_falls_back_to_default_when_all_entries_have_invalid_urls()
+    {
+        // Arrange - All entries are arrays but with missing/empty URLs
+        config(['spectrum.servers' => [
+            ['description' => 'No URL'],
+            ['url' => '', 'description' => 'Empty URL'],
+            ['url' => ['not', 'a', 'string']],
+        ]]);
+        config(['app.url' => 'https://example.com']);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->times(4);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert - All invalid, should fall back to default
+        $this->assertCount(1, $openapi['servers']);
+        $this->assertEquals('https://example.com/api', $openapi['servers'][0]['url']);
+        $this->assertEquals('API Server', $openapi['servers'][0]['description']);
     }
 
     protected function mockControllerAnalysis(string $method, array $result): void

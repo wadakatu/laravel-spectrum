@@ -187,55 +187,13 @@ class OpenApiGenerator
         return [
             'openapi' => $this->getOpenApiVersion(),
             'info' => $info,
-            'servers' => $this->buildServers(),
+            'servers' => OpenApiServer::buildServersFromConfig(),
             'paths' => [],
             'components' => [
                 'schemas' => [],
                 'securitySchemes' => $this->securitySchemeGenerator->generateSecuritySchemes(
                     $schemesArray
                 ),
-            ],
-        ];
-    }
-
-    /**
-     * Build the servers array from configuration or fall back to default.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    protected function buildServers(): array
-    {
-        $servers = config('spectrum.servers');
-
-        if (! is_array($servers) || empty($servers)) {
-            return $this->getDefaultServers();
-        }
-
-        $result = [];
-        foreach ($servers as $server) {
-            if (! is_array($server)) {
-                Log::warning('Invalid server entry in spectrum.servers config: expected array, got '.gettype($server).'. Skipping.');
-
-                continue;
-            }
-
-            $result[] = OpenApiServer::fromArray($server)->toArray();
-        }
-
-        return empty($result) ? $this->getDefaultServers() : $result;
-    }
-
-    /**
-     * Get the default server configuration.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function getDefaultServers(): array
-    {
-        return [
-            [
-                'url' => rtrim(config('app.url', 'http://localhost'), '/').'/api',
-                'description' => 'API Server',
             ],
         ];
     }
