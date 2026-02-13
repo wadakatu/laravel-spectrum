@@ -210,9 +210,15 @@ class RouteAnalyzer implements HasErrors
                     $method = '__invoke';
                 }
 
+                $httpMethods = $this->filterHttpMethods($route->methods());
+
+                if ($httpMethods === []) {
+                    continue;
+                }
+
                 $routes[] = new RouteInfo(
                     uri: $route->uri(),
-                    httpMethods: $route->methods(),
+                    httpMethods: $httpMethods,
                     controller: get_class($controller),
                     method: $method,
                     name: $route->getName(),
@@ -252,6 +258,27 @@ class RouteAnalyzer implements HasErrors
         }
 
         return false;
+    }
+
+    /**
+     * @param  array<int, string>  $httpMethods
+     * @return array<int, string>
+     */
+    protected function filterHttpMethods(array $httpMethods): array
+    {
+        $excludedMethods = array_map(
+            static fn ($method): string => strtoupper((string) $method),
+            (array) config('spectrum.excluded_methods', [])
+        );
+
+        if ($excludedMethods === []) {
+            return $httpMethods;
+        }
+
+        return array_values(array_filter(
+            $httpMethods,
+            fn (string $method): bool => ! in_array(strtoupper($method), $excludedMethods, true)
+        ));
     }
 
     /**

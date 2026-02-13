@@ -57,6 +57,22 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_excludes_configured_http_methods_from_generated_specification(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['head']]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $openapi = $this->generateOpenApi();
+
+        // Assert
+        $this->assertArrayHasKey('/api/users', $openapi['paths']);
+        $this->assertArrayHasKey('get', $openapi['paths']['/api/users']);
+        $this->assertArrayNotHasKey('head', $openapi['paths']['/api/users']);
+    }
+
+    #[Test]
     public function it_includes_request_body_for_post_requests()
     {
         // Arrange

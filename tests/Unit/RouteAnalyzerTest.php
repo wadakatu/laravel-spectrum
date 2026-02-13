@@ -103,6 +103,35 @@ class RouteAnalyzerTest extends TestCase
     }
 
     #[Test]
+    public function it_excludes_configured_http_methods(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['Head']]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(1, $routes);
+        $this->assertEquals(['GET'], $routes[0]['httpMethods']);
+    }
+
+    #[Test]
+    public function it_skips_routes_when_all_http_methods_are_excluded(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['get', 'head']]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(0, $routes);
+    }
+
+    #[Test]
     public function it_extracts_middleware()
     {
         // Arrange
