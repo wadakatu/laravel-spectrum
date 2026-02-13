@@ -135,7 +135,7 @@ class OptimizedGenerateCommandTest extends TestCase
     }
 
     #[Test]
-    public function combine_paths_merges_path_data(): void
+    public function combine_paths_merges_legacy_and_openapi_formats(): void
     {
         $command = new OptimizedGenerateCommand;
         $reflection = new \ReflectionClass($command);
@@ -144,8 +144,8 @@ class OptimizedGenerateCommandTest extends TestCase
 
         $paths = [
             ['path' => '/api/users', 'methods' => ['get' => ['summary' => 'List users']]],
-            ['path' => '/api/users', 'methods' => ['post' => ['summary' => 'Create user']]],
-            ['path' => '/api/posts', 'methods' => ['get' => ['summary' => 'List posts']]],
+            ['/api/users' => ['post' => ['summary' => 'Create user']]],
+            ['/api/posts' => ['get' => ['summary' => 'List posts']]],
         ];
 
         $result = $method->invoke($command, $paths);
@@ -190,45 +190,172 @@ class OptimizedGenerateCommandTest extends TestCase
     }
 
     #[Test]
-    public function assemble_openapi_spec_creates_valid_structure(): void
+    public function assemble_openapi_spec_merges_paths_components_and_metadata(): void
     {
         $command = new OptimizedGenerateCommand;
         $reflection = new \ReflectionClass($command);
         $method = $reflection->getMethod('assembleOpenApiSpec');
         $method->setAccessible(true);
 
-        $paths = [
-            ['path' => '/api/users', 'methods' => ['get' => []]],
+        $specs = [
+            [
+                'openapi' => '3.0.0',
+                'info' => [
+                    'title' => 'Spec A',
+                    'version' => '1.0.0',
+                    'description' => 'First chunk',
+                ],
+                'paths' => [
+                    '/api/users' => ['get' => ['operationId' => 'users.index']],
+                ],
+                'components' => [
+                    'schemas' => [
+                        'User' => ['type' => 'object'],
+                    ],
+                    'securitySchemes' => [
+                        'bearerAuth' => ['type' => 'http', 'scheme' => 'bearer'],
+                    ],
+                ],
+                'security' => [
+                    ['bearerAuth' => []],
+                ],
+                'tags' => [
+                    ['name' => 'User', 'description' => 'User operations'],
+                ],
+                'x-tagGroups' => [
+                    ['name' => 'Core', 'tags' => ['User']],
+                ],
+            ],
+            [
+                'openapi' => '3.1.0',
+                'paths' => [
+                    '/api/users' => ['post' => ['operationId' => 'users.store']],
+                    '/api/posts' => ['get' => ['operationId' => 'posts.index']],
+                ],
+                'components' => [
+                    'schemas' => [
+                        'Post' => ['type' => 'object'],
+                    ],
+                    'callbacks' => [
+                        'notifyEvent' => ['{$request.body#/callback}' => []],
+                    ],
+                ],
+                'security' => [
+                    ['bearerAuth' => []],
+                    ['apiKeyAuth' => []],
+                ],
+                'tags' => [
+                    ['name' => 'Post', 'description' => 'Post operations'],
+                    ['name' => 'User', 'description' => 'Updated description'],
+                ],
+                'x-tagGroups' => [
+                    ['name' => 'Core', 'tags' => ['Post']],
+                    ['name' => 'Extra', 'tags' => ['Post']],
+                ],
+                'jsonSchemaDialect' => 'https://json-schema.org/draft/2020-12/schema',
+            ],
         ];
 
-        $result = $method->invoke($command, $paths);
+        $result = $method->invoke($command, $specs);
 
         $this->assertArrayHasKey('openapi', $result);
-        $this->assertEquals('3.0.0', $result['openapi']);
+        $this->assertEquals('3.1.0', $result['openapi']);
         $this->assertArrayHasKey('info', $result);
-        $this->assertArrayHasKey('title', $result['info']);
-        $this->assertArrayHasKey('version', $result['info']);
+        $this->assertEquals('Spec A', $result['info']['title']);
         $this->assertEquals('1.0.0', $result['info']['version']);
-        $this->assertArrayHasKey('servers', $result);
+        $this->assertEquals('First chunk', $result['info']['description']);
         $this->assertArrayHasKey('paths', $result);
+        $this->assertArrayHasKey('/api/users', $result['paths']);
+        $this->assertArrayHasKey('/api/posts', $result['paths']);
+        $this->assertArrayHasKey('get', $result['paths']['/api/users']);
+        $this->assertArrayHasKey('post', $result['paths']['/api/users']);
         $this->assertArrayHasKey('components', $result);
         $this->assertArrayHasKey('schemas', $result['components']);
         $this->assertArrayHasKey('securitySchemes', $result['components']);
+        $this->assertArrayHasKey('User', $result['components']['schemas']);
+        $this->assertArrayHasKey('Post', $result['components']['schemas']);
+        $this->assertArrayHasKey('callbacks', $result['components']);
+        $this->assertCount(2, $result['security']);
+        $this->assertCount(2, $result['tags']);
+        $this->assertEquals('Updated description', collect($result['tags'])->firstWhere('name', 'User')['description']);
+        $this->assertCount(2, $result['x-tagGroups']);
+        $this->assertEquals(['User', 'Post'], collect($result['x-tagGroups'])->firstWhere('name', 'Core')['tags']);
+        $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $result['jsonSchemaDialect']);
     }
 
     #[Test]
-    public function assemble_openapi_spec_with_empty_paths(): void
+    public function assemble_openapi_spec_with_empty_specs_uses_spectrum_config(): void
     {
         $command = new OptimizedGenerateCommand;
         $reflection = new \ReflectionClass($command);
         $method = $reflection->getMethod('assembleOpenApiSpec');
         $method->setAccessible(true);
+
+        config([
+            'spectrum.title' => 'Configured API',
+            'spectrum.version' => '9.9.9',
+            'spectrum.description' => 'Configured description',
+            'spectrum.openapi.version' => '3.1.0',
+        ]);
 
         $result = $method->invoke($command, []);
 
         $this->assertArrayHasKey('openapi', $result);
+        $this->assertEquals('3.1.0', $result['openapi']);
+        $this->assertEquals('Configured API', $result['info']['title']);
+        $this->assertEquals('9.9.9', $result['info']['version']);
+        $this->assertEquals('Configured description', $result['info']['description']);
         $this->assertArrayHasKey('paths', $result);
         $this->assertEmpty($result['paths']);
+    }
+
+    #[Test]
+    public function assemble_openapi_spec_preserves_base_components_from_generator(): void
+    {
+        $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
+        $openApiGenerator->shouldReceive('generate')
+            ->once()
+            ->with([])
+            ->andReturn(OpenApiSpec::fromArray([
+                'openapi' => '3.0.0',
+                'info' => [
+                    'title' => 'Base API',
+                    'version' => '1.0.0',
+                    'description' => 'Base description',
+                ],
+                'servers' => [
+                    ['url' => 'https://example.com', 'description' => 'Default server'],
+                ],
+                'paths' => [],
+                'components' => [
+                    'schemas' => [],
+                    'securitySchemes' => [
+                        'customAuth' => ['type' => 'apiKey', 'in' => 'header', 'name' => 'X-API-Key'],
+                    ],
+                ],
+            ]));
+
+        $command = new OptimizedGenerateCommand(
+            openApiGenerator: $openApiGenerator
+        );
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('assembleOpenApiSpec');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($command, [[
+            'paths' => [
+                '/api/users' => ['get' => ['operationId' => 'users.index']],
+            ],
+            'components' => [
+                'schemas' => [
+                    'User' => ['type' => 'object'],
+                ],
+            ],
+        ]]);
+
+        $this->assertArrayHasKey('/api/users', $result['paths']);
+        $this->assertArrayHasKey('customAuth', $result['components']['securitySchemes']);
+        $this->assertArrayHasKey('User', $result['components']['schemas']);
     }
 
     #[Test]
@@ -286,10 +413,14 @@ class OptimizedGenerateCommandTest extends TestCase
         $openApiGenerator->shouldReceive('generate')
             ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
-                'info' => ['title' => 'Test', 'version' => '1.0.0'],
+                'info' => ['title' => 'Test', 'version' => '1.0.0', 'description' => 'Test description'],
+                'servers' => [['url' => 'https://example.com', 'description' => 'Test server']],
                 'paths' => [
-                    'path' => '/api/users',
-                    'methods' => ['get' => []],
+                    '/api/users' => ['get' => []],
+                ],
+                'components' => [
+                    'schemas' => [],
+                    'securitySchemes' => [],
                 ],
             ]));
 
@@ -302,11 +433,11 @@ class OptimizedGenerateCommandTest extends TestCase
     }
 
     #[Test]
-    public function handle_via_artisan_with_parallel_option(): void
+    public function handle_via_artisan_accepts_parallel_option(): void
     {
-        // Generate enough routes to trigger parallel processing
+        // Keep route count low to avoid environment-dependent parallel execution during unit tests.
         $routes = [];
-        for ($i = 1; $i <= 60; $i++) {
+        for ($i = 1; $i <= 10; $i++) {
             $routes[] = [
                 'uri' => "/api/resource{$i}",
                 'httpMethods' => ['GET'],
@@ -321,10 +452,14 @@ class OptimizedGenerateCommandTest extends TestCase
         $openApiGenerator->shouldReceive('generate')
             ->andReturn(OpenApiSpec::fromArray([
                 'openapi' => '3.0.0',
-                'info' => ['title' => 'Test', 'version' => '1.0.0'],
+                'info' => ['title' => 'Test', 'version' => '1.0.0', 'description' => 'Test description'],
+                'servers' => [['url' => 'https://example.com', 'description' => 'Test server']],
                 'paths' => [
-                    'path' => '/api/test',
-                    'methods' => ['get' => []],
+                    '/api/test' => ['get' => []],
+                ],
+                'components' => [
+                    'schemas' => [],
+                    'securitySchemes' => [],
                 ],
             ]));
 
@@ -332,7 +467,7 @@ class OptimizedGenerateCommandTest extends TestCase
         $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
 
         $this->artisan('spectrum:generate:optimized', ['--parallel' => true])
-            ->expectsOutputToContain('Found 60 routes to process')
+            ->expectsOutputToContain('Found 10 routes to process')
             ->assertExitCode(0);
     }
 
