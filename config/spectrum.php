@@ -880,6 +880,59 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Callbacks Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define OpenAPI callback definitions for controller methods.
+    | Key format: 'App\Http\Controllers\OrderController@store'
+    |
+    | Each key maps to an array of callback definitions. This is an alternative
+    | to using the #[OpenApiCallback] attribute on controller methods.
+    |
+    | Example:
+    |   'App\Http\Controllers\OrderController@store' => [
+    |       [
+    |           'name' => 'onOrderStatusChange',
+    |           'expression' => '{$request.body#/callbackUrl}',
+    |           'method' => 'post',
+    |           'requestBody' => ['type' => 'object', 'properties' => ['status' => ['type' => 'string']]],
+    |           'responses' => ['200' => ['description' => 'Callback received']],
+    |           'description' => 'Notifies when order status changes',
+    |           'summary' => 'Order status callback',
+    |           'ref' => null, // Set to a component name to use $ref instead of inline definition
+    |       ],
+    |   ],
+    |
+    */
+    'callbacks' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Component Callbacks Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define reusable callback definitions for the components/callbacks section.
+    | These can be referenced from operation-level callbacks using the 'ref'
+    | field in the #[OpenApiCallback] attribute or the 'callbacks' config above.
+    |
+    | Example:
+    |   [
+    |       [
+    |           'name' => 'RefundCallback',
+    |           'expression' => '{$request.body#/webhookUrl}',
+    |           'method' => 'post',
+    |           'requestBody' => ['type' => 'object', 'properties' => ['refundId' => ['type' => 'string']]],
+    |           'responses' => ['200' => ['description' => 'Refund callback received']],
+    |           'description' => 'Refund notification webhook',
+    |           'summary' => 'Refund webhook',
+    |       ],
+    |   ],
+    |
+    */
+    'component_callbacks' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Mock Server Settings
     |--------------------------------------------------------------------------
     */

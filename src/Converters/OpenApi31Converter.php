@@ -113,6 +113,11 @@ class OpenApi31Converter
                         }
                     }
                 }
+
+                // Convert callback schemas
+                if (isset($operation['callbacks']) && is_array($operation['callbacks'])) {
+                    $paths[$path][$method]['callbacks'] = $this->convertCallbacks($operation['callbacks']);
+                }
             }
         }
 
@@ -162,6 +167,11 @@ class OpenApi31Converter
             }
         }
 
+        // Convert callbacks
+        if (isset($components['callbacks']) && is_array($components['callbacks'])) {
+            $components['callbacks'] = $this->convertCallbacks($components['callbacks']);
+        }
+
         // Convert parameters
         if (isset($components['parameters']) && is_array($components['parameters'])) {
             foreach ($components['parameters'] as $name => $parameter) {
@@ -173,6 +183,64 @@ class OpenApi31Converter
         }
 
         return $components;
+    }
+
+    /**
+     * Convert callbacks by traversing callback path items and converting their schemas to 3.1.0 format.
+     *
+     * @param  array<string, mixed>  $callbacks
+     * @return array<string, mixed>
+     */
+    private function convertCallbacks(array $callbacks): array
+    {
+        foreach ($callbacks as $name => $callbackDef) {
+            if (! is_array($callbackDef)) {
+                continue;
+            }
+
+            // Skip $ref callbacks
+            if (isset($callbackDef['$ref'])) {
+                continue;
+            }
+
+            foreach ($callbackDef as $expression => $pathItem) {
+                if (! is_array($pathItem)) {
+                    continue;
+                }
+
+                foreach ($pathItem as $method => $operation) {
+                    if (! is_array($operation)) {
+                        continue;
+                    }
+
+                    // Convert requestBody schemas
+                    if (isset($operation['requestBody']['content'])) {
+                        foreach ($operation['requestBody']['content'] as $mediaType => $content) {
+                            if (isset($content['schema'])) {
+                                $callbacks[$name][$expression][$method]['requestBody']['content'][$mediaType]['schema'] =
+                                    $this->convertSchema($content['schema']);
+                            }
+                        }
+                    }
+
+                    // Convert response schemas
+                    if (isset($operation['responses']) && is_array($operation['responses'])) {
+                        foreach ($operation['responses'] as $statusCode => $response) {
+                            if (isset($response['content']) && is_array($response['content'])) {
+                                foreach ($response['content'] as $mediaType => $content) {
+                                    if (isset($content['schema'])) {
+                                        $callbacks[$name][$expression][$method]['responses'][$statusCode]['content'][$mediaType]['schema'] =
+                                            $this->convertSchema($content['schema']);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $callbacks;
     }
 
     /**

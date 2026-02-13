@@ -19,6 +19,7 @@ use LaravelSpectrum\DTO\OpenApiSchema;
 use LaravelSpectrum\DTO\ResourceInfo;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\DTO\TagDefinition;
+use LaravelSpectrum\Generators\CallbackGenerator;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
@@ -120,6 +121,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $this->schemaRegistry
         );
     }
@@ -814,6 +816,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $realConverter,
+            new CallbackGenerator,
             new SchemaRegistry
         );
 
@@ -1372,6 +1375,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $this->schemaRegistry
         );
 
@@ -1467,6 +1471,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $this->schemaRegistry
         );
 
@@ -1536,6 +1541,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $mockRegistry
         );
 
@@ -1867,6 +1873,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $schemaRegistry
         );
 
@@ -1918,6 +1925,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $schemaRegistry
         );
 
@@ -1970,6 +1978,7 @@ class OpenApiGeneratorTest extends TestCase
             $this->paginationDetector,
             $this->requestAnalyzer,
             $this->openApi31Converter,
+            new CallbackGenerator,
             $schemaRegistry
         );
 

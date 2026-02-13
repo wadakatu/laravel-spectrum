@@ -62,6 +62,7 @@ class OpenApiGenerator
         protected PaginationDetector $paginationDetector,
         protected FormRequestAnalyzer $requestAnalyzer,
         protected OpenApi31Converter $openApi31Converter,
+        protected CallbackGenerator $callbackGenerator,
         protected ?SchemaRegistry $schemaRegistry = null,
         protected ?FractalTransformerAnalyzer $fractalTransformerAnalyzer = null,
     ) {
@@ -132,6 +133,12 @@ class OpenApiGenerator
             foreach ($registeredSchemas as $name => $schema) {
                 $openapi['components']['schemas'][$name] = $schema;
             }
+        }
+
+        // Populate components.callbacks with reusable callback definitions
+        $componentCallbacks = $this->generateComponentCallbacks();
+        if (! empty($componentCallbacks)) {
+            $openapi['components']['callbacks'] = $componentCallbacks;
         }
 
         // Validate that all schema references are resolved
@@ -212,6 +219,35 @@ class OpenApiGenerator
     }
 
     /**
+     * Generate reusable component callbacks from config.
+     *
+     * @return array<string, mixed>
+     */
+    protected function generateComponentCallbacks(): array
+    {
+        /** @var array<int, array<string, mixed>> $componentCallbacksConfig */
+        $componentCallbacksConfig = config('spectrum.component_callbacks', []);
+
+        if (empty($componentCallbacksConfig)) {
+            return [];
+        }
+
+        $callbackInfos = [];
+        foreach ($componentCallbacksConfig as $index => $data) {
+            try {
+                $callbackInfos[] = \LaravelSpectrum\DTO\CallbackInfo::fromArray($data);
+            } catch (\Exception $e) {
+                Log::error(
+                    "Failed to parse component callback config at index {$index}: {$e->getMessage()}",
+                    ['index' => $index, 'data' => $data]
+                );
+            }
+        }
+
+        return $this->callbackGenerator->generateComponentCallbacks($callbackInfos);
+    }
+
+    /**
      * Generate a single operation.
      *
      * @param  RouteDefinition  $route
@@ -242,6 +278,9 @@ class OpenApiGenerator
             }
         }
 
+        // Generate callbacks
+        $callbacks = $this->callbackGenerator->generate($controllerInfo->callbacks);
+
         return new OpenApiOperation(
             operationId: $this->metadataGenerator->generateOperationId($route, $method),
             summary: $this->metadataGenerator->generateSummary($route, $method),
@@ -251,6 +290,7 @@ class OpenApiGenerator
             requestBody: $requestBody,
             security: $security,
             deprecated: $controllerInfo->isDeprecated(),
+            callbacks: $callbacks,
         );
     }
 

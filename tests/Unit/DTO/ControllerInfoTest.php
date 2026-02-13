@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelSpectrum\Tests\Unit\DTO;
 
+use LaravelSpectrum\DTO\CallbackInfo;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\EnumParameterInfo;
 use LaravelSpectrum\DTO\FractalInfo;
@@ -416,5 +417,63 @@ class ControllerInfoTest extends TestCase
 
         $this->assertEquals('App\Http\Resources\UserResource', $info->resource);
         $this->assertCount(2, $info->resourceClasses);
+    }
+
+    #[Test]
+    public function it_checks_if_has_callbacks(): void
+    {
+        $withCallbacks = new ControllerInfo(callbacks: [
+            new CallbackInfo(name: 'cb', expression: '{$request.body#/url}'),
+        ]);
+        $without = ControllerInfo::empty();
+
+        $this->assertTrue($withCallbacks->hasCallbacks());
+        $this->assertFalse($without->hasCallbacks());
+    }
+
+    #[Test]
+    public function it_is_not_empty_when_has_callbacks(): void
+    {
+        $info = new ControllerInfo(callbacks: [
+            new CallbackInfo(name: 'cb', expression: '{$request.body#/url}'),
+        ]);
+
+        $this->assertFalse($info->isEmpty());
+    }
+
+    #[Test]
+    public function it_serializes_callbacks_round_trip(): void
+    {
+        $info = new ControllerInfo(callbacks: [
+            new CallbackInfo(
+                name: 'onEvent',
+                expression: '{$request.body#/callbackUrl}',
+                method: 'post',
+                description: 'Test callback',
+            ),
+        ]);
+
+        $restored = ControllerInfo::fromArray($info->toArray());
+
+        $this->assertCount(1, $restored->callbacks);
+        $this->assertEquals('onEvent', $restored->callbacks[0]->name);
+        $this->assertEquals('{$request.body#/callbackUrl}', $restored->callbacks[0]->expression);
+        $this->assertEquals('Test callback', $restored->callbacks[0]->description);
+    }
+
+    #[Test]
+    public function it_skips_malformed_callbacks_in_from_array(): void
+    {
+        $array = [
+            'callbacks' => [
+                ['invalid' => 'data'],
+                ['name' => 'valid', 'expression' => '{$request.body#/url}'],
+            ],
+        ];
+
+        $info = ControllerInfo::fromArray($array);
+
+        $this->assertCount(1, $info->callbacks);
+        $this->assertEquals('valid', $info->callbacks[0]->name);
     }
 }

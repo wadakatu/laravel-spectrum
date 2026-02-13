@@ -4,6 +4,7 @@ namespace LaravelSpectrum;
 
 use Illuminate\Support\ServiceProvider;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
+use LaravelSpectrum\Analyzers\CallbackAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
@@ -36,6 +37,7 @@ use LaravelSpectrum\Exporters\PostmanExporter;
 use LaravelSpectrum\Formatters\InsomniaFormatter;
 use LaravelSpectrum\Formatters\PostmanFormatter;
 use LaravelSpectrum\Formatters\RequestExampleFormatter;
+use LaravelSpectrum\Generators\CallbackGenerator;
 use LaravelSpectrum\Generators\ErrorResponseGenerator;
 use LaravelSpectrum\Generators\ExampleGenerator;
 use LaravelSpectrum\Generators\ExampleValueFactory;
@@ -110,6 +112,11 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(ModelSchemaExtractor::class);
         $this->app->singleton(CollectionAnalyzer::class);
         $this->app->singleton(ResponseAnalyzer::class);
+        $this->app->singleton(CallbackAnalyzer::class, function ($app) {
+            return new CallbackAnalyzer(
+                configCallbacks: config('spectrum.callbacks', []),
+            );
+        });
         $this->app->singleton(ControllerAnalyzer::class);
         $this->app->singleton(SchemaGenerator::class);
         $this->app->singleton(PaginationSchemaGenerator::class);
@@ -125,6 +132,7 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(OperationMetadataGenerator::class);
         $this->app->singleton(ParameterGenerator::class);
         $this->app->singleton(RequestBodyGenerator::class);
+        $this->app->singleton(CallbackGenerator::class);
         $this->app->singleton(OpenApi31Converter::class);
         $this->app->singleton(OpenApiGenerator::class);
         $this->app->singleton(FileWatcher::class);

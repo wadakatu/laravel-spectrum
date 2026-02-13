@@ -45,6 +45,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     protected ResponseAnalyzer $responseAnalyzer;
 
+    protected CallbackAnalyzer $callbackAnalyzer;
+
     protected AstHelper $astHelper;
 
     protected MethodSourceExtractor $methodSourceExtractor;
@@ -57,6 +59,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         HeaderParameterAnalyzer $headerParameterAnalyzer,
         EnumAnalyzer $enumAnalyzer,
         ResponseAnalyzer $responseAnalyzer,
+        CallbackAnalyzer $callbackAnalyzer,
         AstHelper $astHelper,
         ?MethodSourceExtractor $methodSourceExtractor = null,
         ?ErrorCollector $errorCollector = null
@@ -69,6 +72,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         $this->headerParameterAnalyzer = $headerParameterAnalyzer;
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
+        $this->callbackAnalyzer = $callbackAnalyzer;
         $this->astHelper = $astHelper;
         $this->methodSourceExtractor = $methodSourceExtractor ?? new MethodSourceExtractor;
     }
@@ -160,6 +164,9 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         // @deprecated アノテーションを検出
         $deprecated = $this->detectDeprecated($methodReflection);
 
+        // コールバック定義を検出
+        $callbacks = $this->callbackAnalyzer->analyze($methodReflection);
+
         return new ControllerInfo(
             formRequest: $formRequest,
             inlineValidation: $inlineValidation,
@@ -173,6 +180,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             enumParameters: $enumParameters,
             response: $response,
             deprecated: $deprecated,
+            callbacks: $callbacks,
         );
     }
 

@@ -26,6 +26,7 @@ final readonly class ControllerInfo
      * @param  array<int, EnumParameterInfo>  $enumParameters  Enum parameters from method signature
      * @param  ResponseInfo|null  $response  Response analysis info
      * @param  bool  $deprecated  Whether the controller method is marked as deprecated
+     * @param  array<int, CallbackInfo>  $callbacks  OpenAPI callback definitions
      */
     public function __construct(
         public ?string $formRequest = null,
@@ -40,6 +41,7 @@ final readonly class ControllerInfo
         public array $enumParameters = [],
         public ?ResponseInfo $response = null,
         public bool $deprecated = false,
+        public array $callbacks = [],
     ) {}
 
     /**
@@ -111,6 +113,20 @@ final readonly class ControllerInfo
             $resourceClasses = $data['resourceClasses'];
         }
 
+        // Convert callbacks arrays to DTOs
+        $callbacks = [];
+        if (isset($data['callbacks']) && is_array($data['callbacks'])) {
+            foreach ($data['callbacks'] as $cb) {
+                try {
+                    $callbacks[] = CallbackInfo::fromArray($cb);
+                } catch (\Exception) {
+                    // Skip malformed callback entries to prevent aborting entire deserialization.
+                    // The InvalidArgumentException from CallbackInfo::fromArray() provides the details.
+                    continue;
+                }
+            }
+        }
+
         return new self(
             formRequest: $data['formRequest'] ?? null,
             inlineValidation: $inlineValidation,
@@ -124,6 +140,7 @@ final readonly class ControllerInfo
             enumParameters: $enumParameters,
             response: $response,
             deprecated: $data['deprecated'] ?? false,
+            callbacks: $callbacks,
         );
     }
 
@@ -147,6 +164,7 @@ final readonly class ControllerInfo
             'enumParameters' => array_map(fn (EnumParameterInfo $p) => $p->toArray(), $this->enumParameters),
             'response' => $this->response?->toArray(),
             'deprecated' => $this->deprecated,
+            'callbacks' => array_map(fn (CallbackInfo $cb) => $cb->toArray(), $this->callbacks),
         ];
     }
 
@@ -239,6 +257,14 @@ final readonly class ControllerInfo
     }
 
     /**
+     * Check if callbacks were detected.
+     */
+    public function hasCallbacks(): bool
+    {
+        return count($this->callbacks) > 0;
+    }
+
+    /**
      * Check if the controller method is marked as deprecated.
      */
     public function isDeprecated(): bool
@@ -259,6 +285,7 @@ final readonly class ControllerInfo
             && ! $this->hasQueryParameters()
             && ! $this->hasHeaderParameters()
             && ! $this->hasEnumParameters()
-            && ! $this->hasResponse();
+            && ! $this->hasResponse()
+            && ! $this->hasCallbacks();
     }
 }

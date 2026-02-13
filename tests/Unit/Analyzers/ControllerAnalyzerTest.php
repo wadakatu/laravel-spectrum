@@ -3,6 +3,7 @@
 namespace LaravelSpectrum\Tests\Unit\Analyzers;
 
 use Illuminate\Foundation\Http\FormRequest;
+use LaravelSpectrum\Analyzers\CallbackAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\EnumAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
@@ -157,6 +158,7 @@ class ControllerAnalyzerTest extends TestCase
             $this->app->make(HeaderParameterAnalyzer::class),
             $this->app->make(EnumAnalyzer::class),
             $this->app->make(ResponseAnalyzer::class),
+            $this->app->make(CallbackAnalyzer::class),
             $mockAstHelper,
         );
 
@@ -181,6 +183,7 @@ class ControllerAnalyzerTest extends TestCase
             $this->app->make(HeaderParameterAnalyzer::class),
             $this->app->make(EnumAnalyzer::class),
             $this->app->make(ResponseAnalyzer::class),
+            $this->app->make(CallbackAnalyzer::class),
             $mockAstHelper,
         );
 

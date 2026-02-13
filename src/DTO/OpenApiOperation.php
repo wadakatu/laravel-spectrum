@@ -17,6 +17,7 @@ namespace LaravelSpectrum\DTO;
  *     responses: array<string, array{description: string, content?: array<string, mixed>}>,
  *     security?: array<int, array<string, array<int, string>>>,
  *     deprecated?: bool,
+ *     callbacks?: array<string, mixed>,
  *     x-middleware?: array<int, string>,
  *     x-rate-limit?: array{limit: int, period: string}
  * }
@@ -39,6 +40,7 @@ final readonly class OpenApiOperation
      * @param  OpenApiRequestBody|null  $requestBody  Request body definition
      * @param  array<int, array<string, array<int, string>>>|null  $security  Security requirements
      * @param  bool  $deprecated  Whether the operation is deprecated
+     * @param  array<string, mixed>|null  $callbacks  OpenAPI callbacks object
      */
     public function __construct(
         public string $operationId,
@@ -50,6 +52,7 @@ final readonly class OpenApiOperation
         public ?OpenApiRequestBody $requestBody = null,
         public ?array $security = null,
         public bool $deprecated = false,
+        public ?array $callbacks = null,
     ) {}
 
     /**
@@ -90,6 +93,7 @@ final readonly class OpenApiOperation
             requestBody: $requestBody,
             security: $data['security'] ?? null,
             deprecated: $data['deprecated'] ?? false,
+            callbacks: $data['callbacks'] ?? null,
         );
     }
 
@@ -136,6 +140,10 @@ final readonly class OpenApiOperation
             $result['deprecated'] = true;
         }
 
+        if ($this->callbacks !== null) {
+            $result['callbacks'] = $this->callbacks;
+        }
+
         return $result;
     }
 
@@ -161,6 +169,14 @@ final readonly class OpenApiOperation
     public function hasSecurity(): bool
     {
         return $this->security !== null && count($this->security) > 0;
+    }
+
+    /**
+     * Check if this operation has callbacks.
+     */
+    public function hasCallbacks(): bool
+    {
+        return $this->callbacks !== null && count($this->callbacks) > 0;
     }
 
     /**

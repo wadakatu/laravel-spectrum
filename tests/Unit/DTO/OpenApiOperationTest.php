@@ -545,4 +545,78 @@ class OpenApiOperationTest extends TestCase
         $this->assertTrue($restored->responses['200']->hasContent());
         $this->assertFalse($restored->responses['400']->hasContent());
     }
+
+    #[Test]
+    public function it_checks_if_has_callbacks(): void
+    {
+        $with = new OpenApiOperation(
+            operationId: 'test',
+            summary: null,
+            tags: [],
+            parameters: [],
+            responses: [],
+            callbacks: ['onEvent' => ['{$request.body#/url}' => ['post' => ['responses' => ['200' => ['description' => 'OK']]]]]],
+        );
+        $without = new OpenApiOperation(
+            operationId: 'test',
+            summary: null,
+            tags: [],
+            parameters: [],
+            responses: [],
+        );
+
+        $this->assertTrue($with->hasCallbacks());
+        $this->assertFalse($without->hasCallbacks());
+    }
+
+    #[Test]
+    public function it_includes_callbacks_in_to_array_when_present(): void
+    {
+        $callbacks = ['onEvent' => ['{$request.body#/url}' => ['post' => ['responses' => ['200' => ['description' => 'OK']]]]]];
+        $operation = new OpenApiOperation(
+            operationId: 'test',
+            summary: null,
+            tags: [],
+            parameters: [],
+            responses: [],
+            callbacks: $callbacks,
+        );
+
+        $array = $operation->toArray();
+
+        $this->assertArrayHasKey('callbacks', $array);
+        $this->assertEquals($callbacks, $array['callbacks']);
+    }
+
+    #[Test]
+    public function it_omits_callbacks_from_to_array_when_null(): void
+    {
+        $operation = new OpenApiOperation(
+            operationId: 'test',
+            summary: null,
+            tags: [],
+            parameters: [],
+            responses: [],
+        );
+
+        $array = $operation->toArray();
+
+        $this->assertArrayNotHasKey('callbacks', $array);
+    }
+
+    #[Test]
+    public function it_preserves_callbacks_through_from_array(): void
+    {
+        $callbacks = ['onEvent' => ['{$request.body#/url}' => ['post' => ['responses' => ['200' => ['description' => 'OK']]]]]];
+
+        $operation = OpenApiOperation::fromArray([
+            'operationId' => 'test',
+            'tags' => [],
+            'parameters' => [],
+            'responses' => [],
+            'callbacks' => $callbacks,
+        ]);
+
+        $this->assertEquals($callbacks, $operation->callbacks);
+    }
 }
