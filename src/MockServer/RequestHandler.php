@@ -171,7 +171,12 @@ class RequestHandler
             return;
         }
 
-        usleep($this->responseDelayMs * 1000);
+        $this->sleepMicroseconds($this->responseDelayMs * 1000);
+    }
+
+    protected function sleepMicroseconds(int $microseconds): void
+    {
+        usleep($microseconds);
     }
 
     /**

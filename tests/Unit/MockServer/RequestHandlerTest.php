@@ -87,6 +87,15 @@ class RequestHandlerTest extends TestCase
         };
     }
 
+    private function createSleepSpyHandler(): SleepSpyRequestHandler
+    {
+        return new SleepSpyRequestHandler(
+            $this->validator,
+            $this->authenticator,
+            $this->responseGenerator
+        );
+    }
+
     public function test_handles_successful_request(): void
     {
         $request = $this->createRequestStub([
@@ -365,8 +374,97 @@ class RequestHandlerTest extends TestCase
         $this->assertEquals(404, $result['status']);
     }
 
+    public function test_trims_default_scenario_before_using_it(): void
+    {
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => [],
+        ]);
+
+        $route = [
+            'operation' => [],
+            'method' => 'get',
+        ];
+
+        $this->handler->setDefaultScenario(' not_found ');
+
+        $this->authenticator->expects($this->once())
+            ->method('authenticate')
+            ->willReturn(['authenticated' => true]);
+
+        $this->validator->expects($this->once())
+            ->method('validate')
+            ->willReturn(['valid' => true, 'errors' => []]);
+
+        $this->responseGenerator->expects($this->once())
+            ->method('generate')
+            ->with(
+                $route['operation'],
+                404,
+                'not_found',
+                []
+            )
+            ->willReturn([
+                'status' => 404,
+                'body' => ['error' => 'Not Found'],
+                'headers' => [],
+            ]);
+
+        $result = $this->handler->handle($request, $route);
+
+        $this->assertEquals(404, $result['status']);
+    }
+
+    public function test_clamps_negative_response_delay_to_zero(): void
+    {
+        $this->handler->setResponseDelay(-10);
+
+        $reflection = new \ReflectionProperty(RequestHandler::class, 'responseDelayMs');
+        $reflection->setAccessible(true);
+
+        $this->assertSame(0, $reflection->getValue($this->handler));
+    }
+
+    public function test_does_not_apply_delay_when_delay_is_zero(): void
+    {
+        $handler = $this->createSleepSpyHandler();
+        $handler->setResponseDelay(0);
+
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => [],
+        ]);
+
+        $route = [
+            'operation' => [],
+            'method' => 'get',
+        ];
+
+        $this->authenticator->expects($this->once())
+            ->method('authenticate')
+            ->willReturn(['authenticated' => true]);
+
+        $this->validator->expects($this->once())
+            ->method('validate')
+            ->willReturn(['valid' => true, 'errors' => []]);
+
+        $this->responseGenerator->expects($this->once())
+            ->method('generate')
+            ->willReturn([
+                'status' => 200,
+                'body' => ['success' => true],
+                'headers' => [],
+            ]);
+
+        $handler->handle($request, $route);
+
+        $this->assertSame([], $handler->sleepCalls());
+    }
+
     public function test_applies_response_delay_to_authentication_errors(): void
     {
+        $handler = $this->createSleepSpyHandler();
+
         $request = $this->createRequestStub([
             'method' => 'GET',
             'get' => [],
@@ -379,7 +477,7 @@ class RequestHandlerTest extends TestCase
             'method' => 'get',
         ];
 
-        $this->handler->setResponseDelay(30);
+        $handler->setResponseDelay(30);
 
         $this->authenticator->expects($this->once())
             ->method('authenticate')
@@ -394,12 +492,10 @@ class RequestHandlerTest extends TestCase
         $this->responseGenerator->expects($this->never())
             ->method('generate');
 
-        $startedAt = microtime(true);
-        $result = $this->handler->handle($request, $route);
-        $elapsedMs = (microtime(true) - $startedAt) * 1000;
+        $result = $handler->handle($request, $route);
 
         $this->assertEquals(401, $result['status']);
-        $this->assertGreaterThanOrEqual(20, $elapsedMs);
+        $this->assertSame([30000], $handler->sleepCalls());
     }
 
     public function test_handles_post_request_with_json_body(): void
@@ -488,5 +584,26 @@ class RequestHandlerTest extends TestCase
         $result = $this->handler->handle($request, $route);
 
         $this->assertEquals(201, $result['status']);
+    }
+}
+
+class SleepSpyRequestHandler extends RequestHandler
+{
+    /**
+     * @var list<int>
+     */
+    private array $sleepCalls = [];
+
+    protected function sleepMicroseconds(int $microseconds): void
+    {
+        $this->sleepCalls[] = $microseconds;
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function sleepCalls(): array
+    {
+        return $this->sleepCalls;
     }
 }
