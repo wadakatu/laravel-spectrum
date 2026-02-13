@@ -58,6 +58,31 @@ class ResponseLinkInfoTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_empty_operation_id_or_operation_ref(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        ResponseLinkInfo::fromArray([
+            'statusCode' => 200,
+            'name' => 'invalid',
+            'operationId' => '',
+        ]);
+    }
+
+    #[Test]
+    public function it_rejects_when_both_operation_id_and_operation_ref_are_provided(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        ResponseLinkInfo::fromArray([
+            'statusCode' => 200,
+            'name' => 'invalid',
+            'operationId' => 'usersShow',
+            'operationRef' => '#/paths/~1api~1users~1{id}/get',
+        ]);
+    }
+
+    #[Test]
     public function it_accepts_snake_case_keys(): void
     {
         $link = ResponseLinkInfo::fromArray([

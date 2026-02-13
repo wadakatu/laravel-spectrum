@@ -43,7 +43,7 @@ final readonly class ResponseLinkInfo
                 "Response link config requires a 'statusCode' key."
             );
         }
-        if (! isset($data['name']) || ! is_string($data['name']) || $data['name'] === '') {
+        if (! isset($data['name']) || ! is_string($data['name']) || trim($data['name']) === '') {
             throw new \InvalidArgumentException(
                 "Response link config requires a non-empty 'name' key (string)."
             );
@@ -57,9 +57,20 @@ final readonly class ResponseLinkInfo
         if (! is_string($operationRef) && $operationRef !== null) {
             throw new \InvalidArgumentException("Response link '{$data['name']}' has invalid 'operationRef' value.");
         }
+        if (is_string($operationId) && trim($operationId) === '') {
+            throw new \InvalidArgumentException("Response link '{$data['name']}' has empty 'operationId' value.");
+        }
+        if (is_string($operationRef) && trim($operationRef) === '') {
+            throw new \InvalidArgumentException("Response link '{$data['name']}' has empty 'operationRef' value.");
+        }
         if ($operationId === null && $operationRef === null) {
             throw new \InvalidArgumentException(
                 "Response link '{$data['name']}' requires either 'operationId' or 'operationRef'."
+            );
+        }
+        if ($operationId !== null && $operationRef !== null) {
+            throw new \InvalidArgumentException(
+                "Response link '{$data['name']}' cannot specify both 'operationId' and 'operationRef'."
             );
         }
 
@@ -67,6 +78,11 @@ final readonly class ResponseLinkInfo
         if (! is_string($statusCode) && ! is_int($statusCode)) {
             throw new \InvalidArgumentException(
                 "Response link '{$data['name']}' has invalid 'statusCode' value."
+            );
+        }
+        if (is_string($statusCode) && trim($statusCode) === '') {
+            throw new \InvalidArgumentException(
+                "Response link '{$data['name']}' has empty 'statusCode' value."
             );
         }
 
