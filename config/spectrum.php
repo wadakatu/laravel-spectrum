@@ -958,6 +958,38 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Webhooks Configuration (OpenAPI 3.1.0)
+    |--------------------------------------------------------------------------
+    |
+    | Define root-level webhook operations for OpenAPI 3.1.0 output.
+    | This section maps webhook names to Path Item objects.
+    |
+    | Example:
+    |   'newUser' => [
+    |       'post' => [
+    |           'summary' => 'New user event',
+    |           'requestBody' => [
+    |               'required' => true,
+    |               'content' => [
+    |                   'application/json' => [
+    |                       'schema' => [
+    |                           'type' => 'object',
+    |                           'properties' => ['id' => ['type' => 'string']],
+    |                       ],
+    |                   ],
+    |               ],
+    |           ],
+    |           'responses' => [
+    |               '200' => ['description' => 'Webhook processed'],
+    |           ],
+    |       ],
+    |   ],
+    |
+    */
+    'webhooks' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Mock Server Settings
     |--------------------------------------------------------------------------
     */
