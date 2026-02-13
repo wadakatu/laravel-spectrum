@@ -131,6 +131,44 @@ class ExportPostmanCommandTest extends TestCase
     }
 
     #[Test]
+    public function it_embeds_environments_when_single_file_option_is_enabled()
+    {
+        // Arrange
+        Route::get('api/health', function () {
+            return ['status' => 'ok'];
+        });
+
+        // Act
+        $this->artisan('spectrum:export:postman', [
+            '--single-file' => true,
+            '--environments' => 'local,staging',
+        ])
+            ->expectsOutputToContain('✅ Environments embedded into collection: local, staging')
+            ->assertSuccessful();
+
+        // Assert
+        $collectionPath = storage_path('app/spectrum/postman/postman_collection.json');
+        $localEnvironmentPath = storage_path('app/spectrum/postman/postman_environment_local.json');
+        $stagingEnvironmentPath = storage_path('app/spectrum/postman/postman_environment_staging.json');
+
+        $this->assertFileExists($collectionPath);
+        $this->assertFileDoesNotExist($localEnvironmentPath);
+        $this->assertFileDoesNotExist($stagingEnvironmentPath);
+
+        $collection = json_decode(File::get($collectionPath), true);
+
+        $this->assertArrayHasKey('x-laravel-spectrum-environments', $collection);
+        $this->assertArrayHasKey('local', $collection['x-laravel-spectrum-environments']);
+        $this->assertArrayHasKey('staging', $collection['x-laravel-spectrum-environments']);
+
+        $localValues = $collection['x-laravel-spectrum-environments']['local']['values'] ?? [];
+        $baseUrlVar = collect($localValues)->firstWhere('key', 'base_url');
+
+        $this->assertNotNull($baseUrlVar);
+        $this->assertEquals('http://localhost/api', $baseUrlVar['value']);
+    }
+
+    #[Test]
     public function it_groups_routes_by_tag()
     {
         // Arrange
