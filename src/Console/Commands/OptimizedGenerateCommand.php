@@ -17,8 +17,9 @@ use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
  * @phpstan-type RouteArray array<int, array<string, mixed>>
- * @phpstan-type PathData array{path: string, methods: array<string, mixed>}
- * @phpstan-type PathsArray array<int, PathData>
+ * @phpstan-type LegacyPathData array{path: string, methods: array<string, mixed>}
+ * @phpstan-type GeneratedPathData array<string, array<string, mixed>>
+ * @phpstan-type PathsArray array<int, LegacyPathData|GeneratedPathData>
  * @phpstan-type OpenApiSpec array<string, mixed>
  */
 class OptimizedGenerateCommand extends Command
@@ -267,12 +268,34 @@ class OptimizedGenerateCommand extends Command
         $combined = [];
 
         foreach ($paths as $pathData) {
-            if (isset($pathData['path']) && isset($pathData['methods'])) {
+            if (
+                isset($pathData['path'], $pathData['methods']) &&
+                is_string($pathData['path']) &&
+                is_array($pathData['methods'])
+            ) {
                 $path = $pathData['path'];
                 if (! isset($combined[$path])) {
                     $combined[$path] = [];
                 }
                 $combined[$path] = array_merge($combined[$path], $pathData['methods']);
+
+                continue;
+            }
+
+            if (! is_array($pathData)) {
+                continue;
+            }
+
+            foreach ($pathData as $path => $methods) {
+                if (! is_string($path) || ! is_array($methods)) {
+                    continue;
+                }
+
+                if (! isset($combined[$path])) {
+                    $combined[$path] = [];
+                }
+
+                $combined[$path] = array_merge($combined[$path], $methods);
             }
         }
 
