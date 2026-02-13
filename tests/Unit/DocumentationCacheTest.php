@@ -268,6 +268,62 @@ class DependencyResource {
     }
 
     #[Test]
+    public function it_invalidates_route_cache_when_api_route_file_changes(): void
+    {
+        $routesDir = base_path('routes');
+        $apiRouteFile = $routesDir.'/api.php';
+        $webRouteFile = $routesDir.'/web.php';
+        $routesDirExisted = File::isDirectory($routesDir);
+
+        $originalApi = File::exists($apiRouteFile) ? File::get($apiRouteFile) : null;
+        $originalWeb = File::exists($webRouteFile) ? File::get($webRouteFile) : null;
+
+        File::ensureDirectoryExists($routesDir);
+        File::put($apiRouteFile, '<?php // route cache api v1');
+        File::put($webRouteFile, '<?php // route cache web v1');
+
+        try {
+            $callCount = 0;
+
+            $this->cache->rememberRoutes(function () use (&$callCount) {
+                $callCount++;
+
+                return ['routes' => ['v1']];
+            });
+
+            $this->assertEquals(1, $callCount);
+
+            sleep(1);
+            File::put($apiRouteFile, '<?php // route cache api v2');
+
+            $result = $this->cache->rememberRoutes(function () use (&$callCount) {
+                $callCount++;
+
+                return ['routes' => ['v2']];
+            });
+
+            $this->assertEquals(2, $callCount);
+            $this->assertEquals(['routes' => ['v2']], $result);
+        } finally {
+            if ($originalApi === null) {
+                File::delete($apiRouteFile);
+            } else {
+                File::put($apiRouteFile, $originalApi);
+            }
+
+            if ($originalWeb === null) {
+                File::delete($webRouteFile);
+            } else {
+                File::put($webRouteFile, $originalWeb);
+            }
+
+            if (! $routesDirExisted && File::isDirectory($routesDir)) {
+                File::deleteDirectory($routesDir);
+            }
+        }
+    }
+
+    #[Test]
     public function it_forgets_cache_entries()
     {
         // キャッシュにデータを保存

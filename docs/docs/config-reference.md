@@ -149,6 +149,19 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 
 /*
 |--------------------------------------------------------------------------
+| Excluded HTTP Methods
+|--------------------------------------------------------------------------
+|
+| HTTP methods to exclude from generated documentation.
+| Method names are case-insensitive.
+|
+*/
+'excluded_methods' => [
+    // 'head',
+],
+
+/*
+|--------------------------------------------------------------------------
 | Custom Route Files
 |--------------------------------------------------------------------------
 |
