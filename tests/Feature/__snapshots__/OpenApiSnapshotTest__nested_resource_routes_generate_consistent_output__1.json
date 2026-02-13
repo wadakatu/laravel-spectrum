@@ -280,7 +280,7 @@
         },
         "/api/snapshot/posts/{post}/comments": {
             "get": {
-                "summary": "Get Comment by ID",
+                "summary": "List all Comment",
                 "operationId": "getApiSnapshotPostsPostComments",
                 "tags": [
                     "Snapshot",

@@ -14,7 +14,7 @@
     "paths": {
         "/api/snapshot/profile": {
             "get": {
-                "summary": "List all Profile",
+                "summary": "Get Profile",
                 "operationId": "getApiSnapshotProfile",
                 "tags": [
                     "Snapshot",
