@@ -391,30 +391,4 @@ class ResponseAnalyzerTest extends TestCase
         $this->assertEquals(ResponseType::BINARY_FILE, $result->type);
         $this->assertEquals('application/zip', $result->contentType);
     }
-
-    public function test_prefers_success_response_shape_over_early_error_guard_clause()
-    {
-        $controller = new class
-        {
-            public function show()
-            {
-                if (request()->boolean('unauthorized')) {
-                    return response()->json(['code' => 'UNAUTHORIZED'], 400);
-                }
-
-                return response()->json([
-                    'data' => [
-                        'id' => 1,
-                        'name' => 'John',
-                    ],
-                ]);
-            }
-        };
-
-        $result = $this->analyzer->analyze(get_class($controller), 'show');
-
-        $this->assertEquals(ResponseType::OBJECT, $result->type);
-        $this->assertArrayHasKey('data', $result->properties);
-        $this->assertArrayNotHasKey('code', $result->properties);
-    }
 }

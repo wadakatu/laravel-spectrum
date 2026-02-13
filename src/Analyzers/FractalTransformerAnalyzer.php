@@ -12,6 +12,7 @@ use LaravelSpectrum\DTO\FractalTransformerResult;
 use LaravelSpectrum\Support\AnalyzerErrorType;
 use LaravelSpectrum\Support\AstTypeInferenceEngine;
 use LaravelSpectrum\Support\ErrorCollector;
+use LaravelSpectrum\Support\FieldNameInference;
 use LaravelSpectrum\Support\HasErrorCollection;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
@@ -259,7 +260,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             return $typeInfo;
         }
 
-        $fieldType = $this->typeInferenceEngine->inferFromFieldName($fieldName);
+        $fieldType = $this->inferTypeFromFieldName($fieldName);
         if (($fieldType['type'] ?? 'string') === 'string' && ! isset($fieldType['format'])) {
             return $typeInfo;
         }
@@ -268,6 +269,51 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             'type' => $fieldType['type'] ?? ($typeInfo['type'] ?? 'string'),
             'format' => $fieldType['format'] ?? ($typeInfo['format'] ?? null),
         ]);
+    }
+
+    /**
+     * @return array{type: string, format?: string}
+     */
+    protected function inferTypeFromFieldName(string $fieldName): array
+    {
+        $inference = (new FieldNameInference)->inferFieldType($fieldName);
+        $semanticType = $inference['type'] ?? 'string';
+        $semanticFormat = $inference['format'] ?? null;
+
+        $typeMapping = [
+            'id' => 'integer',
+            'age' => 'integer',
+            'quantity' => 'integer',
+            'score' => 'integer',
+            'money' => 'number',
+            'rating' => 'number',
+            'location' => 'number',
+            'boolean' => 'boolean',
+        ];
+
+        $openApiType = $typeMapping[$semanticType] ?? 'string';
+        $result = ['type' => $openApiType];
+
+        if ($openApiType !== 'string' || $semanticFormat === null || $semanticFormat === 'text' || $semanticFormat === 'boolean') {
+            return $result;
+        }
+
+        $formatMapping = [
+            'datetime' => 'date-time',
+            'date' => 'date',
+            'time' => 'time',
+            'email' => 'email',
+            'url' => 'uri',
+            'image_url' => 'uri',
+            'avatar_url' => 'uri',
+            'uuid' => 'uuid',
+        ];
+
+        if (isset($formatMapping[$semanticFormat])) {
+            $result['format'] = $formatMapping[$semanticFormat];
+        }
+
+        return $result;
     }
 
     /**

@@ -134,18 +134,6 @@ final class AstTypeInferenceEngine
     }
 
     /**
-     * Infer type information from a field name pattern.
-     *
-     * @return array{type: string, properties?: array<string, array<string, mixed>>, format?: string}
-     */
-    public function inferFromFieldName(string $fieldName): array
-    {
-        $inference = $this->fieldNameInference->inferFieldType($fieldName);
-
-        return $this->convertFieldInferenceToTypeInfo($inference)->toArray();
-    }
-
-    /**
      * Infer type from a constant fetch (true, false, null) - returns TypeInfo.
      */
     private function inferFromConstFetchToDto(Node\Expr\ConstFetch $node): TypeInfo
