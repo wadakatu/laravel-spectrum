@@ -151,15 +151,27 @@ class ResponseAnalyzer
             return ['type' => 'object', 'properties' => []];
         }
 
-        $args = $expr->args[0] ?? null;
-        if (! $args) {
-            return ['type' => 'object', 'properties' => []];
+        $payloadArg = $expr->args[0] ?? null;
+        $hasExplicitStatus = isset($expr->args[1]);
+        $statusCode = $hasExplicitStatus
+            ? $this->extractHttpStatusCode($expr->args[1])
+            : 200;
+
+        if (! $payloadArg) {
+            return [
+                'type' => 'object',
+                'properties' => [],
+                '_http_status' => $statusCode,
+                '_has_explicit_status' => $hasExplicitStatus,
+            ];
         }
 
         return [
             'type' => 'object',
-            'properties' => $this->extractArrayStructure($args->value),
+            'properties' => $this->extractArrayStructure($payloadArg->value),
             'wrapped' => false,
+            '_http_status' => $statusCode,
+            '_has_explicit_status' => $hasExplicitStatus,
         ];
     }
 
@@ -305,14 +317,64 @@ class ResponseAnalyzer
 
     private function mergeResponses(array $responses): array
     {
-        // 単純な実装：最初の非unknownレスポンスを返す
-        foreach ($responses as $response) {
-            if ($response['type'] !== 'unknown') {
-                return $response;
+        $bestResponse = null;
+        $bestScore = PHP_INT_MIN;
+
+        foreach ($responses as $index => $response) {
+            $score = $this->calculateResponsePriority($response, $index);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestResponse = $response;
             }
         }
 
-        return ['type' => 'unknown'];
+        if ($bestResponse === null) {
+            return ['type' => 'unknown'];
+        }
+
+        unset($bestResponse['_http_status']);
+        unset($bestResponse['_has_explicit_status']);
+
+        return $bestResponse;
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function calculateResponsePriority(array $response, int $index): int
+    {
+        if (($response['type'] ?? 'unknown') === 'unknown') {
+            return -1000 + $index;
+        }
+
+        $score = 0;
+        $statusCode = $response['_http_status'] ?? null;
+        $hasExplicitStatus = (bool) ($response['_has_explicit_status'] ?? false);
+
+        if (is_int($statusCode)) {
+            if ($statusCode >= 200 && $statusCode < 300) {
+                $score += 300;
+            } elseif ($statusCode >= 300 && $statusCode < 400) {
+                $score += 200;
+            } elseif ($statusCode >= 400 && $statusCode < 600) {
+                $score += 50;
+            } else {
+                $score += 100;
+            }
+        } elseif (! $hasExplicitStatus) {
+            // No explicit status often implies default 200 for Laravel responses.
+            $score += 250;
+        } else {
+            // Explicit status provided but unresolved: keep neutral.
+            $score += 100;
+        }
+
+        if (! empty($response['properties']) && is_array($response['properties'])) {
+            $score += 25;
+        }
+
+        // Prefer later returns when priorities tie (guard clauses are usually early returns).
+        return $score + $index;
     }
 
     /**
@@ -507,6 +569,42 @@ class ResponseAnalyzer
             if ($key !== null && strtolower($key) === 'content-type' && $item->value instanceof Node\Scalar\String_) {
                 return $item->value->value;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract HTTP status code from response()->json(..., <status>) second argument.
+     */
+    private function extractHttpStatusCode(?Node\Arg $arg): ?int
+    {
+        if ($arg === null) {
+            return null;
+        }
+
+        $value = $arg->value;
+        if ($value instanceof Node\Scalar\Int_) {
+            return $value->value;
+        }
+
+        if ($value instanceof Node\Expr\ClassConstFetch && $value->name instanceof Node\Identifier) {
+            $constantName = $value->name->toString();
+
+            $knownHttpConstants = [
+                'HTTP_OK' => 200,
+                'HTTP_CREATED' => 201,
+                'HTTP_ACCEPTED' => 202,
+                'HTTP_NO_CONTENT' => 204,
+                'HTTP_BAD_REQUEST' => 400,
+                'HTTP_UNAUTHORIZED' => 401,
+                'HTTP_FORBIDDEN' => 403,
+                'HTTP_NOT_FOUND' => 404,
+                'HTTP_UNPROCESSABLE_ENTITY' => 422,
+                'HTTP_INTERNAL_SERVER_ERROR' => 500,
+            ];
+
+            return $knownHttpConstants[$constantName] ?? null;
         }
 
         return null;

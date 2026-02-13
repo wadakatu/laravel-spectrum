@@ -502,11 +502,29 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             return $fullName;
         }
 
-        // ファイルのuse文をチェック（簡易版）
+        // ASTからuse文を解決（alias/group use対応）
         $filename = $reflection->getFileName();
-        $content = file_get_contents($filename);
+        if (is_string($filename)) {
+            $ast = $this->astHelper->parseFile($filename);
+            if ($ast !== null) {
+                $useStatements = $this->astHelper->extractUseStatements($ast);
+                if (isset($useStatements[$className]) && class_exists($useStatements[$className])) {
+                    return $useStatements[$className];
+                }
+            }
+        }
 
-        if (preg_match('/use\s+([\w\\\\]+\\\\'.$className.');/', $content, $matches)) {
+        // ファイルのuse文をチェック（簡易版フォールバック）
+        if (! is_string($filename) || ! file_exists($filename)) {
+            return null;
+        }
+
+        $content = file_get_contents($filename);
+        if ($content === false) {
+            return null;
+        }
+
+        if (preg_match('/use\s+([\w\\\\]+\\\\'.$className.')\s*(?:as\s+\w+)?\s*;/', $content, $matches)) {
             return $matches[1];
         }
 

@@ -161,10 +161,28 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             /** @var Node\Expr\Array_|null */
             public ?\PhpParser\Node\Expr\Array_ $returnArray = null;
 
+            /** @var array<string, Node\Expr\Array_> */
+            public array $arrayAssignments = [];
+
             public function enterNode(Node $node): null
             {
-                if ($node instanceof Node\Stmt\Return_ && $node->expr instanceof Node\Expr\Array_) {
-                    $this->returnArray = $node->expr;
+                if ($node instanceof Node\Expr\Assign
+                    && $node->var instanceof Node\Expr\Variable
+                    && is_string($node->var->name)
+                    && $node->expr instanceof Node\Expr\Array_) {
+                    $this->arrayAssignments[$node->var->name] = $node->expr;
+                }
+
+                if ($node instanceof Node\Stmt\Return_) {
+                    if ($node->expr instanceof Node\Expr\Array_) {
+                        $this->returnArray = $node->expr;
+                    }
+
+                    if ($node->expr instanceof Node\Expr\Variable
+                        && is_string($node->expr->name)
+                        && isset($this->arrayAssignments[$node->expr->name])) {
+                        $this->returnArray = $this->arrayAssignments[$node->expr->name];
+                    }
                 }
 
                 return null;
@@ -196,26 +214,60 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             }
 
             $key = $this->getNodeValue($item->key);
-            if (! $key) {
+            if ($key === null || $key === '') {
                 continue;
             }
 
             $value = $item->value;
+            $fieldName = (string) $key;
+            $typeInfo = $this->typeInferenceEngine->inferFromNode($value);
+            $resolvedType = $this->refineTypeFromFieldName($fieldName, $value, $typeInfo);
 
-            $properties[$key] = [
-                'type' => $this->typeInferenceEngine->inferTypeString($value),
-                'example' => $this->generateExampleFromNode($key, $value),
+            $properties[$fieldName] = [
+                'type' => $resolvedType['type'] ?? 'string',
+                'example' => $this->generateExampleFromNode($fieldName, $value, $resolvedType['type'] ?? null),
                 'nullable' => $this->isNullable($value),
             ];
 
+            if (isset($resolvedType['format'])) {
+                $properties[$fieldName]['format'] = $resolvedType['format'];
+            }
+
             // ネストした配列の場合
             if ($value instanceof Node\Expr\Array_) {
-                $properties[$key]['properties'] = $this->parseArrayNode($value);
-                $properties[$key]['type'] = 'object';
+                $properties[$fieldName]['properties'] = $this->parseArrayNode($value);
+                $properties[$fieldName]['type'] = 'object';
             }
         }
 
         return $properties;
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>}  $typeInfo
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>}
+     */
+    protected function refineTypeFromFieldName(string $fieldName, Node $value, array $typeInfo): array
+    {
+        // Keep explicit/stronger inference as-is.
+        if (($typeInfo['type'] ?? 'string') !== 'string' || isset($typeInfo['format'])) {
+            return $typeInfo;
+        }
+
+        // Only refine ambiguous getter/property patterns.
+        if (! $value instanceof Node\Expr\MethodCall && ! $value instanceof Node\Expr\PropertyFetch) {
+            return $typeInfo;
+        }
+
+        $fieldType = $this->typeInferenceEngine->inferFromFieldName($fieldName);
+        if (($fieldType['type'] ?? 'string') === 'string' && ! isset($fieldType['format'])) {
+            return $typeInfo;
+        }
+
+        return array_merge($typeInfo, [
+            'type' => $fieldType['type'] ?? ($typeInfo['type'] ?? 'string'),
+            'format' => $fieldType['format'] ?? ($typeInfo['format'] ?? null),
+        ]);
     }
 
     /**
@@ -261,9 +313,9 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * プロパティ名から例を生成
      */
-    protected function generateExampleFromNode(string $key, Node $node): int|bool|array|\stdClass|string
+    protected function generateExampleFromNode(string $key, Node $node, ?string $resolvedType = null): int|bool|array|\stdClass|string
     {
-        $type = $this->typeInferenceEngine->inferTypeString($node);
+        $type = $resolvedType ?? $this->typeInferenceEngine->inferTypeString($node);
 
         switch ($type) {
             case 'integer':

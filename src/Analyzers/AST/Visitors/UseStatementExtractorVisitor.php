@@ -19,6 +19,16 @@ class UseStatementExtractorVisitor extends NodeVisitorAbstract
             }
         }
 
+        if ($node instanceof Node\Stmt\GroupUse) {
+            $prefix = $node->prefix->toString();
+
+            foreach ($node->uses as $use) {
+                $fullName = $prefix.'\\'.$use->name->toString();
+                $alias = $use->alias ? $use->alias->toString() : $use->name->getLast();
+                $this->useStatements[$alias] = $fullName;
+            }
+        }
+
         return null;
     }
 
