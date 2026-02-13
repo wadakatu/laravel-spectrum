@@ -7,10 +7,12 @@ use LaravelSpectrum\Analyzers\Support\AstHelper;
 use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ExampleGenerationTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\GetterBasedUserTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MinimalTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MissingIncludeMethodTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\UserTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\VariableReturnTransformer;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -351,5 +353,28 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertArrayHasKey('metadata', $result['properties']);
         $this->assertEquals('object', $result['properties']['metadata']['type']);
         $this->assertArrayHasKey('properties', $result['properties']['metadata']);
+    }
+
+    #[Test]
+    public function it_extracts_transform_properties_from_assigned_array_variables(): void
+    {
+        $result = $this->analyzer->analyze(VariableReturnTransformer::class);
+
+        $this->assertArrayHasKey('id', $result['properties']);
+        $this->assertArrayHasKey('name', $result['properties']);
+        $this->assertArrayHasKey('is_active', $result['properties']);
+        $this->assertEquals('integer', $result['properties']['id']['type']);
+    }
+
+    #[Test]
+    public function it_applies_field_name_inference_for_getter_based_transformer_values(): void
+    {
+        $result = $this->analyzer->analyze(GetterBasedUserTransformer::class);
+
+        $this->assertEquals('boolean', $result['properties']['is_beta_user']['type']);
+        $this->assertEquals('string', $result['properties']['created_at']['type']);
+        $this->assertEquals('date-time', $result['properties']['created_at']['format']);
+        $this->assertEquals('string', $result['properties']['email']['type']);
+        $this->assertEquals('email', $result['properties']['email']['format']);
     }
 }

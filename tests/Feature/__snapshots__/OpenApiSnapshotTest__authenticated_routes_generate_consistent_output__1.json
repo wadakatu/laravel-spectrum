@@ -14,10 +14,8 @@
     "paths": {
         "/api/snapshot/profile": {
             "get": {
-                "summary": "Get Profile",
                 "operationId": "getApiSnapshotProfile",
                 "tags": [
-                    "Snapshot",
                     "Profile"
                 ],
                 "parameters": [],
@@ -117,6 +115,7 @@
                         }
                     }
                 },
+                "summary": "Get Profile",
                 "security": [
                     {
                         "sanctumAuth": []
@@ -124,10 +123,8 @@
                 ]
             },
             "head": {
-                "summary": "Head Profile",
                 "operationId": "headApiSnapshotProfile",
                 "tags": [
-                    "Snapshot",
                     "Profile"
                 ],
                 "parameters": [],
@@ -227,6 +224,7 @@
                         }
                     }
                 },
+                "summary": "Head Profile",
                 "security": [
                     {
                         "sanctumAuth": []
@@ -234,10 +232,8 @@
                 ]
             },
             "put": {
-                "summary": "Update Profile",
                 "operationId": "putApiSnapshotProfile",
                 "tags": [
-                    "Snapshot",
                     "Profile"
                 ],
                 "parameters": [],
@@ -337,6 +333,7 @@
                         }
                     }
                 },
+                "summary": "Update Profile",
                 "security": [
                     {
                         "sanctumAuth": []
@@ -359,17 +356,13 @@
     "tags": [
         {
             "name": "Profile"
-        },
-        {
-            "name": "Snapshot"
         }
     ],
     "x-tagGroups": [
         {
             "name": "Other",
             "tags": [
-                "Profile",
-                "Snapshot"
+                "Profile"
             ]
         }
     ]

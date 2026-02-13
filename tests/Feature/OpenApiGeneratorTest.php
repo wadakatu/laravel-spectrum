@@ -7,6 +7,7 @@ use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\Generators\OpenApiGenerator;
+use LaravelSpectrum\Tests\Fixtures\Controllers\PostController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\ProfileController;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\Fixtures\StoreUserRequest;
@@ -141,11 +142,11 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function it_generates_tags_from_route_uri()
+    public function it_generates_tags_from_controller_names()
     {
         // Arrange
         Route::get('api/users', [UserController::class, 'index']);
-        Route::get('api/posts', [UserController::class, 'index']);
+        Route::get('api/posts', [PostController::class, 'index']);
 
         // Act
         $openapi = $this->generateOpenApi();
@@ -209,7 +210,7 @@ class OpenApiGeneratorTest extends TestCase
             ],
         ]);
         Route::get('api/users', [UserController::class, 'index']);
-        Route::get('api/posts', [UserController::class, 'index']);
+        Route::get('api/posts', [PostController::class, 'index']);
 
         // Act
         $openapi = $this->generateOpenApi();
@@ -257,7 +258,7 @@ class OpenApiGeneratorTest extends TestCase
             'spectrum.ungrouped_tags_group' => 'Other',
         ]);
         Route::get('api/users', [UserController::class, 'index']);
-        Route::get('api/posts', [UserController::class, 'index']);
+        Route::get('api/posts', [PostController::class, 'index']);
 
         // Act
         $openapi = $this->generateOpenApi();

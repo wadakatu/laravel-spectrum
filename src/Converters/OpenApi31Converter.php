@@ -54,6 +54,11 @@ class OpenApi31Converter
             $spec['components'] = $this->convertComponents($spec['components']);
         }
 
+        // Convert webhooks
+        if (isset($spec['webhooks']) && is_array($spec['webhooks'])) {
+            $spec['webhooks'] = $this->convertWebhooks($spec['webhooks']);
+        }
+
         // Add empty webhooks section if not present (3.1.0 feature)
         if (! isset($spec['webhooks'])) {
             $spec['webhooks'] = new \stdClass;
@@ -241,6 +246,68 @@ class OpenApi31Converter
         }
 
         return $callbacks;
+    }
+
+    /**
+     * Convert webhooks by traversing webhook path items and converting their schemas to 3.1.0 format.
+     *
+     * @param  array<string, mixed>  $webhooks
+     * @return array<string, mixed>
+     */
+    private function convertWebhooks(array $webhooks): array
+    {
+        foreach ($webhooks as $name => $pathItem) {
+            if (! is_array($pathItem)) {
+                continue;
+            }
+
+            foreach ($pathItem as $method => $operation) {
+                if (! is_array($operation)) {
+                    continue;
+                }
+
+                // Convert requestBody schemas
+                if (isset($operation['requestBody']['content'])) {
+                    foreach ($operation['requestBody']['content'] as $mediaType => $content) {
+                        if (isset($content['schema'])) {
+                            $webhooks[$name][$method]['requestBody']['content'][$mediaType]['schema'] =
+                                $this->convertSchema($content['schema']);
+                        }
+                    }
+                }
+
+                // Convert response schemas
+                if (isset($operation['responses']) && is_array($operation['responses'])) {
+                    foreach ($operation['responses'] as $statusCode => $response) {
+                        if (isset($response['content']) && is_array($response['content'])) {
+                            foreach ($response['content'] as $mediaType => $content) {
+                                if (isset($content['schema'])) {
+                                    $webhooks[$name][$method]['responses'][$statusCode]['content'][$mediaType]['schema'] =
+                                        $this->convertSchema($content['schema']);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Convert parameter schemas
+                if (isset($operation['parameters']) && is_array($operation['parameters'])) {
+                    foreach ($operation['parameters'] as $index => $parameter) {
+                        if (isset($parameter['schema'])) {
+                            $webhooks[$name][$method]['parameters'][$index]['schema'] =
+                                $this->convertSchema($parameter['schema']);
+                        }
+                    }
+                }
+
+                // Convert callback schemas
+                if (isset($operation['callbacks']) && is_array($operation['callbacks'])) {
+                    $webhooks[$name][$method]['callbacks'] = $this->convertCallbacks($operation['callbacks']);
+                }
+            }
+        }
+
+        return $webhooks;
     }
 
     /**

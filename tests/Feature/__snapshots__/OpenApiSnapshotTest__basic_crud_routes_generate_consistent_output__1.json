@@ -16,7 +16,6 @@
             "get": {
                 "operationId": "getApiSnapshotUsers",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [],
@@ -68,7 +67,6 @@
             "head": {
                 "operationId": "headApiSnapshotUsers",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [],
@@ -120,7 +118,6 @@
             "post": {
                 "operationId": "postApiSnapshotUsers",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [],
@@ -278,7 +275,6 @@
             "get": {
                 "operationId": "getApiSnapshotUsersUser",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [
@@ -346,7 +342,6 @@
             "head": {
                 "operationId": "headApiSnapshotUsersUser",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [
@@ -445,9 +440,6 @@
     },
     "tags": [
         {
-            "name": "Snapshot"
-        },
-        {
             "name": "User"
         }
     ],
@@ -455,7 +447,6 @@
         {
             "name": "Other",
             "tags": [
-                "Snapshot",
                 "User"
             ]
         }

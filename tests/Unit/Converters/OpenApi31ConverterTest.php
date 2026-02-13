@@ -294,6 +294,135 @@ class OpenApi31ConverterTest extends TestCase
     }
 
     #[Test]
+    public function it_converts_webhook_schemas_to_31(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'webhooks' => [
+                'newUser' => [
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'id' => ['type' => 'string', 'nullable' => true],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'parameters' => [
+                            [
+                                'name' => 'X-Signature',
+                                'in' => 'header',
+                                'schema' => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'OK',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'accepted' => ['type' => 'boolean', 'nullable' => true],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $requestSchema = $result['webhooks']['newUser']['post']['requestBody']['content']['application/json']['schema']['properties']['id'];
+        $parameterSchema = $result['webhooks']['newUser']['post']['parameters'][0]['schema'];
+        $responseSchema = $result['webhooks']['newUser']['post']['responses']['200']['content']['application/json']['schema']['properties']['accepted'];
+
+        $this->assertEquals(['string', 'null'], $requestSchema['type']);
+        $this->assertArrayNotHasKey('nullable', $requestSchema);
+
+        $this->assertEquals(['string', 'null'], $parameterSchema['type']);
+        $this->assertArrayNotHasKey('nullable', $parameterSchema);
+
+        $this->assertEquals(['boolean', 'null'], $responseSchema['type']);
+        $this->assertArrayNotHasKey('nullable', $responseSchema);
+    }
+
+    #[Test]
+    public function it_converts_webhook_callback_schemas_to_31(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'webhooks' => [
+                'orderCreated' => [
+                    'post' => [
+                        'responses' => ['200' => ['description' => 'OK']],
+                        'callbacks' => [
+                            'onWebhookAck' => [
+                                '{$request.body#/callbackUrl}' => [
+                                    'post' => [
+                                        'requestBody' => [
+                                            'content' => [
+                                                'application/json' => [
+                                                    'schema' => [
+                                                        'type' => 'object',
+                                                        'properties' => [
+                                                            'ackId' => ['type' => 'string', 'nullable' => true],
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                        'responses' => [
+                                            '200' => ['description' => 'Acked'],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $schema = $result['webhooks']['orderCreated']['post']['callbacks']['onWebhookAck']['{$request.body#/callbackUrl}']['post']['requestBody']['content']['application/json']['schema']['properties']['ackId'];
+
+        $this->assertEquals(['string', 'null'], $schema['type']);
+        $this->assertArrayNotHasKey('nullable', $schema);
+    }
+
+    #[Test]
+    public function it_keeps_non_array_webhook_entries_unchanged(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'webhooks' => [
+                'invalid' => 'not-an-array',
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertSame('not-an-array', $result['webhooks']['invalid']);
+    }
+
+    #[Test]
     public function it_converts_allof_schemas(): void
     {
         $spec = [

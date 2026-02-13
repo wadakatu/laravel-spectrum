@@ -27,6 +27,7 @@ final readonly class ControllerInfo
      * @param  ResponseInfo|null  $response  Response analysis info
      * @param  bool  $deprecated  Whether the controller method is marked as deprecated
      * @param  array<int, CallbackInfo>  $callbacks  OpenAPI callback definitions
+     * @param  array<int, ResponseLinkInfo>  $responseLinks  OpenAPI response link definitions
      */
     public function __construct(
         public ?string $formRequest = null,
@@ -42,6 +43,7 @@ final readonly class ControllerInfo
         public ?ResponseInfo $response = null,
         public bool $deprecated = false,
         public array $callbacks = [],
+        public array $responseLinks = [],
     ) {}
 
     /**
@@ -127,6 +129,19 @@ final readonly class ControllerInfo
             }
         }
 
+        // Convert responseLinks arrays to DTOs
+        $responseLinks = [];
+        if (isset($data['responseLinks']) && is_array($data['responseLinks'])) {
+            foreach ($data['responseLinks'] as $link) {
+                try {
+                    $responseLinks[] = ResponseLinkInfo::fromArray($link);
+                } catch (\Exception) {
+                    // Skip malformed link entries to prevent aborting entire deserialization.
+                    continue;
+                }
+            }
+        }
+
         return new self(
             formRequest: $data['formRequest'] ?? null,
             inlineValidation: $inlineValidation,
@@ -141,6 +156,7 @@ final readonly class ControllerInfo
             response: $response,
             deprecated: $data['deprecated'] ?? false,
             callbacks: $callbacks,
+            responseLinks: $responseLinks,
         );
     }
 
@@ -165,6 +181,7 @@ final readonly class ControllerInfo
             'response' => $this->response?->toArray(),
             'deprecated' => $this->deprecated,
             'callbacks' => array_map(fn (CallbackInfo $cb) => $cb->toArray(), $this->callbacks),
+            'responseLinks' => array_map(fn (ResponseLinkInfo $link) => $link->toArray(), $this->responseLinks),
         ];
     }
 
@@ -265,6 +282,14 @@ final readonly class ControllerInfo
     }
 
     /**
+     * Check if response links were detected.
+     */
+    public function hasResponseLinks(): bool
+    {
+        return count($this->responseLinks) > 0;
+    }
+
+    /**
      * Check if the controller method is marked as deprecated.
      */
     public function isDeprecated(): bool
@@ -286,6 +311,7 @@ final readonly class ControllerInfo
             && ! $this->hasHeaderParameters()
             && ! $this->hasEnumParameters()
             && ! $this->hasResponse()
-            && ! $this->hasCallbacks();
+            && ! $this->hasCallbacks()
+            && ! $this->hasResponseLinks();
     }
 }

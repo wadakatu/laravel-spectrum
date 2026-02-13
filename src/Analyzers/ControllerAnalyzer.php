@@ -47,6 +47,8 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
 
     protected CallbackAnalyzer $callbackAnalyzer;
 
+    protected ResponseLinkAnalyzer $responseLinkAnalyzer;
+
     protected AstHelper $astHelper;
 
     protected MethodSourceExtractor $methodSourceExtractor;
@@ -60,6 +62,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         EnumAnalyzer $enumAnalyzer,
         ResponseAnalyzer $responseAnalyzer,
         CallbackAnalyzer $callbackAnalyzer,
+        ResponseLinkAnalyzer $responseLinkAnalyzer,
         AstHelper $astHelper,
         ?MethodSourceExtractor $methodSourceExtractor = null,
         ?ErrorCollector $errorCollector = null
@@ -73,6 +76,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         $this->enumAnalyzer = $enumAnalyzer;
         $this->responseAnalyzer = $responseAnalyzer;
         $this->callbackAnalyzer = $callbackAnalyzer;
+        $this->responseLinkAnalyzer = $responseLinkAnalyzer;
         $this->astHelper = $astHelper;
         $this->methodSourceExtractor = $methodSourceExtractor ?? new MethodSourceExtractor;
     }
@@ -167,6 +171,9 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         // コールバック定義を検出
         $callbacks = $this->callbackAnalyzer->analyze($methodReflection);
 
+        // Response link定義を検出
+        $responseLinks = $this->responseLinkAnalyzer->analyze($methodReflection);
+
         return new ControllerInfo(
             formRequest: $formRequest,
             inlineValidation: $inlineValidation,
@@ -181,6 +188,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
             response: $response,
             deprecated: $deprecated,
             callbacks: $callbacks,
+            responseLinks: $responseLinks,
         );
     }
 

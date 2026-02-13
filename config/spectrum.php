@@ -220,6 +220,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tag Depth
+    |--------------------------------------------------------------------------
+    |
+    | Controls how many meaningful URI path segments are used for automatic
+    | URI-based fallback tag generation after removing "api" and version
+    | prefixes (v1, v2, ...).
+    |
+    | Note: Controller-based tags are used by default. This setting applies
+    | when URI-based fallback is needed.
+    |
+    | 1   = first segment only (default, recommended)
+    | 2+  = include deeper segments
+    | 0   = disable URI-based tags and fallback to controller-based tags
+    |
+    */
+    'tag_depth' => 1,
+
+    /*
+    |--------------------------------------------------------------------------
     | Tag Groups (x-tagGroups)
     |--------------------------------------------------------------------------
     |
@@ -880,6 +899,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Response Links Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define OpenAPI response links for controller methods.
+    | Key format: 'App\Http\Controllers\UserController@store'
+    |
+    | Links are emitted under responses.<status>.links in each operation.
+    | This is an alternative to using the #[OpenApiResponseLink] attribute.
+    |
+    | Example:
+    |   'App\Http\Controllers\UserController@store' => [
+    |       [
+    |           'statusCode' => 201,
+    |           'name' => 'GetUserById',
+    |           'operationId' => 'usersShow',
+    |           'parameters' => ['user' => '$response.body#/id'],
+    |           'description' => 'Follow-up operation to fetch the created user',
+    |       ],
+    |   ],
+    |
+    */
+    'response_links' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Callbacks Configuration
     |--------------------------------------------------------------------------
     |
@@ -930,6 +974,38 @@ return [
     |
     */
     'component_callbacks' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhooks Configuration (OpenAPI 3.1.0)
+    |--------------------------------------------------------------------------
+    |
+    | Define root-level webhook operations for OpenAPI 3.1.0 output.
+    | This section maps webhook names to Path Item objects.
+    |
+    | Example:
+    |   'newUser' => [
+    |       'post' => [
+    |           'summary' => 'New user event',
+    |           'requestBody' => [
+    |               'required' => true,
+    |               'content' => [
+    |                   'application/json' => [
+    |                       'schema' => [
+    |                           'type' => 'object',
+    |                           'properties' => ['id' => ['type' => 'string']],
+    |                       ],
+    |                   ],
+    |               ],
+    |           ],
+    |           'responses' => [
+    |               '200' => ['description' => 'Webhook processed'],
+    |           ],
+    |       ],
+    |   ],
+    |
+    */
+    'webhooks' => [],
 
     /*
     |--------------------------------------------------------------------------
