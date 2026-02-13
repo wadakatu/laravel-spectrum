@@ -168,4 +168,52 @@ class CallbackIntegrationTest extends TestCase
         $this->assertArrayHasKey('callbacks', $operation);
         $this->assertArrayHasKey('onConfiguredCallback', $operation['callbacks']);
     }
+
+    #[Test]
+    public function it_includes_webhooks_from_config_in_31_format(): void
+    {
+        config([
+            'spectrum.openapi.version' => '3.1.0',
+            'spectrum.webhooks' => [
+                'newUser' => [
+                    'post' => [
+                        'summary' => 'New user webhook',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'id' => ['type' => 'string', 'nullable' => true],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => ['description' => 'Webhook processed'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        Route::post('api/orders', [CallbackTestController::class, 'store']);
+
+        $routeAnalyzer = app(RouteAnalyzer::class);
+        $generator = app(OpenApiGenerator::class);
+
+        $routes = $routeAnalyzer->analyze();
+        $openapi = $generator->generate($routes)->toArray();
+
+        $this->assertEquals('3.1.0', $openapi['openapi']);
+        $this->assertArrayHasKey('webhooks', $openapi);
+        $this->assertArrayHasKey('newUser', $openapi['webhooks']);
+        $this->assertArrayHasKey('post', $openapi['webhooks']['newUser']);
+
+        $schema = $openapi['webhooks']['newUser']['post']['requestBody']['content']['application/json']['schema']['properties']['id'];
+        $this->assertEquals(['string', 'null'], $schema['type']);
+        $this->assertArrayNotHasKey('nullable', $schema);
+    }
 }

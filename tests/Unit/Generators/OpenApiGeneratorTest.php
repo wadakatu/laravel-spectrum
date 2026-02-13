@@ -850,6 +850,140 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_configured_webhooks_in_31_output(): void
+    {
+        $realConverter = new OpenApi31Converter;
+        $generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $realConverter,
+            new CallbackGenerator,
+            new SchemaRegistry
+        );
+
+        config([
+            'spectrum.openapi.version' => '3.1.0',
+            'spectrum.webhooks' => [
+                'newUser' => [
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'id' => ['type' => 'string', 'nullable' => true],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => ['description' => 'Webhook processed'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $generator->generate([])->toArray();
+
+        $this->assertArrayHasKey('webhooks', $result);
+        $this->assertArrayHasKey('newUser', $result['webhooks']);
+        $schema = $result['webhooks']['newUser']['post']['requestBody']['content']['application/json']['schema']['properties']['id'];
+        $this->assertEquals(['string', 'null'], $schema['type']);
+        $this->assertArrayNotHasKey('nullable', $schema);
+    }
+
+    #[Test]
+    public function it_does_not_include_configured_webhooks_in_30_output(): void
+    {
+        config([
+            'spectrum.openapi.version' => '3.0.0',
+            'spectrum.webhooks' => [
+                'newUser' => [
+                    'post' => [
+                        'responses' => [
+                            '200' => ['description' => 'Webhook processed'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+        $this->openApi31Converter->shouldNotReceive('convert');
+
+        $result = $this->generateAsArray([]);
+
+        $this->assertArrayNotHasKey('webhooks', $result);
+    }
+
+    #[Test]
+    public function it_handles_invalid_webhooks_config_without_crashing(): void
+    {
+        $realConverter = new OpenApi31Converter;
+        $generator = new OpenApiGenerator(
+            $this->controllerAnalyzer,
+            $this->authenticationAnalyzer,
+            $this->securitySchemeGenerator,
+            $this->tagGenerator,
+            $this->tagGroupGenerator,
+            $this->metadataGenerator,
+            $this->parameterGenerator,
+            $this->requestBodyGenerator,
+            $this->resourceAnalyzer,
+            $this->schemaGenerator,
+            $this->errorResponseGenerator,
+            $this->exampleGenerator,
+            $this->responseSchemaGenerator,
+            $this->paginationSchemaGenerator,
+            $this->paginationDetector,
+            $this->requestAnalyzer,
+            $realConverter,
+            new CallbackGenerator,
+            new SchemaRegistry
+        );
+
+        config([
+            'spectrum.openapi.version' => '3.1.0',
+            'spectrum.webhooks' => 'invalid',
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->with([])->andReturn([]);
+
+        $result = $generator->generate([])->toArray();
+
+        $this->assertArrayHasKey('webhooks', $result);
+        $this->assertInstanceOf(\stdClass::class, $result['webhooks']);
+    }
+
+    #[Test]
     public function it_registers_resource_schemas_in_components(): void
     {
         $routes = [

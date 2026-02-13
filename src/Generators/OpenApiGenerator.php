@@ -141,6 +141,14 @@ class OpenApiGenerator
             $openapi['components']['callbacks'] = $componentCallbacks;
         }
 
+        // Populate root-level webhooks definitions (OpenAPI 3.1.0 feature)
+        if (config('spectrum.openapi.version') === '3.1.0') {
+            $webhooks = $this->generateWebhooks();
+            if (! empty($webhooks)) {
+                $openapi['webhooks'] = $webhooks;
+            }
+        }
+
         // Validate that all schema references are resolved
         $brokenReferences = $this->schemaRegistry->validateReferences();
         if (! empty($brokenReferences)) {
@@ -245,6 +253,26 @@ class OpenApiGenerator
         }
 
         return $this->callbackGenerator->generateComponentCallbacks($callbackInfos);
+    }
+
+    /**
+     * Generate root-level webhooks from config (OpenAPI 3.1.0).
+     *
+     * @return array<string, mixed>
+     */
+    protected function generateWebhooks(): array
+    {
+        $webhooks = config('spectrum.webhooks', []);
+
+        if (! is_array($webhooks)) {
+            Log::warning('Invalid webhooks configuration detected: expected array.', [
+                'type' => gettype($webhooks),
+            ]);
+
+            return [];
+        }
+
+        return $webhooks;
     }
 
     /**
