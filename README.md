@@ -97,8 +97,8 @@ php artisan spectrum:mock
 
 ### Export to API Clients
 ```bash
-php artisan spectrum:export postman    # Postman collection
-php artisan spectrum:export insomnia   # Insomnia workspace
+php artisan spectrum:export:postman    # Postman collection
+php artisan spectrum:export:insomnia   # Insomnia workspace
 ```
 
 ### High Performance
