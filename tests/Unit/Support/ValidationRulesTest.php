@@ -53,16 +53,14 @@ class ValidationRulesTest extends TestCase
     public function it_extracts_rule_name_from_enum_object(): void
     {
         $rule = Rule::enum(StatusEnum::class);
-        // Enum rule doesn't have __toString, so returns 'unknown'
-        $this->assertEquals('unknown', ValidationRules::extractRuleName($rule));
+        $this->assertEquals('enum', ValidationRules::extractRuleName($rule));
     }
 
     #[Test]
     public function it_extracts_rule_name_from_new_enum_instance(): void
     {
         $rule = new Enum(StatusEnum::class);
-        // Enum rule doesn't have __toString, so returns 'unknown'
-        $this->assertEquals('unknown', ValidationRules::extractRuleName($rule));
+        $this->assertEquals('enum', ValidationRules::extractRuleName($rule));
     }
 
     #[Test]
