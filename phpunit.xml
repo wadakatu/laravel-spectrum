@@ -7,7 +7,7 @@
          displayDetailsOnTestsThatTriggerDeprecations="true"
 >
     <php>
-        <ini name="memory_limit" value="-1"/>
+        <ini name="memory_limit" value="1G"/>
     </php>
     <testsuites>
         <testsuite name="Unit">
