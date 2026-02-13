@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Console\Commands;
 
+use Illuminate\Console\OutputStyle;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\DTO\OpenApiSpec;
@@ -15,6 +16,8 @@ use LaravelSpectrum\Performance\ParallelProcessor;
 use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class OptimizedGenerateCommandTest extends TestCase
 {
@@ -413,6 +416,7 @@ class OptimizedGenerateCommandTest extends TestCase
         $command = new OptimizedGenerateCommand(
             dependencyGraph: Mockery::mock(DependencyGraph::class)
         );
+        $command->setOutput(new OutputStyle(new ArrayInput([]), new BufferedOutput));
 
         $routes = [
             [

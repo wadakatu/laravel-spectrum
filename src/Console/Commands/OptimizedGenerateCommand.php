@@ -243,9 +243,7 @@ class OptimizedGenerateCommand extends Command
         $invalidated = array_values(array_unique($cache->getInvalidatedItems()));
 
         if ($invalidated === []) {
-            if (isset($this->output)) {
-                $this->warn('No tracked incremental changes found. Falling back to processing all routes.');
-            }
+            $this->warn('No tracked incremental changes found. Falling back to processing all routes.');
 
             return $routes;
         }
