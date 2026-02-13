@@ -13,6 +13,7 @@ use LaravelSpectrum\DTO\AuthenticationResult;
 use LaravelSpectrum\DTO\ControllerInfo;
 use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiResponse;
+use LaravelSpectrum\DTO\OpenApiServer;
 use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
@@ -186,12 +187,7 @@ class OpenApiGenerator
         return [
             'openapi' => $this->getOpenApiVersion(),
             'info' => $info,
-            'servers' => [
-                [
-                    'url' => rtrim(config('app.url'), '/').'/api',
-                    'description' => 'API Server',
-                ],
-            ],
+            'servers' => OpenApiServer::buildServersFromConfig(),
             'paths' => [],
             'components' => [
                 'schemas' => [],

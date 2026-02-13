@@ -64,9 +64,14 @@ class ValidationRules
     {
         // Handle object rules (like Rule::enum() or new Enum())
         if (is_object($rule)) {
-            // Handle Laravel's Rule::enum() and new Enum() instances
-            if (method_exists($rule, '__toString')) {
+            if ($rule instanceof \Illuminate\Validation\Rules\Enum) {
                 return 'enum';
+            }
+
+            if (method_exists($rule, '__toString')) {
+                $parts = explode(':', (string) $rule);
+
+                return $parts[0];
             }
 
             return 'unknown';
