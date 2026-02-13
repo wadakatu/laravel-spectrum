@@ -53,11 +53,9 @@ class MockServerCommand extends Command
             $responseGenerator
         );
 
-        // レスポンス遅延の設定
-        if ($delay = $this->option('delay')) {
-            // Note: setResponseDelay method would need to be implemented if delay is needed
-            // $requestHandler->setResponseDelay((int) $delay);
-        }
+        // レスポンス遅延・デフォルトシナリオの設定
+        $requestHandler->setResponseDelay((int) $this->option('delay'));
+        $requestHandler->setDefaultScenario((string) $this->option('scenario'));
 
         // モックサーバーの起動
         $server = new MockServer(

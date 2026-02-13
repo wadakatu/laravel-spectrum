@@ -9,6 +9,10 @@ use Workerman\Protocols\Http\Request;
  */
 class RequestHandler
 {
+    private int $responseDelayMs = 0;
+
+    private string $defaultScenario = 'success';
+
     private ValidationSimulator $validator;
 
     private AuthenticationSimulator $authenticator;
@@ -25,6 +29,18 @@ class RequestHandler
         $this->responseGenerator = $responseGenerator;
     }
 
+    public function setResponseDelay(int $milliseconds): void
+    {
+        $this->responseDelayMs = max(0, $milliseconds);
+    }
+
+    public function setDefaultScenario(string $scenario): void
+    {
+        $scenario = trim($scenario);
+
+        $this->defaultScenario = $scenario !== '' ? $scenario : 'success';
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -35,16 +51,18 @@ class RequestHandler
     {
         // 認証チェック
         if ($authError = $this->checkAuthentication($request, $route)) {
-            return $authError;
+            $response = $authError;
+        } elseif ($validationError = $this->validateRequest($request, $route)) {
+            // バリデーション
+            $response = $validationError;
+        } else {
+            // 成功レスポンスの生成
+            $response = $this->generateSuccessResponse($request, $route);
         }
 
-        // バリデーション
-        if ($validationError = $this->validateRequest($request, $route)) {
-            return $validationError;
-        }
+        $this->applyResponseDelay();
 
-        // 成功レスポンスの生成
-        return $this->generateSuccessResponse($request, $route);
+        return $response;
     }
 
     /**
@@ -133,7 +151,7 @@ class RequestHandler
     {
         // シナリオベースのレスポンス選択
         $queryParams = $request->get() ?? [];
-        $scenario = $queryParams['_scenario'] ?? 'success';
+        $scenario = $queryParams['_scenario'] ?? $this->defaultScenario;
 
         // レスポンスコードの決定
         $statusCode = $this->determineStatusCode($route, $scenario);
@@ -145,6 +163,20 @@ class RequestHandler
             $scenario,
             $route['params'] ?? []
         );
+    }
+
+    private function applyResponseDelay(): void
+    {
+        if ($this->responseDelayMs <= 0) {
+            return;
+        }
+
+        $this->sleepMicroseconds($this->responseDelayMs * 1000);
+    }
+
+    protected function sleepMicroseconds(int $microseconds): void
+    {
+        usleep($microseconds);
     }
 
     /**
