@@ -45,6 +45,8 @@ class GenerateDocsCommand extends Command
 
     public function handle(): int
     {
+        $this->applyConfiguredMemoryLimit();
+
         $this->info('🚀 Generating API documentation...');
 
         // エラーコレクターの初期化
@@ -143,6 +145,72 @@ class GenerateDocsCommand extends Command
         $this->info('✅ Documentation generated successfully!');
 
         return 0;
+    }
+
+    private function applyConfiguredMemoryLimit(): void
+    {
+        $configuredLimit = config('spectrum.performance.memory_limit');
+        if (! is_string($configuredLimit) || trim($configuredLimit) === '') {
+            return;
+        }
+
+        $currentLimit = ini_get('memory_limit');
+        if (! is_string($currentLimit) || trim($currentLimit) === '') {
+            return;
+        }
+
+        $currentLimitBytes = $this->parseMemoryLimitToBytes($currentLimit);
+        $configuredLimitBytes = $this->parseMemoryLimitToBytes($configuredLimit);
+
+        // Unlimited memory or invalid values should not be overridden.
+        if ($currentLimitBytes === PHP_INT_MAX || $configuredLimitBytes <= 0) {
+            return;
+        }
+
+        // Avoid lowering the current memory limit to prevent regressions.
+        if ($configuredLimitBytes <= $currentLimitBytes) {
+            return;
+        }
+
+        ini_set('memory_limit', $configuredLimit);
+    }
+
+    private function parseMemoryLimitToBytes(string $limit): int
+    {
+        $normalizedLimit = trim($limit);
+
+        if ($normalizedLimit === '') {
+            return 0;
+        }
+
+        if ($normalizedLimit === '-1') {
+            return PHP_INT_MAX;
+        }
+
+        $unit = strtolower(substr($normalizedLimit, -1));
+        $numericValue = $normalizedLimit;
+
+        if (in_array($unit, ['k', 'm', 'g'], true)) {
+            $numericValue = substr($normalizedLimit, 0, -1);
+        } else {
+            $unit = '';
+        }
+
+        if (! is_numeric($numericValue)) {
+            return 0;
+        }
+
+        $bytes = (int) $numericValue;
+        if ($bytes < 0) {
+            return 0;
+        }
+
+        return match ($unit) {
+            'g' => $bytes * 1024 * 1024 * 1024,
+            'm' => $bytes * 1024 * 1024,
+            'k' => $bytes * 1024,
+            default => $bytes,
+        };
     }
 
     protected function getDefaultOutputPath(): string

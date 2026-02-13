@@ -103,6 +103,103 @@ class RouteAnalyzerTest extends TestCase
     }
 
     #[Test]
+    public function it_excludes_configured_http_methods(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['Head']]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(1, $routes);
+        $this->assertEquals(['GET'], $routes[0]['httpMethods']);
+    }
+
+    #[Test]
+    public function it_skips_routes_when_all_http_methods_are_excluded(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['get', 'head']]);
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(0, $routes);
+    }
+
+    #[Test]
+    public function it_continues_analyzing_routes_after_skipping_all_excluded_methods(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['get', 'head']]);
+        Route::get('api/skipped', [UserController::class, 'index']);
+        Route::post('api/kept', [UserController::class, 'store']);
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(1, $routes);
+        $this->assertEquals('api/kept', $routes[0]['uri']);
+        $this->assertEquals(['POST'], $routes[0]['httpMethods']);
+    }
+
+    #[Test]
+    public function it_returns_original_http_methods_when_no_excluded_methods_configured(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => []]);
+        $analyzer = $this->createAnalyzerProxy();
+        $methods = [
+            1 => 'get',
+            3 => 'post',
+        ];
+
+        // Act
+        $result = $analyzer->exposeFilterHttpMethods($methods);
+
+        // Assert
+        $this->assertSame($methods, $result);
+    }
+
+    #[Test]
+    public function it_filters_http_methods_case_insensitively_and_reindexes_result(): void
+    {
+        // Arrange
+        config(['spectrum.excluded_methods' => ['head']]);
+        $analyzer = $this->createAnalyzerProxy();
+        $methods = [
+            1 => 'GET',
+            3 => 'head',
+            7 => 'POST',
+        ];
+
+        // Act
+        $result = $analyzer->exposeFilterHttpMethods($methods);
+
+        // Assert
+        $this->assertSame(['GET', 'POST'], $result);
+    }
+
+    #[Test]
+    public function perform_analysis_remains_accessible_to_child_classes(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+        $analyzer = $this->createAnalyzerProxy();
+
+        // Act
+        $routes = $analyzer->exposePerformAnalysis();
+
+        // Assert
+        $this->assertNotEmpty($routes);
+    }
+
+    #[Test]
     public function it_extracts_middleware()
     {
         // Arrange
@@ -356,5 +453,34 @@ class RouteAnalyzerTest extends TestCase
         $this->assertEquals('string', $routes[0]['parameters'][0]['schema']['type']);
         $this->assertArrayNotHasKey('format', $routes[0]['parameters'][0]['schema']);
         $this->assertArrayNotHasKey('pattern', $routes[0]['parameters'][0]['schema']);
+    }
+
+    private function createAnalyzerProxy(): object
+    {
+        $cache = $this->createMock(DocumentationCache::class);
+        $cache->method('rememberRoutes')
+            ->willReturnCallback(function ($callback) {
+                return $callback();
+            });
+
+        return new class($cache) extends RouteAnalyzer
+        {
+            /**
+             * @param  array<int, string>  $httpMethods
+             * @return array<int, string>
+             */
+            public function exposeFilterHttpMethods(array $httpMethods): array
+            {
+                return $this->filterHttpMethods($httpMethods);
+            }
+
+            /**
+             * @return array<int, \LaravelSpectrum\DTO\RouteInfo>
+             */
+            public function exposePerformAnalysis(): array
+            {
+                return $this->performAnalysis();
+            }
+        };
     }
 }

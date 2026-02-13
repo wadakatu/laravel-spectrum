@@ -127,6 +127,7 @@ class DocumentationCache
         $routeFiles = [
             base_path('routes/api.php'),
             base_path('routes/web.php'),
+            base_path('config/spectrum.php'),
         ];
 
         // カスタムルートファイルも含める

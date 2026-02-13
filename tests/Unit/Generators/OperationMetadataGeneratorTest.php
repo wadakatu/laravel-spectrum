@@ -39,6 +39,32 @@ class OperationMetadataGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_generates_list_summary_for_get_when_parameter_is_not_trailing(): void
+    {
+        $route = [
+            'uri' => 'api/posts/{post}/comments',
+            'method' => 'comments',
+        ];
+
+        $summary = $this->generator->generateSummary($route, 'get');
+
+        $this->assertEquals('List all Comment', $summary);
+    }
+
+    #[Test]
+    public function it_generates_get_summary_for_singular_endpoint_without_parameter(): void
+    {
+        $route = [
+            'uri' => 'api/profile',
+            'method' => 'show',
+        ];
+
+        $summary = $this->generator->generateSummary($route, 'get');
+
+        $this->assertEquals('Get Profile', $summary);
+    }
+
+    #[Test]
     public function it_generates_create_summary_for_post(): void
     {
         $route = ['uri' => 'api/users'];
@@ -46,6 +72,19 @@ class OperationMetadataGeneratorTest extends TestCase
         $summary = $this->generator->generateSummary($route, 'post');
 
         $this->assertEquals('Create a new User', $summary);
+    }
+
+    #[Test]
+    public function it_generates_create_summary_with_parent_context_for_nested_action_segment(): void
+    {
+        $route = [
+            'uri' => 'api/v2/account/billing/portal_session',
+            'method' => 'storePortalSession',
+        ];
+
+        $summary = $this->generator->generateSummary($route, 'post');
+
+        $this->assertEquals('Create a new BillingPortalSession', $summary);
     }
 
     #[Test]

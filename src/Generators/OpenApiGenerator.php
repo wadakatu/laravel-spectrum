@@ -15,6 +15,7 @@ use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiServer;
 use LaravelSpectrum\DTO\OpenApiSpec;
+use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
 
@@ -141,6 +142,14 @@ class OpenApiGenerator
             $openapi['components']['callbacks'] = $componentCallbacks;
         }
 
+        // Populate root-level webhooks definitions (OpenAPI 3.1.0 feature)
+        if (config('spectrum.openapi.version') === '3.1.0') {
+            $webhooks = $this->generateWebhooks();
+            if (! empty($webhooks)) {
+                $openapi['webhooks'] = $webhooks;
+            }
+        }
+
         // Validate that all schema references are resolved
         $brokenReferences = $this->schemaRegistry->validateReferences();
         if (! empty($brokenReferences)) {
@@ -248,6 +257,26 @@ class OpenApiGenerator
     }
 
     /**
+     * Generate root-level webhooks from config (OpenAPI 3.1.0).
+     *
+     * @return array<string, mixed>
+     */
+    protected function generateWebhooks(): array
+    {
+        $webhooks = config('spectrum.webhooks', []);
+
+        if (! is_array($webhooks)) {
+            Log::warning('Invalid webhooks configuration detected: expected array.', [
+                'type' => gettype($webhooks),
+            ]);
+
+            return [];
+        }
+
+        return $webhooks;
+    }
+
+    /**
      * Generate a single operation.
      *
      * @param  RouteDefinition  $route
@@ -322,6 +351,45 @@ class OpenApiGenerator
                 statusCode: (string) $code,
                 description: $responseData['description'] ?? '',
                 content: $responseData['content'] ?? null,
+            );
+        }
+
+        $responses = $this->applyResponseLinks($responses, $controllerInfo->responseLinks);
+
+        return $responses;
+    }
+
+    /**
+     * @param  array<string, OpenApiResponse>  $responses
+     * @param  array<int, ResponseLinkInfo>  $responseLinks
+     * @return array<string, OpenApiResponse>
+     */
+    protected function applyResponseLinks(array $responses, array $responseLinks): array
+    {
+        if (empty($responseLinks)) {
+            return $responses;
+        }
+
+        foreach ($responseLinks as $responseLink) {
+            $statusCode = (string) $responseLink->statusCode;
+
+            if (! isset($responses[$statusCode])) {
+                Log::warning(
+                    "Skipping response link '{$responseLink->name}' because response status {$statusCode} does not exist."
+                );
+
+                continue;
+            }
+
+            $existingResponse = $responses[$statusCode];
+            $existingLinks = $existingResponse->links ?? [];
+            $existingLinks[$responseLink->name] = $responseLink->toLinkObject();
+
+            $responses[$statusCode] = new OpenApiResponse(
+                statusCode: $existingResponse->statusCode,
+                description: $existingResponse->description,
+                content: $existingResponse->content,
+                links: $existingLinks,
             );
         }
 

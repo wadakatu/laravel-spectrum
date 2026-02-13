@@ -15,6 +15,7 @@ use LaravelSpectrum\Analyzers\PaginationAnalyzer;
 use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
 use LaravelSpectrum\Analyzers\ResourceAnalyzer;
 use LaravelSpectrum\Analyzers\ResponseAnalyzer;
+use LaravelSpectrum\Analyzers\ResponseLinkAnalyzer;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Analyzers\Support\AnonymousClassAnalyzer;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
@@ -115,6 +116,11 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(CallbackAnalyzer::class, function ($app) {
             return new CallbackAnalyzer(
                 configCallbacks: config('spectrum.callbacks', []),
+            );
+        });
+        $this->app->singleton(ResponseLinkAnalyzer::class, function ($app) {
+            return new ResponseLinkAnalyzer(
+                configLinks: config('spectrum.response_links', []),
             );
         });
         $this->app->singleton(ControllerAnalyzer::class);

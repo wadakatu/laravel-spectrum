@@ -91,6 +91,26 @@ class OpenApiResponseTest extends TestCase
     }
 
     #[Test]
+    public function it_converts_to_array_with_links(): void
+    {
+        $response = new OpenApiResponse(
+            statusCode: '201',
+            description: 'Created',
+            links: [
+                'GetUserById' => [
+                    'operationId' => 'usersShow',
+                    'parameters' => ['user' => '$response.body#/id'],
+                ],
+            ],
+        );
+
+        $array = $response->toArray();
+
+        $this->assertArrayHasKey('links', $array);
+        $this->assertArrayHasKey('GetUserById', $array['links']);
+    }
+
+    #[Test]
     public function it_creates_from_array(): void
     {
         $data = [
@@ -137,6 +157,23 @@ class OpenApiResponseTest extends TestCase
 
         $this->assertTrue($withContent->hasContent());
         $this->assertFalse($withoutContent->hasContent());
+    }
+
+    #[Test]
+    public function it_checks_if_has_links(): void
+    {
+        $withLinks = new OpenApiResponse(
+            statusCode: '200',
+            description: 'OK',
+            links: ['GetUserById' => ['operationId' => 'usersShow']],
+        );
+        $withoutLinks = new OpenApiResponse(
+            statusCode: '200',
+            description: 'OK',
+        );
+
+        $this->assertTrue($withLinks->hasLinks());
+        $this->assertFalse($withoutLinks->hasLinks());
     }
 
     #[Test]
@@ -242,5 +279,22 @@ class OpenApiResponseTest extends TestCase
 
         $this->assertEquals('404', $response->statusCode);
         $this->assertEquals('Not Found', $response->description);
+    }
+
+    #[Test]
+    public function it_creates_from_array_with_links(): void
+    {
+        $response = OpenApiResponse::fromArray([
+            'statusCode' => '201',
+            'description' => 'Created',
+            'links' => [
+                'GetUserById' => [
+                    'operationId' => 'usersShow',
+                ],
+            ],
+        ]);
+
+        $this->assertTrue($response->hasLinks());
+        $this->assertArrayHasKey('GetUserById', $response->links ?? []);
     }
 }

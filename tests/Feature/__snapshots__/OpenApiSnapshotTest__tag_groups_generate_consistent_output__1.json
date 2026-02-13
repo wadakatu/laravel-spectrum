@@ -14,10 +14,8 @@
     "paths": {
         "/api/snapshot/posts": {
             "get": {
-                "summary": "List all Post",
                 "operationId": "getApiSnapshotPosts",
                 "tags": [
-                    "Snapshot",
                     "Post"
                 ],
                 "parameters": [],
@@ -72,13 +70,12 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "List all Post"
             },
             "head": {
-                "summary": "Head Post",
                 "operationId": "headApiSnapshotPosts",
                 "tags": [
-                    "Snapshot",
                     "Post"
                 ],
                 "parameters": [],
@@ -133,15 +130,14 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head Post"
             }
         },
         "/api/snapshot/users": {
             "get": {
-                "summary": "List all User",
                 "operationId": "getApiSnapshotUsers",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [],
@@ -187,13 +183,12 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "List all User"
             },
             "head": {
-                "summary": "Head User",
                 "operationId": "headApiSnapshotUsers",
                 "tags": [
-                    "Snapshot",
                     "User"
                 ],
                 "parameters": [],
@@ -239,7 +234,8 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head User"
             }
         }
     },
@@ -251,9 +247,6 @@
         {
             "name": "Post",
             "description": "Post management endpoints"
-        },
-        {
-            "name": "Snapshot"
         },
         {
             "name": "User",
@@ -271,12 +264,6 @@
             "name": "Content",
             "tags": [
                 "Post"
-            ]
-        },
-        {
-            "name": "Other",
-            "tags": [
-                "Snapshot"
             ]
         }
     ]
