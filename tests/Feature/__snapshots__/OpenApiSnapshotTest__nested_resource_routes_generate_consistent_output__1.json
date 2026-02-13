@@ -342,7 +342,7 @@
                         }
                     }
                 },
-                "summary": "Get Comment by ID"
+                "summary": "List all Comment"
             },
             "head": {
                 "operationId": "headApiSnapshotPostsPostComments",
