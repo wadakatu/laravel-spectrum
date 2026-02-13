@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Console\Commands;
 
+use Illuminate\Console\OutputStyle;
 use LaravelSpectrum\Analyzers\RouteAnalyzer;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\DTO\OpenApiSpec;
@@ -15,6 +16,8 @@ use LaravelSpectrum\Performance\ParallelProcessor;
 use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class OptimizedGenerateCommandTest extends TestCase
 {
@@ -408,6 +411,36 @@ class OptimizedGenerateCommandTest extends TestCase
     }
 
     #[Test]
+    public function filter_changed_routes_falls_back_to_all_routes_when_no_changes_are_tracked(): void
+    {
+        $command = new OptimizedGenerateCommand(
+            dependencyGraph: Mockery::mock(DependencyGraph::class)
+        );
+        $command->setOutput(new OutputStyle(new ArrayInput([]), new BufferedOutput));
+
+        $routes = [
+            [
+                'uri' => '/api/users',
+                'httpMethods' => ['GET'],
+                'action' => 'UserController@index',
+            ],
+            [
+                'uri' => '/api/posts',
+                'httpMethods' => ['GET'],
+                'action' => 'PostController@index',
+            ],
+        ];
+
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('filterChangedRoutes');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($command, $routes);
+
+        $this->assertSame($routes, $result);
+    }
+
+    #[Test]
     public function parse_memory_limit_supports_common_units(): void
     {
         $command = new OptimizedGenerateCommand;
@@ -520,6 +553,59 @@ class OptimizedGenerateCommandTest extends TestCase
 
         $this->artisan('spectrum:generate:optimized', ['--parallel' => true])
             ->expectsOutputToContain('Found 10 routes to process')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
+    public function handle_via_artisan_with_incremental_falls_back_to_all_routes_when_change_log_is_empty(): void
+    {
+        $routes = [
+            [
+                'uri' => '/api/users',
+                'httpMethods' => ['GET'],
+                'action' => 'UserController@index',
+            ],
+        ];
+
+        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
+        $routeAnalyzer->shouldReceive('analyze')->andReturn($routes);
+
+        $openApiGenerator = Mockery::mock(OpenApiGenerator::class);
+        $openApiGenerator->shouldReceive('generate')
+            ->andReturnUsing(function (array $analyzedRoutes): OpenApiSpec {
+                if ($analyzedRoutes === []) {
+                    return OpenApiSpec::fromArray([
+                        'openapi' => '3.0.0',
+                        'info' => ['title' => 'Test', 'version' => '1.0.0', 'description' => 'Test description'],
+                        'servers' => [['url' => 'https://example.com', 'description' => 'Test server']],
+                        'paths' => [],
+                        'components' => [
+                            'schemas' => [],
+                            'securitySchemes' => [],
+                        ],
+                    ]);
+                }
+
+                return OpenApiSpec::fromArray([
+                    'openapi' => '3.0.0',
+                    'info' => ['title' => 'Test', 'version' => '1.0.0', 'description' => 'Test description'],
+                    'servers' => [['url' => 'https://example.com', 'description' => 'Test server']],
+                    'paths' => [
+                        '/api/users' => ['get' => []],
+                    ],
+                    'components' => [
+                        'schemas' => [],
+                        'securitySchemes' => [],
+                    ],
+                ]);
+            });
+
+        $this->app->instance(RouteAnalyzer::class, $routeAnalyzer);
+        $this->app->instance(OpenApiGenerator::class, $openApiGenerator);
+
+        $this->artisan('spectrum:generate:optimized', ['--incremental' => true])
+            ->expectsOutputToContain('No tracked incremental changes found')
+            ->expectsOutputToContain('Processing 1 changed routes')
             ->assertExitCode(0);
     }
 

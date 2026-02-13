@@ -240,13 +240,19 @@ class OptimizedGenerateCommand extends Command
     private function filterChangedRoutes(array $routes): array
     {
         $cache = new IncrementalCache($this->dependencyGraph);
-        $invalidated = $cache->getInvalidatedItems();
+        $invalidated = array_values(array_unique($cache->getInvalidatedItems()));
 
-        return array_filter($routes, function ($route) use ($invalidated) {
+        if ($invalidated === []) {
+            $this->warn('No tracked incremental changes found. Falling back to processing all routes.');
+
+            return $routes;
+        }
+
+        return array_values(array_filter($routes, function ($route) use ($invalidated) {
             $routeId = 'route:'.implode(':', $route['httpMethods']).':'.$route['uri'];
 
-            return in_array($routeId, $invalidated);
-        });
+            return in_array($routeId, $invalidated, true);
+        }));
     }
 
     /**
