@@ -324,6 +324,84 @@ class RequestHandlerTest extends TestCase
         $this->assertArrayHasKey('error', $result['body']);
     }
 
+    public function test_uses_default_scenario_when_query_scenario_is_absent(): void
+    {
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => [],
+        ]);
+
+        $route = [
+            'operation' => [],
+            'method' => 'get',
+        ];
+
+        $this->handler->setDefaultScenario('not_found');
+
+        $this->authenticator->expects($this->once())
+            ->method('authenticate')
+            ->willReturn(['authenticated' => true]);
+
+        $this->validator->expects($this->once())
+            ->method('validate')
+            ->willReturn(['valid' => true, 'errors' => []]);
+
+        $this->responseGenerator->expects($this->once())
+            ->method('generate')
+            ->with(
+                $route['operation'],
+                404,
+                'not_found',
+                []
+            )
+            ->willReturn([
+                'status' => 404,
+                'body' => ['error' => 'Not Found'],
+                'headers' => [],
+            ]);
+
+        $result = $this->handler->handle($request, $route);
+
+        $this->assertEquals(404, $result['status']);
+    }
+
+    public function test_applies_response_delay_to_authentication_errors(): void
+    {
+        $request = $this->createRequestStub([
+            'method' => 'GET',
+            'get' => [],
+        ]);
+
+        $route = [
+            'operation' => [
+                'security' => [['bearerAuth' => []]],
+            ],
+            'method' => 'get',
+        ];
+
+        $this->handler->setResponseDelay(30);
+
+        $this->authenticator->expects($this->once())
+            ->method('authenticate')
+            ->willReturn([
+                'authenticated' => false,
+                'message' => 'Invalid token',
+            ]);
+
+        $this->validator->expects($this->never())
+            ->method('validate');
+
+        $this->responseGenerator->expects($this->never())
+            ->method('generate');
+
+        $startedAt = microtime(true);
+        $result = $this->handler->handle($request, $route);
+        $elapsedMs = (microtime(true) - $startedAt) * 1000;
+
+        $this->assertEquals(401, $result['status']);
+        $this->assertGreaterThanOrEqual(20, $elapsedMs);
+    }
+
     public function test_handles_post_request_with_json_body(): void
     {
         $requestBody = ['name' => 'John Doe', 'email' => 'john@example.com'];
