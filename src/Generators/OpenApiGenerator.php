@@ -15,6 +15,7 @@ use LaravelSpectrum\DTO\OpenApiOperation;
 use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiServer;
 use LaravelSpectrum\DTO\OpenApiSpec;
+use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\Support\PaginationDetector;
 
@@ -322,6 +323,45 @@ class OpenApiGenerator
                 statusCode: (string) $code,
                 description: $responseData['description'] ?? '',
                 content: $responseData['content'] ?? null,
+            );
+        }
+
+        $responses = $this->applyResponseLinks($responses, $controllerInfo->responseLinks);
+
+        return $responses;
+    }
+
+    /**
+     * @param  array<string, OpenApiResponse>  $responses
+     * @param  array<int, ResponseLinkInfo>  $responseLinks
+     * @return array<string, OpenApiResponse>
+     */
+    protected function applyResponseLinks(array $responses, array $responseLinks): array
+    {
+        if (empty($responseLinks)) {
+            return $responses;
+        }
+
+        foreach ($responseLinks as $responseLink) {
+            $statusCode = (string) $responseLink->statusCode;
+
+            if (! isset($responses[$statusCode])) {
+                Log::warning(
+                    "Skipping response link '{$responseLink->name}' because response status {$statusCode} does not exist."
+                );
+
+                continue;
+            }
+
+            $existingResponse = $responses[$statusCode];
+            $existingLinks = $existingResponse->links ?? [];
+            $existingLinks[$responseLink->name] = $responseLink->toLinkObject();
+
+            $responses[$statusCode] = new OpenApiResponse(
+                statusCode: $existingResponse->statusCode,
+                description: $existingResponse->description,
+                content: $existingResponse->content,
+                links: $existingLinks,
             );
         }
 

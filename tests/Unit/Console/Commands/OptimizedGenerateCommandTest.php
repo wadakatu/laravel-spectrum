@@ -256,6 +256,33 @@ class OptimizedGenerateCommandTest extends TestCase
     }
 
     #[Test]
+    public function parse_memory_limit_supports_common_units(): void
+    {
+        $command = new OptimizedGenerateCommand;
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('parseMemoryLimit');
+        $method->setAccessible(true);
+
+        $this->assertSame(128 * 1024 * 1024, $method->invoke($command, '128M'));
+        $this->assertSame(2 * 1024 * 1024 * 1024, $method->invoke($command, '2G'));
+        $this->assertSame(512 * 1024, $method->invoke($command, '512K'));
+        $this->assertSame(PHP_INT_MAX, $method->invoke($command, '-1'));
+    }
+
+    #[Test]
+    public function handle_via_artisan_skips_too_low_memory_limit_without_error(): void
+    {
+        $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);
+        $routeAnalyzer->shouldReceive('analyze')->andReturn([]);
+
+        $this->app->instance(RouteAnalyzer::class, $routeAnalyzer);
+
+        $this->artisan('spectrum:generate:optimized', ['--memory-limit' => '1K'])
+            ->expectsOutputToContain('Skipping limit change')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
     public function handle_via_artisan_returns_zero_when_no_routes(): void
     {
         $routeAnalyzer = Mockery::mock(RouteAnalyzer::class);

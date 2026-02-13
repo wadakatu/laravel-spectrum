@@ -13,11 +13,13 @@ final readonly class OpenApiResponse
      * @param  int|string  $statusCode  HTTP status code (e.g., '200', 201, '404')
      * @param  string  $description  Response description
      * @param  array<string, array<string, mixed>>|null  $content  Content by media type
+     * @param  array<string, array<string, mixed>>|null  $links  Link objects keyed by link name
      */
     public function __construct(
         public int|string $statusCode,
         public string $description,
         public ?array $content = null,
+        public ?array $links = null,
     ) {}
 
     /**
@@ -31,6 +33,7 @@ final readonly class OpenApiResponse
             statusCode: $data['status_code'] ?? $data['statusCode'] ?? '',
             description: $data['description'] ?? '',
             content: $data['content'] ?? null,
+            links: $data['links'] ?? null,
         );
     }
 
@@ -49,6 +52,10 @@ final readonly class OpenApiResponse
             $result['content'] = $this->content;
         }
 
+        if ($this->links !== null) {
+            $result['links'] = $this->links;
+        }
+
         return $result;
     }
 
@@ -58,6 +65,14 @@ final readonly class OpenApiResponse
     public function hasContent(): bool
     {
         return $this->content !== null;
+    }
+
+    /**
+     * Check if this response has links.
+     */
+    public function hasLinks(): bool
+    {
+        return $this->links !== null && count($this->links) > 0;
     }
 
     /**

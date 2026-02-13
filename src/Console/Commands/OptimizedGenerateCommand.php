@@ -72,10 +72,7 @@ class OptimizedGenerateCommand extends Command
         $this->routeAnalyzer = $this->routeAnalyzer ?? app(RouteAnalyzer::class);
         $this->openApiGenerator = $this->openApiGenerator ?? app(OpenApiGenerator::class);
 
-        // メモリ制限の設定
-        if ($memoryLimit = $this->option('memory-limit')) {
-            ini_set('memory_limit', $memoryLimit);
-        }
+        $this->configureMemoryLimit();
 
         $startTime = microtime(true);
         $startMemory = memory_get_usage(true);
@@ -320,6 +317,57 @@ class OptimizedGenerateCommand extends Command
             $stats['limit'],
             $stats['percentage']
         ));
+    }
+
+    private function configureMemoryLimit(): void
+    {
+        $memoryLimit = $this->option('memory-limit');
+        if (! is_string($memoryLimit) || trim($memoryLimit) === '') {
+            return;
+        }
+
+        $parsedLimit = $this->parseMemoryLimit($memoryLimit);
+        if ($parsedLimit === null) {
+            $this->warn("Invalid memory limit format [{$memoryLimit}]. Skipping limit change.");
+
+            return;
+        }
+
+        $currentUsage = memory_get_usage(true);
+        if ($parsedLimit !== PHP_INT_MAX && $currentUsage >= $parsedLimit) {
+            $this->warn(
+                "Requested memory limit [{$memoryLimit}] is below current usage ({$this->formatBytes($currentUsage)}). Skipping limit change."
+            );
+
+            return;
+        }
+
+        $result = @ini_set('memory_limit', $memoryLimit);
+        if ($result === false) {
+            $this->warn("Unable to set memory limit to [{$memoryLimit}]. Skipping limit change.");
+        }
+    }
+
+    private function parseMemoryLimit(string $limit): ?int
+    {
+        $normalized = trim($limit);
+        if ($normalized === '-1') {
+            return PHP_INT_MAX;
+        }
+
+        if (! preg_match('/^(\d+)\s*([gmk])?$/i', $normalized, $matches)) {
+            return null;
+        }
+
+        $value = (int) $matches[1];
+        $suffix = strtolower($matches[2] ?? '');
+
+        return match ($suffix) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => $value,
+        };
     }
 
     private function formatBytes(int $bytes): string
