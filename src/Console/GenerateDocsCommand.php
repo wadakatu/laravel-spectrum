@@ -10,6 +10,7 @@ use LaravelSpectrum\DTO\OpenApiSpec;
 use LaravelSpectrum\Generators\HtmlDocumentGenerator;
 use LaravelSpectrum\Generators\OpenApiGenerator;
 use LaravelSpectrum\Support\ErrorCollector;
+use Symfony\Component\Yaml\Yaml;
 
 class GenerateDocsCommand extends Command
 {
@@ -258,28 +259,13 @@ class GenerateDocsCommand extends Command
         return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
-    protected function arrayToYaml(array $array, int $indent = 0): string
+    protected function arrayToYaml(array $array): string
     {
-        // MVP版の簡易実装
-        $yaml = '';
-        foreach ($array as $key => $value) {
-            $yaml .= str_repeat('  ', $indent).$key.': ';
-
-            if (is_array($value)) {
-                $yaml .= "\n".$this->arrayToYaml($value, $indent + 1);
-            } elseif (is_object($value)) {
-                // オブジェクトを配列に変換して再帰処理
-                $yaml .= "\n".$this->arrayToYaml((array) $value, $indent + 1);
-            } elseif (is_bool($value)) {
-                $yaml .= ($value ? 'true' : 'false')."\n";
-            } elseif ($value === null) {
-                $yaml .= "null\n";
-            } else {
-                $yaml .= $value."\n";
-            }
+        if ($array === []) {
+            return '';
         }
 
-        return $yaml;
+        return Yaml::dump($array, 10, 2, Yaml::DUMP_OBJECT_AS_MAP);
     }
 
     private function outputErrorReport(ErrorCollector $errorCollector): void

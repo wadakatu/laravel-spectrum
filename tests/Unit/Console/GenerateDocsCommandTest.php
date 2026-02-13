@@ -11,6 +11,7 @@ use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Tests\Fixtures\Controllers\UserController;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\Yaml\Yaml;
 
 class GenerateDocsCommandTest extends TestCase
 {
@@ -177,11 +178,12 @@ class GenerateDocsCommandTest extends TestCase
         ];
 
         $yaml = $method->invoke($command, $array);
+        $parsed = Yaml::parse($yaml);
 
         $this->assertStringContainsString('openapi: 3.0.0', $yaml);
         $this->assertStringContainsString('info:', $yaml);
-        $this->assertStringContainsString('title: Test API', $yaml);
         $this->assertStringContainsString('version: 1.0.0', $yaml);
+        $this->assertSame($array, $parsed);
     }
 
     #[Test]
@@ -454,10 +456,31 @@ class GenerateDocsCommandTest extends TestCase
         ];
 
         $yaml = $method->invoke($command, $array);
+        $parsed = Yaml::parse($yaml);
 
         // The YAML should properly handle strings with colons
         $this->assertStringContainsString('description:', $yaml);
         $this->assertStringContainsString('multiline:', $yaml);
+        $this->assertSame($array, $parsed);
+    }
+
+    #[Test]
+    public function array_to_yaml_generates_valid_yaml_for_colon_containing_scalars(): void
+    {
+        $command = app(GenerateDocsCommand::class);
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('arrayToYaml');
+        $method->setAccessible(true);
+
+        $array = [
+            'title' => 'API: v1',
+            'description' => 'Base URL: https://api.example.com',
+        ];
+
+        $yaml = $method->invoke($command, $array);
+        $parsed = Yaml::parse($yaml);
+
+        $this->assertSame($array, $parsed);
     }
 
     #[Test]
