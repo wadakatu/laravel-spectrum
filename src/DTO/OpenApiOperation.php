@@ -17,6 +17,7 @@ namespace LaravelSpectrum\DTO;
  *     responses: array<string, array{description: string, content?: array<string, mixed>}>,
  *     security?: array<int, array<string, array<int, string>>>,
  *     deprecated?: bool,
+ *     callbacks?: array<string, mixed>,
  *     x-middleware?: array<int, string>,
  *     x-rate-limit?: array{limit: int, period: string}
  * }

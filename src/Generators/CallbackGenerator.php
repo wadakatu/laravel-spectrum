@@ -10,7 +10,8 @@ use LaravelSpectrum\DTO\CallbackInfo;
  * Generates OpenAPI callback objects from CallbackInfo DTOs.
  *
  * Converts callback definitions into the OpenAPI callbacks structure:
- * callbacks -> {name} -> {expression} -> {method} -> {operation}
+ * - Inline: callbacks -> {name} -> {expression} -> {method} -> {operation}
+ * - Reference: callbacks -> {name} -> {$ref: #/components/callbacks/{ref}}
  */
 class CallbackGenerator
 {

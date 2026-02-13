@@ -12,6 +12,9 @@ namespace LaravelSpectrum\DTO;
  */
 final readonly class CallbackInfo
 {
+    /** @var string The HTTP method for the callback, always lowercase */
+    public string $method;
+
     /**
      * @param  string  $name  The callback name (e.g., 'onOrderStatusChange')
      * @param  string  $expression  The runtime expression for the callback URL (e.g., '{$request.body#/callbackUrl}')
@@ -20,18 +23,20 @@ final readonly class CallbackInfo
      * @param  array<string, mixed>|null  $responses  The response definitions for the callback
      * @param  string|null  $description  A description of the callback
      * @param  string|null  $summary  A short summary of the callback
-     * @param  string|null  $ref  Reference name for components/callbacks
+     * @param  string|null  $ref  When set, emitted as a $ref to #/components/callbacks/{ref} instead of inline definition
      */
     public function __construct(
         public string $name,
         public string $expression,
-        public string $method = 'post',
+        string $method = 'post',
         public ?array $requestBody = null,
         public ?array $responses = null,
         public ?string $description = null,
         public ?string $summary = null,
         public ?string $ref = null,
-    ) {}
+    ) {
+        $this->method = strtolower($method);
+    }
 
     /**
      * Create from an array.
@@ -40,6 +45,17 @@ final readonly class CallbackInfo
      */
     public static function fromArray(array $data): self
     {
+        if (! isset($data['name']) || ! is_string($data['name'])) {
+            throw new \InvalidArgumentException(
+                "Callback config requires a 'name' key (string). Got keys: ".implode(', ', array_keys($data))
+            );
+        }
+        if (! isset($data['expression']) || ! is_string($data['expression'])) {
+            throw new \InvalidArgumentException(
+                "Callback config for '{$data['name']}' requires an 'expression' key (string)."
+            );
+        }
+
         return new self(
             name: $data['name'],
             expression: $data['expression'],
@@ -59,16 +75,29 @@ final readonly class CallbackInfo
      */
     public function toArray(): array
     {
-        return [
+        $result = [
             'name' => $this->name,
             'expression' => $this->expression,
             'method' => $this->method,
-            'requestBody' => $this->requestBody,
-            'responses' => $this->responses,
-            'description' => $this->description,
-            'summary' => $this->summary,
-            'ref' => $this->ref,
         ];
+
+        if ($this->requestBody !== null) {
+            $result['requestBody'] = $this->requestBody;
+        }
+        if ($this->responses !== null) {
+            $result['responses'] = $this->responses;
+        }
+        if ($this->description !== null) {
+            $result['description'] = $this->description;
+        }
+        if ($this->summary !== null) {
+            $result['summary'] = $this->summary;
+        }
+        if ($this->ref !== null) {
+            $result['ref'] = $this->ref;
+        }
+
+        return $result;
     }
 
     /**

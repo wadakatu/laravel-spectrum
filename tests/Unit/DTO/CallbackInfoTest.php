@@ -199,4 +199,66 @@ class CallbackInfoTest extends TestCase
         $this->assertTrue($with->hasResponses());
         $this->assertFalse($without->hasResponses());
     }
+
+    #[Test]
+    public function it_omits_null_fields_from_to_array(): void
+    {
+        $callback = new CallbackInfo(
+            name: 'cb',
+            expression: '{$request.body#/url}',
+        );
+
+        $array = $callback->toArray();
+
+        $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('expression', $array);
+        $this->assertArrayHasKey('method', $array);
+        $this->assertArrayNotHasKey('requestBody', $array);
+        $this->assertArrayNotHasKey('responses', $array);
+        $this->assertArrayNotHasKey('description', $array);
+        $this->assertArrayNotHasKey('summary', $array);
+        $this->assertArrayNotHasKey('ref', $array);
+    }
+
+    #[Test]
+    public function it_throws_when_name_is_missing_from_array(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("'name'");
+
+        CallbackInfo::fromArray(['expression' => '{$request.body#/url}']);
+    }
+
+    #[Test]
+    public function it_throws_when_expression_is_missing_from_array(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("'expression'");
+
+        CallbackInfo::fromArray(['name' => 'cb']);
+    }
+
+    #[Test]
+    public function it_normalizes_method_to_lowercase(): void
+    {
+        $callback = new CallbackInfo(
+            name: 'cb',
+            expression: '{$request.body#/url}',
+            method: 'POST',
+        );
+
+        $this->assertEquals('post', $callback->method);
+    }
+
+    #[Test]
+    public function it_normalizes_method_from_array(): void
+    {
+        $callback = CallbackInfo::fromArray([
+            'name' => 'cb',
+            'expression' => '{$request.body#/url}',
+            'method' => 'PUT',
+        ]);
+
+        $this->assertEquals('put', $callback->method);
+    }
 }

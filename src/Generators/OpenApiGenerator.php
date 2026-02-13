@@ -135,6 +135,12 @@ class OpenApiGenerator
             }
         }
 
+        // Populate components.callbacks with reusable callback definitions
+        $componentCallbacks = $this->generateComponentCallbacks();
+        if (! empty($componentCallbacks)) {
+            $openapi['components']['callbacks'] = $componentCallbacks;
+        }
+
         // Validate that all schema references are resolved
         $brokenReferences = $this->schemaRegistry->validateReferences();
         if (! empty($brokenReferences)) {
@@ -210,6 +216,32 @@ class OpenApiGenerator
         $version = config('spectrum.openapi.version', '3.0.0');
 
         return in_array($version, ['3.0.0', '3.1.0'], true) ? $version : '3.0.0';
+    }
+
+    /**
+     * Generate reusable component callbacks from config.
+     *
+     * @return array<string, mixed>
+     */
+    protected function generateComponentCallbacks(): array
+    {
+        /** @var array<int, array<string, mixed>> $componentCallbacksConfig */
+        $componentCallbacksConfig = config('spectrum.component_callbacks', []);
+
+        if (empty($componentCallbacksConfig)) {
+            return [];
+        }
+
+        $callbackInfos = [];
+        foreach ($componentCallbacksConfig as $data) {
+            try {
+                $callbackInfos[] = \LaravelSpectrum\DTO\CallbackInfo::fromArray($data);
+            } catch (\Exception $e) {
+                Log::warning("Failed to parse component callback config: {$e->getMessage()}");
+            }
+        }
+
+        return $this->callbackGenerator->generateComponentCallbacks($callbackInfos);
     }
 
     /**

@@ -117,7 +117,12 @@ final readonly class ControllerInfo
         $callbacks = [];
         if (isset($data['callbacks']) && is_array($data['callbacks'])) {
             foreach ($data['callbacks'] as $cb) {
-                $callbacks[] = CallbackInfo::fromArray($cb);
+                try {
+                    $callbacks[] = CallbackInfo::fromArray($cb);
+                } catch (\Exception $e) {
+                    // Skip malformed callback entries to avoid aborting entire deserialization
+                    continue;
+                }
             }
         }
 

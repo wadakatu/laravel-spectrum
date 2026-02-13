@@ -1772,4 +1772,111 @@ class OpenApi31ConverterTest extends TestCase
         $this->assertEquals('https://json-schema.org/draft/2020-12/schema', $result['jsonSchemaDialect']);
         $this->assertArrayHasKey('webhooks', $result);
     }
+
+    #[Test]
+    public function it_converts_callback_request_body_schemas_to_31(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+        ];
+        $spec['paths']['/orders']['post'] = [
+            'operationId' => 'createOrder',
+            'responses' => ['200' => ['description' => 'OK']],
+            'callbacks' => [
+                'onStatusChange' => [
+                    '{$request.body#/callbackUrl}' => [
+                        'post' => [
+                            'requestBody' => [
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'status' => ['type' => 'string', 'nullable' => true],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            'responses' => ['200' => ['description' => 'OK']],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $schema = $result['paths']['/orders']['post']['callbacks']['onStatusChange']['{$request.body#/callbackUrl}']['post']['requestBody']['content']['application/json']['schema']['properties']['status'];
+
+        $this->assertEquals(['string', 'null'], $schema['type']);
+        $this->assertArrayNotHasKey('nullable', $schema);
+    }
+
+    #[Test]
+    public function it_skips_ref_callbacks_during_conversion(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+        ];
+        $spec['paths']['/orders']['post'] = [
+            'operationId' => 'createOrder',
+            'responses' => ['200' => ['description' => 'OK']],
+            'callbacks' => [
+                'onRefund' => [
+                    '$ref' => '#/components/callbacks/RefundCallback',
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $this->assertEquals(
+            '#/components/callbacks/RefundCallback',
+            $result['paths']['/orders']['post']['callbacks']['onRefund']['$ref']
+        );
+    }
+
+    #[Test]
+    public function it_converts_component_callback_schemas_to_31(): void
+    {
+        $spec = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API', 'version' => '1.0.0'],
+            'paths' => [],
+            'components' => ['schemas' => []],
+        ];
+        $spec['components']['callbacks'] = [
+            'RefundCallback' => [
+                '{$request.body#/webhookUrl}' => [
+                    'post' => [
+                        'requestBody' => [
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'refundId' => ['type' => 'string', 'nullable' => true],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => ['200' => ['description' => 'OK']],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->converter->convert($spec);
+
+        $schema = $result['components']['callbacks']['RefundCallback']['{$request.body#/webhookUrl}']['post']['requestBody']['content']['application/json']['schema']['properties']['refundId'];
+
+        $this->assertEquals(['string', 'null'], $schema['type']);
+        $this->assertArrayNotHasKey('nullable', $schema);
+    }
 }

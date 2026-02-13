@@ -42,9 +42,6 @@ class CallbackTestController
         return response()->json(['data' => []]);
     }
 
-    /**
-     * Method without any callback attributes.
-     */
     public function index(): JsonResponse
     {
         return response()->json(['data' => []]);

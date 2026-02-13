@@ -40,22 +40,20 @@ class CallbackAnalyzer implements HasErrors
      */
     public function analyze(ReflectionMethod $method): array
     {
-        $callbacks = [];
-
         // 1. Detect from PHP 8 attributes
         $callbacks = $this->detectFromAttributes($method);
 
         // 2. Merge config-based callbacks
         $configKey = $method->getDeclaringClass()->getName().'@'.$method->getName();
         if (isset($this->configCallbacks[$configKey])) {
-            foreach ($this->configCallbacks[$configKey] as $configCallback) {
+            foreach ($this->configCallbacks[$configKey] as $index => $configCallback) {
                 try {
                     $callbacks[] = CallbackInfo::fromArray($configCallback);
-                } catch (\Throwable $e) {
-                    $this->logWarning(
-                        "Failed to parse config callback for {$configKey}: {$e->getMessage()}",
+                } catch (\Exception $e) {
+                    $this->logError(
+                        "Failed to parse config callback for {$configKey}[{$index}]: {$e->getMessage()}",
                         AnalyzerErrorType::AnalysisError,
-                        ['config_key' => $configKey],
+                        ['config_key' => $configKey, 'index' => $index],
                     );
                 }
             }
@@ -88,8 +86,8 @@ class CallbackAnalyzer implements HasErrors
                     summary: $instance->summary,
                     ref: $instance->ref,
                 );
-            } catch (\Throwable $e) {
-                $this->logWarning(
+            } catch (\Exception $e) {
+                $this->logError(
                     "Failed to parse OpenApiCallback attribute on {$method->getDeclaringClass()->getName()}::{$method->getName()}: {$e->getMessage()}",
                     AnalyzerErrorType::AnalysisError,
                     [

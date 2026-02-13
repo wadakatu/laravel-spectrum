@@ -186,7 +186,7 @@ class OpenApi31Converter
     }
 
     /**
-     * Convert callbacks, recursively converting schemas within callback path items.
+     * Convert callbacks by traversing callback path items and converting their schemas to 3.1.0 format.
      *
      * @param  array<string, mixed>  $callbacks
      * @return array<string, mixed>

@@ -34,7 +34,7 @@ final readonly class OpenApiCallback
      * @param  array<string, mixed>|null  $responses  The response definitions for the callback
      * @param  string|null  $description  A description of the callback
      * @param  string|null  $summary  A short summary of the callback
-     * @param  string|null  $ref  Reference name for components/callbacks
+     * @param  string|null  $ref  When set, emitted as a $ref to #/components/callbacks/{ref} instead of inline definition
      */
     public function __construct(
         public string $name,

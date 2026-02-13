@@ -129,4 +129,46 @@ class CallbackAnalyzerTest extends TestCase
 
         $this->assertNotNull($collector);
     }
+
+    #[Test]
+    public function it_collects_error_for_invalid_config_callback(): void
+    {
+        $configCallbacks = [
+            CallbackTestController::class.'@index' => [
+                ['invalid' => 'data'],
+            ],
+        ];
+
+        $analyzer = new CallbackAnalyzer($configCallbacks);
+        $method = new ReflectionMethod(CallbackTestController::class, 'index');
+
+        $callbacks = $analyzer->analyze($method);
+
+        $this->assertEmpty($callbacks);
+        $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
+    }
+
+    #[Test]
+    public function it_continues_processing_after_config_callback_failure(): void
+    {
+        $configCallbacks = [
+            CallbackTestController::class.'@index' => [
+                ['invalid' => 'data'],
+                [
+                    'name' => 'validCallback',
+                    'expression' => '{$request.body#/url}',
+                    'method' => 'post',
+                ],
+            ],
+        ];
+
+        $analyzer = new CallbackAnalyzer($configCallbacks);
+        $method = new ReflectionMethod(CallbackTestController::class, 'index');
+
+        $callbacks = $analyzer->analyze($method);
+
+        $this->assertCount(1, $callbacks);
+        $this->assertEquals('validCallback', $callbacks[0]->name);
+        $this->assertTrue($analyzer->getErrorCollector()->hasErrors());
+    }
 }

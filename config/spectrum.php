@@ -898,11 +898,38 @@ return [
     |           'requestBody' => ['type' => 'object', 'properties' => ['status' => ['type' => 'string']]],
     |           'responses' => ['200' => ['description' => 'Callback received']],
     |           'description' => 'Notifies when order status changes',
+    |           'summary' => 'Order status callback',
+    |           'ref' => null, // Set to a component name to use $ref instead of inline definition
     |       ],
     |   ],
     |
     */
     'callbacks' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Component Callbacks Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define reusable callback definitions for the components/callbacks section.
+    | These can be referenced from operation-level callbacks using the 'ref'
+    | field in the #[OpenApiCallback] attribute or the 'callbacks' config above.
+    |
+    | Example:
+    |   [
+    |       [
+    |           'name' => 'RefundCallback',
+    |           'expression' => '{$request.body#/webhookUrl}',
+    |           'method' => 'post',
+    |           'requestBody' => ['type' => 'object', 'properties' => ['refundId' => ['type' => 'string']]],
+    |           'responses' => ['200' => ['description' => 'Refund callback received']],
+    |           'description' => 'Refund notification webhook',
+    |           'summary' => 'Refund webhook',
+    |       ],
+    |   ],
+    |
+    */
+    'component_callbacks' => [],
 
     /*
     |--------------------------------------------------------------------------
