@@ -233,11 +233,14 @@ class OpenApiGenerator
         }
 
         $callbackInfos = [];
-        foreach ($componentCallbacksConfig as $data) {
+        foreach ($componentCallbacksConfig as $index => $data) {
             try {
                 $callbackInfos[] = \LaravelSpectrum\DTO\CallbackInfo::fromArray($data);
             } catch (\Exception $e) {
-                Log::warning("Failed to parse component callback config: {$e->getMessage()}");
+                Log::error(
+                    "Failed to parse component callback config at index {$index}: {$e->getMessage()}",
+                    ['index' => $index, 'data' => $data]
+                );
             }
         }
 

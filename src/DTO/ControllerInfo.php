@@ -119,8 +119,9 @@ final readonly class ControllerInfo
             foreach ($data['callbacks'] as $cb) {
                 try {
                     $callbacks[] = CallbackInfo::fromArray($cb);
-                } catch (\Exception $e) {
-                    // Skip malformed callback entries to avoid aborting entire deserialization
+                } catch (\Exception) {
+                    // Skip malformed callback entries to prevent aborting entire deserialization.
+                    // The InvalidArgumentException from CallbackInfo::fromArray() provides the details.
                     continue;
                 }
             }

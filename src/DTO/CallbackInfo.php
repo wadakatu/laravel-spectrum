@@ -56,10 +56,17 @@ final readonly class CallbackInfo
             );
         }
 
+        $method = $data['method'] ?? 'post';
+        if (! is_string($method)) {
+            throw new \InvalidArgumentException(
+                "Callback config for '{$data['name']}' has invalid 'method' value: expected string, got ".gettype($method)
+            );
+        }
+
         return new self(
             name: $data['name'],
             expression: $data['expression'],
-            method: $data['method'] ?? 'post',
+            method: $method,
             requestBody: $data['requestBody'] ?? null,
             responses: $data['responses'] ?? null,
             description: $data['description'] ?? null,
