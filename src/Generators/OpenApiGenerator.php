@@ -62,6 +62,7 @@ class OpenApiGenerator
         protected PaginationDetector $paginationDetector,
         protected FormRequestAnalyzer $requestAnalyzer,
         protected OpenApi31Converter $openApi31Converter,
+        protected CallbackGenerator $callbackGenerator,
         protected ?SchemaRegistry $schemaRegistry = null,
         protected ?FractalTransformerAnalyzer $fractalTransformerAnalyzer = null,
     ) {
@@ -242,6 +243,9 @@ class OpenApiGenerator
             }
         }
 
+        // Generate callbacks
+        $callbacks = $this->callbackGenerator->generate($controllerInfo->callbacks);
+
         return new OpenApiOperation(
             operationId: $this->metadataGenerator->generateOperationId($route, $method),
             summary: $this->metadataGenerator->generateSummary($route, $method),
@@ -251,6 +255,7 @@ class OpenApiGenerator
             requestBody: $requestBody,
             security: $security,
             deprecated: $controllerInfo->isDeprecated(),
+            callbacks: $callbacks,
         );
     }
 

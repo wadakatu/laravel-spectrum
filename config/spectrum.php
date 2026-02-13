@@ -880,6 +880,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Callbacks Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define OpenAPI callback definitions for controller methods.
+    | Key format: 'App\Http\Controllers\OrderController@store'
+    |
+    | Each key maps to an array of callback definitions. This is an alternative
+    | to using the #[OpenApiCallback] attribute on controller methods.
+    |
+    | Example:
+    |   'App\Http\Controllers\OrderController@store' => [
+    |       [
+    |           'name' => 'onOrderStatusChange',
+    |           'expression' => '{$request.body#/callbackUrl}',
+    |           'method' => 'post',
+    |           'requestBody' => ['type' => 'object', 'properties' => ['status' => ['type' => 'string']]],
+    |           'responses' => ['200' => ['description' => 'Callback received']],
+    |           'description' => 'Notifies when order status changes',
+    |       ],
+    |   ],
+    |
+    */
+    'callbacks' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Mock Server Settings
     |--------------------------------------------------------------------------
     */
