@@ -2,8 +2,8 @@
 
 namespace LaravelSpectrum\Tests\Unit\Generators;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use LaravelSpectrum\Analyzers\AuthenticationAnalyzer;
 use LaravelSpectrum\Analyzers\ControllerAnalyzer;
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
@@ -17,8 +17,8 @@ use LaravelSpectrum\DTO\OpenApiParameter;
 use LaravelSpectrum\DTO\OpenApiRequestBody;
 use LaravelSpectrum\DTO\OpenApiResponse;
 use LaravelSpectrum\DTO\OpenApiSchema;
-use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\ResourceInfo;
+use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\RouteAuthentication;
 use LaravelSpectrum\DTO\TagDefinition;
 use LaravelSpectrum\Generators\CallbackGenerator;

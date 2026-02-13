@@ -11,8 +11,8 @@ use LaravelSpectrum\DTO\FractalInfo;
 use LaravelSpectrum\DTO\InlineValidationInfo;
 use LaravelSpectrum\DTO\PaginationInfo;
 use LaravelSpectrum\DTO\QueryParameterInfo;
-use LaravelSpectrum\DTO\ResponseLinkInfo;
 use LaravelSpectrum\DTO\ResponseInfo;
+use LaravelSpectrum\DTO\ResponseLinkInfo;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
