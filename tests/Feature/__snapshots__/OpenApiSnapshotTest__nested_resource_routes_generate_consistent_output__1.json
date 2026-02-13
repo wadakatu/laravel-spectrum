@@ -14,10 +14,8 @@
     "paths": {
         "/api/snapshot/posts": {
             "get": {
-                "summary": "List all Post",
                 "operationId": "getApiSnapshotPosts",
                 "tags": [
-                    "Snapshot",
                     "Post"
                 ],
                 "parameters": [],
@@ -72,13 +70,12 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "List all Post"
             },
             "head": {
-                "summary": "Head Post",
                 "operationId": "headApiSnapshotPosts",
                 "tags": [
-                    "Snapshot",
                     "Post"
                 ],
                 "parameters": [],
@@ -133,22 +130,21 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head Post"
             }
         },
         "/api/snapshot/posts/{post}": {
             "get": {
-                "summary": "Get Post by ID",
                 "operationId": "getApiSnapshotPostsPost",
                 "tags": [
-                    "Snapshot",
                     "Post"
                 ],
                 "parameters": [
                     {
                         "name": "post",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -205,20 +201,19 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Get Post by ID"
             },
             "head": {
-                "summary": "Head Post",
                 "operationId": "headApiSnapshotPostsPost",
                 "tags": [
-                    "Snapshot",
                     "Post"
                 ],
                 "parameters": [
                     {
                         "name": "post",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -275,23 +270,21 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head Post"
             }
         },
         "/api/snapshot/posts/{post}/comments": {
             "get": {
-                "summary": "Get Comment by ID",
                 "operationId": "getApiSnapshotPostsPostComments",
                 "tags": [
-                    "Snapshot",
-                    "Post",
-                    "Comment"
+                    "Post"
                 ],
                 "parameters": [
                     {
                         "name": "post",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -348,21 +341,19 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Get Comment by ID"
             },
             "head": {
-                "summary": "Head Comment",
                 "operationId": "headApiSnapshotPostsPostComments",
                 "tags": [
-                    "Snapshot",
-                    "Post",
-                    "Comment"
+                    "Post"
                 ],
                 "parameters": [
                     {
                         "name": "post",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -419,21 +410,19 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Head Comment"
             },
             "post": {
-                "summary": "Create a new Comment",
                 "operationId": "postApiSnapshotPostsPostComments",
                 "tags": [
-                    "Snapshot",
-                    "Post",
-                    "Comment"
+                    "Post"
                 ],
                 "parameters": [
                     {
                         "name": "post",
-                        "required": true,
                         "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -471,7 +460,8 @@
                             }
                         }
                     }
-                }
+                },
+                "summary": "Create a new Comment"
             }
         }
     },
@@ -481,22 +471,14 @@
     },
     "tags": [
         {
-            "name": "Comment"
-        },
-        {
             "name": "Post"
-        },
-        {
-            "name": "Snapshot"
         }
     ],
     "x-tagGroups": [
         {
             "name": "Other",
             "tags": [
-                "Comment",
-                "Post",
-                "Snapshot"
+                "Post"
             ]
         }
     ]

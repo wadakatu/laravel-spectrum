@@ -43,7 +43,7 @@ class TagGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_nested_resources_with_multiple_tags(): void
+    public function it_prefers_controller_based_tags_for_nested_resources_by_default(): void
     {
         $route = [
             'uri' => 'api/v1/posts/{post}/comments',
@@ -52,11 +52,11 @@ class TagGeneratorTest extends TestCase
 
         $tags = $this->generator->generate($route);
 
-        $this->assertEquals(['Post', 'Comment'], $tags);
+        $this->assertEquals(['Comment'], $tags);
     }
 
     #[Test]
-    public function it_uses_controller_name_as_fallback_for_generic_paths(): void
+    public function it_uses_controller_name_for_generic_paths(): void
     {
         $route = [
             'uri' => 'api/v1/{resource}',
@@ -96,7 +96,35 @@ class TagGeneratorTest extends TestCase
 
         $tags = $this->generator->generate($route);
 
+        $this->assertEquals(['Like'], $tags);
+    }
+
+    #[Test]
+    public function it_can_generate_multiple_tags_when_tag_depth_is_increased(): void
+    {
+        $this->app['config']->set('spectrum.tag_depth', 3);
+
+        $route = [
+            'uri' => 'api/v1/posts/{post}/comments/{comment}/likes',
+        ];
+
+        $tags = $this->generator->generate($route);
+
         $this->assertEquals(['Post', 'Comment', 'Like'], $tags);
+    }
+
+    #[Test]
+    public function it_returns_empty_tags_when_tag_depth_is_zero_without_controller(): void
+    {
+        $this->app['config']->set('spectrum.tag_depth', 0);
+
+        $route = [
+            'uri' => 'api/v1/posts/{post}/comments',
+        ];
+
+        $tags = $this->generator->generate($route);
+
+        $this->assertEquals([], $tags);
     }
 
     #[Test]

@@ -220,6 +220,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tag Depth
+    |--------------------------------------------------------------------------
+    |
+    | Controls how many meaningful URI path segments are used for automatic
+    | URI-based fallback tag generation after removing "api" and version
+    | prefixes (v1, v2, ...).
+    |
+    | Note: Controller-based tags are used by default. This setting applies
+    | when URI-based fallback is needed.
+    |
+    | 1   = first segment only (default, recommended)
+    | 2+  = include deeper segments
+    | 0   = disable URI-based tags and fallback to controller-based tags
+    |
+    */
+    'tag_depth' => 1,
+
+    /*
+    |--------------------------------------------------------------------------
     | Tag Groups (x-tagGroups)
     |--------------------------------------------------------------------------
     |
