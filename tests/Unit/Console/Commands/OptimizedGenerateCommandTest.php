@@ -157,6 +157,28 @@ class OptimizedGenerateCommandTest extends TestCase
     }
 
     #[Test]
+    public function combine_paths_merges_generated_paths_shape(): void
+    {
+        $command = new OptimizedGenerateCommand;
+        $reflection = new \ReflectionClass($command);
+        $method = $reflection->getMethod('combinePaths');
+        $method->setAccessible(true);
+
+        $paths = [
+            ['/api/users' => ['get' => ['summary' => 'List users']]],
+            ['/api/users' => ['post' => ['summary' => 'Create user']]],
+            ['/api/posts' => ['get' => ['summary' => 'List posts']]],
+        ];
+
+        $result = $method->invoke($command, $paths);
+
+        $this->assertArrayHasKey('/api/users', $result);
+        $this->assertArrayHasKey('/api/posts', $result);
+        $this->assertArrayHasKey('get', $result['/api/users']);
+        $this->assertArrayHasKey('post', $result['/api/users']);
+    }
+
+    #[Test]
     public function combine_paths_handles_empty_array(): void
     {
         $command = new OptimizedGenerateCommand;
@@ -181,12 +203,15 @@ class OptimizedGenerateCommandTest extends TestCase
             ['path' => '/api/users', 'methods' => ['get' => []]],
             ['invalid' => 'entry'],  // Missing 'path' and 'methods'
             ['path' => '/api/posts'],  // Missing 'methods'
+            ['/api/comments' => ['post' => []]],
+            ['/api/tags' => 'not-an-array'],
         ];
 
         $result = $method->invoke($command, $paths);
 
-        $this->assertCount(1, $result);
+        $this->assertCount(2, $result);
         $this->assertArrayHasKey('/api/users', $result);
+        $this->assertArrayHasKey('/api/comments', $result);
     }
 
     #[Test]
