@@ -50,8 +50,8 @@ class FractalController extends Controller
         ]);
 
         // Parse includes if provided
-        if ($request->has('include')) {
-            $this->fractal->parseIncludes($request->input('include'));
+        if (isset($validated['include']) && $validated['include'] !== null && $validated['include'] !== '') {
+            $this->fractal->parseIncludes($validated['include']);
         }
 
         $perPage = $validated['per_page'] ?? 15;
@@ -72,12 +72,12 @@ class FractalController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'include' => 'nullable|string',
         ]);
 
-        if ($request->has('include')) {
-            $this->fractal->parseIncludes($request->input('include'));
+        if (isset($validated['include']) && $validated['include'] !== null && $validated['include'] !== '') {
+            $this->fractal->parseIncludes($validated['include']);
         }
 
         $user = User::findOrFail($id);
@@ -102,13 +102,13 @@ class FractalController extends Controller
             'published_only' => 'nullable|boolean',
         ]);
 
-        if ($request->has('include')) {
-            $this->fractal->parseIncludes($request->input('include'));
+        if (isset($validated['include']) && $validated['include'] !== null && $validated['include'] !== '') {
+            $this->fractal->parseIncludes($validated['include']);
         }
 
         $query = Post::query();
 
-        if ($request->boolean('published_only')) {
+        if (! empty($validated['published_only'])) {
             $query->where('is_published', true);
         }
 
@@ -130,12 +130,12 @@ class FractalController extends Controller
      */
     public function showPost(Request $request, int $id): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'include' => 'nullable|string',
         ]);
 
-        if ($request->has('include')) {
-            $this->fractal->parseIncludes($request->input('include'));
+        if (isset($validated['include']) && $validated['include'] !== null && $validated['include'] !== '') {
+            $this->fractal->parseIncludes($validated['include']);
         }
 
         $post = Post::findOrFail($id);
@@ -159,8 +159,8 @@ class FractalController extends Controller
             'include' => 'nullable|string',
         ]);
 
-        if ($request->has('include')) {
-            $this->fractal->parseIncludes($request->input('include'));
+        if (isset($validated['include']) && $validated['include'] !== null && $validated['include'] !== '') {
+            $this->fractal->parseIncludes($validated['include']);
         }
 
         $user = User::findOrFail($userId);

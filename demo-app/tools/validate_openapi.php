@@ -6,17 +6,28 @@ use cebe\openapi\Reader;
 use cebe\openapi\spec\OpenApi;
 
 require dirname(__DIR__, 2).'/vendor/autoload.php';
+require __DIR__.'/OpenApiRequirementValidator.php';
 
 if ($argc < 4) {
-    fwrite(STDERR, "Usage: php demo-app/tools/validate_openapi.php <spec-path> <expected-openapi-version> <label>\n");
+    fwrite(
+        STDERR,
+        "Usage: php demo-app/tools/validate_openapi.php <spec-path> <expected-openapi-version> <label> [--report=/path/to/report.json]\n"
+    );
     exit(2);
 }
 
 $specPath = $argv[1];
 $expectedVersion = $argv[2];
 $label = $argv[3];
+$reportPath = null;
 
-$errors = [];
+for ($index = 4; $index < $argc; $index++) {
+    if (str_starts_with($argv[$index], '--report=')) {
+        $reportPath = substr($argv[$index], strlen('--report='));
+    }
+}
+
+$schemaErrors = [];
 
 $content = file_get_contents($specPath);
 if ($content === false) {
@@ -34,50 +45,40 @@ try {
 
 $actualVersion = $spec['openapi'] ?? null;
 if (! is_string($actualVersion)) {
-    $errors[] = 'missing or invalid "openapi" version';
+    $schemaErrors[] = 'missing or invalid "openapi" version';
 } elseif ($actualVersion !== $expectedVersion) {
-    $errors[] = "version mismatch: expected {$expectedVersion}, got {$actualVersion}";
+    $schemaErrors[] = "version mismatch: expected {$expectedVersion}, got {$actualVersion}";
 }
 
 $openApi = Reader::readFromJson($content);
+$schemaValid = false;
 if (! $openApi instanceof OpenApi) {
-    $errors[] = 'failed to parse spec with cebe/openapi Reader';
+    $schemaErrors[] = 'failed to parse spec with cebe/openapi Reader';
 } else {
-    $valid = $openApi->validate();
-    if (! $valid) {
+    $schemaValid = $openApi->validate();
+    if (! $schemaValid) {
         foreach ($openApi->getErrors() as $readerError) {
-            $errors[] = "schema validation error: {$readerError}";
+            $schemaErrors[] = "schema validation error: {$readerError}";
         }
     }
 }
 
-if (str_starts_with($expectedVersion, '3.0.')) {
-    if (array_key_exists('jsonSchemaDialect', $spec)) {
-        $errors[] = 'OpenAPI 3.0.x must not include jsonSchemaDialect';
+$validator = new OpenApiRequirementValidator;
+$report = $validator->validate(
+    spec: $spec,
+    rawJson: $content,
+    expectedVersion: $expectedVersion,
+    schemaValid: $schemaValid,
+    schemaErrors: $schemaErrors
+);
+
+if (is_string($reportPath) && $reportPath !== '') {
+    $directory = dirname($reportPath);
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
     }
 
-    if (array_key_exists('webhooks', $spec)) {
-        $errors[] = 'OpenAPI 3.0.x must not include webhooks';
-    }
-
-    if (preg_match('/"type"\s*:\s*\[/', $content) === 1) {
-        $errors[] = 'OpenAPI 3.0.x must not use array form of "type"';
-    }
-}
-
-if (str_starts_with($expectedVersion, '3.1.')) {
-    $dialect = $spec['jsonSchemaDialect'] ?? null;
-    if (! is_string($dialect) || $dialect === '') {
-        $errors[] = 'OpenAPI 3.1.x must include jsonSchemaDialect';
-    }
-
-    if (! array_key_exists('webhooks', $spec)) {
-        $errors[] = 'OpenAPI 3.1.x output is expected to include a webhooks section';
-    }
-
-    if (preg_match('/"nullable"\s*:/', $content) === 1) {
-        $errors[] = 'OpenAPI 3.1.x must not include nullable keyword';
-    }
+    file_put_contents($reportPath, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 }
 
 $pathCount = 0;
@@ -85,13 +86,16 @@ if (isset($spec['paths']) && is_array($spec['paths'])) {
     $pathCount = count($spec['paths']);
 }
 
-if ($errors !== []) {
+if ($report['failures'] !== []) {
     fwrite(STDERR, "[FAIL] {$label} ({$expectedVersion})\n");
-    foreach ($errors as $error) {
+    foreach ($report['failures'] as $error) {
         fwrite(STDERR, "  - {$error}\n");
     }
     exit(1);
 }
 
-fwrite(STDOUT, "[PASS] {$label} ({$expectedVersion}) paths={$pathCount}\n");
+fwrite(
+    STDOUT,
+    "[PASS] {$label} ({$expectedVersion}) paths={$pathCount} requirements={$report['summary']['passed']}/{$report['summary']['total']}\n"
+);
 exit(0);

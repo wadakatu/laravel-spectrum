@@ -34,6 +34,8 @@ for item in "${matrix[@]}"; do
   app_dir="${DEMO_DIR}/${app}"
   spec_file="${run_dir}/${app}-openapi-${version}.json"
   log_file="${run_dir}/${app}-openapi-${version}.log"
+  report_file="${run_dir}/${app}-openapi-${version}-requirements.json"
+  requirements="0/0"
   status="PASS"
   note="ok"
 
@@ -51,15 +53,21 @@ for item in "${matrix[@]}"; do
       status="FAIL"
       note="generation failed"
       overall_status=1
-    elif ! php "${VALIDATOR}" "${spec_file}" "${version}" "${app}" >>"${log_file}" 2>&1; then
+    elif ! php "${VALIDATOR}" "${spec_file}" "${version}" "${app}" "--report=${report_file}" >>"${log_file}" 2>&1; then
       status="FAIL"
       note="validation failed"
       overall_status=1
+    elif [[ ! -f "${report_file}" ]]; then
+      status="FAIL"
+      note="requirement report missing"
+      overall_status=1
+    else
+      requirements="$(php -r '$r=json_decode(file_get_contents($argv[1]), true); echo ($r["summary"]["passed"] ?? 0)."/".($r["summary"]["total"] ?? 0);' "${report_file}")"
     fi
   fi
 
-  rows+=("${app}|${version}|${status}|${note}|${spec_file}|${log_file}")
-  echo "    ${status} (${note})"
+  rows+=("${app}|${version}|${status}|${requirements}|${note}|${spec_file}|${log_file}|${report_file}")
+  echo "    ${status} (${note}, requirements: ${requirements})"
   echo
 done
 
@@ -71,11 +79,11 @@ summary_file="${run_dir}/summary.md"
   echo "- Workspace: ${ROOT_DIR}"
   echo "- Overall result: $([[ ${overall_status} -eq 0 ]] && echo "PASS" || echo "FAIL")"
   echo
-  echo "| App | Version | Result | Note | Spec | Log |"
-  echo "|---|---|---|---|---|---|"
+  echo "| App | Version | Result | Requirements | Note | Spec | Log | Requirement Report |"
+  echo "|---|---|---|---|---|---|---|---|"
   for row in "${rows[@]}"; do
-    IFS='|' read -r app version status note spec_file log_file <<<"${row}"
-    echo "| ${app} | ${version} | ${status} | ${note} | \`${spec_file}\` | \`${log_file}\` |"
+    IFS='|' read -r app version status requirements note spec_file log_file report_file <<<"${row}"
+    echo "| ${app} | ${version} | ${status} | ${requirements} | ${note} | \`${spec_file}\` | \`${log_file}\` | \`${report_file}\` |"
   done
 } >"${summary_file}"
 
