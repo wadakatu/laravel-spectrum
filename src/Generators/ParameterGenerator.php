@@ -54,7 +54,7 @@ class ParameterGenerator
             $parameters = $this->addValidationQueryParameters($parameters, $controllerInfo);
         }
 
-        return $parameters;
+        return $this->deduplicateParameters($parameters);
     }
 
     /**
@@ -436,6 +436,63 @@ class ParameterGenerator
         return array_map(
             fn (QueryParameterInfo $info) => $this->createFromQueryParameterInfo($info),
             $infos
+        );
+    }
+
+    /**
+     * Remove duplicate parameters within the same operation scope (name + in).
+     *
+     * @param  array<int, OpenApiParameter>  $parameters
+     * @return array<int, OpenApiParameter>
+     */
+    protected function deduplicateParameters(array $parameters): array
+    {
+        $unique = [];
+
+        foreach ($parameters as $parameter) {
+            $key = $parameter->name.'|'.$parameter->in;
+
+            if (! isset($unique[$key])) {
+                $unique[$key] = $parameter;
+
+                continue;
+            }
+
+            $unique[$key] = $this->mergeParameters($unique[$key], $parameter);
+        }
+
+        return array_values($unique);
+    }
+
+    /**
+     * Merge duplicate parameter definitions by preserving richer metadata.
+     */
+    protected function mergeParameters(OpenApiParameter $existing, OpenApiParameter $candidate): OpenApiParameter
+    {
+        $existingSchemaSize = count($existing->schema->toArray());
+        $candidateSchemaSize = count($candidate->schema->toArray());
+
+        $schema = $candidateSchemaSize > $existingSchemaSize
+            ? $candidate->schema
+            : $existing->schema;
+
+        $description = $existing->description;
+        if (($description === null || $description === '')
+            && $candidate->description !== null
+            && $candidate->description !== '') {
+            $description = $candidate->description;
+        }
+
+        return new OpenApiParameter(
+            name: $existing->name,
+            in: $existing->in,
+            required: $existing->required || $candidate->required,
+            schema: $schema,
+            description: $description,
+            style: $existing->style ?? $candidate->style,
+            explode: $existing->explode ?? $candidate->explode,
+            deprecated: $existing->deprecated ?? $candidate->deprecated,
+            allowEmptyValue: $existing->allowEmptyValue ?? $candidate->allowEmptyValue,
         );
     }
 }

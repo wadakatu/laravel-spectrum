@@ -15,7 +15,8 @@ For each case, it:
 
 1. Generates spec via `php artisan spectrum:generate --no-cache`
 2. Validates it with `devizzent/cebe-php-openapi`
-3. Applies version-specific guard checks:
+3. Applies requirement-matrix semantic checks (root/path/operation/parameter/response/schema/security/link/callback/webhook rules)
+4. Applies version-specific guard checks:
    - 3.0.x: no `jsonSchemaDialect`, no `webhooks`, no `type: []`
    - 3.1.x: `jsonSchemaDialect` exists, no `nullable`, `webhooks` exists
 
@@ -36,5 +37,6 @@ Each run writes artifacts under:
 - `summary.md`: matrix result table
 - `*-openapi-<version>.json`: generated specs
 - `*-openapi-<version>.log`: generation + validation logs
+- `*-openapi-<version>-requirements.json`: requirement-level pass/fail report
 
 Use this directory as evidence for compliance checks and regression tracking.

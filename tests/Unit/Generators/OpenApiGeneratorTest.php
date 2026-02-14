@@ -332,6 +332,61 @@ class OpenApiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_makes_operation_ids_unique_when_metadata_generator_returns_duplicates(): void
+    {
+        $routes = [
+            [
+                'uri' => 'api/users',
+                'httpMethods' => ['GET', 'HEAD'],
+                'controller' => 'App\Http\Controllers\UserController',
+                'action' => 'index',
+                'method' => 'index',
+                'middleware' => [],
+                'name' => 'users.index',
+                'parameters' => [],
+            ],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'method' => 'index',
+            'responseType' => 'json',
+            'hasValidation' => false,
+        ]);
+
+        $this->authenticationAnalyzer->shouldReceive('loadCustomSchemes')->once();
+        $this->authenticationAnalyzer->shouldReceive('getGlobalAuthentication')->once()->andReturn(null);
+        $this->authenticationAnalyzer->shouldReceive('analyze')->once()->andReturn(AuthenticationResult::empty());
+        $this->securitySchemeGenerator->shouldReceive('generateSecuritySchemes')->once()->andReturn([]);
+
+        $this->controllerAnalyzer->shouldReceive('analyzeToResult')
+            ->twice()
+            ->andReturn($controllerInfo, $controllerInfo);
+
+        $this->metadataGenerator->shouldReceive('convertToOpenApiPath')
+            ->once()
+            ->with('api/users')
+            ->andReturn('/api/users');
+
+        $this->metadataGenerator->shouldReceive('generateOperationId')
+            ->twice()
+            ->andReturn('usersIndex', 'usersIndex');
+
+        $this->metadataGenerator->shouldReceive('generateSummary')
+            ->twice()
+            ->andReturn('List all User', 'Head User');
+
+        $this->tagGenerator->shouldReceive('generate')->twice()->andReturn(['User']);
+        $this->parameterGenerator->shouldReceive('generate')->twice()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('generateErrorResponses')->twice()->andReturn([]);
+        $this->errorResponseGenerator->shouldReceive('getDefaultErrorResponses')->twice()->andReturn([]);
+
+        $result = $this->generateAsArray($routes);
+
+        $this->assertSame('usersIndex', $result['paths']['/api/users']['get']['operationId']);
+        $this->assertSame('usersIndexHead', $result['paths']['/api/users']['head']['operationId']);
+    }
+
+    #[Test]
     public function it_generates_request_body_for_post_route()
     {
         $routes = [
