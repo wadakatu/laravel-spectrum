@@ -13,12 +13,10 @@ use League\Fractal\TransformerAbstract;
  */
 class CommentTransformer extends TransformerAbstract
 {
-    /**
-     * Relations that can be included if requested.
-     *
-     * @var array<string>
-     */
-    protected array $availableIncludes = ['author'];
+    public function __construct()
+    {
+        $this->availableIncludes = ['author'];
+    }
 
     /**
      * Transform comment data into an array.

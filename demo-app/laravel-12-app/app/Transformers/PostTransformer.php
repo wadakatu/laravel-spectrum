@@ -18,19 +18,11 @@ use League\Fractal\TransformerAbstract;
  */
 class PostTransformer extends TransformerAbstract
 {
-    /**
-     * Relations that can be included if requested.
-     *
-     * @var array<string>
-     */
-    protected array $availableIncludes = ['comments', 'tags'];
-
-    /**
-     * Relations that are included by default.
-     *
-     * @var array<string>
-     */
-    protected array $defaultIncludes = ['author'];
+    public function __construct()
+    {
+        $this->availableIncludes = ['comments', 'tags'];
+        $this->defaultIncludes = ['author'];
+    }
 
     /**
      * Transform a Post model into an array.

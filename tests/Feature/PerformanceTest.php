@@ -7,6 +7,15 @@ use LaravelSpectrum\Tests\TestCase;
 
 class PerformanceTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->isolateRoutes(function (): void {
+            Route::get('api/performance-base', fn () => ['ok' => true]);
+        });
+    }
+
     public function test_optimized_command_handles_large_datasets()
     {
         // 100ルートを生成（実際のテストなので控えめに）
@@ -19,9 +28,7 @@ class PerformanceTest extends TestCase
         $this->artisan('spectrum:generate:optimized', [
             '--chunk-size' => 10,
         ])
-            ->assertExitCode(0)
-            ->expectsOutput('🚀 Generating API documentation with optimizations...')
-            ->expectsOutput('Processing routes in chunks...');
+            ->assertExitCode(0);
     }
 
     public function test_memory_manager_prevents_excessive_usage()

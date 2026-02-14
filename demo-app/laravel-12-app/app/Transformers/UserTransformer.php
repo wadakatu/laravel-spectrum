@@ -18,19 +18,11 @@ use League\Fractal\TransformerAbstract;
  */
 class UserTransformer extends TransformerAbstract
 {
-    /**
-     * Relations that can be included if requested.
-     *
-     * @var array<string>
-     */
-    protected array $availableIncludes = ['posts', 'profile'];
-
-    /**
-     * Relations that are included by default.
-     *
-     * @var array<string>
-     */
-    protected array $defaultIncludes = [];
+    public function __construct()
+    {
+        $this->availableIncludes = ['posts', 'profile'];
+        $this->defaultIncludes = [];
+    }
 
     /**
      * Transform a User model into an array.

@@ -127,6 +127,16 @@ php artisan spectrum:export:insomnia   # Insomnia workspace
 - PHP 8.2+
 - Laravel 11.x or 12.x
 
+## Compliance Check (Demo App Matrix)
+
+Use the bundled demo apps to verify OpenAPI 3.0/3.1 compliance in one run:
+
+```bash
+./demo-app/check-openapi-compliance.sh
+```
+
+Details: `demo-app/README.md`
+
 ---
 
 ## Documentation
