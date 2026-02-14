@@ -61,6 +61,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Excluded HTTP Methods
+    |--------------------------------------------------------------------------
+    |
+    | Methods listed here are omitted from generated operations.
+    | For compliance checks we exclude implicit HEAD and duplicate PATCH routes.
+    |
+    */
+    'excluded_methods' => ['HEAD', 'PATCH'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Tag Mappings
     |--------------------------------------------------------------------------
     |

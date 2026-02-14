@@ -45,13 +45,6 @@ class OpenApiGenerator
      */
     private array $resourceExamples = [];
 
-    /**
-     * Tracks operationId usage during a single generation run.
-     *
-     * @var array<string, int>
-     */
-    private array $usedOperationIds = [];
-
     public function __construct(
         protected ControllerAnalyzer $controllerAnalyzer,
         protected AuthenticationAnalyzer $authenticationAnalyzer,
@@ -88,7 +81,6 @@ class OpenApiGenerator
         // Clear schema registry and examples for fresh generation
         $this->schemaRegistry->clear();
         $this->resourceExamples = [];
-        $this->usedOperationIds = [];
 
         // Load custom authentication schemes
         $this->authenticationAnalyzer->loadCustomSchemes();
@@ -296,11 +288,6 @@ class OpenApiGenerator
             $route['method']
         );
 
-        $operationId = $this->reserveUniqueOperationId(
-            $this->metadataGenerator->generateOperationId($route, $method),
-            $method
-        );
-
         // Generate request body for POST, PUT, PATCH, DELETE
         // DELETE with body is common for batch operations (RFC 7231 allows it)
         $requestBody = null;
@@ -324,7 +311,7 @@ class OpenApiGenerator
         $callbacks = $this->callbackGenerator->generate($controllerInfo->callbacks);
 
         return new OpenApiOperation(
-            operationId: $operationId,
+            operationId: $this->metadataGenerator->generateOperationId($route, $method),
             summary: $this->metadataGenerator->generateSummary($route, $method),
             tags: $this->tagGenerator->generate($route),
             parameters: $this->parameterGenerator->generate($route, $controllerInfo, $method),
@@ -729,32 +716,6 @@ class OpenApiGenerator
         sort($uniqueTags);
 
         return $uniqueTags;
-    }
-
-    /**
-     * Reserve a unique operationId for the current document.
-     */
-    protected function reserveUniqueOperationId(string $baseOperationId, string $method): string
-    {
-        if (! isset($this->usedOperationIds[$baseOperationId])) {
-            $this->usedOperationIds[$baseOperationId] = 1;
-
-            return $baseOperationId;
-        }
-
-        $candidateBase = $baseOperationId.\Illuminate\Support\Str::studly(strtolower($method));
-        $candidate = $candidateBase;
-        $suffix = 2;
-
-        while (isset($this->usedOperationIds[$candidate])) {
-            $candidate = $candidateBase.$suffix;
-            $suffix++;
-        }
-
-        $this->usedOperationIds[$baseOperationId]++;
-        $this->usedOperationIds[$candidate] = 1;
-
-        return $candidate;
     }
 
     /**

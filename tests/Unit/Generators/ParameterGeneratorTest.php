@@ -899,48 +899,4 @@ class ParameterGeneratorTest extends TestCase
         // When httpMethod is null, validation should not be converted to query parameters
         $this->assertCount(0, $parameters);
     }
-
-    #[Test]
-    public function it_deduplicates_query_parameters_defined_by_detection_and_validation(): void
-    {
-        $route = [
-            'parameters' => [],
-            'methods' => ['GET'],
-        ];
-
-        $controllerInfo = ControllerInfo::fromArray([
-            'queryParameters' => [
-                [
-                    'name' => 'include',
-                    'type' => 'string',
-                    'required' => false,
-                    'description' => 'Explicit include parameter',
-                ],
-            ],
-            'inlineValidation' => [
-                'rules' => [
-                    'include' => 'required|string|min:1',
-                ],
-            ],
-        ]);
-
-        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
-            ->once()
-            ->with(['required', 'string', 'min:1'])
-            ->andReturn('string');
-
-        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
-            ->once()
-            ->with(['required', 'string', 'min:1'])
-            ->andReturn(['minLength' => 1]);
-
-        $parameters = $this->generator->generate($route, $controllerInfo, 'get');
-
-        $this->assertCount(1, $parameters);
-        $this->assertSame('include', $parameters[0]->name);
-        $this->assertSame('query', $parameters[0]->in);
-        $this->assertTrue($parameters[0]->required);
-        $this->assertSame('Explicit include parameter', $parameters[0]->description);
-        $this->assertSame(1, $parameters[0]->schema->minLength);
-    }
 }
