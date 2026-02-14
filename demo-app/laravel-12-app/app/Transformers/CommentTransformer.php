@@ -18,7 +18,7 @@ class CommentTransformer extends TransformerAbstract
      *
      * @var array<string>
      */
-    protected array $availableIncludes = ['author'];
+    protected $availableIncludes = ['author'];
 
     /**
      * Transform comment data into an array.
