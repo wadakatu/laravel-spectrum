@@ -27,6 +27,7 @@ composer format:fix && composer analyze && composer test
 | `composer test-coverage` | Run tests with coverage report |
 | `composer format:fix` | Fix code style (Laravel Pint) |
 | `composer analyze` | Run static analysis (PHPStan) |
+| `composer infection` | Run full mutation testing (same MSI thresholds as CI full run) |
 
 ## Pull Request Process
 
@@ -76,8 +77,7 @@ refactor: code improvements
 ## Documentation
 
 For detailed contribution guidelines, see:
-- [English Guide](docs/en/contributing.md)
-- [Japanese Guide](docs/ja/contributing.md)
+- [Contributing Guide](docs/docs/contributing.md)
 
 ## Getting Help
 

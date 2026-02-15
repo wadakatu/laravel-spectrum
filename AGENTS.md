@@ -44,7 +44,11 @@ composer format:fix
 composer analyze
 
 # Mutation testing
+# Full mutation run (same MSI thresholds as CI full run)
 composer infection
+
+# PR-style diff run (replace base branch when needed)
+XDEBUG_MODE=coverage vendor/bin/infection --threads=max --git-diff-filter=AM --git-diff-base=origin/main --min-msi=50 --min-covered-msi=65 --ignore-msi-with-no-mutations
 
 # Recommended pre-push gate
 composer format:fix && composer analyze && composer test
@@ -100,4 +104,4 @@ composer format:fix && composer analyze && composer test
 
 - Repo overview: `README.md`
 - Contribution flow: `CONTRIBUTING.md`
-- Detailed contributor docs: `docs/en/contributing.md`, `docs/ja/contributing.md`
+- Detailed contributor docs: `docs/docs/contributing.md`

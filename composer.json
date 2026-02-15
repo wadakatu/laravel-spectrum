@@ -69,7 +69,7 @@
         "format": "vendor/bin/pint --test",
         "format:fix": "vendor/bin/pint",
         "analyze": "vendor/bin/phpstan analyse",
-        "infection": "XDEBUG_MODE=coverage vendor/bin/infection --threads=max --show-mutations --only-covered"
+        "infection": "XDEBUG_MODE=coverage vendor/bin/infection --threads=max --min-msi=50 --min-covered-msi=65"
     },
     "scripts-descriptions": {
         "test": "Run the tests",
