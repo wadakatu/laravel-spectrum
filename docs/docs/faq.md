@@ -177,10 +177,10 @@ See the [Performance Optimization Guide](./performance.md) for details.
 ],
 ```
 
-You can also specify in the command:
+After updating route patterns, regenerate documentation:
 
 ```bash
-php artisan spectrum:generate --pattern="api/v1/*"
+php artisan spectrum:generate --clear-cache
 ```
 
 ### Q: I'm using custom authentication middleware
