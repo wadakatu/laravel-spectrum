@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Generators;
 
 use LaravelSpectrum\Analyzers\FormRequestAnalyzer;
