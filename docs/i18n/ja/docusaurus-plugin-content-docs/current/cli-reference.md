@@ -330,7 +330,7 @@ docs-mock:
 	php artisan spectrum:mock
 
 docs-export:
-	php artisan spectrum:export:postman --environment
+	php artisan spectrum:export:postman --environments=local
 	php artisan spectrum:export:insomnia
 ```
 

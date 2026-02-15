@@ -452,7 +452,7 @@ jobs:
           name: Generate Documentation
           command: |
             php artisan spectrum:generate
-            php artisan spectrum:export:postman --environment
+            php artisan spectrum:export:postman --environments=local
             php artisan spectrum:export:insomnia
             
       - store_artifacts:
