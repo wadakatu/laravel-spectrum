@@ -68,7 +68,8 @@ class FakerIntegrationTest extends TestCase
     #[Test]
     public function it_respects_field_constraints()
     {
-        $age = $this->valueFactory->create('age', [
+        // Use neutral field names so registry presets do not override schema constraints.
+        $age = $this->valueFactory->create('bounded_integer_value', [
             'type' => 'integer',
             'minimum' => 18,
             'maximum' => 65,
@@ -77,7 +78,7 @@ class FakerIntegrationTest extends TestCase
         $this->assertGreaterThanOrEqual(18, $age);
         $this->assertLessThanOrEqual(65, $age);
 
-        $price = $this->valueFactory->create('price', [
+        $price = $this->valueFactory->create('bounded_number_value', [
             'type' => 'number',
             'minimum' => 0.01,
             'maximum' => 999.99,
