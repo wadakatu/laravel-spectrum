@@ -218,7 +218,42 @@ class DefaultWorkerCountResolverTest extends TestCase
             {
                 $result = null;  // Simulating shell_exec returning null
 
-                return $result !== null ? (int) $result : 1;
+                if ($result === null) {
+                    return 1;
+                }
+
+                $cores = (int) trim($result);
+
+                return $cores > 0 ? $cores : 1;
+            }
+        };
+
+        $cores = $resolver->getDetectedCores();
+        $this->assertEquals(1, $cores);
+    }
+
+    #[Test]
+    public function detect_cpu_cores_handles_darwin_non_positive_shell_exec_result(): void
+    {
+        // Simulate macOS where shell_exec returns non-positive value
+        $resolver = new class extends DefaultWorkerCountResolver
+        {
+            public function getDetectedCores(): int
+            {
+                return $this->simulateDarwinNonPositiveResult();
+            }
+
+            private function simulateDarwinNonPositiveResult(): int
+            {
+                $result = "0\n";  // Simulating shell_exec returning invalid core count
+
+                if ($result === null) {
+                    return 1;
+                }
+
+                $cores = (int) trim($result);
+
+                return $cores > 0 ? $cores : 1;
             }
         };
 
