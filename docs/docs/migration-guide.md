@@ -392,8 +392,8 @@ git tag pre-spectrum-migration
 // Check details in debug mode
 php artisan spectrum:generate -vvv
 
-// Generate with specific pattern
-php artisan spectrum:generate --pattern="api/users/*"
+// Regenerate after configuration updates
+php artisan spectrum:generate --clear-cache
 ```
 
 ### Schema Mismatches

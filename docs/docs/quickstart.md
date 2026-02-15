@@ -183,8 +183,8 @@ php artisan spectrum:generate
 # Regenerate without cache
 php artisan spectrum:generate --no-cache
 
-# Specific route patterns only
-php artisan spectrum:generate --pattern="api/v2/*"
+# Generate YAML output
+php artisan spectrum:generate --format=yaml --output=docs/openapi.yaml
 
 # Real-time preview
 php artisan spectrum:watch

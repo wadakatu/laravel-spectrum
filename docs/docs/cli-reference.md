@@ -85,9 +85,9 @@ php artisan spectrum:generate:optimized [options]
 | `--format` | json | Output format (json/yaml) |
 | `--output` | storage/app/spectrum/openapi.json | Output file path |
 | `--parallel` | false | Enable parallel processing |
-| `--workers` | auto | Number of parallel workers (auto for CPU cores) |
-| `--chunk-size` | auto | Number of routes processed by each worker |
-| `--memory-limit` | 512M | Memory limit for each worker |
+| `--workers` | none | Number of parallel workers |
+| `--chunk-size` | auto | Number of routes processed per chunk |
+| `--memory-limit` | none | Memory limit override (example: `1G`) |
 | `--incremental` | false | Process only changed files |
 
 ### Examples
@@ -324,7 +324,7 @@ docs-mock:
 	php artisan spectrum:mock
 
 docs-export:
-	php artisan spectrum:export:postman --environment
+	php artisan spectrum:export:postman --environments=local
 	php artisan spectrum:export:insomnia
 ```
 

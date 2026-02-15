@@ -180,7 +180,7 @@ jobs:
 
       - name: Generate documentation
         run: |
-          php artisan spectrum:generate --dry-run
+          php artisan spectrum:generate --fail-on-error --error-report=storage/logs/spectrum-errors.json
           
       - name: Check for errors
         run: |
@@ -446,7 +446,7 @@ jobs:
           name: Generate Documentation
           command: |
             php artisan spectrum:generate
-            php artisan spectrum:export:postman --environment
+            php artisan spectrum:export:postman --environments=local
             php artisan spectrum:export:insomnia
             
       - store_artifacts:
