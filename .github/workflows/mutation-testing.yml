@@ -61,12 +61,7 @@ jobs:
 
       - name: Run full mutation testing
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.full_test == 'true')
-        run: |
-          vendor/bin/infection \
-            --threads=max \
-            --min-msi=50 \
-            --min-covered-msi=65 \
-            --logger-github
+        run: composer infection -- --logger-github
         env:
           XDEBUG_MODE: coverage
 

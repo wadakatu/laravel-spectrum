@@ -153,6 +153,7 @@ Details: `demo-app/README.md`
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+For mutation testing, run `composer infection` (full run with CI-aligned MSI thresholds).
 
 ## License
 
