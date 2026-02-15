@@ -19,6 +19,9 @@ class RouteAnalyzer implements HasErrors
 {
     use HasErrorCollection;
 
+    /**
+     * @var array<int, string>
+     */
     protected array $excludedMiddleware = ['web', 'api'];
 
     protected DocumentationCache $cache;
@@ -419,6 +422,8 @@ class RouteAnalyzer implements HasErrors
 
     /**
      * ミドルウェアを抽出
+     *
+     * @return array<int, string>
      */
     protected function extractMiddleware(Route $route): array
     {

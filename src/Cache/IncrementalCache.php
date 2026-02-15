@@ -8,6 +8,9 @@ class IncrementalCache extends DocumentationCache
 {
     private DependencyGraph $dependencyGraph;
 
+    /**
+     * @var array<int, array{file: string, type: string, timestamp: float}>
+     */
     private array $changeLog = [];
 
     public function __construct(DependencyGraph $dependencyGraph)
@@ -30,9 +33,12 @@ class IncrementalCache extends DocumentationCache
 
     /**
      * Get items that need regeneration based on changes
+     *
+     * @return array<int, string>
      */
     public function getInvalidatedItems(): array
     {
+        /** @var array<int, string> $invalidated */
         $invalidated = [];
 
         foreach ($this->changeLog as $change) {
@@ -41,7 +47,7 @@ class IncrementalCache extends DocumentationCache
             $invalidated = array_merge($invalidated, $affected);
         }
 
-        return array_unique($invalidated);
+        return array_values(array_unique($invalidated));
     }
 
     /**
@@ -63,13 +69,15 @@ class IncrementalCache extends DocumentationCache
 
     /**
      * Get cache entries that are still valid
+     *
+     * @return array<int, string>
      */
     public function getValidEntries(): array
     {
         $allKeys = $this->getAllCacheKeys();
         $invalidated = $this->getInvalidatedItems();
 
-        return array_diff($allKeys, $invalidated);
+        return array_values(array_diff($allKeys, $invalidated));
     }
 
     private function fileToNodeId(string $file): string

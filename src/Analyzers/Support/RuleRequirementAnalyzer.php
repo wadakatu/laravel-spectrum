@@ -49,7 +49,7 @@ class RuleRequirementAnalyzer
     /**
      * Check if field is unconditionally required.
      *
-     * @param  string|array  $rules
+     * @param  string|array<int, mixed>  $rules
      */
     public function isRequired($rules): bool
     {
@@ -70,7 +70,7 @@ class RuleRequirementAnalyzer
     /**
      * Check if field has any conditional required rules.
      *
-     * @param  string|array  $rules
+     * @param  string|array<int, mixed>  $rules
      */
     public function hasConditionalRequired($rules): bool
     {
@@ -126,6 +126,8 @@ class RuleRequirementAnalyzer
 
     /**
      * Check if field is required in any condition.
+     *
+     * @param  array<int, array<string, mixed>>  $rulesByCondition
      */
     public function isRequiredInAnyCondition(array $rulesByCondition): bool
     {

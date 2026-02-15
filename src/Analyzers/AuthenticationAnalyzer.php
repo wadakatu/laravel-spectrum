@@ -83,26 +83,36 @@ class AuthenticationAnalyzer
 
     /**
      * グローバル認証設定を取得
+     *
+     * @return array{scheme: array<string, mixed>, required: bool}|null
      */
     public function getGlobalAuthentication(): ?array
     {
+        /** @var array{enabled?: bool, scheme?: array<string, mixed>, required?: bool}|null $globalAuth */
         $globalAuth = config('spectrum.authentication.global');
 
-        if (! $globalAuth || ! $globalAuth['enabled']) {
+        if (! is_array($globalAuth) || ! ($globalAuth['enabled'] ?? false)) {
+            return null;
+        }
+
+        if (! isset($globalAuth['scheme']) || ! is_array($globalAuth['scheme'])) {
             return null;
         }
 
         return [
             'scheme' => $globalAuth['scheme'],
-            'required' => $globalAuth['required'] ?? false,
+            'required' => (bool) ($globalAuth['required'] ?? false),
         ];
     }
 
     /**
      * ルートパターンに基づく認証設定を取得
+     *
+     * @return array<string, mixed>|null
      */
     public function getPatternBasedAuthentication(string $uri): ?array
     {
+        /** @var array<string, array<string, mixed>> $patterns */
         $patterns = config('spectrum.authentication.patterns', []);
 
         foreach ($patterns as $pattern => $auth) {
