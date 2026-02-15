@@ -60,9 +60,14 @@ class DefaultWorkerCountResolver implements WorkerCountResolverInterface
         }
 
         if (PHP_OS_FAMILY === 'Darwin') {
-            $result = shell_exec('sysctl -n hw.ncpu');
+            $result = shell_exec('sysctl -n hw.ncpu 2>/dev/null');
+            if ($result === null) {
+                return 1;
+            }
 
-            return $result !== null ? (int) $result : 1;
+            $cores = (int) trim($result);
+
+            return $cores > 0 ? $cores : 1;
         }
 
         if (PHP_OS_FAMILY === 'Windows') {
