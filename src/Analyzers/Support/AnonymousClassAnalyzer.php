@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Analyzers\Support;
 
 use LaravelSpectrum\DTO\ParameterDefinition;
