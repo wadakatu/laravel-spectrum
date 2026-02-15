@@ -30,13 +30,13 @@ php artisan spectrum:export:postman --output=/path/to/postman_collection.json
 php artisan spectrum:export:postman \
     --include-examples \
     --include-tests \
-    --environment
+    --environments=local
 ```
 
 オプション説明：
 - `--include-examples`: リクエスト/レスポンス例を含める
 - `--include-tests`: 自動テストスクリプトを生成
-- `--environment`: 環境変数ファイルも生成
+- `--environments`: エクスポートする環境（カンマ区切り、デフォルト `local`）
 
 ### 生成される内容
 
@@ -369,7 +369,7 @@ jobs:
         run: |
           php artisan spectrum:export:postman \
             --output=postman/collection.json \
-            --environment
+            --environments=local
             
       - name: Export to Insomnia  
         run: |
