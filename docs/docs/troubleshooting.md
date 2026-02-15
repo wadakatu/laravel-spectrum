@@ -218,14 +218,14 @@ Authentication is required but not shown in documentation.
 ### Debug Commands
 
 ```bash
-# Generate with specific pattern
-php artisan spectrum:generate --pattern="api/users/*" -vvv
+# Generate with full debug output and error report
+php artisan spectrum:generate --no-cache --error-report=storage/logs/spectrum-errors.json -vvv
 
 # Verbose output
 php artisan spectrum:generate -vvv
 
-# Dry run (no file generation)
-php artisan spectrum:generate --dry-run
+# Clear cache before rerun
+php artisan spectrum:generate --clear-cache
 ```
 
 ### Check Log Files
@@ -359,9 +359,15 @@ Recommended extensions:
 
 ### File Size Too Large
 
-1. **Split Output**
-   ```bash
-   php artisan spectrum:generate --split-by-tag
+1. **Limit analyzed routes**
+   ```php
+   // config/spectrum.php
+   'route_patterns' => [
+       'api/public/*',
+   ],
+   'excluded_routes' => [
+       'api/internal/*',
+   ],
    ```
 
 2. **Exclude Unnecessary Information**

@@ -102,17 +102,24 @@ php artisan spectrum:generate:optimized --incremental
 
 ### 4. Selective Generation
 
-Generate only specific route patterns:
+Control target routes from configuration:
+
+```php
+// config/spectrum.php
+'route_patterns' => [
+    'api/v2/*',
+    'api/users/*',
+    'api/posts/*',
+],
+'excluded_routes' => [
+    'api/admin/*',
+    'api/debug/*',
+],
+```
 
 ```bash
-# Specific version only
-php artisan spectrum:generate --pattern="api/v2/*"
-
-# Multiple patterns
-php artisan spectrum:generate --pattern="api/users/*" --pattern="api/posts/*"
-
-# Exclusion patterns
-php artisan spectrum:generate --exclude="api/admin/*" --exclude="api/debug/*"
+# Apply updated route filters
+php artisan spectrum:generate --clear-cache
 ```
 
 ## 🔧 Configuration Optimization
@@ -201,11 +208,9 @@ php artisan spectrum:generate:optimized --workers=1
 ### Cache Issues
 
 ```bash
-# Clear cache
+# Clear cache and regenerate
 php artisan spectrum:cache clear
-
-# Generate without cache
-php artisan spectrum:generate:optimized --no-cache
+php artisan spectrum:generate:optimized
 ```
 
 ## 💡 Best Practices
