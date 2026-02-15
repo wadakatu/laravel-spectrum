@@ -1,18 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:getGlobalAuthentication\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/AuthenticationAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\AuthenticationAnalyzer\:\:getPatternBasedAuthentication\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/AuthenticationAnalyzer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\FormRequestAnalyzer\:\:analyzeWithDetails\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -133,36 +121,6 @@ parameters:
 			path: src/Analyzers/ResponseAnalyzer.php
 
 		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:extractMiddleware\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/RouteAnalyzer.php
-
-		-
-			message: '#^Property LaravelSpectrum\\Analyzers\\RouteAnalyzer\:\:\$excludedMiddleware type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/RouteAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:hasConditionalRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:isRequired\(\) has parameter \$rules with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\RuleRequirementAnalyzer\:\:isRequiredInAnyCondition\(\) has parameter \$rulesByCondition with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Analyzers/Support/RuleRequirementAnalyzer.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Analyzers\\Support\\ValidationDescriptionGenerator\:\:buildFileInfoParts\(\) has parameter \$fileInfo with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -197,24 +155,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Analyzers/Support/ValidationDescriptionGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Cache\\IncrementalCache\:\:getInvalidatedItems\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Cache/IncrementalCache.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Cache\\IncrementalCache\:\:getValidEntries\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Cache/IncrementalCache.php
-
-		-
-			message: '#^Property LaravelSpectrum\\Cache\\IncrementalCache\:\:\$changeLog type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Cache/IncrementalCache.php
 
 		-
 			message: '#^Method LaravelSpectrum\\Console\\Commands\\ExportPostmanCommand\:\:displayImportInstructions\(\) has parameter \$environments with no value type specified in iterable type array\.$#'
