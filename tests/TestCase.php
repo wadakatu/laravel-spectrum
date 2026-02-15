@@ -15,11 +15,11 @@ abstract class TestCase extends Orchestra
 
     protected function setUp(): void
     {
-        parent::setUp();
-
         // Some CI combinations can end up with the PHP default limit (128M) during long runs.
         // Enforce unlimited memory for package tests to match tests/bootstrap.php intent.
         ini_set('memory_limit', '-1');
+
+        parent::setUp();
     }
 
     protected function getPackageProviders($app)
