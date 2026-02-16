@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Exporters;
 
 use Illuminate\Support\Str;
@@ -533,7 +535,6 @@ class PostmanExporter implements ExportFormatInterface
 
             $schema = $response['content']['application/json']['schema'] ?? [];
             $exampleData = $this->exampleFormatter->generateFromSchema($schema);
-
             $examples[] = [
                 'name' => $response['description'] ?? "Response {$statusCode}",
                 'originalRequest' => [
@@ -543,7 +544,7 @@ class PostmanExporter implements ExportFormatInterface
                         'raw' => '{{base_url}}/example',
                     ],
                 ],
-                'status' => $this->getStatusText($statusCode),
+                'status' => $this->getStatusText((string) $statusCode),
                 'code' => (int) $statusCode,
                 '_postman_previewlanguage' => 'json',
                 'header' => [
