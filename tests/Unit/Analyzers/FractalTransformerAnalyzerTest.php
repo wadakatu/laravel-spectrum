@@ -8,6 +8,7 @@ use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ComplexTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\ExampleGenerationTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\GetterBasedUserTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\Issue458ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MinimalTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MissingIncludeMethodTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
@@ -376,5 +377,20 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertEquals('date-time', $result['properties']['created_at']['format']);
         $this->assertEquals('string', $result['properties']['email']['type']);
         $this->assertEquals('email', $result['properties']['email']['format']);
+    }
+
+    #[Test]
+    public function it_infers_nested_types_and_boolean_expressions_from_private_method_calls(): void
+    {
+        $result = $this->analyzer->analyze(Issue458ProjectTransformer::class);
+
+        $this->assertSame('object', $result['properties']['current_plan']['type']);
+        $this->assertArrayHasKey('properties', $result['properties']['current_plan']);
+        $this->assertSame('object', $result['properties']['current_plan']['properties']['discount']['type']);
+        $this->assertSame('object', $result['properties']['next_plan']['type']);
+        $this->assertSame('array', $result['properties']['project_users']['type']);
+        $this->assertSame('array', $result['properties']['notification_codes']['type']);
+        $this->assertSame('boolean', $result['properties']['is_owner']['type']);
+        $this->assertSame('integer', $result['properties']['verified']['type']);
     }
 }

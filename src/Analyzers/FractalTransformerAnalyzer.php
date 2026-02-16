@@ -123,8 +123,13 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                 return FractalTransformerResult::empty();
             }
 
+            $modelPropertyTypes = $this->extractTransformModelPropertyTypes(
+                $reflection,
+                $this->astHelper->extractUseStatements($ast)
+            );
+
             return new FractalTransformerResult(
-                properties: $this->extractTransformMethod($classNode),
+                properties: $this->extractTransformMethod($classNode, $modelPropertyTypes),
                 availableIncludes: $this->extractAvailableIncludes($classNode),
                 defaultIncludes: $this->extractDefaultIncludes($classNode),
                 meta: $this->extractMetaData($classNode),
@@ -147,9 +152,10 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * transform()メソッドからプロパティを抽出
      *
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
      * @return array<string, array<string, mixed>>
      */
-    protected function extractTransformMethod(Node\Stmt\Class_ $class): array
+    protected function extractTransformMethod(Node\Stmt\Class_ $class, array $modelPropertyTypes = []): array
     {
         $transformMethod = $this->astHelper->findMethodNode($class, 'transform');
         if (! $transformMethod) {
@@ -195,7 +201,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         $this->astHelper->traverse([$transformMethod], $visitor);
 
         if ($visitor->returnArray) {
-            $properties = $this->parseArrayNode($visitor->returnArray);
+            $properties = $this->parseArrayNode($visitor->returnArray, $class, ['transform' => true], $modelPropertyTypes);
         }
 
         return $properties;
@@ -204,9 +210,11 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * 配列ノードを解析
      *
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
      * @return array<string, array<string, mixed>>
      */
-    protected function parseArrayNode(Node\Expr\Array_ $array): array
+    protected function parseArrayNode(Node\Expr\Array_ $array, ?Node\Stmt\Class_ $class = null, array $methodStack = [], array $modelPropertyTypes = []): array
     {
         $properties = [];
 
@@ -225,7 +233,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
             $value = $item->value;
             $fieldName = (string) $key;
-            $typeInfo = $this->typeInferenceEngine->inferFromNode($value);
+            $typeInfo = $this->inferTypeFromExpression($value, $class, $methodStack, $modelPropertyTypes);
             $resolvedType = $this->refineTypeFromFieldName($fieldName, $value, $typeInfo);
 
             $properties[$fieldName] = [
@@ -238,9 +246,15 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                 $properties[$fieldName]['format'] = $resolvedType['format'];
             }
 
-            // ネストした配列の場合
-            if ($value instanceof Node\Expr\Array_) {
-                $properties[$fieldName]['properties'] = $this->parseArrayNode($value);
+            if (isset($resolvedType['items']) && is_array($resolvedType['items'])) {
+                $properties[$fieldName]['items'] = $resolvedType['items'];
+            }
+
+            if (isset($resolvedType['properties']) && is_array($resolvedType['properties'])) {
+                $properties[$fieldName]['properties'] = $resolvedType['properties'];
+                $properties[$fieldName]['type'] = 'object';
+            } elseif ($value instanceof Node\Expr\Array_ && $this->isAssociativeArray($value)) {
+                $properties[$fieldName]['properties'] = $this->parseArrayNode($value, $class, $methodStack, $modelPropertyTypes);
                 $properties[$fieldName]['type'] = 'object';
             }
         }
@@ -249,8 +263,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     }
 
     /**
-     * @param  array{type?: string, format?: string, properties?: array<string, mixed>}  $typeInfo
-     * @return array{type?: string, format?: string, properties?: array<string, mixed>}
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}  $typeInfo
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}
      */
     protected function refineTypeFromFieldName(string $fieldName, Node $value, array $typeInfo): array
     {
@@ -273,6 +287,332 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             'type' => $fieldType['type'] ?? ($typeInfo['type'] ?? 'string'),
             'format' => $fieldType['format'] ?? ($typeInfo['format'] ?? null),
         ]);
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}
+     */
+    protected function inferTypeFromExpression(Node\Expr $expression, ?Node\Stmt\Class_ $class = null, array $methodStack = [], array $modelPropertyTypes = []): array
+    {
+        if ($this->isBooleanExpression($expression)) {
+            return ['type' => 'boolean'];
+        }
+
+        if ($expression instanceof Node\Expr\PropertyFetch) {
+            $modelCastType = $this->inferTypeFromModelPropertyCast($expression, $modelPropertyTypes);
+            if ($modelCastType !== null) {
+                return $modelCastType;
+            }
+        }
+
+        if ($class !== null && $expression instanceof Node\Expr\MethodCall) {
+            $methodCallType = $this->inferTypeFromTransformerMethodCall($expression, $class, $methodStack, $modelPropertyTypes);
+            if ($methodCallType !== null) {
+                return $methodCallType;
+            }
+        }
+
+        if ($expression instanceof Node\Expr\Array_) {
+            if ($this->isAssociativeArray($expression)) {
+                return [
+                    'type' => 'object',
+                    'properties' => $this->parseArrayNode($expression, $class, $methodStack, $modelPropertyTypes),
+                ];
+            }
+
+            return ['type' => 'array'];
+        }
+
+        return $this->typeInferenceEngine->inferFromNode($expression);
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}|null
+     */
+    protected function inferTypeFromTransformerMethodCall(Node\Expr\MethodCall $methodCall, Node\Stmt\Class_ $class, array $methodStack, array $modelPropertyTypes = []): ?array
+    {
+        if (! $methodCall->var instanceof Node\Expr\Variable || $methodCall->var->name !== 'this') {
+            return null;
+        }
+
+        if (! $methodCall->name instanceof Node\Identifier) {
+            return null;
+        }
+
+        $methodName = $methodCall->name->toString();
+        if (isset($methodStack[$methodName])) {
+            return null;
+        }
+
+        $method = $this->astHelper->findMethodNode($class, $methodName);
+        if (! $method) {
+            return null;
+        }
+
+        $returnExpression = $this->extractMethodReturnExpression($method);
+        if (! $returnExpression) {
+            return null;
+        }
+
+        $nextStack = $methodStack;
+        $nextStack[$methodName] = true;
+
+        return $this->inferTypeFromExpression($returnExpression, $class, $nextStack, $modelPropertyTypes);
+    }
+
+    /**
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @return array{type: string, format?: string}|null
+     */
+    protected function inferTypeFromModelPropertyCast(Node\Expr\PropertyFetch $propertyFetch, array $modelPropertyTypes): ?array
+    {
+        if (! $propertyFetch->var instanceof Node\Expr\Variable || ! is_string($propertyFetch->var->name)) {
+            return null;
+        }
+
+        if (! $propertyFetch->name instanceof Node\Identifier) {
+            return null;
+        }
+
+        $variableName = $propertyFetch->var->name;
+        $propertyName = $propertyFetch->name->toString();
+
+        return $modelPropertyTypes[$variableName][$propertyName] ?? null;
+    }
+
+    protected function extractMethodReturnExpression(Node\Stmt\ClassMethod $method): ?Node\Expr
+    {
+        $visitor = new class extends NodeVisitorAbstract
+        {
+            public ?Node\Expr $returnExpression = null;
+
+            /** @var array<string, Node\Expr> */
+            public array $assignments = [];
+
+            public function enterNode(Node $node): null
+            {
+                if ($node instanceof Node\Expr\Assign
+                    && $node->var instanceof Node\Expr\Variable
+                    && is_string($node->var->name)) {
+                    $this->assignments[$node->var->name] = $node->expr;
+                }
+
+                if (! $node instanceof Node\Stmt\Return_ || ! $node->expr instanceof Node\Expr) {
+                    return null;
+                }
+
+                if ($node->expr instanceof Node\Expr\Variable
+                    && is_string($node->expr->name)
+                    && isset($this->assignments[$node->expr->name])) {
+                    $this->returnExpression = $this->assignments[$node->expr->name];
+
+                    return null;
+                }
+
+                $this->returnExpression = $node->expr;
+
+                return null;
+            }
+        };
+
+        $this->astHelper->traverse([$method], $visitor);
+
+        return $visitor->returnExpression;
+    }
+
+    protected function isAssociativeArray(Node\Expr\Array_ $array): bool
+    {
+        foreach ($array->items as $item) {
+            if ($item !== null && $item->key instanceof Node\Scalar\String_) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function isBooleanExpression(Node $node): bool
+    {
+        return $node instanceof Node\Expr\BinaryOp\BooleanAnd
+            || $node instanceof Node\Expr\BinaryOp\BooleanOr
+            || $node instanceof Node\Expr\BinaryOp\LogicalAnd
+            || $node instanceof Node\Expr\BinaryOp\LogicalOr
+            || $node instanceof Node\Expr\BinaryOp\LogicalXor
+            || $node instanceof Node\Expr\BinaryOp\Equal
+            || $node instanceof Node\Expr\BinaryOp\NotEqual
+            || $node instanceof Node\Expr\BinaryOp\Identical
+            || $node instanceof Node\Expr\BinaryOp\NotIdentical
+            || $node instanceof Node\Expr\BinaryOp\Greater
+            || $node instanceof Node\Expr\BinaryOp\GreaterOrEqual
+            || $node instanceof Node\Expr\BinaryOp\Smaller
+            || $node instanceof Node\Expr\BinaryOp\SmallerOrEqual
+            || $node instanceof Node\Expr\BooleanNot;
+    }
+
+    /**
+     * @param  \ReflectionClass<\League\Fractal\TransformerAbstract>  $reflection
+     * @param  array<string, string>  $useStatements
+     * @return array<string, array<string, array{type: string, format?: string}>>
+     */
+    protected function extractTransformModelPropertyTypes(\ReflectionClass $reflection, array $useStatements = []): array
+    {
+        if (! $reflection->hasMethod('transform')) {
+            return [];
+        }
+
+        $transformMethod = $reflection->getMethod('transform');
+        $docComment = $transformMethod->getDocComment() ?: null;
+        $modelPropertyTypes = [];
+
+        foreach ($transformMethod->getParameters() as $parameter) {
+            $type = $parameter->getType();
+            $modelClass = null;
+
+            if ($type instanceof \ReflectionNamedType && ! $type->isBuiltin()) {
+                $modelClass = $type->getName();
+            }
+
+            if ($modelClass === null) {
+                $modelClass = $this->extractModelClassFromParamDocComment(
+                    $docComment,
+                    $parameter->getName(),
+                    $useStatements,
+                    $reflection->getNamespaceName()
+                );
+            }
+
+            if ($modelClass === null) {
+                continue;
+            }
+
+            $castTypes = $this->extractModelCastTypes($modelClass);
+            if ($castTypes !== []) {
+                $modelPropertyTypes[$parameter->getName()] = $castTypes;
+            }
+        }
+
+        return $modelPropertyTypes;
+    }
+
+    /**
+     * @param  array<string, string>  $useStatements
+     */
+    protected function extractModelClassFromParamDocComment(?string $docComment, string $parameterName, array $useStatements, string $transformerNamespace): ?string
+    {
+        if ($docComment === null || $docComment === '') {
+            return null;
+        }
+
+        $pattern = sprintf('/@param\s+([^\s]+)\s+\$%s\b/', preg_quote($parameterName, '/'));
+        if (! preg_match($pattern, $docComment, $matches) || ! isset($matches[1])) {
+            return null;
+        }
+
+        $declaredType = explode('|', (string) $matches[1], 2)[0];
+        $declaredType = ltrim(trim($declaredType), '?');
+        if ($declaredType === '') {
+            return null;
+        }
+
+        $builtinTypes = [
+            'array',
+            'bool',
+            'boolean',
+            'callable',
+            'float',
+            'int',
+            'integer',
+            'iterable',
+            'mixed',
+            'object',
+            'self',
+            'static',
+            'string',
+        ];
+        if (in_array(strtolower($declaredType), $builtinTypes, true)) {
+            return null;
+        }
+
+        if (str_starts_with($declaredType, '\\')) {
+            $fqcn = ltrim($declaredType, '\\');
+
+            return class_exists($fqcn) ? $fqcn : null;
+        }
+
+        if (isset($useStatements[$declaredType])) {
+            return $useStatements[$declaredType];
+        }
+
+        $namespacedClass = $transformerNamespace !== '' ? $transformerNamespace.'\\'.$declaredType : $declaredType;
+        if (class_exists($namespacedClass)) {
+            return $namespacedClass;
+        }
+
+        return class_exists($declaredType) ? $declaredType : null;
+    }
+
+    /**
+     * @return array<string, array{type: string, format?: string}>
+     */
+    protected function extractModelCastTypes(string $modelClass): array
+    {
+        if (! class_exists($modelClass)) {
+            return [];
+        }
+
+        $reflection = new \ReflectionClass($modelClass);
+
+        $defaultProperties = $reflection->getDefaultProperties();
+        $casts = $defaultProperties['casts'] ?? null;
+        if (! is_array($casts)) {
+            return [];
+        }
+
+        $castTypes = [];
+        foreach ($casts as $property => $castDefinition) {
+            if (! is_string($property) || ! is_string($castDefinition)) {
+                continue;
+            }
+
+            $typeInfo = $this->mapLaravelCastToTypeInfo($castDefinition);
+            if ($typeInfo !== null) {
+                $castTypes[$property] = $typeInfo;
+            }
+        }
+
+        return $castTypes;
+    }
+
+    /**
+     * @return array{type: string, format?: string}|null
+     */
+    protected function mapLaravelCastToTypeInfo(string $castDefinition): ?array
+    {
+        $parts = explode(':', strtolower($castDefinition), 2);
+        $castType = trim($parts[0]);
+
+        if ($castType === 'encrypted' && isset($parts[1])) {
+            $castType = trim($parts[1]);
+        }
+
+        if (str_contains($castType, '\\')) {
+            $castType = strtolower((string) basename(str_replace('\\', '/', $castType)));
+        }
+
+        return match ($castType) {
+            'int', 'integer' => ['type' => 'integer'],
+            'float', 'double', 'real', 'decimal' => ['type' => 'number'],
+            'bool', 'boolean' => ['type' => 'boolean'],
+            'array', 'json', 'collection', 'asarrayobject', 'ascollection' => ['type' => 'array'],
+            'object', 'asobject' => ['type' => 'object'],
+            'date', 'immutable_date' => ['type' => 'string', 'format' => 'date'],
+            'datetime', 'immutable_datetime', 'custom_datetime', 'timestamp' => ['type' => 'string', 'format' => 'date-time'],
+            default => null,
+        };
     }
 
     /**
