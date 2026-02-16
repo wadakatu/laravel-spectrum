@@ -88,6 +88,30 @@ class RouteAnalyzerWithPrefixTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_non_standard_api_prefixes_when_pattern_is_configured(): void
+    {
+        // Arrange
+        config(['spectrum.route_patterns' => ['data_proxy_api/v2/*']]);
+
+        Route::prefix('data_proxy_api/v2')->group(function () {
+            Route::get('users', [UserController::class, 'index']);
+            Route::post('users', [UserController::class, 'store']);
+        });
+
+        Route::get('web/about', function () {
+            return 'about';
+        });
+
+        // Act
+        $routes = $this->analyzer->analyze();
+
+        // Assert
+        $this->assertCount(2, $routes);
+        $this->assertEquals('data_proxy_api/v2/users', $routes[0]['uri']);
+        $this->assertEquals('data_proxy_api/v2/users', $routes[1]['uri']);
+    }
+
+    #[Test]
     public function it_respects_custom_route_patterns_with_prefix()
     {
         // Arrange
