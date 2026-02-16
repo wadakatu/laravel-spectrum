@@ -879,6 +879,90 @@ class ParameterGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_deduplicates_query_parameters_from_detection_and_inline_validation_for_get(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['GET'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'queryParameters' => [
+                [
+                    'name' => 'email',
+                    'type' => 'string',
+                    'required' => false,
+                    'description' => 'Email',
+                ],
+            ],
+            'inlineValidation' => [
+                'rules' => [
+                    'email' => 'nullable|email|max:255',
+                ],
+            ],
+        ]);
+
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->once()
+            ->with(['nullable', 'email', 'max:255'])
+            ->andReturn('string');
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->once()
+            ->with(['nullable', 'email', 'max:255'])
+            ->andReturn(['maxLength' => 255]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'get');
+
+        $this->assertCount(1, $parameters);
+        $this->assertEquals('email', $parameters[0]->name);
+        $this->assertEquals('query', $parameters[0]->in);
+        $this->assertEquals('Email', $parameters[0]->description);
+        $this->assertEquals(255, $parameters[0]->schema->maxLength);
+    }
+
+    #[Test]
+    public function it_merges_required_flag_when_duplicate_query_parameters_are_generated(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['GET'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'queryParameters' => [
+                [
+                    'name' => 'search',
+                    'type' => 'string',
+                    'required' => false,
+                    'description' => 'Search term',
+                ],
+            ],
+            'inlineValidation' => [
+                'rules' => [
+                    'search' => 'required|string|min:3',
+                ],
+            ],
+        ]);
+
+        $this->mockTypeInference->shouldReceive('inferFromValidationRules')
+            ->once()
+            ->with(['required', 'string', 'min:3'])
+            ->andReturn('string');
+        $this->mockTypeInference->shouldReceive('getConstraintsFromRules')
+            ->once()
+            ->with(['required', 'string', 'min:3'])
+            ->andReturn(['minLength' => 3]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'get');
+
+        $this->assertCount(1, $parameters);
+        $this->assertEquals('search', $parameters[0]->name);
+        $this->assertTrue($parameters[0]->required);
+        $this->assertEquals('Search term', $parameters[0]->description);
+        $this->assertEquals(3, $parameters[0]->schema->minLength);
+    }
+
+    #[Test]
     public function it_does_not_add_validation_query_parameters_when_http_method_is_null(): void
     {
         $route = [
