@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.2) - 2026-02-16
+
+### 🐛 Bug Fixes
+
+- improve fractal transformer type inference for issue 465
+
+### 📚 Documentation
+
+- update CHANGELOG.md for v1.1.1
+
 ## [1.1.1](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.1) - 2026-02-16
 
 ### ✅ Tests
