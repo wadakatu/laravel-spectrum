@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.3) - 2026-02-16
+
+### 🐛 Bug Fixes
+
+- infer fractal static method return types
+
+### 📚 Documentation
+
+- update CHANGELOG.md for v1.1.2
+
 ## [1.1.2](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.2) - 2026-02-16
 
 ### 🐛 Bug Fixes
