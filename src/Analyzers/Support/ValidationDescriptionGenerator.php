@@ -12,6 +12,22 @@ use LaravelSpectrum\Support\FileSizeFormatter;
  * Generates human-readable descriptions for validation fields.
  *
  * Extracted from FormRequestAnalyzer to improve single responsibility.
+ *
+ * @phpstan-type ValidationRule string|array<int, mixed>|object
+ * @phpstan-type ValidationRuleList array<int, ValidationRule>
+ * @phpstan-type UseStatements array<string, string>
+ * @phpstan-type FileInfo array{
+ *     mimes?: array<int, string>,
+ *     max_size?: int|null,
+ *     min_size?: int|null,
+ *     dimensions?: array{
+ *         min_width?: int|float|string,
+ *         min_height?: int|float|string,
+ *         max_width?: int|float|string,
+ *         max_height?: int|float|string,
+ *         ratio?: int|float|string
+ *     }
+ * }
  */
 class ValidationDescriptionGenerator
 {
@@ -26,9 +42,9 @@ class ValidationDescriptionGenerator
      * Generate description for a field based on its validation rules.
      *
      * @param  string  $field  The field name
-     * @param  array  $rules  The validation rules
+     * @param  ValidationRuleList  $rules  The validation rules
      * @param  string|null  $namespace  The namespace for enum resolution
-     * @param  array  $useStatements  Use statements for enum resolution
+     * @param  UseStatements  $useStatements  Use statements for enum resolution
      */
     public function generateDescription(string $field, array $rules, ?string $namespace = null, array $useStatements = []): string
     {
@@ -61,6 +77,8 @@ class ValidationDescriptionGenerator
      *
      * This is a convenience method that delegates to generateFileDescriptionWithAttribute
      * with a null attribute, using the formatted field name as the description base.
+     *
+     * @param  FileInfo  $fileInfo
      */
     public function generateFileDescription(string $field, array $fileInfo): string
     {
@@ -69,6 +87,8 @@ class ValidationDescriptionGenerator
 
     /**
      * Generate description for a file field with custom attribute name.
+     *
+     * @param  FileInfo  $fileInfo
      */
     public function generateFileDescriptionWithAttribute(string $field, array $fileInfo, ?string $attribute = null): string
     {
@@ -80,6 +100,8 @@ class ValidationDescriptionGenerator
 
     /**
      * Generate description for a conditional field.
+     *
+     * @param  array<string, mixed>  $fieldInfo
      */
     public function generateConditionalDescription(string $field, array $fieldInfo): string
     {
@@ -179,7 +201,8 @@ class ValidationDescriptionGenerator
     /**
      * Build file info parts for description.
      *
-     * @return array<string>
+     * @param  FileInfo  $fileInfo
+     * @return array<int, string>
      */
     protected function buildFileInfoParts(array $fileInfo): array
     {

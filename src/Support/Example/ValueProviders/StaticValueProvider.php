@@ -11,6 +11,9 @@ use LaravelSpectrum\Support\Example\FieldPatternRegistry;
  * Strategy that generates example values using static predefined values.
  *
  * Useful for deterministic output and testing scenarios.
+ *
+ * @phpstan-type ExampleConfig array<string, mixed>
+ * @phpstan-type ConstraintConfig array<string, mixed>
  */
 final class StaticValueProvider implements ExampleGenerationStrategy
 {
@@ -20,6 +23,8 @@ final class StaticValueProvider implements ExampleGenerationStrategy
 
     /**
      * {@inheritDoc}
+     *
+     * @param  ExampleConfig  $config
      */
     public function generate(string $fieldName, array $config): mixed
     {
@@ -65,6 +70,8 @@ final class StaticValueProvider implements ExampleGenerationStrategy
 
     /**
      * {@inheritDoc}
+     *
+     * @param  ConstraintConfig  $constraints
      */
     public function generateByType(string $type, array $constraints = []): mixed
     {
@@ -80,6 +87,8 @@ final class StaticValueProvider implements ExampleGenerationStrategy
 
     /**
      * Generate integer with constraints.
+     *
+     * @param  ConstraintConfig  $constraints
      */
     private function generateInteger(array $constraints): int
     {
@@ -95,6 +104,8 @@ final class StaticValueProvider implements ExampleGenerationStrategy
 
     /**
      * Generate number (float) with constraints.
+     *
+     * @param  ConstraintConfig  $constraints
      */
     private function generateNumber(array $constraints): float
     {
