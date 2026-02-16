@@ -7,8 +7,13 @@ namespace LaravelSpectrum\Services;
 use Symfony\Component\Finder\Finder;
 use Workerman\Timer;
 
+/**
+ * @phpstan-type FileHashes array<string, string>
+ * @phpstan-type WatchPaths array<int, string>
+ */
 class FileWatcher
 {
+    /** @var FileHashes */
     private array $fileHashes = [];
 
     private float $pollInterval;
@@ -18,6 +23,10 @@ class FileWatcher
         $this->pollInterval = $pollInterval;
     }
 
+    /**
+     * @param  WatchPaths  $paths
+     * @param  callable(string, string):void  $callback
+     */
     public function watch(array $paths, callable $callback): void
     {
         // Initialize file hashes
@@ -29,6 +38,10 @@ class FileWatcher
         });
     }
 
+    /**
+     * @param  WatchPaths  $paths
+     * @param  callable(string, string):void  $callback
+     */
     private function checkForChanges(array $paths, callable $callback): void
     {
         $currentHashes = $this->getCurrentFileHashes($paths);
@@ -58,13 +71,20 @@ class FileWatcher
         }
     }
 
+    /**
+     * @param  WatchPaths  $paths
+     * @return FileHashes
+     */
     private function getCurrentFileHashes(array $paths): array
     {
         $hashes = [];
 
         foreach ($paths as $path) {
             if (is_file($path)) {
-                $hashes[realpath($path)] = $this->hashFile($path);
+                $realPath = realpath($path);
+                if ($realPath !== false) {
+                    $hashes[$realPath] = $this->hashFile($path);
+                }
             } elseif (is_dir($path)) {
                 $finder = new Finder;
                 $finder->files()
@@ -74,7 +94,10 @@ class FileWatcher
                     ->notPath('node_modules');
 
                 foreach ($finder as $file) {
-                    $hashes[$file->getRealPath()] = $this->hashFile($file->getRealPath());
+                    $realPath = $file->getRealPath();
+                    if ($realPath !== false) {
+                        $hashes[$realPath] = $this->hashFile($realPath);
+                    }
                 }
             }
         }
@@ -91,6 +114,9 @@ class FileWatcher
         return md5_file($path).':'.filemtime($path);
     }
 
+    /**
+     * @param  WatchPaths  $paths
+     */
     private function initializeFileHashes(array $paths): void
     {
         $this->fileHashes = $this->getCurrentFileHashes($paths);
