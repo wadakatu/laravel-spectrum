@@ -126,7 +126,7 @@ class ControllerAnalyzer implements HasErrors, MethodAnalyzer
         $inlineValidation = null;
         $methodNode = $this->getMethodNode($reflection, $method);
         if ($methodNode) {
-            $inlineValidation = $this->inlineValidationAnalyzer->analyze($methodNode);
+            $inlineValidation = $this->inlineValidationAnalyzer->analyze($methodNode, $reflection);
         }
 
         // メソッドのソースコードからResourceを検出

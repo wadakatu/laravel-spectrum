@@ -14,6 +14,7 @@ use LaravelSpectrum\Analyzers\QueryParameterAnalyzer;
 use LaravelSpectrum\Analyzers\ResponseAnalyzer;
 use LaravelSpectrum\Analyzers\ResponseLinkAnalyzer;
 use LaravelSpectrum\Analyzers\Support\AstHelper;
+use LaravelSpectrum\Tests\Fixtures\Requests\TestStaticValidationRequest;
 use LaravelSpectrum\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -105,6 +106,34 @@ class ControllerAnalyzerTest extends TestCase
             is_array($result['inlineValidation']) || is_null($result['inlineValidation']),
             'inlineValidation should be either an array or null'
         );
+    }
+
+    #[Test]
+    public function it_detects_custom_static_validation_call_chained_to_fails(): void
+    {
+        $result = $this->analyzer->analyze(TestCustomStaticValidationController::class, 'store');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('inlineValidation', $result);
+        $this->assertNotNull($result['inlineValidation']);
+        $this->assertArrayHasKey('rules', $result['inlineValidation']);
+        $this->assertSame('required|string|max:100', $result['inlineValidation']['rules']['country_code']);
+        $this->assertSame('required|string', $result['inlineValidation']['rules']['payment_method_id']);
+        $this->assertSame('nullable|string|max:100', $result['inlineValidation']['rules']['city']);
+    }
+
+    #[Test]
+    public function it_detects_custom_static_validation_assigned_to_variable(): void
+    {
+        $result = $this->analyzer->analyze(TestCustomStaticValidationController::class, 'storeUsingVariable');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('inlineValidation', $result);
+        $this->assertNotNull($result['inlineValidation']);
+        $this->assertArrayHasKey('rules', $result['inlineValidation']);
+        $this->assertArrayHasKey('country_code', $result['inlineValidation']['rules']);
+        $this->assertArrayHasKey('payment_method_id', $result['inlineValidation']['rules']);
+        $this->assertArrayHasKey('city', $result['inlineValidation']['rules']);
     }
 
     #[Test]
@@ -376,6 +405,29 @@ class TestInlineValidationController
         ]);
 
         return response()->json($validated);
+    }
+}
+
+class TestCustomStaticValidationController
+{
+    public function store(\Illuminate\Http\Request $request)
+    {
+        if (TestStaticValidationRequest::validation($request)->fails()) {
+            return response()->json(['message' => 'validation failed'], 422);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function storeUsingVariable(\Illuminate\Http\Request $request)
+    {
+        $validator = TestStaticValidationRequest::validation($request);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'validation failed'], 422);
+        }
+
+        return response()->json(['ok' => true]);
     }
 }
 
