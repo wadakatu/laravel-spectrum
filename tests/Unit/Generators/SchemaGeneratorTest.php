@@ -172,6 +172,45 @@ class SchemaGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_preserves_fractal_array_item_definitions(): void
+    {
+        $fractalData = [
+            'type' => 'fractal',
+            'properties' => [
+                'project_users' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer'],
+                            'email' => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+                'notification_codes' => [
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                ],
+            ],
+            'availableIncludes' => [],
+            'defaultIncludes' => [],
+        ];
+
+        $schema = $this->generator->generateFromFractal($fractalData);
+        $dataProperties = $schema['properties']['data']['properties'];
+
+        $this->assertSame('array', $dataProperties['project_users']['type']);
+        $this->assertArrayHasKey('items', $dataProperties['project_users']);
+        $this->assertSame('object', $dataProperties['project_users']['items']['type']);
+        $this->assertArrayHasKey('id', $dataProperties['project_users']['items']['properties']);
+        $this->assertSame('integer', $dataProperties['project_users']['items']['properties']['id']['type']);
+
+        $this->assertSame('array', $dataProperties['notification_codes']['type']);
+        $this->assertArrayHasKey('items', $dataProperties['notification_codes']);
+        $this->assertSame('string', $dataProperties['notification_codes']['items']['type']);
+    }
+
+    #[Test]
     public function it_generates_schema_from_resource_without_example_keys()
     {
         $resourceInfo = ResourceInfo::fromArray([

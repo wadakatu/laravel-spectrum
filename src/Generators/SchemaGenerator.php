@@ -982,20 +982,34 @@ class SchemaGenerator
         ];
 
         foreach ($properties as $key => $property) {
-            // ネストしたプロパティの処理
-            if (isset($property['properties'])) {
-                $propSchema = $this->convertFractalPropertiesToSchema($property['properties']);
-                $propSchema['type'] = 'object';
-            } else {
-                $propSchema = $this->propertyMapper->mapType($property);
-                $propSchema = $this->propertyMapper->mapSimpleProperties($property, $propSchema);
-                $propSchema = $this->propertyMapper->mapBooleanProperties($property, $propSchema);
-            }
-
-            $schema['properties'][$key] = $propSchema;
+            $schema['properties'][$key] = $this->convertFractalPropertyToSchema($property);
         }
 
         return $schema;
+    }
+
+    /**
+     * @param  array<string, mixed>  $property
+     * @return array<string, mixed>
+     */
+    private function convertFractalPropertyToSchema(array $property): array
+    {
+        if (isset($property['properties']) && is_array($property['properties'])) {
+            $propSchema = $this->convertFractalPropertiesToSchema($property['properties']);
+            $propSchema['type'] = 'object';
+        } else {
+            $propSchema = $this->propertyMapper->mapType($property);
+            $propSchema = $this->propertyMapper->mapSimpleProperties($property, $propSchema);
+            $propSchema = $this->propertyMapper->mapBooleanProperties($property, $propSchema);
+        }
+
+        if (($propSchema['type'] ?? null) === 'array'
+            && isset($property['items'])
+            && is_array($property['items'])) {
+            $propSchema['items'] = $this->convertFractalPropertyToSchema($property['items']);
+        }
+
+        return $propSchema;
     }
 
     /**
