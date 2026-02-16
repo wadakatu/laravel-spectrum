@@ -17,6 +17,11 @@ use LaravelSpectrum\DTO\OpenApiRequestBody;
  * - Inline controller validation
  * - Conditional validation rules
  * - File upload parameters
+ *
+ * @phpstan-type RouteInfo array<string, mixed>
+ * @phpstan-type RequestParameter array<string, mixed>
+ * @phpstan-type RequestParameters array<int, RequestParameter>
+ * @phpstan-type ConditionalRules array<string, mixed>
  */
 class RequestBodyGenerator
 {
@@ -30,7 +35,7 @@ class RequestBodyGenerator
      * Generate request body for an API operation.
      *
      * @param  ControllerInfo  $controllerInfo  Controller analysis result
-     * @param  array  $route  Route information
+     * @param  RouteInfo  $route  Route information
      * @return OpenApiRequestBody|null Request body DTO or null if no validation
      */
     public function generate(ControllerInfo $controllerInfo, array $route): ?OpenApiRequestBody
@@ -89,7 +94,7 @@ class RequestBodyGenerator
     /**
      * Check if parameters contain file uploads.
      *
-     * @param  array  $parameters  Request parameters
+     * @param  RequestParameters  $parameters  Request parameters
      * @return bool True if file upload parameters exist
      */
     protected function hasFileUploadParameters(array $parameters): bool
@@ -106,7 +111,7 @@ class RequestBodyGenerator
     /**
      * Generate request body for file upload endpoints.
      *
-     * @param  array  $parameters  Request parameters
+     * @param  RequestParameters  $parameters  Request parameters
      * @return OpenApiRequestBody|null Request body with multipart/form-data content
      */
     protected function generateFileUploadRequestBody(array $parameters): ?OpenApiRequestBody
@@ -129,9 +134,9 @@ class RequestBodyGenerator
     /**
      * Generate schema from parameters, handling conditional rules.
      *
-     * @param  array  $parameters  Request parameters
-     * @param  array|null  $conditionalRules  Conditional validation rules
-     * @return array Generated schema
+     * @param  RequestParameters  $parameters  Request parameters
+     * @param  ConditionalRules|null  $conditionalRules  Conditional validation rules
+     * @return array<string, mixed> Generated schema
      */
     protected function generateSchema(array $parameters, ?array $conditionalRules): array
     {
@@ -145,7 +150,7 @@ class RequestBodyGenerator
     /**
      * Generate description for file upload endpoints.
      *
-     * @param  array  $parameters  Request parameters
+     * @param  RequestParameters  $parameters  Request parameters
      * @return string Description text
      */
     protected function generateFileUploadDescription(array $parameters): string

@@ -199,48 +199,6 @@ parameters:
 			path: src/Generators/ParameterGenerator.php
 
 		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generate\(\) has parameter \$route with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateFileUploadDescription\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateFileUploadRequestBody\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateSchema\(\) has parameter \$conditionalRules with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateSchema\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:generateSchema\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Generators\\RequestBodyGenerator\:\:hasFileUploadParameters\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Generators/RequestBodyGenerator.php
-
-		-
 			message: '#^Method LaravelSpectrum\\Generators\\SchemaGenerator\:\:applyRuleConstraints\(\) has parameter \$property with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -341,48 +299,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Support/EnumExtractor.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:executeMethodChain\(\) has parameter \$args with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generate\(\) has parameter \$config with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateByType\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateInteger\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateNumber\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:generateString\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
-
-		-
-			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\FakerValueProvider\:\:handleUnknownType\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Support/Example/ValueProviders/FakerValueProvider.php
 
 		-
 			message: '#^Method LaravelSpectrum\\Support\\Example\\ValueProviders\\StaticValueProvider\:\:generate\(\) has parameter \$config with no value type specified in iterable type array\.$#'
