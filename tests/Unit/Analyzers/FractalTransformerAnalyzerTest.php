@@ -10,6 +10,7 @@ use LaravelSpectrum\Tests\Fixtures\Transformers\ExampleGenerationTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\GetterBasedUserTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue458ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue465ProjectTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\Issue467ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MinimalTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MissingIncludeMethodTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
@@ -412,5 +413,19 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertSame('array', $result['properties']['notification_codes']['type']);
         $this->assertArrayHasKey('items', $result['properties']['notification_codes']);
         $this->assertSame('string', $result['properties']['notification_codes']['items']['type']);
+    }
+
+    #[Test]
+    public function it_infers_issue_467_types_for_static_method_calls_returning_array_map_of_objects(): void
+    {
+        $result = $this->analyzer->analyze(Issue467ProjectTransformer::class);
+
+        $this->assertSame('array', $result['properties']['project_users']['type']);
+        $this->assertArrayHasKey('items', $result['properties']['project_users']);
+        $this->assertSame('object', $result['properties']['project_users']['items']['type']);
+        $this->assertArrayHasKey('properties', $result['properties']['project_users']['items']);
+        $this->assertSame('integer', $result['properties']['project_users']['items']['properties']['id']['type']);
+        $this->assertSame('string', $result['properties']['project_users']['items']['properties']['email']['type']);
+        $this->assertSame('boolean', $result['properties']['project_users']['items']['properties']['is_invited']['type']);
     }
 }
