@@ -354,6 +354,13 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             }
         }
 
+        if ($class !== null && $expression instanceof Node\Expr\StaticCall) {
+            $staticCallType = $this->inferTypeFromTransformerStaticCall($expression, $class, $methodStack, $modelPropertyTypes);
+            if ($staticCallType !== null) {
+                return $staticCallType;
+            }
+        }
+
         if ($expression instanceof Node\Expr\FuncCall) {
             $arrayMapType = $this->inferTypeFromArrayMapCall(
                 $expression,
@@ -403,6 +410,59 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         }
 
         $methodName = $methodCall->name->toString();
+        if (isset($methodStack[$methodName])) {
+            return null;
+        }
+
+        $method = $this->astHelper->findMethodNode($class, $methodName);
+        if (! $method) {
+            return null;
+        }
+
+        $returnExpression = $this->extractMethodReturnExpression($method);
+        if (! $returnExpression) {
+            return null;
+        }
+
+        $nextStack = $methodStack;
+        $nextStack[$methodName] = true;
+
+        $methodVariableTypeHints = $this->extractMethodVariableTypeHints($method, $class, $nextStack, $modelPropertyTypes);
+
+        return $this->inferTypeFromExpression(
+            $returnExpression,
+            $class,
+            $nextStack,
+            $modelPropertyTypes,
+            $methodVariableTypeHints
+        );
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}|null
+     */
+    protected function inferTypeFromTransformerStaticCall(Node\Expr\StaticCall $staticCall, Node\Stmt\Class_ $class, array $methodStack, array $modelPropertyTypes = []): ?array
+    {
+        if (! $staticCall->class instanceof Node\Name) {
+            return null;
+        }
+
+        $isSameClassReference = in_array(strtolower($staticCall->class->toString()), ['self', 'static'], true);
+        if (! $isSameClassReference && $class->name instanceof Node\Identifier) {
+            $isSameClassReference = strtolower($staticCall->class->getLast()) === strtolower($class->name->toString());
+        }
+
+        if (! $isSameClassReference) {
+            return null;
+        }
+
+        if (! $staticCall->name instanceof Node\Identifier) {
+            return null;
+        }
+
+        $methodName = $staticCall->name->toString();
         if (isset($methodStack[$methodName])) {
             return null;
         }
