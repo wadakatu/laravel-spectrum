@@ -56,7 +56,7 @@ class ParameterGenerator
             $parameters = $this->addValidationQueryParameters($parameters, $controllerInfo);
         }
 
-        return $parameters;
+        return $this->deduplicateParameters($parameters);
     }
 
     /**
@@ -333,6 +333,71 @@ class ParameterGenerator
         }
 
         return $parameters;
+    }
+
+    /**
+     * Deduplicate parameters by name+in and merge metadata from duplicate definitions.
+     *
+     * @param  array<int, OpenApiParameter>  $parameters
+     * @return array<int, OpenApiParameter>
+     */
+    private function deduplicateParameters(array $parameters): array
+    {
+        $result = [];
+        $indexByKey = [];
+
+        foreach ($parameters as $parameter) {
+            $key = sprintf('%s:%s', $parameter->in, $parameter->name);
+
+            if (! array_key_exists($key, $indexByKey)) {
+                $indexByKey[$key] = count($result);
+                $result[] = $parameter;
+
+                continue;
+            }
+
+            $index = $indexByKey[$key];
+            $result[$index] = $this->mergeParameters($result[$index], $parameter);
+        }
+
+        return $result;
+    }
+
+    private function mergeParameters(OpenApiParameter $base, OpenApiParameter $incoming): OpenApiParameter
+    {
+        return new OpenApiParameter(
+            name: $base->name,
+            in: $base->in,
+            required: $base->required || $incoming->required,
+            schema: $this->mergeSchemas($base->schema, $incoming->schema),
+            description: $base->description ?? $incoming->description,
+            style: $base->style ?? $incoming->style,
+            explode: $base->explode ?? $incoming->explode,
+            deprecated: $base->deprecated ?? $incoming->deprecated,
+            allowEmptyValue: $base->allowEmptyValue ?? $incoming->allowEmptyValue,
+        );
+    }
+
+    private function mergeSchemas(OpenApiSchema $base, OpenApiSchema $incoming): OpenApiSchema
+    {
+        $type = $base->type;
+        if ($type === 'string' && $incoming->type !== 'string') {
+            $type = $incoming->type;
+        }
+
+        return new OpenApiSchema(
+            type: $type,
+            format: $base->format ?? $incoming->format,
+            default: $base->default ?? $incoming->default,
+            enum: $base->enum ?? $incoming->enum,
+            minimum: $base->minimum ?? $incoming->minimum,
+            maximum: $base->maximum ?? $incoming->maximum,
+            minLength: $base->minLength ?? $incoming->minLength,
+            maxLength: $base->maxLength ?? $incoming->maxLength,
+            pattern: $base->pattern ?? $incoming->pattern,
+            items: $base->items ?? $incoming->items,
+            nullable: $base->nullable ?? $incoming->nullable,
+        );
     }
 
     /**
