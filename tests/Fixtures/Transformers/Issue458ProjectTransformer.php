@@ -22,6 +22,13 @@ class Issue458ProjectTransformer extends TransformerAbstract
             'current_plan' => $this->currentPlan($project),
             'next_plan' => $this->nextPlan($project),
             'project_users' => $this->projectUsers($project),
+            'inline_project_users' => [
+                [
+                    'id' => (int) $project->owner_id,
+                    'name' => 'InlineOwner',
+                ],
+            ],
+            'external_plan' => $project->currentPlan(),
             'notification_codes' => $project->notification_codes,
             'is_owner' => $userId === $project->user_id,
             'verified' => $project->verified,

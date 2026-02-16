@@ -389,6 +389,9 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertSame('object', $result['properties']['current_plan']['properties']['discount']['type']);
         $this->assertSame('object', $result['properties']['next_plan']['type']);
         $this->assertSame('array', $result['properties']['project_users']['type']);
+        $this->assertSame('array', $result['properties']['inline_project_users']['type']);
+        $this->assertArrayNotHasKey('properties', $result['properties']['inline_project_users']);
+        $this->assertSame('string', $result['properties']['external_plan']['type']);
         $this->assertSame('array', $result['properties']['notification_codes']['type']);
         $this->assertSame('boolean', $result['properties']['is_owner']['type']);
         $this->assertSame('integer', $result['properties']['verified']['type']);
