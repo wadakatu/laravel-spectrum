@@ -9,9 +9,18 @@ use LaravelSpectrum\DTO\OpenApiOperation;
 /**
  * @phpstan-import-type OpenApiOperationType from OpenApiOperation
  *
+ * @phpstan-type ValidationErrors array<string, array<int, string>>
+ * @phpstan-type OpenApiSchema array<string, mixed>
+ * @phpstan-type ParameterSpec array{
+ *     name: string,
+ *     in: string,
+ *     required?: bool,
+ *     schema?: OpenApiSchema
+ * }
+ * @phpstan-type FieldValue string|int|float|bool|array<mixed>|null
  * @phpstan-type ValidationResult array{
  *     valid: bool,
- *     errors: array<string, array<int, string>>
+ *     errors: ValidationErrors
  * }
  */
 class ValidationSimulator
@@ -63,6 +72,11 @@ class ValidationSimulator
         ];
     }
 
+    /**
+     * @param  OpenApiSchema  $requestBodySpec
+     * @param  array<string, mixed>  $data
+     * @return ValidationErrors
+     */
     private function validateRequestBody(array $requestBodySpec, array $data): array
     {
         $errors = [];
@@ -97,6 +111,11 @@ class ValidationSimulator
         return $errors;
     }
 
+    /**
+     * @param  FieldValue  $value
+     * @param  OpenApiSchema  $spec
+     * @return array<int, string>
+     */
     private function validateField(string $field, string|int|float|bool|array|null $value, array $spec): array
     {
         $errors = [];
@@ -169,6 +188,12 @@ class ValidationSimulator
         return $errors;
     }
 
+    /**
+     * @param  ParameterSpec  $parameter
+     * @param  array<string, string>  $queryParams
+     * @param  array<string, string>  $pathParams
+     * @return ValidationErrors
+     */
     private function validateParameter(array $parameter, array $queryParams, array $pathParams): array
     {
         $errors = [];

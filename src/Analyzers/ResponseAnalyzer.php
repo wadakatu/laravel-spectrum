@@ -83,6 +83,9 @@ class ResponseAnalyzer
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function analyzeReturnStatement(Node\Stmt\Return_ $returnStmt, string $controllerClass): array
     {
         $expr = $returnStmt->expr;
@@ -144,6 +147,9 @@ class ResponseAnalyzer
             && $expr->name->toString() === 'json';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function analyzeResponseJson(Node\Expr $expr): array
     {
         // response()->json()の引数を解析
@@ -168,6 +174,9 @@ class ResponseAnalyzer
         return $expr instanceof Node\Expr\Array_;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function analyzeArrayReturn(Node\Expr $expr): array
     {
         return [
@@ -176,6 +185,9 @@ class ResponseAnalyzer
         ];
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
     private function extractArrayStructure(Node $node): array
     {
         $structure = [];
@@ -220,6 +232,9 @@ class ResponseAnalyzer
         return false;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function analyzeEloquentModel(Node\Expr $expr, string $controllerClass): array
     {
         if ($expr instanceof Node\Expr\StaticCall && $expr->class instanceof Node\Name) {
@@ -263,6 +278,9 @@ class ResponseAnalyzer
         return false;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function analyzeCollection(Node\Expr $expr, string $controllerClass): array
     {
         return $this->collectionAnalyzer->analyzeCollectionChain($expr);
@@ -303,6 +321,10 @@ class ResponseAnalyzer
         return '';
     }
 
+    /**
+     * @param  array<int, array<string, mixed>>  $responses
+     * @return array<string, mixed>
+     */
     private function mergeResponses(array $responses): array
     {
         // 単純な実装：最初の非unknownレスポンスを返す

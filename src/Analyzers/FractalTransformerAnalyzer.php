@@ -146,6 +146,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * transform()メソッドからプロパティを抽出
+     *
+     * @return array<string, array<string, mixed>>
      */
     protected function extractTransformMethod(Node\Stmt\Class_ $class): array
     {
@@ -201,6 +203,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * 配列ノードを解析
+     *
+     * @return array<string, array<string, mixed>>
      */
     protected function parseArrayNode(Node\Expr\Array_ $array): array
     {
@@ -358,6 +362,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * プロパティ名から例を生成
+     *
+     * @return int|bool|array<int, mixed>|\stdClass|string
      */
     protected function generateExampleFromNode(string $key, Node $node, ?string $resolvedType = null): int|bool|array|\stdClass|string
     {
@@ -416,6 +422,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * availableIncludesプロパティを抽出
+     *
+     * @return array<string, array<string, mixed>>
      */
     protected function extractAvailableIncludes(Node\Stmt\Class_ $class): array
     {
@@ -439,6 +447,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * defaultIncludesプロパティを抽出
+     *
+     * @return array<int, string>
      */
     protected function extractDefaultIncludes(Node\Stmt\Class_ $class): array
     {
@@ -485,6 +495,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * include{Name}メソッドを解析
+     *
+     * @return array<string, mixed>
      */
     protected function analyzeIncludeMethod(Node\Stmt\Class_ $class, string $includeName): array
     {
@@ -507,6 +519,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * includeメソッドの戻り値を解析
+     *
+     * @return array<string, mixed>
      */
     protected function analyzeIncludeReturnType(Node\Stmt\ClassMethod $method): array
     {
@@ -553,6 +567,8 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
     /**
      * メタデータを抽出（将来の拡張用）
+     *
+     * @return array<string, mixed>
      */
     protected function extractMetaData(Node\Stmt\Class_ $class): array
     {
