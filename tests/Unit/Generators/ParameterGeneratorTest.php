@@ -710,6 +710,68 @@ class ParameterGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_add_non_query_source_parameters_for_post_request(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['POST'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'queryParameters' => [
+                [
+                    'name' => 'name',
+                    'type' => 'string',
+                    'required' => false,
+                    'source' => 'input',
+                ],
+                [
+                    'name' => 'is_beta_user',
+                    'type' => 'boolean',
+                    'required' => false,
+                    'source' => 'boolean',
+                ],
+            ],
+        ]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'post');
+
+        $this->assertCount(0, $parameters);
+    }
+
+    #[Test]
+    public function it_keeps_explicit_query_source_parameters_for_post_request(): void
+    {
+        $route = [
+            'parameters' => [],
+            'methods' => ['POST'],
+        ];
+
+        $controllerInfo = ControllerInfo::fromArray([
+            'queryParameters' => [
+                [
+                    'name' => 'via_query',
+                    'type' => 'string',
+                    'required' => false,
+                    'source' => 'query',
+                ],
+                [
+                    'name' => 'via_input',
+                    'type' => 'string',
+                    'required' => false,
+                    'source' => 'input',
+                ],
+            ],
+        ]);
+
+        $parameters = $this->generator->generate($route, $controllerInfo, 'post');
+
+        $this->assertCount(1, $parameters);
+        $this->assertEquals('via_query', $parameters[0]->name);
+        $this->assertEquals('query', $parameters[0]->in);
+    }
+
+    #[Test]
     public function it_converts_nested_validation_rules_to_bracket_notation_for_get(): void
     {
         $route = [

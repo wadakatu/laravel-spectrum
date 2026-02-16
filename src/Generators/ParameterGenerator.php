@@ -46,7 +46,7 @@ class ParameterGenerator
         $parameters = $this->addEnumParameters($parameters, $controllerInfo);
 
         // Add query parameters
-        $parameters = $this->addQueryParameters($parameters, $controllerInfo);
+        $parameters = $this->addQueryParameters($parameters, $controllerInfo, $httpMethod);
 
         // Add header parameters
         $parameters = $this->addHeaderParameters($parameters, $controllerInfo);
@@ -122,15 +122,20 @@ class ParameterGenerator
      *
      * @param  array<int, OpenApiParameter>  $parameters  Existing parameters
      * @param  ControllerInfo  $controllerInfo  Controller analysis result
+     * @param  string|null  $httpMethod  HTTP method (get, post, put, patch, delete)
      * @return array<int, OpenApiParameter> Updated parameters
      */
-    protected function addQueryParameters(array $parameters, ControllerInfo $controllerInfo): array
+    protected function addQueryParameters(array $parameters, ControllerInfo $controllerInfo, ?string $httpMethod = null): array
     {
         if (! $controllerInfo->hasQueryParameters()) {
             return $parameters;
         }
 
         foreach ($controllerInfo->queryParameters as $queryParamDTO) {
+            if (! $this->shouldIncludeAsQueryParameter($queryParamDTO, $httpMethod)) {
+                continue;
+            }
+
             $queryParam = $queryParamDTO->toArray();
             $type = $queryParam['type'] ?? 'string';
 
@@ -203,6 +208,22 @@ class ParameterGenerator
         }
 
         return $parameters;
+    }
+
+    /**
+     * Non-GET request methods should only keep parameters explicitly accessed via query().
+     */
+    protected function shouldIncludeAsQueryParameter(QueryParameterInfo $queryParam, ?string $httpMethod): bool
+    {
+        if ($httpMethod === null) {
+            return true;
+        }
+
+        if (! in_array(strtolower($httpMethod), ['post', 'put', 'patch', 'delete'], true)) {
+            return true;
+        }
+
+        return $queryParam->source === 'query';
     }
 
     /**

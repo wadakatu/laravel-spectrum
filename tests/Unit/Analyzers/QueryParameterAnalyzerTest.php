@@ -127,9 +127,11 @@ class QueryParameterAnalyzerTest extends TestCase
         $this->assertCount(2, $result['parameters']);
 
         $this->assertEquals('required_param', $result['parameters'][0]['name']);
+        $this->assertFalse($result['parameters'][0]['required']);
         $this->assertTrue($result['parameters'][0]['context']['has_check']);
 
         $this->assertEquals('optional_param', $result['parameters'][1]['name']);
+        $this->assertFalse($result['parameters'][1]['required']);
         $this->assertTrue($result['parameters'][1]['context']['filled_check']);
     }
 
