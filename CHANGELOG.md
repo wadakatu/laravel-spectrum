@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.1) - 2026-02-16
+
+### ✅ Tests
+
+- strengthen mutation coverage for parameter generator
+- strengthen fractal analyzer mutation coverage
+- cover non-standard api prefix route patterns
+
+### 🐛 Bug Fixes
+
+- deduplicate query parameters in parameter generator
+- avoid query params from request input on non-get methods
+- detect static validation() request pattern
+- infer fractal nested field types from transformer methods
+
+### 📚 Documentation
+
+- update CHANGELOG.md for v1.1.0
+
 ## [1.1.0](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.0) - 2026-02-16
 
 ### ♻️ Code Refactoring
