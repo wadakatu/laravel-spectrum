@@ -16,6 +16,11 @@ use LaravelSpectrum\Support\TypeInference;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
+use PhpParser\PrettyPrinter;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * @phpstan-type ValidationRulesArray array<string, string|array<int, string>>
@@ -44,22 +49,28 @@ class InlineValidationAnalyzer implements HasErrors
 
     protected FileUploadAnalyzer $fileUploadAnalyzer;
 
+    protected Parser $parser;
+
+    protected PrettyPrinter\Standard $printer;
+
     public function __construct(TypeInference $typeInference, ?EnumAnalyzer $enumAnalyzer = null, ?FileUploadAnalyzer $fileUploadAnalyzer = null, ?ErrorCollector $errorCollector = null)
     {
         $this->initializeErrorCollector($errorCollector);
         $this->typeInference = $typeInference;
         $this->enumAnalyzer = $enumAnalyzer ?? new EnumAnalyzer;
         $this->fileUploadAnalyzer = $fileUploadAnalyzer ?? new FileUploadAnalyzer;
+        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $this->printer = new PrettyPrinter\Standard;
     }
 
     /**
      * メソッド内のインラインバリデーションを解析
+     *
+     * @param  ReflectionClass<object>|null  $contextClass
      */
-    public function analyze(Node\Stmt\ClassMethod $method): ?InlineValidationInfo
+    public function analyze(Node\Stmt\ClassMethod $method, ?ReflectionClass $contextClass = null): ?InlineValidationInfo
     {
         try {
-            $validations = [];
-
             $visitor = new class extends NodeVisitorAbstract
             {
                 /** @var array<string, mixed> */
@@ -503,6 +514,10 @@ class InlineValidationAnalyzer implements HasErrors
             $traverser->addVisitor($visitor);
             $traverser->traverse([$method]);
 
+            foreach ($this->extractCustomStaticValidationEntries($method, $contextClass) as $entry) {
+                $visitor->validations[] = $entry;
+            }
+
             // 複数のバリデーションがある場合はマージ
             return $this->mergeValidations($visitor->validations);
         } catch (\Exception $e) {
@@ -512,6 +527,410 @@ class InlineValidationAnalyzer implements HasErrors
 
             return null;
         }
+    }
+
+    /**
+     * @param  ReflectionClass<object>|null  $contextClass
+     * @return array<int, ValidationEntry>
+     */
+    protected function extractCustomStaticValidationEntries(Node\Stmt\ClassMethod $method, ?ReflectionClass $contextClass): array
+    {
+        $visitor = new class extends NodeVisitorAbstract
+        {
+            /** @var array<int, string> */
+            public array $calledClasses = [];
+
+            public function enterNode(Node $node): null
+            {
+                if (! $node instanceof Node\Expr\StaticCall) {
+                    return null;
+                }
+
+                if (! $node->class instanceof Node\Name || ! $node->name instanceof Node\Identifier) {
+                    return null;
+                }
+
+                if ($node->name->toString() !== 'validation') {
+                    return null;
+                }
+
+                $this->calledClasses[] = $node->class->toString();
+
+                return null;
+            }
+        };
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse([$method]);
+
+        $entries = [];
+        $processedClasses = [];
+
+        foreach ($visitor->calledClasses as $calledClass) {
+            $resolvedClass = $this->resolveValidationClassName($calledClass, $contextClass);
+            if ($resolvedClass === null || in_array($resolvedClass, $processedClasses, true)) {
+                continue;
+            }
+
+            $processedClasses[] = $resolvedClass;
+            $entry = $this->extractValidationEntryFromClass($resolvedClass);
+
+            if ($entry !== null) {
+                $entries[] = $entry;
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param  ReflectionClass<object>|null  $contextClass
+     */
+    protected function resolveValidationClassName(string $className, ?ReflectionClass $contextClass): ?string
+    {
+        $normalizedClassName = ltrim($className, '\\');
+        $lowerClassName = strtolower($normalizedClassName);
+
+        if (in_array($lowerClassName, ['self', 'static'], true)) {
+            return $contextClass?->getName();
+        }
+
+        if ($lowerClassName === 'parent') {
+            return $contextClass?->getParentClass()?->getName() ?: null;
+        }
+
+        if (class_exists($normalizedClassName)) {
+            return $normalizedClassName;
+        }
+
+        if ($contextClass === null) {
+            return null;
+        }
+
+        $namespace = $contextClass->getNamespaceName();
+        if ($namespace !== '') {
+            $candidate = $namespace.'\\'.$normalizedClassName;
+            if (class_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        $useStatements = $this->extractUseStatements($contextClass);
+
+        if (isset($useStatements[$normalizedClassName]) && class_exists($useStatements[$normalizedClassName])) {
+            return $useStatements[$normalizedClassName];
+        }
+
+        if (str_contains($normalizedClassName, '\\')) {
+            [$alias, $suffix] = explode('\\', $normalizedClassName, 2);
+            if (isset($useStatements[$alias])) {
+                $candidate = $useStatements[$alias].'\\'.$suffix;
+                if (class_exists($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  ReflectionClass<object>  $contextClass
+     * @return array<string, string>
+     */
+    protected function extractUseStatements(ReflectionClass $contextClass): array
+    {
+        $fileName = $contextClass->getFileName();
+        if (! is_string($fileName) || ! file_exists($fileName)) {
+            return [];
+        }
+
+        $content = file_get_contents($fileName);
+        if ($content === false) {
+            return [];
+        }
+
+        if (! preg_match_all('/^use\s+([^;]+);/m', $content, $matches)) {
+            return [];
+        }
+
+        $useStatements = [];
+
+        foreach ($matches[1] as $statement) {
+            $statement = trim($statement);
+            if ($statement === '') {
+                continue;
+            }
+
+            if (preg_match('/^(.+)\s+as\s+(\w+)$/i', $statement, $parts)) {
+                $fullyQualifiedClassName = trim($parts[1]);
+                $alias = trim($parts[2]);
+            } else {
+                $fullyQualifiedClassName = $statement;
+                $alias = basename(str_replace('\\', '/', $statement));
+            }
+
+            $useStatements[$alias] = ltrim($fullyQualifiedClassName, '\\');
+        }
+
+        return $useStatements;
+    }
+
+    /**
+     * @return ValidationEntry|null
+     */
+    protected function extractValidationEntryFromClass(string $className): ?array
+    {
+        if (! class_exists($className)) {
+            return null;
+        }
+
+        $classReflection = new ReflectionClass($className);
+        if (! $classReflection->hasMethod('validation')) {
+            return null;
+        }
+
+        $validationMethod = $classReflection->getMethod('validation');
+        if (! $validationMethod->isStatic()) {
+            return null;
+        }
+
+        $methodNode = $this->findClassMethodNode($validationMethod);
+        if ($methodNode === null) {
+            return null;
+        }
+
+        return $this->extractValidationEntryFromMethodNode($methodNode);
+    }
+
+    protected function findClassMethodNode(ReflectionMethod $methodReflection): ?Node\Stmt\ClassMethod
+    {
+        $fileName = $methodReflection->getFileName();
+        if (! is_string($fileName) || ! file_exists($fileName)) {
+            return null;
+        }
+
+        $code = file_get_contents($fileName);
+        if ($code === false) {
+            return null;
+        }
+
+        try {
+            $ast = $this->parser->parse($code);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! is_array($ast)) {
+            return null;
+        }
+
+        $targetStartLine = $methodReflection->getStartLine();
+        $targetMethodName = $methodReflection->getName();
+
+        $visitor = new class($targetMethodName, $targetStartLine) extends NodeVisitorAbstract
+        {
+            public ?Node\Stmt\ClassMethod $methodNode = null;
+
+            public function __construct(
+                private readonly string $targetMethodName,
+                private readonly int $targetStartLine
+            ) {}
+
+            public function enterNode(Node $node): ?int
+            {
+                if (! $node instanceof Node\Stmt\ClassMethod) {
+                    return null;
+                }
+
+                if (
+                    $node->name->toString() === $this->targetMethodName &&
+                    $node->getStartLine() === $this->targetStartLine
+                ) {
+                    $this->methodNode = $node;
+
+                    return NodeTraverser::STOP_TRAVERSAL;
+                }
+
+                return null;
+            }
+        };
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        return $visitor->methodNode;
+    }
+
+    /**
+     * @return ValidationEntry|null
+     */
+    protected function extractValidationEntryFromMethodNode(Node\Stmt\ClassMethod $methodNode): ?array
+    {
+        $visitor = new class extends NodeVisitorAbstract
+        {
+            public ?Node\Expr\StaticCall $validatorMakeCall = null;
+
+            public function enterNode(Node $node): ?int
+            {
+                if (! $node instanceof Node\Expr\StaticCall) {
+                    return null;
+                }
+
+                if (! $node->class instanceof Node\Name || ! $node->name instanceof Node\Identifier) {
+                    return null;
+                }
+
+                if ($node->name->toString() !== 'make') {
+                    return null;
+                }
+
+                $className = ltrim($node->class->toString(), '\\');
+                if (! in_array($className, ['Validator', 'Illuminate\\Support\\Facades\\Validator'], true)) {
+                    return null;
+                }
+
+                $this->validatorMakeCall = $node;
+
+                return NodeTraverser::STOP_TRAVERSAL;
+            }
+        };
+
+        $traverser = new NodeTraverser;
+        $traverser->addVisitor($visitor);
+        $traverser->traverse([$methodNode]);
+
+        $validatorMakeCall = $visitor->validatorMakeCall;
+        if ($validatorMakeCall === null || count($validatorMakeCall->args) < 2) {
+            return null;
+        }
+
+        $rules = $this->extractRulesArray($validatorMakeCall->args[1]->value);
+        if ($rules === []) {
+            return null;
+        }
+
+        $messages = [];
+        if (isset($validatorMakeCall->args[2])) {
+            $messages = $this->extractScalarArray($validatorMakeCall->args[2]->value);
+        }
+
+        return [
+            'type' => 'custom_static_validation',
+            'rules' => $rules,
+            'messages' => $messages,
+            'attributes' => [],
+        ];
+    }
+
+    /**
+     * @return ValidationRulesArray
+     */
+    protected function extractRulesArray(Node $node): array
+    {
+        if (! $node instanceof Node\Expr\Array_) {
+            return [];
+        }
+
+        $rules = [];
+
+        foreach ($node->items as $item) {
+            if ($item === null || $item->key === null) {
+                continue;
+            }
+
+            $key = $this->getNodeScalarValue($item->key);
+            if (! is_string($key)) {
+                continue;
+            }
+
+            $value = $item->value;
+            if ($value instanceof Node\Scalar\String_) {
+                $rules[$key] = $value->value;
+
+                continue;
+            }
+
+            if ($value instanceof Node\Expr\BinaryOp\Concat) {
+                $rules[$key] = $this->printer->prettyPrintExpr($value);
+
+                continue;
+            }
+
+            if (! $value instanceof Node\Expr\Array_) {
+                continue;
+            }
+
+            $ruleArray = [];
+            foreach ($value->items as $ruleItem) {
+                if ($ruleItem === null) {
+                    continue;
+                }
+
+                if ($ruleItem->value instanceof Node\Scalar\String_) {
+                    $ruleArray[] = $ruleItem->value->value;
+                } elseif (
+                    $ruleItem->value instanceof Node\Expr\StaticCall ||
+                    $ruleItem->value instanceof Node\Expr\New_
+                ) {
+                    $ruleArray[] = $this->printer->prettyPrintExpr($ruleItem->value);
+                } elseif (
+                    $ruleItem->value instanceof Node\Expr\Closure ||
+                    $ruleItem->value instanceof Node\Expr\ArrowFunction
+                ) {
+                    $ruleArray[] = 'custom:closure_validation';
+                }
+            }
+
+            $rules[$key] = $ruleArray;
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function extractScalarArray(Node $node): array
+    {
+        if (! $node instanceof Node\Expr\Array_) {
+            return [];
+        }
+
+        $array = [];
+        foreach ($node->items as $item) {
+            if ($item === null || $item->key === null) {
+                continue;
+            }
+
+            $key = $this->getNodeScalarValue($item->key);
+            $value = $this->getNodeScalarValue($item->value);
+
+            if (is_string($key) && is_string($value)) {
+                $array[$key] = $value;
+            }
+        }
+
+        return $array;
+    }
+
+    protected function getNodeScalarValue(Node $node): string|int|float|null
+    {
+        if ($node instanceof Node\Scalar\String_) {
+            return $node->value;
+        }
+
+        if ($node instanceof Node\Scalar\LNumber) {
+            return $node->value;
+        }
+
+        if ($node instanceof Node\Scalar\DNumber) {
+            return $node->value;
+        }
+
+        return null;
     }
 
     /**
