@@ -8,6 +8,8 @@ class ValidationRules
 {
     /**
      * バリデーションルールからエラーメッセージのテンプレートを取得
+     *
+     * @var array<string, string|array<string, string>>
      */
     protected static array $messageTemplates = [
         'required' => 'The :attribute field is required.',
@@ -61,6 +63,8 @@ class ValidationRules
 
     /**
      * ルール名を抽出（パラメータを除去）
+     *
+     * @param  string|array<int, mixed>|object  $rule
      */
     public static function extractRuleName(string|array|object $rule): string
     {
@@ -97,6 +101,8 @@ class ValidationRules
 
     /**
      * ルールのパラメータを抽出
+     *
+     * @return array<int, string>
      */
     public static function extractRuleParameters(string $rule): array
     {
@@ -130,6 +136,8 @@ class ValidationRules
 
     /**
      * フィールドタイプを推測
+     *
+     * @param  array<int, string|array<int, mixed>|object>  $rules
      */
     public static function inferFieldType(array $rules): string
     {
