@@ -341,13 +341,13 @@ class ParameterGenerator
      * @param  array<int, OpenApiParameter>  $parameters
      * @return array<int, OpenApiParameter>
      */
-    protected function deduplicateParameters(array $parameters): array
+    private function deduplicateParameters(array $parameters): array
     {
         $result = [];
         $indexByKey = [];
 
         foreach ($parameters as $parameter) {
-            $key = $parameter->in.':'.$parameter->name;
+            $key = sprintf('%s:%s', $parameter->in, $parameter->name);
 
             if (! array_key_exists($key, $indexByKey)) {
                 $indexByKey[$key] = count($result);
@@ -363,7 +363,7 @@ class ParameterGenerator
         return $result;
     }
 
-    protected function mergeParameters(OpenApiParameter $base, OpenApiParameter $incoming): OpenApiParameter
+    private function mergeParameters(OpenApiParameter $base, OpenApiParameter $incoming): OpenApiParameter
     {
         return new OpenApiParameter(
             name: $base->name,
@@ -378,7 +378,7 @@ class ParameterGenerator
         );
     }
 
-    protected function mergeSchemas(OpenApiSchema $base, OpenApiSchema $incoming): OpenApiSchema
+    private function mergeSchemas(OpenApiSchema $base, OpenApiSchema $incoming): OpenApiSchema
     {
         $type = $base->type;
         if ($type === 'string' && $incoming->type !== 'string') {
