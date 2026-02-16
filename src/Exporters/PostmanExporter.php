@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelSpectrum\Exporters;
 
 use Illuminate\Support\Str;
@@ -560,8 +562,10 @@ class PostmanExporter implements ExportFormatInterface
         return $examples;
     }
 
-    private function getStatusText(string $code): string
+    private function getStatusText(int|string $code): string
     {
+        $code = (string) $code;
+
         $statuses = [
             '200' => 'OK',
             '201' => 'Created',
