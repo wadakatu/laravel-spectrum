@@ -535,6 +535,7 @@ class PostmanExporter implements ExportFormatInterface
 
             $schema = $response['content']['application/json']['schema'] ?? [];
             $exampleData = $this->exampleFormatter->generateFromSchema($schema);
+            $httpStatusCode = (int) $statusCode;
 
             $examples[] = [
                 'name' => $response['description'] ?? "Response {$statusCode}",
@@ -545,8 +546,8 @@ class PostmanExporter implements ExportFormatInterface
                         'raw' => '{{base_url}}/example',
                     ],
                 ],
-                'status' => $this->getStatusText($statusCode),
-                'code' => (int) $statusCode,
+                'status' => $this->getStatusText($httpStatusCode),
+                'code' => $httpStatusCode,
                 '_postman_previewlanguage' => 'json',
                 'header' => [
                     [
@@ -562,20 +563,18 @@ class PostmanExporter implements ExportFormatInterface
         return $examples;
     }
 
-    private function getStatusText(int|string $code): string
+    private function getStatusText(int $code): string
     {
-        $code = (string) $code;
-
         $statuses = [
-            '200' => 'OK',
-            '201' => 'Created',
-            '204' => 'No Content',
-            '400' => 'Bad Request',
-            '401' => 'Unauthorized',
-            '403' => 'Forbidden',
-            '404' => 'Not Found',
-            '422' => 'Unprocessable Entity',
-            '500' => 'Internal Server Error',
+            200 => 'OK',
+            201 => 'Created',
+            204 => 'No Content',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            422 => 'Unprocessable Entity',
+            500 => 'Internal Server Error',
         ];
 
         return $statuses[$code] ?? 'Unknown';
