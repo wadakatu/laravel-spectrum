@@ -119,12 +119,11 @@ class QueryParameterAnalyzer implements ReflectionMethodAnalyzer
      */
     private function isRequired(DetectedQueryParameter $param): bool
     {
-        // If has() is used, it suggests the parameter might be required
+        // has()/filled() are conditional existence checks and do not imply "required".
         if ($param->hasContextFlag('has_check') && $param->context['has_check']) {
-            return true;
+            return false;
         }
 
-        // If filled() is used, parameter is optional but expected to have value
         if ($param->hasContextFlag('filled_check') && $param->context['filled_check']) {
             return false;
         }
