@@ -2,6 +2,103 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.1.0) - 2026-02-16
+
+### ♻️ Code Refactoring
+
+- address PR review suggestions
+- consolidate server building logic into OpenApiServer DTO
+- reduce missingType.iterableValue baseline entries
+- add strict_types to AST visitors
+- add strict_types to analyzer support
+- add strict_types to console commands
+- add strict_types to generators
+- add strict_types to mock server
+- add strict_types to exporter contracts and formatters
+- complete strict_types rollout for remaining src files
+- reduce iterable value type baseline for phase 2
+- reduce iterable value baseline in generator and faker provider
+- reduce iterable value baseline in file watcher and parallel processor
+- reduce iterable value baseline in validation support
+
+### ✅ Tests
+
+- add coverage for custom rule handling in ValidationRuleTypeMapper and ConditionalRulesExtractorVisitor
+- add comprehensive tests for custom rule handling
+- add mutation testing coverage tests
+- add case-insensitive Content-Type header tests
+- add coverage for nullable byte format conversion
+- strengthen mutation coverage for tag generation
+- strengthen mutation coverage for route analyzer
+- harden request handler mutation coverage
+- set memory limit before testbench boot
+- avoid field pattern collisions in constraint test
+
+### ✨ Features
+
+- add Fractal Transformer integration example
+- add custom validation rule analysis infrastructure
+- integrate custom rule analysis into validation pipeline
+- add custom rule support to ConditionalRulesExtractorVisitor
+- add custom validation rule examples
+- detect non-JSON response content types ([#301](https://github.com/wadakatu/laravel-spectrum/issues/301))
+- improve JSON Schema 2020-12 support for OpenAPI 3.1
+- support configurable servers with variables in OpenAPI spec
+- add OpenAPI Callbacks support ([#294](https://github.com/wadakatu/laravel-spectrum/issues/294))
+- add response links support
+- support root-level webhooks in OpenAPI 3.1
+- add excluded_methods option for route operations
+
+### 🐛 Bug Fixes
+
+- integrate FractalTransformerAnalyzer into OpenAPI generation
+- address PR review feedback
+- add array type hints to transformer properties
+- make Content-Type header check case-insensitive
+- address PR review findings for server variables feature
+- add null safety to app.url config and align OptimizedGenerateCommand servers
+- handle Enum rule detection for Laravel 12.51+ compatibility
+- set explicit 1G memory limit in phpunit.xml for CI stability
+- set memory_limit at CLI level to prevent OOM in PHPUnit 12
+- address PR review issues for OpenAPI Callbacks support
+- improve error handling robustness from PR review round 2
+- handle generated paths shape in optimized command
+- improve operation summary inference for issue 404
+- enforce valid link targets
+- avoid invalid memory-limit override in optimized command
+- merge optimized OpenAPI chunk results correctly
+- normalize merged tag groups for phpstan
+- apply configured memory limit in spectrum:generate
+- resolve fractal response schema extraction for issue 402
+- stabilize fractal analyzer and satisfy mutation coverage
+- prefer controller-based default tag generation
+- fallback incremental generation when no changes tracked
+- satisfy phpstan for incremental fallback warning
+- apply delay and default scenario options
+- honor postman --single-file option
+- generate valid YAML scalars in spectrum:generate
+- align export docs and add consistency tests
+- enforce memory limit in base test case
+- add openapi compliance matrix and restore laravel12 generation
+- stabilize demo-app fractal compatibility and perf test routes
+- enforce full OpenAPI requirement compliance checks
+- resolve mutation failure via demo-app compliance tuning
+- align infection script with current CLI
+- suppress Darwin sysctl stderr noise in worker resolver
+- enforce integer status code handling in postman exporter
+- harden postman response status mutation coverage
+
+### 📚 Documentation
+
+- update CHANGELOG.md for v1.0.1
+- document non-standard OpenAPI extensions
+- add CLAUDE.md for Claude Code project instructions
+- add AGENTS.md for coding agents
+- make CLAUDE.md reference AGENTS.md
+- strengthen AGENTS.md guidance
+- sync CLI docs with implemented command options
+- fix postman export option name in ja docs
+
 ## [1.0.1](https://github.com/wadakatu/laravel-spectrum/releases/tag/v1.0.1) - 2026-01-04
 
 ### 🐛 Bug Fixes
