@@ -12,6 +12,10 @@ use LaravelSpectrum\Support\Example\FieldPatternRegistry;
 
 /**
  * Strategy that generates example values using Faker.
+ *
+ * @phpstan-type ExampleConfig array<string, mixed>
+ * @phpstan-type ConstraintConfig array<string, mixed>
+ * @phpstan-type FakerMethodArgs array<int, mixed>
  */
 final class FakerValueProvider implements ExampleGenerationStrategy
 {
@@ -22,6 +26,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * {@inheritDoc}
+     *
+     * @param  ExampleConfig  $config
      */
     public function generate(string $fieldName, array $config): mixed
     {
@@ -74,6 +80,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * {@inheritDoc}
+     *
+     * @param  ConstraintConfig  $constraints
      */
     public function generateByType(string $type, array $constraints = []): mixed
     {
@@ -90,6 +98,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * Handle unknown OpenAPI types with logging.
+     *
+     * @param  ConstraintConfig  $constraints
      */
     private function handleUnknownType(string $type, array $constraints): string
     {
@@ -156,6 +166,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * Execute a Faker method chain.
+     *
+     * @param  FakerMethodArgs  $args
      */
     private function executeMethodChain(string $method, array $args): mixed
     {
@@ -179,6 +191,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * Generate integer with constraints.
+     *
+     * @param  ConstraintConfig  $constraints
      */
     private function generateInteger(array $constraints): int
     {
@@ -190,6 +204,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * Generate number (float) with constraints.
+     *
+     * @param  ConstraintConfig  $constraints
      */
     private function generateNumber(array $constraints): float
     {
@@ -201,6 +217,8 @@ final class FakerValueProvider implements ExampleGenerationStrategy
 
     /**
      * Generate string with constraints.
+     *
+     * @param  ConstraintConfig  $constraints
      */
     private function generateString(array $constraints): string
     {
