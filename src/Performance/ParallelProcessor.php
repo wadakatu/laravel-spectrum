@@ -40,6 +40,10 @@ class ParallelProcessor
 
     /**
      * Process routes in parallel using multiple workers
+     *
+     * @param  array<int, mixed>  $routes
+     * @param  callable(mixed):mixed  $processor
+     * @return array<int, mixed>
      */
     public function process(array $routes, callable $processor): array
     {
@@ -72,6 +76,11 @@ class ParallelProcessor
 
     /**
      * Process with progress callback
+     *
+     * @param  array<int, mixed>  $items
+     * @param  callable(mixed):mixed  $processor
+     * @param  callable(int, int):void  $onProgress
+     * @return array<int, mixed>
      */
     public function processWithProgress(array $items, callable $processor, callable $onProgress): array
     {
@@ -141,6 +150,12 @@ class ParallelProcessor
         return collect($chunkResults)->flatten(1)->toArray();
     }
 
+    /**
+     * @param  array<int, mixed>  $items
+     * @param  callable(mixed):mixed  $processor
+     * @param  callable(int, int):void  $onProgress
+     * @return array<int, mixed>
+     */
     private function processSequentialWithProgress(array $items, callable $processor, callable $onProgress): array
     {
         $total = count($items);
