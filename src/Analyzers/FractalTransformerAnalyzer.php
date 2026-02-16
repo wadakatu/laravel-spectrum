@@ -201,7 +201,15 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         $this->astHelper->traverse([$transformMethod], $visitor);
 
         if ($visitor->returnArray) {
-            $properties = $this->parseArrayNode($visitor->returnArray, $class, ['transform' => true], $modelPropertyTypes);
+            $methodStack = ['transform' => true];
+            $variableTypeHints = $this->extractMethodVariableTypeHints($transformMethod, $class, $methodStack, $modelPropertyTypes);
+            $properties = $this->parseArrayNode(
+                $visitor->returnArray,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
         }
 
         return $properties;
@@ -212,10 +220,16 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
      *
      * @param  array<string, bool>  $methodStack
      * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @param  array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>  $variableTypeHints
      * @return array<string, array<string, mixed>>
      */
-    protected function parseArrayNode(Node\Expr\Array_ $array, ?Node\Stmt\Class_ $class = null, array $methodStack = [], array $modelPropertyTypes = []): array
-    {
+    protected function parseArrayNode(
+        Node\Expr\Array_ $array,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = [],
+        array $variableTypeHints = []
+    ): array {
         $properties = [];
 
         /** @var array<int, Node\Expr\ArrayItem|null> $items */
@@ -233,7 +247,7 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
             $value = $item->value;
             $fieldName = (string) $key;
-            $typeInfo = $this->inferTypeFromExpression($value, $class, $methodStack, $modelPropertyTypes);
+            $typeInfo = $this->inferTypeFromExpression($value, $class, $methodStack, $modelPropertyTypes, $variableTypeHints);
             $resolvedType = $this->refineTypeFromFieldName($fieldName, $value, $typeInfo);
 
             $properties[$fieldName] = [
@@ -254,7 +268,13 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
                 $properties[$fieldName]['properties'] = $resolvedType['properties'];
                 $properties[$fieldName]['type'] = 'object';
             } elseif ($value instanceof Node\Expr\Array_ && $this->isAssociativeArray($value)) {
-                $properties[$fieldName]['properties'] = $this->parseArrayNode($value, $class, $methodStack, $modelPropertyTypes);
+                $properties[$fieldName]['properties'] = $this->parseArrayNode(
+                    $value,
+                    $class,
+                    $methodStack,
+                    $modelPropertyTypes,
+                    $variableTypeHints
+                );
                 $properties[$fieldName]['type'] = 'object';
             }
         }
@@ -292,12 +312,32 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     /**
      * @param  array<string, bool>  $methodStack
      * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @param  array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>  $variableTypeHints
      * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}
      */
-    protected function inferTypeFromExpression(Node\Expr $expression, ?Node\Stmt\Class_ $class = null, array $methodStack = [], array $modelPropertyTypes = []): array
-    {
+    protected function inferTypeFromExpression(
+        Node\Expr $expression,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = [],
+        array $variableTypeHints = []
+    ): array {
         if ($this->isBooleanExpression($expression)) {
             return ['type' => 'boolean'];
+        }
+
+        if ($expression instanceof Node\Expr\Variable && is_string($expression->name) && isset($variableTypeHints[$expression->name])) {
+            return $variableTypeHints[$expression->name];
+        }
+
+        if ($expression instanceof Node\Expr\BinaryOp\Coalesce) {
+            return $this->inferTypeFromCoalesceExpression(
+                $expression,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
         }
 
         if ($expression instanceof Node\Expr\PropertyFetch) {
@@ -314,11 +354,30 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             }
         }
 
+        if ($expression instanceof Node\Expr\FuncCall) {
+            $arrayMapType = $this->inferTypeFromArrayMapCall(
+                $expression,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
+            if ($arrayMapType !== null) {
+                return $arrayMapType;
+            }
+        }
+
         if ($expression instanceof Node\Expr\Array_) {
             if ($this->isAssociativeArray($expression)) {
                 return [
                     'type' => 'object',
-                    'properties' => $this->parseArrayNode($expression, $class, $methodStack, $modelPropertyTypes),
+                    'properties' => $this->parseArrayNode(
+                        $expression,
+                        $class,
+                        $methodStack,
+                        $modelPropertyTypes,
+                        $variableTypeHints
+                    ),
                 ];
             }
 
@@ -361,7 +420,15 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         $nextStack = $methodStack;
         $nextStack[$methodName] = true;
 
-        return $this->inferTypeFromExpression($returnExpression, $class, $nextStack, $modelPropertyTypes);
+        $methodVariableTypeHints = $this->extractMethodVariableTypeHints($method, $class, $nextStack, $modelPropertyTypes);
+
+        return $this->inferTypeFromExpression(
+            $returnExpression,
+            $class,
+            $nextStack,
+            $modelPropertyTypes,
+            $methodVariableTypeHints
+        );
     }
 
     /**
@@ -390,30 +457,36 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         {
             public ?Node\Expr $returnExpression = null;
 
-            /** @var array<string, Node\Expr> */
-            public array $assignments = [];
+            public int $functionLikeDepth = 0;
 
             public function enterNode(Node $node): null
             {
-                if ($node instanceof Node\Expr\Assign
-                    && $node->var instanceof Node\Expr\Variable
-                    && is_string($node->var->name)) {
-                    $this->assignments[$node->var->name] = $node->expr;
+                if ($node instanceof Node\Stmt\ClassMethod
+                    || $node instanceof Node\Expr\Closure
+                    || $node instanceof Node\Expr\ArrowFunction) {
+                    $this->functionLikeDepth++;
                 }
 
                 if (! $node instanceof Node\Stmt\Return_ || ! $node->expr instanceof Node\Expr) {
                     return null;
                 }
 
-                if ($node->expr instanceof Node\Expr\Variable
-                    && is_string($node->expr->name)
-                    && isset($this->assignments[$node->expr->name])) {
-                    $this->returnExpression = $this->assignments[$node->expr->name];
-
+                if ($this->functionLikeDepth !== 1) {
                     return null;
                 }
 
                 $this->returnExpression = $node->expr;
+
+                return null;
+            }
+
+            public function leaveNode(Node $node): null
+            {
+                if ($node instanceof Node\Stmt\ClassMethod
+                    || $node instanceof Node\Expr\Closure
+                    || $node instanceof Node\Expr\ArrowFunction) {
+                    $this->functionLikeDepth--;
+                }
 
                 return null;
             }
@@ -422,6 +495,323 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         $this->astHelper->traverse([$method], $visitor);
 
         return $visitor->returnExpression;
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @return array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>
+     */
+    protected function extractMethodVariableTypeHints(
+        Node\Stmt\ClassMethod $method,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = []
+    ): array {
+        $visitor = new class extends NodeVisitorAbstract
+        {
+            /** @var array<string, Node\Expr> */
+            public array $assignments = [];
+
+            /** @var array<string, array<int, Node\Expr>> */
+            public array $appendedValues = [];
+
+            public function enterNode(Node $node): null
+            {
+                if (! $node instanceof Node\Expr\Assign) {
+                    return null;
+                }
+
+                if ($node->var instanceof Node\Expr\Variable && is_string($node->var->name)) {
+                    $this->assignments[$node->var->name] = $node->expr;
+
+                    return null;
+                }
+
+                if ($node->var instanceof Node\Expr\ArrayDimFetch
+                    && $node->var->dim === null
+                    && $node->var->var instanceof Node\Expr\Variable
+                    && is_string($node->var->var->name)) {
+                    $this->appendedValues[$node->var->var->name][] = $node->expr;
+                }
+
+                return null;
+            }
+        };
+
+        $this->astHelper->traverse([$method], $visitor);
+
+        $variableTypeHints = [];
+
+        foreach ($visitor->assignments as $variableName => $assignmentExpr) {
+            if ($assignmentExpr instanceof Node\Expr\Array_ && ! $this->isAssociativeArray($assignmentExpr)) {
+                $inferredArrayType = $this->inferTypeFromAppendedArrayValues(
+                    $visitor->appendedValues[$variableName] ?? [],
+                    $class,
+                    $methodStack,
+                    $modelPropertyTypes,
+                    $variableTypeHints
+                );
+
+                if (isset($inferredArrayType['items'])) {
+                    $variableTypeHints[$variableName] = $inferredArrayType;
+
+                    continue;
+                }
+            }
+
+            $variableTypeHints[$variableName] = $this->inferTypeFromExpression(
+                $assignmentExpr,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
+        }
+
+        foreach ($visitor->appendedValues as $variableName => $appendedValues) {
+            if (isset($variableTypeHints[$variableName])) {
+                continue;
+            }
+
+            $variableTypeHints[$variableName] = $this->inferTypeFromAppendedArrayValues(
+                $appendedValues,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
+        }
+
+        return $variableTypeHints;
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @param  array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>  $variableTypeHints
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}
+     */
+    protected function inferTypeFromCoalesceExpression(
+        Node\Expr\BinaryOp\Coalesce $expression,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = [],
+        array $variableTypeHints = []
+    ): array {
+        $leftType = $this->inferTypeFromExpression(
+            $expression->left,
+            $class,
+            $methodStack,
+            $modelPropertyTypes,
+            $variableTypeHints
+        );
+        $rightType = $this->inferTypeFromExpression(
+            $expression->right,
+            $class,
+            $methodStack,
+            $modelPropertyTypes,
+            $variableTypeHints
+        );
+
+        if (($leftType['type'] ?? null) === 'null' || ($this->isAmbiguousStringTypeInfo($leftType) && $this->hasSpecificTypeInformation($rightType))) {
+            return $rightType;
+        }
+
+        return $leftType;
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @param  array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>  $variableTypeHints
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}|null
+     */
+    protected function inferTypeFromArrayMapCall(
+        Node\Expr\FuncCall $functionCall,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = [],
+        array $variableTypeHints = []
+    ): ?array {
+        if (! $functionCall->name instanceof Node\Name || strtolower($functionCall->name->toString()) !== 'array_map') {
+            return null;
+        }
+
+        $type = ['type' => 'array'];
+        if (! isset($functionCall->args[0])) {
+            return $type;
+        }
+
+        $itemType = $this->inferTypeFromArrayMapCallback(
+            $functionCall->args[0]->value,
+            $class,
+            $methodStack,
+            $modelPropertyTypes,
+            $variableTypeHints
+        );
+
+        if ($itemType !== null) {
+            $type['items'] = $itemType;
+        }
+
+        return $type;
+    }
+
+    /**
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @param  array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>  $variableTypeHints
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}|null
+     */
+    protected function inferTypeFromArrayMapCallback(
+        Node\Expr $callback,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = [],
+        array $variableTypeHints = []
+    ): ?array {
+        if ($callback instanceof Node\Expr\ArrowFunction) {
+            return $this->inferTypeFromExpression(
+                $callback->expr,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
+        }
+
+        if (! $callback instanceof Node\Expr\Closure) {
+            return null;
+        }
+
+        $visitor = new class extends NodeVisitorAbstract
+        {
+            public ?Node\Expr $returnExpression = null;
+
+            public function enterNode(Node $node): null
+            {
+                if ($node instanceof Node\Stmt\Return_ && $node->expr instanceof Node\Expr) {
+                    $this->returnExpression = $node->expr;
+                }
+
+                return null;
+            }
+        };
+
+        $this->astHelper->traverse($callback->stmts ?? [], $visitor);
+        if (! $visitor->returnExpression instanceof Node\Expr) {
+            return null;
+        }
+
+        return $this->inferTypeFromExpression(
+            $visitor->returnExpression,
+            $class,
+            $methodStack,
+            $modelPropertyTypes,
+            $variableTypeHints
+        );
+    }
+
+    /**
+     * @param  array<int, Node\Expr>  $appendedValues
+     * @param  array<string, bool>  $methodStack
+     * @param  array<string, array<string, array{type: string, format?: string}>>  $modelPropertyTypes
+     * @param  array<string, array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}>  $variableTypeHints
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}
+     */
+    protected function inferTypeFromAppendedArrayValues(
+        array $appendedValues,
+        ?Node\Stmt\Class_ $class = null,
+        array $methodStack = [],
+        array $modelPropertyTypes = [],
+        array $variableTypeHints = []
+    ): array {
+        $result = ['type' => 'array'];
+        $items = null;
+
+        foreach ($appendedValues as $appendedValue) {
+            $itemType = $this->inferTypeFromExpression(
+                $appendedValue,
+                $class,
+                $methodStack,
+                $modelPropertyTypes,
+                $variableTypeHints
+            );
+            $items = $this->mergeArrayItemType($items, $itemType);
+        }
+
+        if ($items !== null) {
+            $result['items'] = $items;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}|null  $existingType
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}  $newType
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}
+     */
+    protected function mergeArrayItemType(?array $existingType, array $newType): array
+    {
+        if ($existingType === null) {
+            return $newType;
+        }
+
+        $existingTypeName = $existingType['type'] ?? 'string';
+        $newTypeName = $newType['type'] ?? 'string';
+
+        if ($existingTypeName === $newTypeName) {
+            if ($existingTypeName === 'object'
+                && isset($existingType['properties'], $newType['properties'])
+                && is_array($existingType['properties'])
+                && is_array($newType['properties'])) {
+                $existingType['properties'] = array_merge($existingType['properties'], $newType['properties']);
+            }
+
+            if ($existingTypeName === 'array'
+                && isset($existingType['items'], $newType['items'])
+                && is_array($existingType['items'])
+                && is_array($newType['items'])) {
+                $existingType['items'] = $this->mergeArrayItemType($existingType['items'], $newType['items']);
+            }
+
+            if (! isset($existingType['format']) && isset($newType['format'])) {
+                $existingType['format'] = $newType['format'];
+            }
+
+            return $existingType;
+        }
+
+        if ($this->isAmbiguousStringTypeInfo($existingType) && $this->hasSpecificTypeInformation($newType)) {
+            return $newType;
+        }
+
+        if ($this->isAmbiguousStringTypeInfo($newType) && $this->hasSpecificTypeInformation($existingType)) {
+            return $existingType;
+        }
+
+        return ['type' => 'string'];
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}  $typeInfo
+     */
+    protected function hasSpecificTypeInformation(array $typeInfo): bool
+    {
+        return ! $this->isAmbiguousStringTypeInfo($typeInfo);
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>}  $typeInfo
+     */
+    protected function isAmbiguousStringTypeInfo(array $typeInfo): bool
+    {
+        return ($typeInfo['type'] ?? 'string') === 'string'
+            && ! isset($typeInfo['format'])
+            && ! isset($typeInfo['properties'])
+            && ! isset($typeInfo['items']);
     }
 
     protected function isAssociativeArray(Node\Expr\Array_ $array): bool
