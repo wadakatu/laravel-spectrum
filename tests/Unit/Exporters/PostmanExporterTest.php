@@ -639,6 +639,63 @@ class PostmanExporterTest extends TestCase
         // Should have response examples
         $this->assertArrayHasKey('response', $request);
         $this->assertNotEmpty($request['response']);
+        $this->assertSame('Success', $request['response'][0]['name']);
+        $this->assertSame('OK', $request['response'][0]['status']);
+        $this->assertSame(200, $request['response'][0]['code']);
+    }
+
+    public function test_export_response_examples_map_known_status_codes(): void
+    {
+        $jsonResponse = [
+            'description' => 'Sample response',
+            'content' => [
+                'application/json' => [
+                    'schema' => ['type' => 'object'],
+                ],
+            ],
+        ];
+
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'Test API'],
+            'paths' => [
+                '/statuses' => [
+                    'get' => [
+                        'summary' => 'Status examples',
+                        'tags' => ['Status'],
+                        'responses' => [
+                            200 => $jsonResponse,
+                            201 => $jsonResponse,
+                            204 => $jsonResponse,
+                            400 => $jsonResponse,
+                            401 => $jsonResponse,
+                            403 => $jsonResponse,
+                            404 => $jsonResponse,
+                            422 => $jsonResponse,
+                            500 => $jsonResponse,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->exporter->export($openapi);
+        $responses = $result['item'][0]['item'][0]['response'];
+
+        $statusByCode = [];
+        foreach ($responses as $response) {
+            $statusByCode[$response['code']] = $response['status'];
+        }
+
+        $this->assertSame('OK', $statusByCode[200]);
+        $this->assertSame('Created', $statusByCode[201]);
+        $this->assertSame('No Content', $statusByCode[204]);
+        $this->assertSame('Bad Request', $statusByCode[400]);
+        $this->assertSame('Unauthorized', $statusByCode[401]);
+        $this->assertSame('Forbidden', $statusByCode[403]);
+        $this->assertSame('Not Found', $statusByCode[404]);
+        $this->assertSame('Unprocessable Entity', $statusByCode[422]);
+        $this->assertSame('Internal Server Error', $statusByCode[500]);
     }
 
     public function test_export_without_servers_has_empty_variables(): void
