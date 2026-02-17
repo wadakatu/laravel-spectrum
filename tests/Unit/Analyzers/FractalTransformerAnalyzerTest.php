@@ -11,6 +11,7 @@ use LaravelSpectrum\Tests\Fixtures\Transformers\GetterBasedUserTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue458ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue465ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue467ProjectTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\Issue474ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MinimalTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MissingIncludeMethodTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
@@ -427,5 +428,31 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertSame('integer', $result['properties']['project_users']['items']['properties']['id']['type']);
         $this->assertSame('string', $result['properties']['project_users']['items']['properties']['email']['type']);
         $this->assertSame('boolean', $result['properties']['project_users']['items']['properties']['is_invited']['type']);
+    }
+
+    #[Test]
+    public function it_prefers_issue_474_transform_return_phpdoc_array_shape_types(): void
+    {
+        $result = $this->analyzer->analyze(Issue474ProjectTransformer::class);
+
+        $this->assertSame('integer', $result['properties']['status']['type']);
+        $this->assertSame('object', $result['properties']['current_plan']['type']);
+        $this->assertSame('integer', $result['properties']['current_plan']['properties']['price']['type']);
+
+        $this->assertSame('array', $result['properties']['project_users']['type']);
+        $this->assertArrayHasKey('items', $result['properties']['project_users']);
+        $this->assertSame('object', $result['properties']['project_users']['items']['type']);
+        $this->assertSame('string', $result['properties']['project_users']['items']['properties']['email']['type']);
+
+        $this->assertSame('array', $result['properties']['tags']['type']);
+        $this->assertSame('string', $result['properties']['tags']['items']['type']);
+        $this->assertSame('array', $result['properties']['roles']['type']);
+        $this->assertSame('string', $result['properties']['roles']['items']['type']);
+
+        $this->assertSame('string', $result['properties']['avatar']['type']);
+        $this->assertTrue($result['properties']['avatar']['nullable']);
+        $this->assertSame('string', $result['properties']['bio']['type']);
+        $this->assertTrue($result['properties']['bio']['nullable']);
+        $this->assertSame('boolean', $result['properties']['is_owner']['type']);
     }
 }

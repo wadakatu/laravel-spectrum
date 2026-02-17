@@ -162,6 +162,11 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
             return [];
         }
 
+        $docCommentProperties = $this->extractTransformPropertiesFromReturnDocComment($transformMethod);
+        if ($docCommentProperties !== []) {
+            return $docCommentProperties;
+        }
+
         $properties = [];
 
         // return文を探す
@@ -213,6 +218,557 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         }
 
         return $properties;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected function extractTransformPropertiesFromReturnDocComment(Node\Stmt\ClassMethod $transformMethod): array
+    {
+        $docComment = $transformMethod->getDocComment();
+        if (! $docComment instanceof \PhpParser\Comment\Doc) {
+            return [];
+        }
+
+        $returnType = $this->extractReturnTypeFromDocComment($docComment->getText());
+        if ($returnType === null) {
+            return [];
+        }
+
+        $offset = 0;
+        $parsedType = $this->parsePhpDocType($returnType, $offset);
+        if ($parsedType === null || ($parsedType['type'] ?? null) !== 'object') {
+            return [];
+        }
+
+        $properties = $parsedType['properties'] ?? null;
+        if (! is_array($properties)) {
+            return [];
+        }
+
+        return $properties;
+    }
+
+    protected function extractReturnTypeFromDocComment(string $docComment): ?string
+    {
+        $lines = preg_split('/\R/', $docComment);
+        if (! is_array($lines)) {
+            return null;
+        }
+
+        $capturing = false;
+        $buffer = '';
+        $curlyDepth = 0;
+        $angleDepth = 0;
+        $bracketDepth = 0;
+
+        foreach ($lines as $line) {
+            $normalizedLine = trim((string) preg_replace('/^\s*\/?\**\s?/', '', $line));
+            $normalizedLine = trim((string) preg_replace('/\*\/\s*$/', '', $normalizedLine));
+            if ($normalizedLine === '') {
+                continue;
+            }
+
+            if (! $capturing) {
+                $returnPosition = strpos($normalizedLine, '@return');
+                if ($returnPosition === false) {
+                    continue;
+                }
+
+                $normalizedLine = trim(substr($normalizedLine, $returnPosition + 7));
+                $capturing = true;
+
+                if ($normalizedLine === '') {
+                    continue;
+                }
+            }
+
+            if ($buffer !== '') {
+                $buffer .= ' ';
+            }
+            $buffer .= $normalizedLine;
+
+            $length = strlen($normalizedLine);
+            for ($i = 0; $i < $length; $i++) {
+                $char = $normalizedLine[$i];
+
+                if ($char === '{') {
+                    $curlyDepth++;
+
+                    continue;
+                }
+
+                if ($char === '}') {
+                    $curlyDepth--;
+
+                    continue;
+                }
+
+                if ($char === '<') {
+                    $angleDepth++;
+
+                    continue;
+                }
+
+                if ($char === '>') {
+                    $angleDepth--;
+
+                    continue;
+                }
+
+                if ($char === '[') {
+                    $bracketDepth++;
+
+                    continue;
+                }
+
+                if ($char === ']') {
+                    $bracketDepth--;
+                }
+            }
+
+            if ($curlyDepth <= 0
+                && $angleDepth <= 0
+                && $bracketDepth <= 0
+                && ! str_ends_with($normalizedLine, '|')) {
+                break;
+            }
+        }
+
+        $type = trim($buffer);
+
+        return $type === '' ? null : $type;
+    }
+
+    /**
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}|null
+     */
+    protected function parsePhpDocType(string $type, int &$offset = 0): ?array
+    {
+        $this->skipPhpDocWhitespace($type, $offset);
+
+        if (($type[$offset] ?? '') === '?') {
+            $offset++;
+            $nullableType = $this->parsePhpDocType($type, $offset);
+            if ($nullableType === null) {
+                return null;
+            }
+            $nullableType['nullable'] = true;
+
+            return $nullableType;
+        }
+
+        $parsedTypes = [];
+        $nullable = false;
+
+        while (true) {
+            $singleType = $this->parsePhpDocSingleType($type, $offset);
+            if ($singleType === null) {
+                return null;
+            }
+
+            if (($singleType['type'] ?? null) === 'null') {
+                $nullable = true;
+            } else {
+                $parsedTypes[] = $singleType;
+            }
+
+            $this->skipPhpDocWhitespace($type, $offset);
+            if (($type[$offset] ?? '') !== '|') {
+                break;
+            }
+
+            $offset++;
+            $this->skipPhpDocWhitespace($type, $offset);
+        }
+
+        if ($parsedTypes === []) {
+            return ['type' => 'string', 'nullable' => true];
+        }
+
+        $mergedType = array_shift($parsedTypes);
+        if (! is_array($mergedType)) {
+            return null;
+        }
+
+        foreach ($parsedTypes as $parsedType) {
+            $mergedType = $this->mergePhpDocTypeInfo($mergedType, $parsedType);
+        }
+
+        if ($nullable) {
+            $mergedType['nullable'] = true;
+        }
+
+        return $mergedType;
+    }
+
+    /**
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}|null
+     */
+    protected function parsePhpDocSingleType(string $type, int &$offset): ?array
+    {
+        $this->skipPhpDocWhitespace($type, $offset);
+
+        $identifier = $this->parsePhpDocIdentifier($type, $offset);
+        if ($identifier === null) {
+            return null;
+        }
+
+        $normalizedIdentifier = strtolower($identifier);
+
+        if ($normalizedIdentifier === 'array' && ($type[$offset] ?? '') === '{') {
+            return $this->parsePhpDocArrayShapeType($type, $offset);
+        }
+
+        if (($normalizedIdentifier === 'array' || $normalizedIdentifier === 'list')
+            && ($type[$offset] ?? '') === '<') {
+            $genericArrayType = $this->parsePhpDocGenericArrayType($type, $offset, $normalizedIdentifier === 'list');
+            if ($genericArrayType === null) {
+                return null;
+            }
+
+            $this->skipPhpDocWhitespace($type, $offset);
+
+            while (substr($type, $offset, 2) === '[]') {
+                $offset += 2;
+                $genericArrayType = ['type' => 'array', 'items' => $genericArrayType];
+                $this->skipPhpDocWhitespace($type, $offset);
+            }
+
+            return $genericArrayType;
+        }
+
+        $mappedType = $this->mapPhpDocTypeToOpenApiTypeInfo($normalizedIdentifier);
+
+        $this->skipPhpDocWhitespace($type, $offset);
+        while (substr($type, $offset, 2) === '[]') {
+            $offset += 2;
+            $mappedType = ['type' => 'array', 'items' => $mappedType];
+            $this->skipPhpDocWhitespace($type, $offset);
+        }
+
+        return $mappedType;
+    }
+
+    /**
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}|null
+     */
+    protected function parsePhpDocArrayShapeType(string $type, int &$offset): ?array
+    {
+        if (($type[$offset] ?? '') !== '{') {
+            return null;
+        }
+
+        $offset++;
+        $properties = [];
+
+        while (true) {
+            $this->skipPhpDocWhitespace($type, $offset);
+
+            if (($type[$offset] ?? '') === '}') {
+                $offset++;
+                break;
+            }
+
+            [$propertyName, $isOptional] = $this->parsePhpDocArrayShapePropertyName($type, $offset);
+            if ($propertyName === null) {
+                return null;
+            }
+
+            $this->skipPhpDocWhitespace($type, $offset);
+            if (($type[$offset] ?? '') !== ':') {
+                return null;
+            }
+            $offset++;
+
+            $propertyType = $this->parsePhpDocType($type, $offset);
+            if ($propertyType === null) {
+                return null;
+            }
+
+            $properties[$propertyName] = $this->buildPropertyDefinitionFromPhpDocType($propertyName, $propertyType, $isOptional);
+
+            $this->skipPhpDocWhitespace($type, $offset);
+            if (($type[$offset] ?? '') === ',') {
+                $offset++;
+
+                continue;
+            }
+
+            if (($type[$offset] ?? '') === '}') {
+                $offset++;
+                break;
+            }
+        }
+
+        return [
+            'type' => 'object',
+            'properties' => $properties,
+        ];
+    }
+
+    /**
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}|null
+     */
+    protected function parsePhpDocGenericArrayType(string $type, int &$offset, bool $isList): ?array
+    {
+        if (($type[$offset] ?? '') !== '<') {
+            return null;
+        }
+
+        $offset++;
+        $this->skipPhpDocWhitespace($type, $offset);
+
+        $firstType = $this->parsePhpDocType($type, $offset);
+        if ($firstType === null) {
+            return null;
+        }
+
+        $valueType = $firstType;
+        $this->skipPhpDocWhitespace($type, $offset);
+
+        if (! $isList && ($type[$offset] ?? '') === ',') {
+            $offset++;
+            $this->skipPhpDocWhitespace($type, $offset);
+
+            $secondType = $this->parsePhpDocType($type, $offset);
+            if ($secondType === null) {
+                return null;
+            }
+            $valueType = $secondType;
+            $this->skipPhpDocWhitespace($type, $offset);
+        }
+
+        if (($type[$offset] ?? '') !== '>') {
+            return null;
+        }
+        $offset++;
+
+        return [
+            'type' => 'array',
+            'items' => $this->normalizePhpDocTypeInfoForNestedSchema($valueType),
+        ];
+    }
+
+    /**
+     * @return array{0: string|null, 1: bool}
+     */
+    protected function parsePhpDocArrayShapePropertyName(string $type, int &$offset): array
+    {
+        $this->skipPhpDocWhitespace($type, $offset);
+        $current = $type[$offset] ?? '';
+
+        $propertyName = null;
+        $isOptional = false;
+
+        if ($current === '\'' || $current === '"') {
+            $quote = $current;
+            $offset++;
+            $start = $offset;
+
+            while (($type[$offset] ?? '') !== $quote && ($type[$offset] ?? '') !== '') {
+                $offset++;
+            }
+
+            $propertyName = substr($type, $start, max(0, $offset - $start));
+            if (($type[$offset] ?? '') === $quote) {
+                $offset++;
+            }
+        } else {
+            $start = $offset;
+
+            while (true) {
+                $char = $type[$offset] ?? '';
+                if ($char === '' || $char === ':' || $char === '?' || ctype_space($char) || $char === ',' || $char === '}') {
+                    break;
+                }
+                $offset++;
+            }
+
+            $propertyName = trim(substr($type, $start, max(0, $offset - $start)));
+        }
+
+        $this->skipPhpDocWhitespace($type, $offset);
+        if (($type[$offset] ?? '') === '?') {
+            $isOptional = true;
+            $offset++;
+        }
+
+        return [$propertyName === '' ? null : $propertyName, $isOptional];
+    }
+
+    protected function skipPhpDocWhitespace(string $type, int &$offset): void
+    {
+        $length = strlen($type);
+        while ($offset < $length && ctype_space($type[$offset])) {
+            $offset++;
+        }
+    }
+
+    protected function parsePhpDocIdentifier(string $type, int &$offset): ?string
+    {
+        $this->skipPhpDocWhitespace($type, $offset);
+        $length = strlen($type);
+        if ($offset >= $length) {
+            return null;
+        }
+
+        $start = $offset;
+        while ($offset < $length) {
+            $char = $type[$offset];
+            if (str_contains(" \t\n\r<>{}[](),:|?", $char)) {
+                break;
+            }
+            $offset++;
+        }
+
+        $identifier = trim(substr($type, $start, max(0, $offset - $start)));
+
+        return $identifier === '' ? null : $identifier;
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}  $typeInfo
+     * @return array<string, mixed>
+     */
+    protected function buildPropertyDefinitionFromPhpDocType(string $fieldName, array $typeInfo, bool $isOptional = false): array
+    {
+        $normalizedTypeInfo = $typeInfo;
+        $type = $normalizedTypeInfo['type'] ?? 'string';
+
+        if ($type === 'null') {
+            $type = 'string';
+            $normalizedTypeInfo['nullable'] = true;
+        }
+
+        $nullable = (bool) ($normalizedTypeInfo['nullable'] ?? false);
+        if ($isOptional) {
+            $nullable = true;
+        }
+
+        $property = [
+            'type' => $type,
+            'example' => $this->generateExampleFromPhpDocType($fieldName, $type),
+            'nullable' => $nullable,
+        ];
+
+        if (isset($normalizedTypeInfo['format']) && is_string($normalizedTypeInfo['format'])) {
+            $property['format'] = $normalizedTypeInfo['format'];
+        }
+
+        if (isset($normalizedTypeInfo['items']) && is_array($normalizedTypeInfo['items'])) {
+            $property['items'] = $this->normalizePhpDocTypeInfoForNestedSchema($normalizedTypeInfo['items']);
+        }
+
+        if (isset($normalizedTypeInfo['properties']) && is_array($normalizedTypeInfo['properties'])) {
+            $property['type'] = 'object';
+            $property['properties'] = $normalizedTypeInfo['properties'];
+        }
+
+        return $property;
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}  $typeInfo
+     * @return array<string, mixed>
+     */
+    protected function normalizePhpDocTypeInfoForNestedSchema(array $typeInfo): array
+    {
+        $normalized = $typeInfo;
+        if (($normalized['type'] ?? null) === 'null') {
+            $normalized['type'] = 'string';
+            $normalized['nullable'] = true;
+        }
+
+        if (isset($normalized['items']) && is_array($normalized['items'])) {
+            $normalized['items'] = $this->normalizePhpDocTypeInfoForNestedSchema($normalized['items']);
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}  $leftType
+     * @param  array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}  $rightType
+     * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}
+     */
+    protected function mergePhpDocTypeInfo(array $leftType, array $rightType): array
+    {
+        $leftName = $leftType['type'] ?? 'string';
+        $rightName = $rightType['type'] ?? 'string';
+
+        if ($leftName === $rightName) {
+            if ($leftName === 'array'
+                && isset($leftType['items'], $rightType['items'])
+                && is_array($leftType['items'])
+                && is_array($rightType['items'])) {
+                $leftType['items'] = $this->mergePhpDocTypeInfo($leftType['items'], $rightType['items']);
+            }
+
+            if ($leftName === 'object'
+                && isset($leftType['properties'], $rightType['properties'])
+                && is_array($leftType['properties'])
+                && is_array($rightType['properties'])) {
+                $leftType['properties'] = array_merge($leftType['properties'], $rightType['properties']);
+            }
+
+            if (! isset($leftType['format']) && isset($rightType['format'])) {
+                $leftType['format'] = $rightType['format'];
+            }
+
+            if (! isset($leftType['nullable']) && isset($rightType['nullable'])) {
+                $leftType['nullable'] = $rightType['nullable'];
+            }
+
+            return $leftType;
+        }
+
+        if ($this->isAmbiguousStringTypeInfo($leftType) && $this->hasSpecificTypeInformation($rightType)) {
+            return $rightType;
+        }
+
+        if ($this->isAmbiguousStringTypeInfo($rightType) && $this->hasSpecificTypeInformation($leftType)) {
+            return $leftType;
+        }
+
+        return ['type' => 'string'];
+    }
+
+    /**
+     * @return array{type: string, format?: string}
+     */
+    protected function mapPhpDocTypeToOpenApiTypeInfo(string $type): array
+    {
+        return match (strtolower($type)) {
+            'int', 'integer' => ['type' => 'integer'],
+            'float', 'double', 'real', 'decimal', 'number' => ['type' => 'number'],
+            'bool', 'boolean', 'true', 'false' => ['type' => 'boolean'],
+            'array', 'iterable', 'list' => ['type' => 'array'],
+            'object' => ['type' => 'object'],
+            'date' => ['type' => 'string', 'format' => 'date'],
+            'datetime' => ['type' => 'string', 'format' => 'date-time'],
+            'null' => ['type' => 'null'],
+            default => ['type' => 'string'],
+        };
+    }
+
+    /**
+     * @return int|bool|array<int, mixed>|\stdClass|string
+     */
+    protected function generateExampleFromPhpDocType(string $fieldName, string $type): int|bool|array|\stdClass|string
+    {
+        return match ($type) {
+            'integer' => str_contains($fieldName, 'id') ? 1 : 42,
+            'number' => 42,
+            'boolean' => true,
+            'array' => [],
+            'object' => new \stdClass,
+            default => $this->generateExampleFromNode(
+                $fieldName,
+                new Node\Scalar\String_('string'),
+                'string'
+            ),
+        };
     }
 
     /**
