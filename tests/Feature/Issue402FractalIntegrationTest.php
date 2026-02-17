@@ -23,9 +23,12 @@ class Issue402FractalIntegrationTest extends TestCase
 
         $this->assertSame('object', $responseSchema['type']);
         $this->assertArrayHasKey('data', $responseSchema['properties']);
-        $this->assertArrayHasKey('properties', $responseSchema['properties']['data']);
+        $this->assertSame(
+            '#/components/schemas/GetterBasedUserTransformer',
+            $responseSchema['properties']['data']['$ref']
+        );
 
-        $dataProperties = $responseSchema['properties']['data']['properties'];
+        $dataProperties = $openapi['components']['schemas']['GetterBasedUserTransformer']['properties'];
         $this->assertArrayHasKey('is_beta_user', $dataProperties);
         $this->assertSame('boolean', $dataProperties['is_beta_user']['type']);
         $this->assertArrayHasKey('created_at', $dataProperties);

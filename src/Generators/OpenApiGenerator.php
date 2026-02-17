@@ -781,6 +781,14 @@ class OpenApiGenerator
             $this->schemaRegistry->register($schemaName, $itemSchema);
         }
 
+        if ($this->schemaRegistry->has($schemaName)) {
+            $schema = $this->replaceFractalDataWithSchemaReference(
+                $schema,
+                $this->schemaRegistry->getRef($schemaName),
+                $isCollection
+            );
+        }
+
         $response = $baseResponse;
         $response['content'] = [
             'application/json' => [
@@ -789,6 +797,34 @@ class OpenApiGenerator
         ];
 
         return $response;
+    }
+
+    /**
+     * Replace Fractal data payload schema with a reusable component reference.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, string>  $schemaRef
+     * @return array<string, mixed>
+     */
+    private function replaceFractalDataWithSchemaReference(array $schema, array $schemaRef, bool $isCollection): array
+    {
+        if (! isset($schema['properties']['data']) || ! is_array($schema['properties']['data'])) {
+            return $schema;
+        }
+
+        if ($isCollection) {
+            if (($schema['properties']['data']['type'] ?? null) !== 'array') {
+                return $schema;
+            }
+
+            $schema['properties']['data']['items'] = $schemaRef;
+
+            return $schema;
+        }
+
+        $schema['properties']['data'] = $schemaRef;
+
+        return $schema;
     }
 
     /**
