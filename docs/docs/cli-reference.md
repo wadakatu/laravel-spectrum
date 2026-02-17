@@ -13,6 +13,7 @@ A detailed reference of all available Artisan commands and options in Laravel Sp
 | `spectrum:export:postman` | Export to Postman collection |
 | `spectrum:export:insomnia` | Export to Insomnia workspace |
 | `spectrum:validate` | Validate OpenAPI spec compliance |
+| `spectrum:diff` | Compare two OpenAPI specs and detect breaking changes |
 | `spectrum:cache` | Manage cache (clear, stats, warm) |
 
 ## 🔧 spectrum:generate
@@ -150,6 +151,45 @@ php artisan spectrum:validate --strict
 # Machine-readable outputs
 php artisan spectrum:validate --format=json
 php artisan spectrum:validate --format=junit
+```
+
+## 🔍 spectrum:diff
+
+Compare two OpenAPI documents and highlight breaking changes.
+
+### Usage
+
+```bash
+php artisan spectrum:diff [from] [to] [options]
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `from` | none | Baseline OpenAPI file path (json/yaml) |
+| `to` | none | Target OpenAPI file path (json/yaml) |
+| `--against` | none | Compare against `last`, a git ref, or a file path |
+| `--breaking-only` | false | Show only breaking changes |
+| `--format` | text | Output format (text/json) |
+
+### Examples
+
+```bash
+# Compare two explicit files
+php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json
+
+# Compare current generated spec against the last snapshot
+php artisan spectrum:diff --against=last
+
+# Compare a spec file against the same path in main branch
+php artisan spectrum:diff docs/openapi.json --against=main
+
+# Only show breaking changes
+php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json --breaking-only
+
+# CI-friendly output
+php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json --format=json
 ```
 
 ## 👁️ spectrum:watch
