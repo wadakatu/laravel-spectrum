@@ -27,11 +27,6 @@ final class OpenApiDiffAnalyzer
             'breaking_changes' => [],
             'deprecations' => [],
             'additions' => [],
-            'summary' => [
-                'breaking' => 0,
-                'deprecations' => 0,
-                'additions' => 0,
-            ],
         ];
 
         $fromOperations = $this->collectOperations($fromSpec);
@@ -39,10 +34,8 @@ final class OpenApiDiffAnalyzer
 
         $fromKeys = array_keys($fromOperations);
         $toKeys = array_keys($toOperations);
-        sort($fromKeys);
-        sort($toKeys);
 
-        $removedOperationKeys = array_values(array_diff($fromKeys, $toKeys));
+        $removedOperationKeys = array_diff($fromKeys, $toKeys);
         foreach ($removedOperationKeys as $operationKey) {
             $this->addFinding(
                 bucket: $result['breaking_changes'],
@@ -52,7 +45,7 @@ final class OpenApiDiffAnalyzer
             );
         }
 
-        $addedOperationKeys = array_values(array_diff($toKeys, $fromKeys));
+        $addedOperationKeys = array_diff($toKeys, $fromKeys);
         foreach ($addedOperationKeys as $operationKey) {
             $this->addFinding(
                 bucket: $result['additions'],
@@ -62,8 +55,7 @@ final class OpenApiDiffAnalyzer
             );
         }
 
-        $sharedKeys = array_values(array_intersect($fromKeys, $toKeys));
-        sort($sharedKeys);
+        $sharedKeys = array_intersect($fromKeys, $toKeys);
 
         foreach ($sharedKeys as $operationKey) {
             $fromOperation = $fromOperations[$operationKey];
@@ -77,9 +69,11 @@ final class OpenApiDiffAnalyzer
             $this->compareResponses($operationKey, $fromOperation, $toOperation, $result);
         }
 
-        $result['summary']['breaking'] = count($result['breaking_changes']);
-        $result['summary']['deprecations'] = count($result['deprecations']);
-        $result['summary']['additions'] = count($result['additions']);
+        $result['summary'] = [
+            'breaking' => count($result['breaking_changes']),
+            'deprecations' => count($result['deprecations']),
+            'additions' => count($result['additions']),
+        ];
 
         return $result;
     }
@@ -280,10 +274,8 @@ final class OpenApiDiffAnalyzer
 
         $fromKeys = array_keys($fromParameters);
         $toKeys = array_keys($toParameters);
-        sort($fromKeys);
-        sort($toKeys);
 
-        $addedParameterKeys = array_values(array_diff($toKeys, $fromKeys));
+        $addedParameterKeys = array_diff($toKeys, $fromKeys);
         foreach ($addedParameterKeys as $parameterKey) {
             $parameter = $toParameters[$parameterKey];
             $label = sprintf('%s (%s)', $parameter['name'], $parameter['in']);
@@ -305,8 +297,7 @@ final class OpenApiDiffAnalyzer
             }
         }
 
-        $sharedParameterKeys = array_values(array_intersect($fromKeys, $toKeys));
-        sort($sharedParameterKeys);
+        $sharedParameterKeys = array_intersect($fromKeys, $toKeys);
 
         foreach ($sharedParameterKeys as $parameterKey) {
             $fromParameter = $fromParameters[$parameterKey];
@@ -362,16 +353,15 @@ final class OpenApiDiffAnalyzer
     {
         $parametersByKey = [];
 
-        $sources = [
-            $pathItem['parameters'] ?? null,
-            $operation['parameters'] ?? null,
-        ];
+        $sources = [];
+        if (isset($pathItem['parameters']) && is_array($pathItem['parameters'])) {
+            $sources[] = $pathItem['parameters'];
+        }
+        if (isset($operation['parameters']) && is_array($operation['parameters'])) {
+            $sources[] = $operation['parameters'];
+        }
 
         foreach ($sources as $parameterList) {
-            if (! is_array($parameterList)) {
-                continue;
-            }
-
             foreach ($parameterList as $parameter) {
                 if (! is_array($parameter)) {
                     continue;
@@ -443,10 +433,6 @@ final class OpenApiDiffAnalyzer
         $toRequestBody = $toOperation['operation']['requestBody'] ?? null;
         $fromRequestSchema = $this->extractBodySchema($fromRequestBody);
         $toRequestSchema = $this->extractBodySchema($toRequestBody);
-
-        if ($fromRequestSchema === null && $toRequestSchema === null) {
-            return;
-        }
 
         if ($fromRequestSchema === null && $toRequestSchema !== null) {
             $isRequired = is_array($toRequestBody) && (($toRequestBody['required'] ?? false) === true);
@@ -543,11 +529,11 @@ final class OpenApiDiffAnalyzer
 
         $fromStatusCodes = array_keys($fromResponses);
         $toStatusCodes = array_keys($toResponses);
-        sort($fromStatusCodes);
-        sort($toStatusCodes);
 
-        $removedStatusCodes = array_values(array_diff($fromStatusCodes, $toStatusCodes));
-        foreach ($removedStatusCodes as $statusCode) {
+        $removedStatusCodes = array_diff($fromStatusCodes, $toStatusCodes);
+        foreach ($removedStatusCodes as $rawStatusCode) {
+            $statusCode = (string) $rawStatusCode;
+
             $this->addFinding(
                 bucket: $result['breaking_changes'],
                 type: 'response_removed',
@@ -556,8 +542,10 @@ final class OpenApiDiffAnalyzer
             );
         }
 
-        $addedStatusCodes = array_values(array_diff($toStatusCodes, $fromStatusCodes));
-        foreach ($addedStatusCodes as $statusCode) {
+        $addedStatusCodes = array_diff($toStatusCodes, $fromStatusCodes);
+        foreach ($addedStatusCodes as $rawStatusCode) {
+            $statusCode = (string) $rawStatusCode;
+
             if ($this->isErrorStatusCode($statusCode)) {
                 $this->addFinding(
                     bucket: $result['additions'],
@@ -575,10 +563,10 @@ final class OpenApiDiffAnalyzer
             }
         }
 
-        $sharedStatusCodes = array_values(array_intersect($fromStatusCodes, $toStatusCodes));
-        sort($sharedStatusCodes);
+        $sharedStatusCodes = array_intersect($fromStatusCodes, $toStatusCodes);
 
-        foreach ($sharedStatusCodes as $statusCode) {
+        foreach ($sharedStatusCodes as $rawStatusCode) {
+            $statusCode = (string) $rawStatusCode;
             $fromSchema = $fromResponses[$statusCode];
             $toSchema = $toResponses[$statusCode];
 
@@ -774,10 +762,8 @@ final class OpenApiDiffAnalyzer
     ): void {
         $fromKeys = array_keys($fromProperties);
         $toKeys = array_keys($toProperties);
-        sort($fromKeys);
-        sort($toKeys);
 
-        $removedKeys = array_values(array_diff($fromKeys, $toKeys));
+        $removedKeys = array_diff($fromKeys, $toKeys);
         foreach ($removedKeys as $propertyName) {
             $propertyPath = $this->concatFieldPath($parentPath, $propertyName);
 
@@ -796,7 +782,7 @@ final class OpenApiDiffAnalyzer
             }
         }
 
-        $addedKeys = array_values(array_diff($toKeys, $fromKeys));
+        $addedKeys = array_diff($toKeys, $fromKeys);
         foreach ($addedKeys as $propertyName) {
             $propertyPath = $this->concatFieldPath($parentPath, $propertyName);
             $isRequired = in_array($propertyName, $toRequired, true);
@@ -846,8 +832,7 @@ final class OpenApiDiffAnalyzer
             }
         }
 
-        $sharedKeys = array_values(array_intersect($fromKeys, $toKeys));
-        sort($sharedKeys);
+        $sharedKeys = array_intersect($fromKeys, $toKeys);
 
         foreach ($sharedKeys as $propertyName) {
             if ($scope === 'request' && ! in_array($propertyName, $fromRequired, true) && in_array($propertyName, $toRequired, true)) {
@@ -939,7 +924,7 @@ final class OpenApiDiffAnalyzer
             }
         }
 
-        return array_values(array_unique($normalized));
+        return array_unique($normalized);
     }
 
     /**
@@ -982,7 +967,7 @@ final class OpenApiDiffAnalyzer
             }
         }
 
-        $normalized = array_values(array_unique($normalized));
+        $normalized = array_unique($normalized);
         sort($normalized);
 
         return $normalized;
@@ -1004,11 +989,7 @@ final class OpenApiDiffAnalyzer
         array $toEnumValues,
         array &$result
     ): void {
-        if ($fromEnumValues === [] && $toEnumValues === []) {
-            return;
-        }
-
-        $removedValues = array_values(array_diff($fromEnumValues, $toEnumValues));
+        $removedValues = array_diff($fromEnumValues, $toEnumValues);
         foreach ($removedValues as $removedValue) {
             $this->addFinding(
                 bucket: $result['breaking_changes'],
@@ -1018,7 +999,7 @@ final class OpenApiDiffAnalyzer
             );
         }
 
-        $addedValues = array_values(array_diff($toEnumValues, $fromEnumValues));
+        $addedValues = array_diff($toEnumValues, $fromEnumValues);
         foreach ($addedValues as $addedValue) {
             $this->addFinding(
                 bucket: $result['additions'],
