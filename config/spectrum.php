@@ -913,6 +913,71 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | SDK Generation Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure SDK client generation from OpenAPI specs.
+    |
+    | Supported generators:
+    | - openapi-generator
+    | - openapi-typescript
+    | - kiota
+    |
+    */
+    'sdk' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Default Generator
+        |--------------------------------------------------------------------------
+        */
+        'generator' => env('SPECTRUM_SDK_GENERATOR', 'openapi-generator'),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generator Binaries
+        |--------------------------------------------------------------------------
+        |
+        | You can override each executable. Multi-token commands are supported.
+        | Example: 'openapi-typescript' => 'pnpm dlx openapi-typescript'
+        |
+        */
+        'binaries' => [
+            'openapi-generator' => env('SPECTRUM_SDK_OPENAPI_GENERATOR_BIN', 'openapi-generator-cli'),
+            'openapi-typescript' => env('SPECTRUM_SDK_OPENAPI_TYPESCRIPT_BIN', 'npx openapi-typescript'),
+            'kiota' => env('SPECTRUM_SDK_KIOTA_BIN', 'kiota'),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Language Presets
+        |--------------------------------------------------------------------------
+        */
+        'languages' => [
+            'typescript' => [
+                'generator_name' => 'typescript-axios',
+                'output' => 'sdk/typescript',
+                'package_name_property' => 'npmName',
+                'additional_properties' => [
+                    'supportsES6' => true,
+                ],
+            ],
+            'swift' => [
+                'generator_name' => 'swift5',
+                'output' => 'sdk/swift',
+                'package_name_property' => 'projectName',
+                'additional_properties' => [],
+            ],
+            'kotlin' => [
+                'generator_name' => 'kotlin',
+                'output' => 'sdk/kotlin',
+                'package_name_property' => 'packageName',
+                'additional_properties' => [],
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Response Links Configuration
     |--------------------------------------------------------------------------
     |

@@ -31,6 +31,7 @@ use LaravelSpectrum\Console\CacheCommand;
 use LaravelSpectrum\Console\Commands\DiffOpenApiCommand;
 use LaravelSpectrum\Console\Commands\ExportInsomniaCommand;
 use LaravelSpectrum\Console\Commands\ExportPostmanCommand;
+use LaravelSpectrum\Console\Commands\GenerateSdkCommand;
 use LaravelSpectrum\Console\Commands\MockServerCommand;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
 use LaravelSpectrum\Console\Commands\ValidateOpenApiCommand;
@@ -57,6 +58,9 @@ use LaravelSpectrum\Generators\SecuritySchemeGenerator;
 use LaravelSpectrum\Generators\TagGenerator;
 use LaravelSpectrum\Generators\TagGroupGenerator;
 use LaravelSpectrum\Generators\ValidationMessageGenerator;
+use LaravelSpectrum\SDK\SdkCommandBuilder;
+use LaravelSpectrum\SDK\SdkCommandRunnerInterface;
+use LaravelSpectrum\SDK\SymfonyProcessSdkCommandRunner;
 use LaravelSpectrum\Services\FileWatcher;
 use LaravelSpectrum\Services\LiveReloadServer;
 use LaravelSpectrum\Support\CollectionAnalyzer;
@@ -154,6 +158,8 @@ class SpectrumServiceProvider extends ServiceProvider
         $this->app->singleton(PostmanFormatter::class);
         $this->app->singleton(InsomniaFormatter::class);
         $this->app->singleton(RequestExampleFormatter::class);
+        $this->app->singleton(SdkCommandBuilder::class);
+        $this->app->singleton(SdkCommandRunnerInterface::class, SymfonyProcessSdkCommandRunner::class);
 
         // コマンドの登録
         if ($this->app->runningInConsole()) {
@@ -164,6 +170,7 @@ class SpectrumServiceProvider extends ServiceProvider
                 OptimizedGenerateCommand::class,
                 ExportPostmanCommand::class,
                 ExportInsomniaCommand::class,
+                GenerateSdkCommand::class,
                 DiffOpenApiCommand::class,
                 MockServerCommand::class,
                 ValidateOpenApiCommand::class,

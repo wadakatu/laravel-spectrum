@@ -12,6 +12,7 @@ A detailed reference of all available Artisan commands and options in Laravel Sp
 | `spectrum:mock` | Launch mock API server |
 | `spectrum:export:postman` | Export to Postman collection |
 | `spectrum:export:insomnia` | Export to Insomnia workspace |
+| `spectrum:sdk` | Generate typed SDK client code |
 | `spectrum:validate` | Validate OpenAPI spec compliance |
 | `spectrum:diff` | Compare two OpenAPI specs and detect breaking changes |
 | `spectrum:cache` | Manage cache (clear, stats, warm) |
@@ -328,6 +329,46 @@ php artisan spectrum:export:insomnia --output=insomnia/api.json
 php artisan spectrum:export:insomnia --output=insomnia/
 ```
 
+## 🧩 spectrum:sdk
+
+Generate type-safe SDK client code from an OpenAPI specification.
+
+### Usage
+
+```bash
+php artisan spectrum:sdk {language} [options]
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `language` | required | Target language (`typescript`, `swift`, `kotlin`) |
+| `--spec` | auto-generate | Path to OpenAPI specification file |
+| `--output` | from `config/spectrum.php` | Output directory |
+| `--generator` | openapi-generator | SDK generator (`openapi-generator`, `openapi-typescript`, `kiota`) |
+| `--package-name` | none | Package/namespace name override |
+| `--dry-run` | false | Show command without executing it |
+
+### Examples
+
+```bash
+# Generate TypeScript SDK with default settings
+php artisan spectrum:sdk typescript
+
+# Generate Swift SDK to a custom directory
+php artisan spectrum:sdk swift --output=sdk/swift
+
+# Generate Kotlin SDK from an existing spec
+php artisan spectrum:sdk kotlin --spec=docs/openapi.json --output=sdk/kotlin
+
+# Use openapi-typescript generator explicitly
+php artisan spectrum:sdk typescript --generator=openapi-typescript --output=sdk/typescript
+
+# Override package name
+php artisan spectrum:sdk typescript --package-name=@myapp/api-client
+```
+
 ## 🗑️ spectrum:cache
 
 Manage Laravel Spectrum cache (clear, show statistics, or warm up).
@@ -403,6 +444,7 @@ docs-mock:
 docs-export:
 	php artisan spectrum:export:postman --environments=local
 	php artisan spectrum:export:insomnia
+	php artisan spectrum:sdk typescript --output=sdk/typescript
 ```
 
 ### Integration with npm scripts

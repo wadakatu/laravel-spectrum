@@ -696,6 +696,52 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 ],
 ```
 
+## 🧩 SDK Generation Configuration
+
+```php
+/*
+|--------------------------------------------------------------------------
+| SDK Generation Configuration
+|--------------------------------------------------------------------------
+|
+| Configuration for SDK client generation from OpenAPI specifications.
+|
+*/
+'sdk' => [
+    // Default generator backend
+    'generator' => env('SPECTRUM_SDK_GENERATOR', 'openapi-generator'),
+
+    // Executable commands (multi-token commands are supported)
+    'binaries' => [
+        'openapi-generator' => env('SPECTRUM_SDK_OPENAPI_GENERATOR_BIN', 'openapi-generator-cli'),
+        'openapi-typescript' => env('SPECTRUM_SDK_OPENAPI_TYPESCRIPT_BIN', 'npx openapi-typescript'),
+        'kiota' => env('SPECTRUM_SDK_KIOTA_BIN', 'kiota'),
+    ],
+
+    // Language presets
+    'languages' => [
+        'typescript' => [
+            'generator_name' => 'typescript-axios',
+            'output' => 'sdk/typescript',
+            'package_name_property' => 'npmName',
+            'additional_properties' => [
+                'supportsES6' => true,
+            ],
+        ],
+        'swift' => [
+            'generator_name' => 'swift5',
+            'output' => 'sdk/swift',
+            'package_name_property' => 'projectName',
+        ],
+        'kotlin' => [
+            'generator_name' => 'kotlin',
+            'output' => 'sdk/kotlin',
+            'package_name_property' => 'packageName',
+        ],
+    ],
+],
+```
+
 ## 🎭 Mock Server Configuration
 
 ```php
@@ -810,6 +856,12 @@ SPECTRUM_CACHE_TTL=3600
 SPECTRUM_MOCK_HOST=127.0.0.1
 SPECTRUM_MOCK_PORT=8081
 SPECTRUM_MOCK_DELAY=0
+
+# SDK generation
+SPECTRUM_SDK_GENERATOR=openapi-generator
+SPECTRUM_SDK_OPENAPI_GENERATOR_BIN=openapi-generator-cli
+SPECTRUM_SDK_OPENAPI_TYPESCRIPT_BIN="npx openapi-typescript"
+SPECTRUM_SDK_KIOTA_BIN=kiota
 ```
 
 ## 📚 Related Documentation
