@@ -15,6 +15,7 @@ A detailed reference of all available Artisan commands and options in Laravel Sp
 | `spectrum:sdk` | Generate typed SDK client code |
 | `spectrum:validate` | Validate OpenAPI spec compliance |
 | `spectrum:diff` | Compare two OpenAPI specs and detect breaking changes |
+| `spectrum:version-compare` | Alias of `spectrum:diff` with migration-focused reporting |
 | `spectrum:cache` | Manage cache (clear, stats, warm) |
 
 ## 🔧 spectrum:generate
@@ -172,6 +173,7 @@ php artisan spectrum:diff [from] [to] [options]
 | `to` | none | Target OpenAPI file path (json/yaml) |
 | `--against` | none | Compare against `last`, a git ref, or a file path |
 | `--breaking-only` | false | Show only breaking changes |
+| `--migration-guide` | false | Show endpoint mappings and migration coverage (v1 → v2) |
 | `--format` | text | Output format (text/json) |
 
 ### Examples
@@ -191,6 +193,12 @@ php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json --breaking-o
 
 # CI-friendly output
 php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json --format=json
+
+# Version-to-version migration report
+php artisan spectrum:version-compare docs/openapi-v1.json docs/openapi-v2.json --migration-guide
+
+# JSON report with migration coverage data
+php artisan spectrum:version-compare docs/openapi-v1.json docs/openapi-v2.json --migration-guide --format=json
 ```
 
 ## 👁️ spectrum:watch

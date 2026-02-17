@@ -105,6 +105,50 @@ class DiffOpenApiCommandTest extends TestCase
         $this->assertStringNotContainsString('DEPRECATIONS', $output);
     }
 
+    #[Test]
+    public function it_supports_version_compare_alias_with_migration_guide_output(): void
+    {
+        $fromPath = $this->writeSpec('version-compare-from.json', $this->versionOneSpec());
+        $toPath = $this->writeSpec('version-compare-to.json', $this->versionTwoSpec());
+
+        Artisan::call('spectrum:version-compare', [
+            'from' => $fromPath,
+            'to' => $toPath,
+            '--migration-guide' => true,
+        ]);
+
+        $output = Artisan::output();
+
+        $this->assertStringContainsString('API Version Comparison', $output);
+        $this->assertStringContainsString('ENDPOINT MAPPING', $output);
+        $this->assertStringContainsString('GET /api/v1/users -> GET /api/v2/users', $output);
+        $this->assertStringContainsString('GET /api/v1/legacy -> [no equivalent endpoint found]', $output);
+        $this->assertStringContainsString('MIGRATION COVERAGE', $output);
+        $this->assertStringContainsString('v1 endpoints with v2 equivalent: 1/2 (50.0%)', $output);
+    }
+
+    #[Test]
+    public function it_includes_migration_guide_in_json_output(): void
+    {
+        $fromPath = $this->writeSpec('version-compare-json-from.json', $this->versionOneSpec());
+        $toPath = $this->writeSpec('version-compare-json-to.json', $this->versionTwoSpec());
+
+        Artisan::call('spectrum:version-compare', [
+            'from' => $fromPath,
+            'to' => $toPath,
+            '--migration-guide' => true,
+            '--format' => 'json',
+        ]);
+
+        $report = json_decode(Artisan::output(), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertArrayHasKey('migration_guide', $report);
+        $this->assertSame(1, $report['migration_guide']['summary']['changed']);
+        $this->assertSame(1, $report['migration_guide']['summary']['removed']);
+        $this->assertSame(1, $report['migration_guide']['summary']['new_in_target']);
+        $this->assertEquals(50.0, $report['migration_guide']['coverage']['percentage']);
+    }
+
     /**
      * @param  array<string, mixed>  $spec
      */
@@ -293,6 +337,66 @@ class DiffOpenApiCommandTest extends TestCase
                     'post' => [
                         'responses' => [
                             '201' => ['description' => 'Created'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function versionOneSpec(): array
+    {
+        return [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => 'Version Compare API',
+                'version' => '1.0.0',
+            ],
+            'paths' => [
+                '/api/v1/users' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => ['description' => 'Success'],
+                        ],
+                    ],
+                ],
+                '/api/v1/legacy' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => ['description' => 'Legacy'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function versionTwoSpec(): array
+    {
+        return [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => 'Version Compare API',
+                'version' => '2.0.0',
+            ],
+            'paths' => [
+                '/api/v2/users' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => ['description' => 'Success'],
+                        ],
+                    ],
+                ],
+                '/api/v2/reports' => [
+                    'get' => [
+                        'responses' => [
+                            '200' => ['description' => 'Reports'],
                         ],
                     ],
                 ],

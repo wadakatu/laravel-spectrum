@@ -11,11 +11,22 @@ use Symfony\Component\Yaml\Yaml;
 
 class DiffOpenApiCommand extends Command
 {
+    /**
+     * @var array<int, string>
+     */
+    protected $aliases = ['spectrum:version-compare'];
+
+    /**
+     * @var array<int, string>
+     */
+    private const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'];
+
     protected $signature = 'spectrum:diff
                             {from? : Baseline OpenAPI specification path}
                             {to? : Target OpenAPI specification path}
                             {--against= : Compare target spec against last snapshot, git ref, or spec file}
                             {--breaking-only : Show only breaking changes}
+                            {--migration-guide : Show version migration coverage and endpoint mappings}
                             {--format=text : Output format (text|json)}';
 
     protected $description = 'Compare two OpenAPI specifications and detect breaking changes';
@@ -58,7 +69,11 @@ class DiffOpenApiCommand extends Command
             $report = $this->applyBreakingOnly($report);
         }
 
-        $this->renderReport($format, $report);
+        $migrationGuide = (bool) $this->option('migration-guide')
+            ? $this->buildMigrationGuide($fromSpec, $toSpec, $report)
+            : null;
+
+        $this->renderReport($format, $report, $migrationGuide);
         $this->saveLastSnapshot($comparison['to_content']);
 
         return $report['summary']['breaking'] > 0 ? 1 : 0;
@@ -335,18 +350,44 @@ class DiffOpenApiCommand extends Command
      *   deprecations: array<int, array{type: string, operation: string, message: string}>,
      *   additions: array<int, array{type: string, operation: string, message: string}>,
      *   summary: array{breaking: int, deprecations: int, additions: int}
-     * }  $report
+     * }  $report,
+     * @param  array{
+     *   endpoint_mapping: array<int, array{
+     *     status: 'compatible'|'changed'|'removed',
+     *     from: string,
+     *     to: string|null,
+     *     reason: string
+     *   }>,
+     *   new_endpoints: array<int, string>,
+     *   coverage: array{mapped: int, total: int, percentage: float, without_equivalent: int},
+     *   summary: array{compatible: int, changed: int, removed: int, new_in_target: int}
+     * }|null  $migrationGuide
      */
-    private function renderReport(string $format, array $report): void
+    private function renderReport(string $format, array $report, ?array $migrationGuide = null): void
     {
         if ($format === 'json') {
-            $this->line((string) json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            $payload = $report;
+            if ($migrationGuide !== null) {
+                $payload['migration_guide'] = $migrationGuide;
+            }
+
+            $this->line((string) json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
             return;
         }
 
-        $this->line(sprintf('📊 API Diff: %s -> %s', $report['from'], $report['to']));
+        if ($migrationGuide !== null) {
+            $this->line(sprintf('📊 API Version Comparison: %s -> %s', $report['from'], $report['to']));
+        } else {
+            $this->line(sprintf('📊 API Diff: %s -> %s', $report['from'], $report['to']));
+        }
+
         $this->line('');
+
+        if ($migrationGuide !== null) {
+            $this->renderMigrationGuideText($migrationGuide);
+            $this->line('');
+        }
 
         if ($report['breaking_changes'] === []) {
             $this->info('✅ BREAKING CHANGES (0)');
@@ -424,5 +465,281 @@ class DiffOpenApiCommand extends Command
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    /**
+     * @param  array<string, mixed>  $fromSpec
+     * @param  array<string, mixed>  $toSpec
+     * @param  array{
+     *   breaking_changes: array<int, array{type: string, operation: string, message: string}>,
+     *   deprecations: array<int, array{type: string, operation: string, message: string}>,
+     *   additions: array<int, array{type: string, operation: string, message: string}>,
+     *   summary: array{breaking: int, deprecations: int, additions: int}
+     * }  $report
+     * @return array{
+     *   endpoint_mapping: array<int, array{
+     *     status: 'compatible'|'changed'|'removed',
+     *     from: string,
+     *     to: string|null,
+     *     reason: string
+     *   }>,
+     *   new_endpoints: array<int, string>,
+     *   coverage: array{mapped: int, total: int, percentage: float, without_equivalent: int},
+     *   summary: array{compatible: int, changed: int, removed: int, new_in_target: int}
+     * }
+     */
+    private function buildMigrationGuide(array $fromSpec, array $toSpec, array $report): array
+    {
+        $fromOperations = $this->collectOperations($fromSpec);
+        $toOperations = $this->collectOperations($toSpec);
+        $breakingByOperation = $this->groupFindingsByOperation($report['breaking_changes']);
+
+        $toByNormalizedMethod = [];
+        foreach ($toOperations as $toKey => $toOperation) {
+            $normalizedKey = $toOperation['method'].' '.$toOperation['normalized_path'];
+            $toByNormalizedMethod[$normalizedKey] ??= [];
+            $toByNormalizedMethod[$normalizedKey][] = $toKey;
+        }
+
+        $endpointMapping = [];
+        $mappedToKeys = [];
+        $compatibleCount = 0;
+        $changedCount = 0;
+        $removedCount = 0;
+
+        foreach ($fromOperations as $fromKey => $fromOperation) {
+            if (array_key_exists($fromKey, $toOperations)) {
+                $reason = $this->summarizeBreakingReason($fromKey, $breakingByOperation[$fromKey] ?? []);
+                $status = $reason === null ? 'compatible' : 'changed';
+
+                $endpointMapping[] = [
+                    'status' => $status,
+                    'from' => $fromKey,
+                    'to' => $fromKey,
+                    'reason' => $reason ?? 'No breaking changes detected.',
+                ];
+
+                $mappedToKeys[$fromKey] = true;
+
+                if ($status === 'compatible') {
+                    $compatibleCount++;
+                } else {
+                    $changedCount++;
+                }
+
+                continue;
+            }
+
+            $normalizedKey = $fromOperation['method'].' '.$fromOperation['normalized_path'];
+            $candidates = $toByNormalizedMethod[$normalizedKey] ?? [];
+
+            if (count($candidates) === 1) {
+                $mappedToKey = $candidates[0];
+                $endpointMapping[] = [
+                    'status' => 'changed',
+                    'from' => $fromKey,
+                    'to' => $mappedToKey,
+                    'reason' => 'Versioned path changed. Verify request/response compatibility.',
+                ];
+                $mappedToKeys[$mappedToKey] = true;
+                $changedCount++;
+
+                continue;
+            }
+
+            $reason = count($candidates) > 1
+                ? 'Multiple candidates found in target version. Manual mapping required.'
+                : 'No equivalent endpoint found in target version.';
+
+            $endpointMapping[] = [
+                'status' => 'removed',
+                'from' => $fromKey,
+                'to' => null,
+                'reason' => $reason,
+            ];
+            $removedCount++;
+        }
+
+        $newEndpoints = [];
+        foreach (array_keys($toOperations) as $toKey) {
+            if (! array_key_exists($toKey, $mappedToKeys)) {
+                $newEndpoints[] = $toKey;
+            }
+        }
+
+        $mappedCount = $compatibleCount + $changedCount;
+        $totalFrom = count($fromOperations);
+        $coverage = $totalFrom > 0 ? round(($mappedCount / $totalFrom) * 100, 1) : 0.0;
+
+        return [
+            'endpoint_mapping' => $endpointMapping,
+            'new_endpoints' => $newEndpoints,
+            'coverage' => [
+                'mapped' => $mappedCount,
+                'total' => $totalFrom,
+                'percentage' => $coverage,
+                'without_equivalent' => $removedCount,
+            ],
+            'summary' => [
+                'compatible' => $compatibleCount,
+                'changed' => $changedCount,
+                'removed' => $removedCount,
+                'new_in_target' => count($newEndpoints),
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $spec
+     * @return array<string, array{method: string, normalized_path: string}>
+     */
+    private function collectOperations(array $spec): array
+    {
+        $operations = [];
+        $paths = $spec['paths'] ?? [];
+        if (! is_array($paths)) {
+            return $operations;
+        }
+
+        foreach ($paths as $path => $pathItem) {
+            if (! is_string($path) || ! is_array($pathItem)) {
+                continue;
+            }
+
+            foreach (self::HTTP_METHODS as $method) {
+                $operation = $pathItem[$method] ?? null;
+                if (! is_array($operation)) {
+                    continue;
+                }
+
+                $methodUpper = strtoupper($method);
+                $operationKey = $methodUpper.' '.$path;
+
+                $operations[$operationKey] = [
+                    'method' => $methodUpper,
+                    'normalized_path' => $this->normalizeVersionedPath($path),
+                ];
+            }
+        }
+
+        return $operations;
+    }
+
+    private function normalizeVersionedPath(string $path): string
+    {
+        $normalized = preg_replace('#(^|/)v[0-9]+(?=/|$)#i', '$1v{n}', $path);
+
+        return $normalized === null ? $path : $normalized;
+    }
+
+    /**
+     * @param  array<int, array{type: string, operation: string, message: string}>  $findings
+     * @return array<string, array<int, array{type: string, operation: string, message: string}>>
+     */
+    private function groupFindingsByOperation(array $findings): array
+    {
+        $grouped = [];
+
+        foreach ($findings as $finding) {
+            $operation = $finding['operation'];
+            $grouped[$operation] ??= [];
+            $grouped[$operation][] = $finding;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * @param  array<int, array{type: string, operation: string, message: string}>  $breakingFindings
+     */
+    private function summarizeBreakingReason(string $operationKey, array $breakingFindings): ?string
+    {
+        if ($breakingFindings === []) {
+            return null;
+        }
+
+        $message = $breakingFindings[0]['message'];
+        $prefix = $operationKey.': ';
+
+        if (str_starts_with($message, $prefix)) {
+            return substr($message, strlen($prefix));
+        }
+
+        return $message;
+    }
+
+    /**
+     * @param  array{
+     *   endpoint_mapping: array<int, array{
+     *     status: 'compatible'|'changed'|'removed',
+     *     from: string,
+     *     to: string|null,
+     *     reason: string
+     *   }>,
+     *   new_endpoints: array<int, string>,
+     *   coverage: array{mapped: int, total: int, percentage: float, without_equivalent: int},
+     *   summary: array{compatible: int, changed: int, removed: int, new_in_target: int}
+     * }  $migrationGuide
+     */
+    private function renderMigrationGuideText(array $migrationGuide): void
+    {
+        $this->line('ENDPOINT MAPPING:');
+
+        foreach ($migrationGuide['endpoint_mapping'] as $mapping) {
+            if ($mapping['status'] === 'compatible') {
+                $this->line(sprintf(
+                    '  ✅ %s -> %s (compatible)',
+                    $mapping['from'],
+                    (string) $mapping['to']
+                ));
+
+                continue;
+            }
+
+            if ($mapping['status'] === 'changed') {
+                $this->line(sprintf(
+                    '  ⚠️  %s -> %s (%s)',
+                    $mapping['from'],
+                    (string) $mapping['to'],
+                    $mapping['reason']
+                ));
+
+                continue;
+            }
+
+            $this->line(sprintf(
+                '  ❌ %s -> [no equivalent endpoint found]',
+                $mapping['from']
+            ));
+        }
+
+        if ($migrationGuide['new_endpoints'] !== []) {
+            $this->line('');
+            $this->line('NEW IN TARGET:');
+
+            foreach ($migrationGuide['new_endpoints'] as $endpoint) {
+                $this->line('  ➕ '.$endpoint);
+            }
+        }
+
+        $this->line('');
+        $this->line('MIGRATION COVERAGE:');
+        $this->line(sprintf(
+            '  v1 endpoints with v2 equivalent: %d/%d (%.1f%%)',
+            $migrationGuide['coverage']['mapped'],
+            $migrationGuide['coverage']['total'],
+            $migrationGuide['coverage']['percentage']
+        ));
+        $this->line(sprintf(
+            '  v1 endpoints without v2 equivalent: %d',
+            $migrationGuide['coverage']['without_equivalent']
+        ));
+        $this->line(sprintf(
+            'Summary: %d compatible, %d changed, %d removed, %d new in target',
+            $migrationGuide['summary']['compatible'],
+            $migrationGuide['summary']['changed'],
+            $migrationGuide['summary']['removed'],
+            $migrationGuide['summary']['new_in_target']
+        ));
     }
 }
