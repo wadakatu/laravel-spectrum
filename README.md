@@ -99,6 +99,7 @@ php artisan spectrum:mock
 ```bash
 php artisan spectrum:export:postman    # Postman collection
 php artisan spectrum:export:insomnia   # Insomnia workspace
+php artisan spectrum:sdk typescript    # Type-safe SDK client
 ```
 
 ### Validate OpenAPI Spec
