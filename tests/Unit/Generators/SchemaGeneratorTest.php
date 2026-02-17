@@ -1593,6 +1593,27 @@ class SchemaGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_skips_rule_constraints_in_enum_for_dynamic_expression(): void
+    {
+        $conditionalRules = [
+            'rules_sets' => [
+                [
+                    'conditions' => [ConditionResult::httpMethod('POST', '$this->isMethod("POST")')],
+                    'rules' => ['email' => "in:' . Auth::user()->email"],
+                ],
+                [
+                    'conditions' => [ConditionResult::httpMethod('PUT', '$this->isMethod("PUT")')],
+                    'rules' => ['email' => 'string'],
+                ],
+            ],
+        ];
+
+        $schema = $this->generator->generateConditionalSchema($conditionalRules, []);
+
+        $this->assertArrayNotHasKey('enum', $schema['oneOf'][0]['properties']['email']);
+    }
+
+    #[Test]
     public function it_applies_rule_constraints_regex_pattern(): void
     {
         $conditionalRules = [

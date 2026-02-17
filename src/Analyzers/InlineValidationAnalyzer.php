@@ -13,6 +13,7 @@ use LaravelSpectrum\Support\ErrorCollector;
 use LaravelSpectrum\Support\FileSizeFormatter;
 use LaravelSpectrum\Support\HasErrorCollection;
 use LaravelSpectrum\Support\TypeInference;
+use LaravelSpectrum\Support\ValidationRules;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -1071,6 +1072,7 @@ class InlineValidationAnalyzer implements HasErrors
             $minimum = null;
             $maximum = null;
             $inlineEnum = null;
+            $hasInvalidInlineEnum = false;
 
             foreach ($rulesList as $rule) {
                 if (is_string($rule) && strpos($rule, ':') !== false) {
@@ -1092,7 +1094,12 @@ class InlineValidationAnalyzer implements HasErrors
                             }
                             break;
                         case 'in':
-                            $inlineEnum = explode(',', $ruleValue);
+                            $enumValues = ValidationRules::extractSafeInRuleValues($ruleValue);
+                            if ($enumValues === null) {
+                                $hasInvalidInlineEnum = true;
+                            } else {
+                                $inlineEnum = $enumValues;
+                            }
                             break;
                         case 'size':
                             if ($type === 'string') {
@@ -1102,6 +1109,10 @@ class InlineValidationAnalyzer implements HasErrors
                             break;
                     }
                 }
+            }
+
+            if ($hasInvalidInlineEnum) {
+                $inlineEnum = null;
             }
 
             $parameters[] = new InlineParameterInfo(

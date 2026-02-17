@@ -153,6 +153,14 @@ class ValidationRuleTypeMapperTest extends TestCase
     }
 
     #[Test]
+    public function it_skips_dynamic_expression_fragments_when_extracting_enum_values(): void
+    {
+        $values = $this->mapper->extractEnumValues(["in:' . Auth::user()->email"]);
+
+        $this->assertNull($values);
+    }
+
+    #[Test]
     public function it_returns_null_for_no_enum_values(): void
     {
         $this->assertNull($this->mapper->extractEnumValues(['required']));
@@ -248,6 +256,14 @@ class ValidationRuleTypeMapperTest extends TestCase
         $constraints = $this->mapper->extractConstraints(['in:a,b,c']);
 
         $this->assertEquals(['a', 'b', 'c'], $constraints['enum']);
+    }
+
+    #[Test]
+    public function it_skips_dynamic_expression_fragments_when_extracting_enum_constraint(): void
+    {
+        $constraints = $this->mapper->extractConstraints(["in:' . Auth::user()->email"]);
+
+        $this->assertArrayNotHasKey('enum', $constraints);
     }
 
     #[Test]

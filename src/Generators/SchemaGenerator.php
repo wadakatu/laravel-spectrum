@@ -855,7 +855,10 @@ class SchemaGenerator
                 break;
             case 'in':
                 if ($ruleValue) {
-                    $property['enum'] = explode(',', $ruleValue);
+                    $enumValues = ValidationRules::extractSafeInRuleValues($ruleValue);
+                    if ($enumValues !== null) {
+                        $property['enum'] = $enumValues;
+                    }
                 }
                 break;
             case 'regex':
