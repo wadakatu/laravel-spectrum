@@ -32,6 +32,7 @@ use LaravelSpectrum\Console\Commands\ExportInsomniaCommand;
 use LaravelSpectrum\Console\Commands\ExportPostmanCommand;
 use LaravelSpectrum\Console\Commands\MockServerCommand;
 use LaravelSpectrum\Console\Commands\OptimizedGenerateCommand;
+use LaravelSpectrum\Console\Commands\ValidateOpenApiCommand;
 use LaravelSpectrum\Console\GenerateDocsCommand;
 use LaravelSpectrum\Console\WatchCommand;
 use LaravelSpectrum\Converters\OpenApi31Converter;
@@ -163,6 +164,7 @@ class SpectrumServiceProvider extends ServiceProvider
                 ExportPostmanCommand::class,
                 ExportInsomniaCommand::class,
                 MockServerCommand::class,
+                ValidateOpenApiCommand::class,
             ]);
         }
     }

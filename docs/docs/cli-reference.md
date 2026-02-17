@@ -12,6 +12,7 @@ A detailed reference of all available Artisan commands and options in Laravel Sp
 | `spectrum:mock` | Launch mock API server |
 | `spectrum:export:postman` | Export to Postman collection |
 | `spectrum:export:insomnia` | Export to Insomnia workspace |
+| `spectrum:validate` | Validate OpenAPI spec compliance |
 | `spectrum:cache` | Manage cache (clear, stats, warm) |
 
 ## 🔧 spectrum:generate
@@ -113,6 +114,42 @@ php artisan spectrum:generate:optimized --format=yaml
 
 # Generate with verbose output
 php artisan spectrum:generate:optimized -v
+```
+
+## ✅ spectrum:validate
+
+Validate an OpenAPI document for structural compliance and best-practice warnings.
+
+### Usage
+
+```bash
+php artisan spectrum:validate [path] [options]
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `path` | storage/app/spectrum/openapi.json | OpenAPI file path (json/yaml) |
+| `--generate` | false | Generate spec first, then validate |
+| `--strict` | false | Treat warnings as errors |
+| `--format` | text | Output format (text/json/junit) |
+
+### Examples
+
+```bash
+# Validate existing JSON spec
+php artisan spectrum:validate storage/app/spectrum/openapi.json
+
+# Generate and validate in one step
+php artisan spectrum:validate --generate
+
+# Fail CI when warnings exist
+php artisan spectrum:validate --strict
+
+# Machine-readable outputs
+php artisan spectrum:validate --format=json
+php artisan spectrum:validate --format=junit
 ```
 
 ## 👁️ spectrum:watch

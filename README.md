@@ -101,6 +101,12 @@ php artisan spectrum:export:postman    # Postman collection
 php artisan spectrum:export:insomnia   # Insomnia workspace
 ```
 
+### Validate OpenAPI Spec
+```bash
+php artisan spectrum:validate storage/app/spectrum/openapi.json
+php artisan spectrum:validate --generate --strict
+```
+
 ### High Performance
 - Parallel processing for large codebases
 - Incremental generation (only changed files)
