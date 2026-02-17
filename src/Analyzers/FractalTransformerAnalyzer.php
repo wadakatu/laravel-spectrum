@@ -360,10 +360,20 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
         $parsedTypes = [];
         $nullable = false;
+        $maxIterations = max(1, strlen($type) + 1);
+        $iterations = 0;
 
         while (true) {
+            if ($iterations++ > $maxIterations) {
+                return null;
+            }
+
+            $startOffset = $offset;
             $singleType = $this->parsePhpDocSingleType($type, $offset);
             if ($singleType === null) {
+                return null;
+            }
+            if ($offset <= $startOffset) {
                 return null;
             }
 
@@ -461,8 +471,14 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
 
         $offset++;
         $properties = [];
+        $maxIterations = max(1, strlen($type) + 1);
+        $iterations = 0;
 
         while (true) {
+            if ($iterations++ > $maxIterations) {
+                return null;
+            }
+
             $this->skipPhpDocWhitespace($type, $offset);
 
             if (($type[$offset] ?? '') === '}') {
@@ -600,7 +616,14 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
     protected function skipPhpDocWhitespace(string $type, int &$offset): void
     {
         $length = strlen($type);
+        $maxIterations = max(1, $length - $offset + 1);
+        $iterations = 0;
+
         while ($offset < $length && ctype_space($type[$offset])) {
+            if ($iterations++ > $maxIterations) {
+                break;
+            }
+
             $offset++;
         }
     }
@@ -614,7 +637,14 @@ class FractalTransformerAnalyzer implements ClassAnalyzer, HasErrors
         }
 
         $start = $offset;
+        $maxIterations = max(1, $length - $offset + 1);
+        $iterations = 0;
+
         while ($offset < $length) {
+            if ($iterations++ > $maxIterations) {
+                break;
+            }
+
             $char = $type[$offset];
             if (str_contains(" \t\n\r<>{}[](),:|?", $char)) {
                 break;

@@ -436,23 +436,37 @@ class FractalTransformerAnalyzerTest extends TestCase
         $result = $this->analyzer->analyze(Issue474ProjectTransformer::class);
 
         $this->assertSame('integer', $result['properties']['status']['type']);
+        $this->assertSame(42, $result['properties']['status']['example']);
+        $this->assertSame('integer', $result['properties']['project_id']['type']);
+        $this->assertSame(1, $result['properties']['project_id']['example']);
+        $this->assertSame('number', $result['properties']['budget']['type']);
+        $this->assertSame(42, $result['properties']['budget']['example']);
         $this->assertSame('object', $result['properties']['current_plan']['type']);
         $this->assertSame('integer', $result['properties']['current_plan']['properties']['price']['type']);
+        $this->assertSame('object', $result['properties']['profile']['type']);
+        $this->assertInstanceOf(\stdClass::class, $result['properties']['profile']['example']);
 
         $this->assertSame('array', $result['properties']['project_users']['type']);
         $this->assertArrayHasKey('items', $result['properties']['project_users']);
         $this->assertSame('object', $result['properties']['project_users']['items']['type']);
         $this->assertSame('string', $result['properties']['project_users']['items']['properties']['email']['type']);
+        $this->assertSame([], $result['properties']['project_users']['example']);
 
         $this->assertSame('array', $result['properties']['tags']['type']);
         $this->assertSame('string', $result['properties']['tags']['items']['type']);
+        $this->assertSame([], $result['properties']['tags']['example']);
         $this->assertSame('array', $result['properties']['roles']['type']);
         $this->assertSame('string', $result['properties']['roles']['items']['type']);
+        $this->assertSame('array', $result['properties']['legacy_list']['type']);
+        $this->assertSame('array', $result['properties']['raw_items']['type']);
 
         $this->assertSame('string', $result['properties']['avatar']['type']);
         $this->assertTrue($result['properties']['avatar']['nullable']);
         $this->assertSame('string', $result['properties']['bio']['type']);
         $this->assertTrue($result['properties']['bio']['nullable']);
         $this->assertSame('boolean', $result['properties']['is_owner']['type']);
+        $this->assertTrue($result['properties']['is_owner']['example']);
+        $this->assertSame('date', $result['properties']['due_date']['format']);
+        $this->assertSame('date-time', $result['properties']['updated_at_custom']['format']);
     }
 }
