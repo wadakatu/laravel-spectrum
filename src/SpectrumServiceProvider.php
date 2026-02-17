@@ -28,6 +28,7 @@ use LaravelSpectrum\Analyzers\Support\RuleRequirementAnalyzer;
 use LaravelSpectrum\Analyzers\Support\ValidationDescriptionGenerator;
 use LaravelSpectrum\Cache\DocumentationCache;
 use LaravelSpectrum\Console\CacheCommand;
+use LaravelSpectrum\Console\Commands\DiffOpenApiCommand;
 use LaravelSpectrum\Console\Commands\ExportInsomniaCommand;
 use LaravelSpectrum\Console\Commands\ExportPostmanCommand;
 use LaravelSpectrum\Console\Commands\MockServerCommand;
@@ -163,6 +164,7 @@ class SpectrumServiceProvider extends ServiceProvider
                 OptimizedGenerateCommand::class,
                 ExportPostmanCommand::class,
                 ExportInsomniaCommand::class,
+                DiffOpenApiCommand::class,
                 MockServerCommand::class,
                 ValidateOpenApiCommand::class,
             ]);

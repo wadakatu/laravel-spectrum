@@ -107,6 +107,12 @@ php artisan spectrum:validate storage/app/spectrum/openapi.json
 php artisan spectrum:validate --generate --strict
 ```
 
+### Detect API Breaking Changes
+```bash
+php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json
+php artisan spectrum:diff --against=last --format=json
+```
+
 ### High Performance
 - Parallel processing for large codebases
 - Incremental generation (only changed files)
