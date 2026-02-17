@@ -219,6 +219,23 @@ class InlineValidationAnalyzerTest extends TestCase
     }
 
     #[Test]
+    public function it_skips_inline_enum_when_in_rule_contains_dynamic_expression()
+    {
+        $validation = [
+            'rules' => [
+                'email' => "'required|email|in:' . Auth::user()->email",
+            ],
+        ];
+
+        $parameters = $this->analyzer->generateParameters($validation);
+
+        $this->assertCount(1, $parameters);
+        $this->assertEquals('email', $parameters[0]['name']);
+        $this->assertEquals('email', $parameters[0]['format']);
+        $this->assertArrayNotHasKey('enum', $parameters[0]);
+    }
+
+    #[Test]
     public function it_handles_conditional_required_rules()
     {
         $validation = [

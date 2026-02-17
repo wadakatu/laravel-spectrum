@@ -116,6 +116,79 @@ class ValidationRules
     }
 
     /**
+     * Extract safe literal values from an "in:" rule parameter string.
+     *
+     * Returns null when values appear to contain unresolved dynamic expressions.
+     *
+     * @return array<int, string>|null
+     */
+    public static function extractSafeInRuleValues(string $rawValues): ?array
+    {
+        $values = self::parseInRuleValues($rawValues);
+
+        if ($values === []) {
+            return null;
+        }
+
+        $normalizedValues = [];
+
+        foreach ($values as $value) {
+            $trimmed = trim($value);
+            $unquoted = trim($trimmed, "\"'");
+
+            if ($unquoted === '' || self::containsDynamicExpressionFragment($trimmed)) {
+                return null;
+            }
+
+            $normalizedValues[] = $unquoted;
+        }
+
+        return $normalizedValues;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function parseInRuleValues(string $rawValues): array
+    {
+        if (str_contains($rawValues, '"')) {
+            preg_match_all('/"([^"]*)"/', $rawValues, $matches);
+            if ($matches[1] !== []) {
+                return $matches[1];
+            }
+        }
+
+        if (str_contains($rawValues, "'")) {
+            preg_match_all("/'([^']*)'/", $rawValues, $matches);
+            if ($matches[1] !== []) {
+                return $matches[1];
+            }
+        }
+
+        return explode(',', $rawValues);
+    }
+
+    private static function containsDynamicExpressionFragment(string $value): bool
+    {
+        if (
+            str_contains($value, '::') ||
+            str_contains($value, '->') ||
+            preg_match('/\$[A-Za-z_]/', $value) === 1
+        ) {
+            return true;
+        }
+
+        if (
+            preg_match('/[\'"]\s*\./', $value) === 1 ||
+            preg_match('/\.\s*[\'"]/', $value) === 1
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * ルールに対応するメッセージテンプレートを取得
      */
     public static function getMessageTemplate(string $ruleName, string $fieldType = 'string'): ?string

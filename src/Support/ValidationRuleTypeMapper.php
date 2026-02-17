@@ -448,7 +448,7 @@ final class ValidationRuleTypeMapper
             if (is_string($rule) && Str::startsWith($rule, 'in:')) {
                 $values = Str::after($rule, 'in:');
 
-                return $this->parseInRuleValues($values);
+                return ValidationRules::extractSafeInRuleValues($values);
             }
 
             // Handle Rule::in() object (Illuminate\Validation\Rules\In)
@@ -457,33 +457,12 @@ final class ValidationRuleTypeMapper
                 if (Str::startsWith($stringRule, 'in:')) {
                     $values = Str::after($stringRule, 'in:');
 
-                    return $this->parseInRuleValues($values);
+                    return ValidationRules::extractSafeInRuleValues($values);
                 }
             }
         }
 
         return null;
-    }
-
-    /**
-     * Parse values from 'in:' rule string.
-     *
-     * Handles both unquoted (in:a,b,c) and quoted (in:"a","b","c") formats.
-     *
-     * @return array<string>
-     */
-    private function parseInRuleValues(string $values): array
-    {
-        // Check if values are quoted (from Rule::in() object)
-        if (Str::contains($values, '"')) {
-            // Extract values between quotes
-            preg_match_all('/"([^"]*)"/', $values, $matches);
-
-            return $matches[1];
-        }
-
-        // Simple comma-separated values
-        return explode(',', $values);
     }
 
     /**
@@ -573,7 +552,13 @@ final class ValidationRuleTypeMapper
                     break;
 
                 case 'in':
-                    $constraints['enum'] = $parameters;
+                    $rawInValues = $parts[1] ?? null;
+                    if ($rawInValues !== null) {
+                        $enumValues = ValidationRules::extractSafeInRuleValues($rawInValues);
+                        if ($enumValues !== null) {
+                            $constraints['enum'] = $enumValues;
+                        }
+                    }
                     break;
 
                 case 'regex':

@@ -106,6 +106,23 @@ class ValidationRulesTest extends TestCase
     }
 
     #[Test]
+    public function it_extracts_safe_in_rule_values(): void
+    {
+        $this->assertEquals(
+            ['active', 'inactive', 'pending'],
+            ValidationRules::extractSafeInRuleValues('active,inactive,pending')
+        );
+    }
+
+    #[Test]
+    public function it_returns_null_for_dynamic_in_rule_values(): void
+    {
+        $this->assertNull(
+            ValidationRules::extractSafeInRuleValues("' . Auth::user()->email")
+        );
+    }
+
+    #[Test]
     public function it_extracts_parameters_with_special_characters(): void
     {
         $params = ValidationRules::extractRuleParameters('regex:/^[a-z]+$/');
