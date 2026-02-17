@@ -755,6 +755,7 @@ class OpenApiGenerator
 
         // Generate schema using SchemaGenerator
         $schema = $this->schemaGenerator->generateFromFractal($fractalData, $isCollection, $hasPagination);
+        $schema = $this->mergeFractalResponseProperties($schema, $controllerInfo);
 
         if (empty($schema)) {
             Log::debug('Fractal schema generation returned empty result', [
@@ -788,5 +789,55 @@ class OpenApiGenerator
         ];
 
         return $response;
+    }
+
+    /**
+     * Merge top-level properties from ResponseAnalyzer into Fractal schema.
+     *
+     * This keeps Fractal-derived `data` authoritative while preserving custom
+     * metadata fields manually added in response()->json([...]), such as
+     * next_cursor or total counters.
+     *
+     * @param  array<string, mixed>  $fractalSchema
+     * @return array<string, mixed>
+     */
+    private function mergeFractalResponseProperties(array $fractalSchema, ControllerInfo $controllerInfo): array
+    {
+        if (! $controllerInfo->hasResponse()) {
+            return $fractalSchema;
+        }
+
+        $responseData = $controllerInfo->response?->toArray() ?? [];
+
+        if (($responseData['type'] ?? null) !== 'object' || ! isset($responseData['properties']) || ! is_array($responseData['properties'])) {
+            return $fractalSchema;
+        }
+
+        // Only merge when the analyzed response actually represents the successful
+        // Fractal payload shape.
+        if (! array_key_exists('data', $responseData['properties'])) {
+            return $fractalSchema;
+        }
+
+        $normalized = $this->responseSchemaGenerator->generate($responseData, 200);
+        $responseProperties = $normalized[200]['content']['application/json']['schema']['properties'] ?? null;
+
+        if (! is_array($responseProperties)) {
+            return $fractalSchema;
+        }
+
+        if (! isset($fractalSchema['properties']) || ! is_array($fractalSchema['properties'])) {
+            $fractalSchema['properties'] = [];
+        }
+
+        foreach ($responseProperties as $name => $propertySchema) {
+            if (! is_string($name) || array_key_exists($name, $fractalSchema['properties'])) {
+                continue;
+            }
+
+            $fractalSchema['properties'][$name] = $propertySchema;
+        }
+
+        return $fractalSchema;
     }
 }
