@@ -11,6 +11,7 @@ use LaravelSpectrum\Tests\Fixtures\Transformers\GetterBasedUserTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue458ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue465ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\Issue467ProjectTransformer;
+use LaravelSpectrum\Tests\Fixtures\Transformers\Issue474ProjectTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MinimalTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\MissingIncludeMethodTransformer;
 use LaravelSpectrum\Tests\Fixtures\Transformers\PostTransformer;
@@ -427,5 +428,147 @@ class FractalTransformerAnalyzerTest extends TestCase
         $this->assertSame('integer', $result['properties']['project_users']['items']['properties']['id']['type']);
         $this->assertSame('string', $result['properties']['project_users']['items']['properties']['email']['type']);
         $this->assertSame('boolean', $result['properties']['project_users']['items']['properties']['is_invited']['type']);
+    }
+
+    #[Test]
+    public function it_prefers_issue_474_transform_return_phpdoc_array_shape_types(): void
+    {
+        $result = $this->analyzer->analyze(Issue474ProjectTransformer::class);
+
+        $this->assertSame('integer', $result['properties']['status']['type']);
+        $this->assertSame(42, $result['properties']['status']['example']);
+        $this->assertSame('integer', $result['properties']['project_id']['type']);
+        $this->assertSame(1, $result['properties']['project_id']['example']);
+        $this->assertSame('number', $result['properties']['budget']['type']);
+        $this->assertSame(42, $result['properties']['budget']['example']);
+        $this->assertSame('object', $result['properties']['current_plan']['type']);
+        $this->assertSame('integer', $result['properties']['current_plan']['properties']['price']['type']);
+        $this->assertSame('object', $result['properties']['profile']['type']);
+        $this->assertInstanceOf(\stdClass::class, $result['properties']['profile']['example']);
+
+        $this->assertSame('array', $result['properties']['project_users']['type']);
+        $this->assertArrayHasKey('items', $result['properties']['project_users']);
+        $this->assertSame('object', $result['properties']['project_users']['items']['type']);
+        $this->assertSame('string', $result['properties']['project_users']['items']['properties']['email']['type']);
+        $this->assertSame([], $result['properties']['project_users']['example']);
+
+        $this->assertSame('array', $result['properties']['tags']['type']);
+        $this->assertSame('string', $result['properties']['tags']['items']['type']);
+        $this->assertSame([], $result['properties']['tags']['example']);
+        $this->assertSame('array', $result['properties']['roles']['type']);
+        $this->assertSame('string', $result['properties']['roles']['items']['type']);
+        $this->assertSame('array', $result['properties']['legacy_list']['type']);
+        $this->assertSame('array', $result['properties']['raw_items']['type']);
+
+        $this->assertSame('string', $result['properties']['avatar']['type']);
+        $this->assertTrue($result['properties']['avatar']['nullable']);
+        $this->assertSame('string', $result['properties']['bio']['type']);
+        $this->assertTrue($result['properties']['bio']['nullable']);
+        $this->assertSame('boolean', $result['properties']['is_owner']['type']);
+        $this->assertTrue($result['properties']['is_owner']['example']);
+        $this->assertSame('date', $result['properties']['due_date']['format']);
+        $this->assertSame('date-time', $result['properties']['updated_at_custom']['format']);
+    }
+
+    #[Test]
+    public function it_extracts_multiline_return_type_from_phpdoc_without_including_other_tags(): void
+    {
+        $analyzer = $this->createPhpDocParserExposedAnalyzer();
+
+        $returnType = $analyzer->extractReturnTypeFromDocCommentPublic(<<<'PHPDOC'
+/**
+ * Description line.
+ *
+ * @return array{
+ *   users: array<array{id: int, tags: string[]}>,
+ *   meta: array{count: int},
+ * }
+ * @param mixed $payload
+ */
+PHPDOC);
+
+        $this->assertNotNull($returnType);
+        $this->assertStringStartsWith('array{', $returnType);
+        $this->assertStringContainsString('users: array<array{id: int, tags: string[]}>', $returnType);
+        $this->assertStringContainsString('meta: array{count: int}', $returnType);
+        $this->assertStringNotContainsString('@param', $returnType);
+    }
+
+    #[Test]
+    public function it_parses_phpdoc_array_shape_types_for_list_iterable_nullable_and_formats(): void
+    {
+        $analyzer = $this->createPhpDocParserExposedAnalyzer();
+
+        $parsed = $analyzer->parsePhpDocTypePublic('array{
+            project_id: int,
+            is_owner: bool,
+            legacy_list: list,
+            raw_items: array,
+            iterable_values: iterable,
+            profile: object,
+            due_date: date,
+            updated_at: datetime,
+            avatar: string|null,
+            bio: ?string,
+        }');
+
+        $this->assertIsArray($parsed);
+        $this->assertSame('object', $parsed['type']);
+        $this->assertSame('integer', $parsed['properties']['project_id']['type']);
+        $this->assertSame(1, $parsed['properties']['project_id']['example']);
+        $this->assertSame('boolean', $parsed['properties']['is_owner']['type']);
+        $this->assertTrue($parsed['properties']['is_owner']['example']);
+        $this->assertSame('array', $parsed['properties']['legacy_list']['type']);
+        $this->assertSame('array', $parsed['properties']['raw_items']['type']);
+        $this->assertSame([], $parsed['properties']['raw_items']['example']);
+        $this->assertSame('array', $parsed['properties']['iterable_values']['type']);
+        $this->assertSame('object', $parsed['properties']['profile']['type']);
+        $this->assertInstanceOf(\stdClass::class, $parsed['properties']['profile']['example']);
+        $this->assertSame('string', $parsed['properties']['due_date']['type']);
+        $this->assertSame('date', $parsed['properties']['due_date']['format']);
+        $this->assertSame('date-time', $parsed['properties']['updated_at']['format']);
+        $this->assertTrue($parsed['properties']['avatar']['nullable']);
+        $this->assertTrue($parsed['properties']['bio']['nullable']);
+    }
+
+    #[Test]
+    public function it_parses_nested_phpdoc_arrays_from_generics_and_array_suffix_syntax(): void
+    {
+        $analyzer = $this->createPhpDocParserExposedAnalyzer();
+
+        $parsed = $analyzer->parsePhpDocTypePublic('array{
+            users: array<array{id: int, tags: string[]}>,
+            ids: int[],
+        }');
+
+        $this->assertIsArray($parsed);
+        $this->assertSame('array', $parsed['properties']['users']['type']);
+        $this->assertSame('object', $parsed['properties']['users']['items']['type']);
+        $this->assertSame('integer', $parsed['properties']['users']['items']['properties']['id']['type']);
+        $this->assertSame('array', $parsed['properties']['users']['items']['properties']['tags']['type']);
+        $this->assertSame('string', $parsed['properties']['users']['items']['properties']['tags']['items']['type']);
+        $this->assertSame('array', $parsed['properties']['ids']['type']);
+        $this->assertSame('integer', $parsed['properties']['ids']['items']['type']);
+    }
+
+    private function createPhpDocParserExposedAnalyzer(): FractalTransformerAnalyzer
+    {
+        return new class($this->app->make(AstHelper::class)) extends FractalTransformerAnalyzer
+        {
+            public function extractReturnTypeFromDocCommentPublic(string $docComment): ?string
+            {
+                return $this->extractReturnTypeFromDocComment($docComment);
+            }
+
+            /**
+             * @return array{type?: string, format?: string, properties?: array<string, mixed>, items?: array<string, mixed>, nullable?: bool}|null
+             */
+            public function parsePhpDocTypePublic(string $type): ?array
+            {
+                $offset = 0;
+
+                return $this->parsePhpDocType($type, $offset);
+            }
+        };
     }
 }
