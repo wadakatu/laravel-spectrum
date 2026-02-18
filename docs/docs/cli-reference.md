@@ -39,6 +39,7 @@ php artisan spectrum:generate [options]
 | `--fail-on-error` | false | Stop execution on first error |
 | `--ignore-errors` | false | Continue generation ignoring errors |
 | `--error-report` | none | Save error report to file |
+| `--viewer` | swagger-ui | HTML viewer (swagger-ui/elements/scalar/rapidoc) |
 | `--no-try-it-out` | false | Disable "Try It Out" feature in HTML output |
 
 ### Examples
@@ -52,6 +53,15 @@ php artisan spectrum:generate --format=yaml --output=docs/api.yaml
 
 # Output in HTML format (with Swagger UI)
 php artisan spectrum:generate --format=html --output=docs/api.html
+
+# Output in HTML format with Stoplight Elements
+php artisan spectrum:generate --format=html --viewer=elements --output=docs/api-elements.html
+
+# Output in HTML format with Scalar
+php artisan spectrum:generate --format=html --viewer=scalar --output=docs/api-scalar.html
+
+# Output in HTML format with RapiDoc
+php artisan spectrum:generate --format=html --viewer=rapidoc --output=docs/api-rapidoc.html
 
 # Clear cache and regenerate
 php artisan spectrum:generate --clear-cache

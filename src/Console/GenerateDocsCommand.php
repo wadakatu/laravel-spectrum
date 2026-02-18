@@ -24,6 +24,7 @@ class GenerateDocsCommand extends Command
                             {--fail-on-error : Stop execution on first error}
                             {--ignore-errors : Continue generation ignoring errors}
                             {--error-report= : Save error report to file}
+                            {--viewer= : HTML viewer (swagger-ui|elements|scalar|rapidoc)}
                             {--no-try-it-out : Disable Try It Out feature in HTML output}';
 
     protected $description = 'Generate API documentation';
@@ -250,6 +251,7 @@ class GenerateDocsCommand extends Command
             $htmlGenerator = new HtmlDocumentGenerator;
 
             return $htmlGenerator->generate($data, [
+                'viewer' => $this->option('viewer'),
                 'try_it_out' => ! $this->option('no-try-it-out'),
             ]);
         }

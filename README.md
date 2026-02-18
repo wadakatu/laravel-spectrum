@@ -59,8 +59,10 @@ composer require wadakatu/laravel-spectrum --dev
 # Generate OpenAPI documentation
 php artisan spectrum:generate
 
-# View in browser (HTML with Swagger UI)
+# View in browser (HTML, default: Swagger UI)
 php artisan spectrum:generate --format=html
+# Or choose a viewer
+php artisan spectrum:generate --format=html --viewer=elements
 # Open: storage/app/spectrum/openapi.html
 ```
 
