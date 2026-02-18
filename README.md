@@ -112,6 +112,7 @@ php artisan spectrum:validate --generate --strict
 ```bash
 php artisan spectrum:diff docs/openapi-v1.json docs/openapi-v2.json
 php artisan spectrum:diff --against=last --format=json
+php artisan spectrum:version-compare docs/openapi-v1.json docs/openapi-v2.json --migration-guide
 ```
 
 ### High Performance

@@ -25,10 +25,12 @@ class DiffOpenApiCommandTest extends TestCase
         $command = app(DiffOpenApiCommand::class);
         $definition = $command->getDefinition();
 
+        $this->assertContains('spectrum:version-compare', $command->getAliases());
         $this->assertTrue($definition->hasArgument('from'));
         $this->assertTrue($definition->hasArgument('to'));
         $this->assertTrue($definition->hasOption('against'));
         $this->assertTrue($definition->hasOption('breaking-only'));
+        $this->assertTrue($definition->hasOption('migration-guide'));
         $this->assertTrue($definition->hasOption('format'));
 
         $this->assertSame('text', $definition->getOption('format')->getDefault());
