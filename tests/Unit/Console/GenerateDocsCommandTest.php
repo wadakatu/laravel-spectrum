@@ -59,6 +59,7 @@ class GenerateDocsCommandTest extends TestCase
         $this->assertTrue($definition->hasOption('fail-on-error'));
         $this->assertTrue($definition->hasOption('ignore-errors'));
         $this->assertTrue($definition->hasOption('error-report'));
+        $this->assertTrue($definition->hasOption('viewer'));
         $this->assertTrue($definition->hasOption('no-try-it-out'));
     }
 
@@ -595,6 +596,24 @@ class GenerateDocsCommandTest extends TestCase
         $content = File::get(storage_path('app/spectrum/openapi.html'));
         $this->assertStringContainsString('<!DOCTYPE html>', $content);
         $this->assertStringContainsString('swagger-ui', $content);
+    }
+
+    #[Test]
+    public function format_output_generates_html_with_elements_viewer(): void
+    {
+        // Arrange
+        Route::get('api/users', [UserController::class, 'index']);
+
+        // Act
+        $this->artisan('spectrum:generate', ['--format' => 'html', '--viewer' => 'elements'])
+            ->assertSuccessful();
+
+        // Assert
+        $this->assertFileExists(storage_path('app/spectrum/openapi.html'));
+
+        $content = File::get(storage_path('app/spectrum/openapi.html'));
+        $this->assertStringContainsString('<!DOCTYPE html>', $content);
+        $this->assertStringContainsString('<elements-api', $content);
     }
 
     #[Test]

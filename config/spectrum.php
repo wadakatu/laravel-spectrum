@@ -796,10 +796,20 @@ return [
     | HTML Output Settings
     |--------------------------------------------------------------------------
     |
-    | Configure HTML documentation output with Swagger UI.
+    | Configure HTML documentation output viewers.
     |
     */
     'html' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Default Viewer
+        |--------------------------------------------------------------------------
+        |
+        | Available viewers: swagger-ui, elements, scalar, rapidoc
+        |
+        */
+        'viewer' => env('SPECTRUM_HTML_VIEWER', 'swagger-ui'),
+
         /*
         |--------------------------------------------------------------------------
         | Try It Out Feature
@@ -810,6 +820,39 @@ return [
         |
         */
         'try_it_out' => env('SPECTRUM_HTML_TRY_IT_OUT', true),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Stoplight Elements
+        |--------------------------------------------------------------------------
+        */
+        'elements' => [
+            'layout' => env('SPECTRUM_HTML_ELEMENTS_LAYOUT', 'sidebar'),
+            'router' => env('SPECTRUM_HTML_ELEMENTS_ROUTER', 'hash'),
+            'hide_try_it' => (bool) env('SPECTRUM_HTML_ELEMENTS_HIDE_TRY_IT', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Scalar
+        |--------------------------------------------------------------------------
+        */
+        'scalar' => [
+            'theme' => env('SPECTRUM_HTML_SCALAR_THEME', 'default'),
+            'dark_mode' => (bool) env('SPECTRUM_HTML_SCALAR_DARK_MODE', true),
+            'show_sidebar' => (bool) env('SPECTRUM_HTML_SCALAR_SHOW_SIDEBAR', true),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | RapiDoc
+        |--------------------------------------------------------------------------
+        */
+        'rapidoc' => [
+            'theme' => env('SPECTRUM_HTML_RAPIDOC_THEME', 'light'),
+            'render_style' => env('SPECTRUM_HTML_RAPIDOC_RENDER_STYLE', 'read'),
+            'schema_style' => env('SPECTRUM_HTML_RAPIDOC_SCHEMA_STYLE', 'tree'),
+        ],
 
         /*
         |--------------------------------------------------------------------------

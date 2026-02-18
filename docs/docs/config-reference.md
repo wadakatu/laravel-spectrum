@@ -621,19 +621,19 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
 | HTML Output Configuration
 |--------------------------------------------------------------------------
 |
-| Configuration for HTML output with Swagger UI.
+| Configuration for HTML output viewers.
 |
 */
 'html' => [
     /*
     |--------------------------------------------------------------------------
-    | Theme
+    | Default Viewer
     |--------------------------------------------------------------------------
     |
-    | Swagger UI theme. Options: 'default', 'dark'
+    | Available: swagger-ui, elements, scalar, rapidoc
     |
     */
-    'theme' => 'default',
+    'viewer' => 'swagger-ui',
 
     /*
     |--------------------------------------------------------------------------
@@ -644,6 +644,24 @@ php artisan vendor:publish --provider="LaravelSpectrum\SpectrumServiceProvider" 
     |
     */
     'try_it_out' => true,
+
+    'elements' => [
+        'layout' => 'sidebar',
+        'router' => 'hash',
+        'hide_try_it' => false,
+    ],
+
+    'scalar' => [
+        'theme' => 'default',
+        'dark_mode' => true,
+        'show_sidebar' => true,
+    ],
+
+    'rapidoc' => [
+        'theme' => 'light',
+        'render_style' => 'read',
+        'schema_style' => 'tree',
+    ],
 ],
 ```
 

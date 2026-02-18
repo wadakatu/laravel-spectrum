@@ -29,6 +29,39 @@ class HtmlDocumentGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_generates_html_with_stoplight_elements(): void
+    {
+        $spec = $this->getSampleOpenApiSpec();
+
+        $html = $this->generator->generate($spec, ['viewer' => 'elements']);
+
+        $this->assertStringContainsString('<elements-api', $html);
+        $this->assertStringContainsString('@stoplight/elements', $html);
+    }
+
+    #[Test]
+    public function it_generates_html_with_scalar(): void
+    {
+        $spec = $this->getSampleOpenApiSpec();
+
+        $html = $this->generator->generate($spec, ['viewer' => 'scalar']);
+
+        $this->assertStringContainsString('scalar-api-reference', $html);
+        $this->assertStringContainsString('@scalar/api-reference', $html);
+    }
+
+    #[Test]
+    public function it_generates_html_with_rapidoc(): void
+    {
+        $spec = $this->getSampleOpenApiSpec();
+
+        $html = $this->generator->generate($spec, ['viewer' => 'rapidoc']);
+
+        $this->assertStringContainsString('<rapi-doc', $html);
+        $this->assertStringContainsString('rapidoc-min.js', $html);
+    }
+
+    #[Test]
     public function it_includes_api_title_in_html(): void
     {
         $spec = $this->getSampleOpenApiSpec();
@@ -88,6 +121,28 @@ class HtmlDocumentGeneratorTest extends TestCase
         $html = $this->generator->generate($spec, ['try_it_out' => false]);
 
         $this->assertStringContainsString('tryItOutEnabled: false', $html);
+    }
+
+    #[Test]
+    public function it_uses_configured_viewer_when_option_is_not_passed(): void
+    {
+        config(['spectrum.html.viewer' => 'elements']);
+
+        $spec = $this->getSampleOpenApiSpec();
+        $html = $this->generator->generate($spec);
+
+        $this->assertStringContainsString('<elements-api', $html);
+    }
+
+    #[Test]
+    public function it_falls_back_to_swagger_ui_when_viewer_is_invalid(): void
+    {
+        $spec = $this->getSampleOpenApiSpec();
+
+        $html = $this->generator->generate($spec, ['viewer' => 'unknown-viewer']);
+
+        $this->assertStringContainsString('swagger-ui', $html);
+        $this->assertStringContainsString('SwaggerUIBundle', $html);
     }
 
     #[Test]
